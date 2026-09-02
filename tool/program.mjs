@@ -776,7 +776,13 @@ async function cmdBlob() {
 
   for (const full of found) {
     out += `\n\n${"=".repeat(78)}\n<!-- источник: ${relative(PKG_ROOT, full)} -->\n${"=".repeat(78)}\n\n`;
-    out += await readFile(full, "utf8");
+    // Ссылки на соседние файлы в склейке ведут в никуда: соседей рядом больше нет,
+    // все они внутри этого же текста. Оставляем подпись, снимаем разметку.
+    const body = (await readFile(full, "utf8")).replace(
+      /\[([^\]]+)\]\((?!https?:)[^)]+\.md(?:#[^)]*)?\)/g,
+      "$1"
+    );
+    out += body;
   }
 
   const dst = join(CWD, "GOD_AI.md");
