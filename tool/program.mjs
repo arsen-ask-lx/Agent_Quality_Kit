@@ -444,7 +444,7 @@ async function reportCatalog(man, facts) {
   for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
   for (const rec of todo) {
     console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
-    console.log(c.dim(`      проверить: ${recipeFor(rec, facts)}`));
+    console.log(c.dim(`      поставить: aqk add ${rec.slug}`));
   }
   if (skip.length) {
     console.log(c.dim(`\n  Не применимо к этому репозиторию (${skip.length}):`));
@@ -664,6 +664,90 @@ async function cmdNote(args) {
   );
 }
 
+// --- add ---------------------------------------------------------------------
+// Ставит гейт из каталога в проект. Проверка КОПИРУЕТСЯ в репозиторий, а не остаётся
+// ссылкой в пакет: при установке через npx пакет временный, и завтра команда в манифесте
+// указывала бы в никуда — тот самый класс «гейт объявлен, но не запускается».
+
+const PROJECT_GATES = "gates";
+
+// Вписать гейт в манифест, не тронув комментарии: правим текст, а не пересобираем YAML.
+function manifestWithGate(text, slug, cmd) {
+  const lines = text.split("\n");
+  const entry = `  ${slug}: "${cmd}"`;
+
+  const gi = lines.findIndex((l) => /^gates:\s*$/.test(l));
+  if (gi === -1) return { text: null, why: "в .aqk.yml нет блока gates:" };
+  if (lines.some((l) => new RegExp(`^\\s+${slug}:`).test(l))) return { text: null, why: "уже объявлен" };
+
+  let last = gi;
+  for (let i = gi + 1; i < lines.length; i++) {
+    if (/^\s+\S/.test(lines[i])) last = i;
+    else if (lines[i].trim() === "" || lines[i].startsWith("#")) continue;
+    else break;
+  }
+  lines.splice(last + 1, 0, entry);
+
+  let out = lines.join("\n");
+  // Образцы теперь есть — ступень AQK-2 требует, чтобы поле на них указывало.
+  out = out.replace(/^samples:\s*""\s*$/m, `samples: ${PROJECT_GATES}`);
+  return { text: out, why: null };
+}
+
+async function cmdAdd(args) {
+  const slug = args.find((a) => !a.startsWith("-"));
+  if (!slug) die("Укажи имя гейта: aqk add <имя>. Список — aqk doctor");
+
+  const src = join(GATES_SRC, slug);
+  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — aqk doctor`);
+
+  const man = await readManifest();
+  if (!man) die("Нет .aqk.yml — сначала aqk init");
+
+  const rec = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
+  const facts = await detectFacts(man);
+  const verdict = triggerVerdict(rec, facts);
+  if (!verdict.applies) {
+    console.log(c.yellow(`\n  Этот гейт к репозиторию не применим: ${verdict.why}`));
+    console.log(c.dim("  Ставлю всё равно — решение твоё, но сторожить ему нечего.\n"));
+  }
+
+  const dst = join(CWD, PROJECT_GATES, slug);
+  await mkdir(dst, { recursive: true });
+  const copied = await copyDir(src, dst, { force: false });
+
+  // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
+  const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+  let cmd = null;
+  for (const lang of facts.langs) if (recipes[lang]) { cmd = recipes[lang]; break; }
+  cmd = String(cmd || recipes.any || "")
+    .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
+    .replace(/\{dir\}/g, ".");
+  if (!cmd) die(`У записи ${slug} нет команды ни под ${[...facts.langs].join("/") || "этот стек"}, ни общей.`);
+
+  const manPath = join(CWD, MANIFEST);
+  const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);
+
+  console.log(c.bold(`\naqk add ${slug}\n`));
+  console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(`${copied.length} файлов: проверка и образцы`)}`);
+  if (text) {
+    await writeFile(manPath, text, "utf8");
+    console.log(`  ${c.green("✔")}  .aqk.yml       ${c.dim(`гейт объявлен: ${cmd}`)}`);
+  } else {
+    console.log(`  ${c.yellow("!")}  .aqk.yml       ${c.dim(`не тронут (${why}). Впиши сам: ${slug}: "${cmd}"`)}`);
+  }
+
+  console.log(`
+${c.bold("Дальше:")}
+
+  1. Проверь, что он краснеет и молчит там, где должен:
+     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/red`)}`)}   ${c.dim("→ ожидается отказ")}
+     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/green`)}`)} ${c.dim("→ ожидается тишина")}
+  2. Впиши команду в хук коммита и в конвейер. ${c.dim("Гейт, который никто не запускает, — не гейт.")}
+  3. Прогон всех объявленных: ${c.bold("aqk doctor --run")}
+`);
+}
+
 // --- blob ---------------------------------------------------------------------
 // Один файл со всем текстом комплекта — чтобы разом отдать его в чат.
 // СОБИРАЕТСЯ, А НЕ ХРАНИТСЯ. Копия, которую правят руками, через неделю расходится
@@ -717,6 +801,9 @@ switch (cmd) {
   case "note":
     await cmdNote(rest);
     break;
+  case "add":
+    await cmdAdd(rest);
+    break;
   case "blob":
     await cmdBlob();
     break;
@@ -726,7 +813,7 @@ ${c.bold("aqk")} — оснастка для разработки с агент�
 
   ${c.bold("aqk init")}            разложить правила и методички в текущий проект
   ${c.bold("aqk init --force")}    перезаписать уже существующие файлы
-  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты
+  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект
   ${c.bold("aqk note")} "…"        записать урок в общий журнал шишек
   ${c.bold("aqk blob")}            собрать методички в один файл GOD_AI.md
 

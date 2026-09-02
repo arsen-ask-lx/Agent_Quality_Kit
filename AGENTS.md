@@ -27,7 +27,7 @@
 ## Где что лежит
 
 - `README.md` — что это, состояние, очередь работ. **Начинать отсюда.**
-- `tool/program.mjs` — вся программа: `init`, `doctor`, `note`, `blob`
+- `tool/program.mjs` — вся программа: `init`, `doctor`, `add`, `note`, `blob`
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
