@@ -1,14 +1,15 @@
 {
   "name": "@arsen-ask-lx/temper",
   "version": "0.1.0",
-  "description": "Оснастка для разработки с агентами: правила, документация и журнал шишек — для любого инструмента, не только Claude Code",
+  "description": "Оснастка для разработки с агентами: правила, процедуры, методички и общий журнал шишек. Ставится в любой проект одной командой, от инструмента не зависит.",
   "type": "module",
   "bin": {
     "temper": "cli/index.mjs"
   },
   "files": [
     "cli",
-    "plugins/temper/references",
+    "references",
+    "guides",
     "lessons",
     "gates",
     "README.md",

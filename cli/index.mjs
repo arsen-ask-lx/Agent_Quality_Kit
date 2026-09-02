@@ -24,7 +24,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, "..");
 const CWD = process.cwd();
 
-const REFERENCES_SRC = join(PKG_ROOT, "plugins", "temper", "references");
+const REFERENCES_SRC = join(PKG_ROOT, "references");
+const GUIDES_SRC = join(PKG_ROOT, "guides");
 const TARGET_DIR = ".temper";
 
 const c = {
@@ -68,6 +69,7 @@ const AGENTS_MD = `# AGENTS.md
 ## Где что лежит
 
 - \`.temper/rules/\` — стандарты: общие, тесты, безопасность
+- \`.temper/guides/\` — процедуры: как развернуть харнес, как записать урок
 - \`.temper/references/\` — методички: минимум проекта, харнес, процесс, исследования
 - \`.temper/references/project-baseline.md\` — **начни отсюда**, если проект новый
 
@@ -253,6 +255,9 @@ async function cmdInit(args) {
   const refs = await copyDir(REFERENCES_SRC, join(CWD, TARGET_DIR, "references"), { force });
   for (const f of refs) created.push(relative(CWD, f));
 
+  const guides = await copyDir(GUIDES_SRC, join(CWD, TARGET_DIR, "guides"), { force });
+  for (const f of guides) created.push(relative(CWD, f));
+
   for (const [name, body] of Object.entries(RULES)) {
     const p = join(CWD, TARGET_DIR, "rules", name);
     track(await writeIfAbsent(p, body, { force }), p);
@@ -296,6 +301,7 @@ async function cmdDoctor() {
   const checks = [
     [".temper/references", "корпус методичек"],
     [".temper/rules", "стандарты"],
+    [".temper/guides", "процедуры"],
     ["AGENTS.md", "точка входа для агентов"],
     ["CLAUDE.md", "точка входа для Claude Code"],
     [".gitignore", "гигиена репозитория"],
