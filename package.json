@@ -1,15 +1,16 @@
 {
-  "name": "@arsen-ask-lx/temper",
+  "name": "agent-quality-kit",
   "version": "0.1.0",
-  "description": "Оснастка для разработки с агентами: правила, процедуры, методички и общий журнал шишек. Ставится в любой проект одной командой, от инструмента не зависит.",
+  "description": "AQK — Agent Quality Kit: переносимый комплект, приводящий проект в состояние, пригодное для работы агентов. Правила, механические упоры, накопленные уроки. Одна команда, любой инструмент.",
   "type": "module",
   "bin": {
-    "temper": "cli/index.mjs"
+    "aqk": "cli/index.mjs"
   },
   "files": [
     "cli",
     "references",
     "guides",
+    "rules",
     "lessons",
     "gates",
     "README.md",
@@ -22,13 +23,15 @@
   "author": "Arsen Askaryants",
   "repository": {
     "type": "git",
-    "url": "https://github.com/arsen-ask-lx/temper.git"
+    "url": "https://github.com/arsen-ask-lx/Agent_Quality_Kit.git"
   },
   "keywords": [
+    "aqk",
+    "agent-quality-kit",
     "ai-agents",
+    "quality-gates",
     "claude-code",
     "codex",
-    "quality-gates",
     "harness"
   ]
 }
