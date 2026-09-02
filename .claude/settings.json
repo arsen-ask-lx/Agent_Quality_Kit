@@ -10,7 +10,7 @@
       "Bash(git log:*)",
       "Bash(gh repo view:*)",
       "Bash(gh api:*)",
-      "Bash(node cli/index.mjs:*)",
+      "Bash(node tool/program.mjs:*)",
       "Bash(npx github:arsen-ask-lx/Agent_Quality_Kit:*)"
     ],
     "ask": [

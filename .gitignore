@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 /.aqk/
+
+# собирается командой aqk blob, в историю не кладём
+GOD_AI.md

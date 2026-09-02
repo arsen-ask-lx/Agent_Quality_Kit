@@ -1,0 +1,13 @@
+intent: отладочная печать не доезжает до прод-кода
+
+# Запись касается только языков, где есть эта конструкция. В проекте на Go или
+# Rust она не показывается вовсе.
+trigger:
+  langs: python, javascript, typescript
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+  python: ruff check --select T20 {dir}
+  typescript: eslint --rule '{"no-console":"error"}' {dir}
+
+proof: правило arch-lint в audit_project; отдельной записи в журнале нет — доказательство слабое

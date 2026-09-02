@@ -1,0 +1,736 @@
+#!/usr/bin/env node
+// aqk — разложить оснастку в проект и вести общий журнал шишек.
+//
+// ЗАЧЕМ ЭТО, А НЕ ПЛАГИН. Плагин Claude Code работает только в Claude Code. Правила, документация
+// и гейты не зависят от того, какой нейросетью пишут код, — значит и способ установки не должен
+// зависеть. `npx` есть везде, где есть Node.
+//
+// ЗАВИСИМОСТЕЙ НЕТ НАМЕРЕННО. Каждая чужая библиотека — лишний узел надёжности и лишняя дверь в
+// цепочке поставок. Инструмент, который ставят одной командой в чужой проект, обязан быть
+// проверяемым глазами за один присест.
+//
+//   npx github:arsen-ask-lx/Agent_Quality_Kit init     разложить комплект в текущий проект
+//   npx github:arsen-ask-lx/Agent_Quality_Kit init --force   перезаписать уже существующие файлы
+//   npx github:arsen-ask-lx/Agent_Quality_Kit note "..."     записать урок в общий журнал
+//   npx github:arsen-ask-lx/Agent_Quality_Kit doctor   проверить, что разложено и чего не хватает
+
+import { readdir, mkdir, copyFile, writeFile, access, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve, relative } from "node:path";
+import { spawnSync } from "node:child_process";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const PKG_ROOT = resolve(HERE, "..");   // корень комплекта: tool/ лежит в нём
+const CWD = process.cwd();
+
+const DOCS_SRC = join(PKG_ROOT, "kit", "docs");
+const RULES_SRC = join(PKG_ROOT, "kit", "rules");
+const TARGET_DIR = ".aqk";
+
+const c = {
+  bold: (s) => `[1m${s}[0m`,
+  dim: (s) => `[2m${s}[0m`,
+  green: (s) => `[32m${s}[0m`,
+  yellow: (s) => `[33m${s}[0m`,
+  red: (s) => `[31m${s}[0m`,
+};
+
+const exists = async (p) => access(p, constants.F_OK).then(() => true, () => false);
+
+function die(msg) {
+  console.error(c.red(msg));
+  process.exit(1);
+}
+
+// --- шаблоны точек входа ----------------------------------------------------
+// ОДИН источник правил, НЕСКОЛЬКО входов. Каждый инструмент читает свой файл, но оба ведут в
+// .aqk/. Два расходящихся свода правил — худшее, что можно сделать: через месяц они врут
+// по-разному, и никто не знает, какой настоящий.
+
+const AGENTS_MD = `# AGENTS.md
+
+> Точка входа для агента. Держи файл коротким: раздутый свод правил вытесняет саму задачу из
+> контекста, и тогда игнорируются все правила разом. Всё длинное — по ссылкам ниже.
+
+## Железные правила
+
+- **План до кода.** Нетривиальная задача начинается с плана, который человек одобрил словами.
+- **Красный тест до кода.** Сначала проверка, которая падает, потом реализация.
+- **Максимум 3 попытки.** Не решил за три — стоп и человеку, а не четвёртый заход.
+- **Секреты только в окружении.** Никогда в коде, логах и коммитах.
+- **Только файлы из задачи.** Заодно ничего не чиним.
+- **Готово = доказано.** Назови арбитра: тест, живой прогон, сверка с источником. «Выглядит
+  рабочим» — не готово.
+- **Ошибку не глотать.** Либо обработана и залогирована, либо проброшена.
+- **Развилка — вопрос человеку.** Отступление от принятого решения не оформляется комментарием
+  в коде.
+
+## Где что лежит
+
+- \`.aqk/rules/\` — стандарты: общие, тесты, безопасность
+- \`.aqk/docs/\` — методички: минимум проекта, харнес, процесс, исследования
+- \`.aqk/docs/project-baseline.md\` — **начни отсюда**, если проект новый
+
+## Команды
+
+<!-- Заполни под свой проект. Команда, которую нельзя скопировать и выполнить, — не команда. -->
+
+- сборка: \`\`
+- тесты: \`\`
+- линтер: \`\`
+- всё разом перед пушем: \`\`
+
+## Чего в этом проекте нет
+
+<!-- Пиши сюда честно. Ненаписанное «нет» агент додумает как «есть». -->
+`;
+
+const CLAUDE_MD = `# CLAUDE.md
+
+Правила этого проекта живут в \`AGENTS.md\` — читай его.
+
+Один свод правил, несколько точек входа: \`AGENTS.md\` для агентов, понимающих его,
+\`CLAUDE.md\` — для Claude Code. Держать два расходящихся свода нельзя: через месяц они врут
+по-разному, и непонятно, какой настоящий.
+
+@AGENTS.md
+`;
+
+// Манифест — единственный машиночитаемый файл стандарта. Всё остальное человекочитаемо.
+// Пустые значения оставлены НАМЕРЕННО: заполненная заглушка врала бы про уровень.
+const MANIFEST_YML = `# .aqk.yml — манифест Agent Quality Kit
+# Что это: машиночитаемое описание того, как в этом репозитории живут агенты.
+# Уровень соответствия считает \`aqk doctor\`. Пустое поле = ступень не пройдена,
+# и это честно: заполнять заглушками бессмысленно, проверяются файлы, а не слова.
+
+aqk: 1
+
+# AQK-0 — что агент читает первым.
+entry:
+  - AGENTS.md
+
+# AQK-1 — где стандарты и какие проверки обязательны.
+rules: .aqk/rules
+gates:
+  lint: ""
+  test: ""
+  types: ""
+
+# AQK-2 — чем доказано, что гейты работают, и где реестры долга.
+# samples: каталог с красными и зелёными образцами (гейт обязан краснеть на первом
+# и молчать на втором). ratchets: списки известных нарушений, которые могут только
+# укорачиваться.
+samples: ""
+ratchets: ""
+
+# AQK-3 — где копятся уроки. Путь или адрес.
+lessons: ""
+`;
+
+
+// --- init -------------------------------------------------------------------
+
+async function copyDir(src, dst, { force }) {
+  await mkdir(dst, { recursive: true });
+  const entries = await readdir(src, { withFileTypes: true });
+  const written = [];
+  for (const e of entries) {
+    const from = join(src, e.name);
+    const to = join(dst, e.name);
+    if (e.isDirectory()) {
+      written.push(...(await copyDir(from, to, { force })));
+      continue;
+    }
+    if (!force && (await exists(to))) continue;
+    await copyFile(from, to);
+    written.push(to);
+  }
+  return written;
+}
+
+async function writeIfAbsent(path, content, { force }) {
+  if (!force && (await exists(path))) return false;
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content, "utf8");
+  return true;
+}
+
+async function cmdInit(args) {
+  const force = args.includes("--force");
+  const created = [];
+  const skipped = [];
+
+  const track = (ok, path) => (ok ? created : skipped).push(relative(CWD, path));
+
+  if (!(await exists(DOCS_SRC))) {
+    die(`Не найден корпус методичек: ${DOCS_SRC}\nПохоже, пакет установлен не полностью.`);
+  }
+
+  const refs = await copyDir(DOCS_SRC, join(CWD, TARGET_DIR, "docs"), { force });
+  for (const f of refs) created.push(relative(CWD, f));
+
+  const rules = await copyDir(RULES_SRC, join(CWD, TARGET_DIR, "rules"), { force });
+  for (const f of rules) created.push(relative(CWD, f));
+
+
+  const manifest = join(CWD, MANIFEST);
+  track(await writeIfAbsent(manifest, MANIFEST_YML, { force }), manifest);
+
+  const agents = join(CWD, "AGENTS.md");
+  track(await writeIfAbsent(agents, AGENTS_MD, { force }), agents);
+
+  const claude = join(CWD, "CLAUDE.md");
+  track(await writeIfAbsent(claude, CLAUDE_MD, { force }), claude);
+
+  console.log(c.bold("\naqk init\n"));
+  if (created.length) {
+    console.log(c.green(`  создано (${created.length}):`));
+    for (const f of created.slice(0, 8)) console.log(`    ${f}`);
+    if (created.length > 8) console.log(c.dim(`    … и ещё ${created.length - 8}`));
+  }
+  if (skipped.length) {
+    console.log(c.yellow(`\n  уже были на месте, не тронуты (${skipped.length}):`));
+    for (const f of skipped) console.log(`    ${f}`);
+    console.log(c.dim("  перезаписать: aqk init --force"));
+  }
+
+  console.log(`
+${c.bold("Что дальше — по порядку:")}
+
+  1. Открой ${c.bold("AGENTS.md")} и заполни раздел «Команды». Команда, которую нельзя
+     скопировать и выполнить, — не команда, а пожелание.
+  2. Прочитай ${c.bold(".aqk/docs/project-baseline.md")} — это обязательный минимум
+     проекта без привязки к языку. Пройди сверху вниз и отметь, чего нет.
+  3. Заполни ${c.bold(".aqk.yml")} — гейты, образцы, журнал. Уровень соответствия AQK
+     считается по нему: ${c.bold("aqk doctor")}.
+  4. Поднимайся по ступеням ${c.bold("по одной")}. Гейт стережёт существующий артефакт:
+     проверка на код, которого ещё нет, — мёртвое правило.
+
+${c.dim('Обжёгся на чём-то — запиши: aqk note "что случилось"')}
+`);
+}
+
+// --- манифест и уровни соответствия AQK -------------------------------------
+// СТАНДАРТ. Уровень — не самооценка и не галочка в README, а вычисляемое утверждение:
+// каждая ступень проверяется файлами на диске. Утверждение, которое нельзя проверить
+// машиной, в стандарт не входит — иначе значок в README означает только доверие к автору.
+
+const MANIFEST = ".aqk.yml";
+
+// Разбор ограниченного подмножества YAML: ключ, вложенный на один уровень ключ, список.
+// НАМЕРЕННО без библиотеки: манифест обязан быть настолько простым, чтобы его разбирал
+// кусок кода, который читается за минуту. Сложный манифест никто не заполнит.
+function parseManifest(text) {
+  const out = {};
+  let section = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.replace(/#.*$/, "").replace(/\s+$/, "");
+    if (!line.trim()) continue;
+    const indented = /^\s/.test(line);
+    const listItem = line.trim().startsWith("- ");
+
+    if (listItem && section) {
+      // Ключ вида `entry:` без значения уже создал пустой объект — под список его надо
+      // заменить массивом, иначе push падает и весь манифест читается как отсутствующий.
+      if (!Array.isArray(out[section])) out[section] = [];
+      out[section].push(line.trim().slice(2).trim().replace(/^["']|["']$/g, ""));
+      continue;
+    }
+    const m = line.trim().match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!m) continue;
+    const [, key, value] = m;
+    const clean = value.trim().replace(/^["']|["']$/g, "");
+
+    if (indented && section) {
+      if (typeof out[section] !== "object" || Array.isArray(out[section])) out[section] = {};
+      out[section][key] = clean;
+      continue;
+    }
+    section = key;
+    // Список в одну строку: entry: [AGENTS.md, docs/START.md]. Люди пишут именно так —
+    // и раньше манифест молча читался как пустой, а проект получал вердикт «нет AQK-0».
+    // Неверный вердикт хуже отсутствия вердикта: ему верят.
+    if (clean.startsWith("[") && clean.endsWith("]")) {
+      out[key] = clean
+        .slice(1, -1)
+        .split(",")
+        .map((v) => v.trim().replace(/^["']|["']$/g, ""))
+        .filter(Boolean);
+      continue;
+    }
+    out[key] = clean === "" ? {} : clean;
+  }
+  return out;
+}
+
+async function readManifest() {
+  const p = join(CWD, MANIFEST);
+  if (!(await exists(p))) return null;
+  try {
+    return parseManifest(await readFile(p, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// Каждая ступень: что требуется, как проверяется, и что это даёт человеку.
+async function assessLevel(man) {
+  const has = async (rel) => Boolean(rel) && (await exists(join(CWD, String(rel))));
+  const isUrl = (v) => typeof v === "string" && /^https?:\/\//.test(v);
+
+  const entries = Array.isArray(man?.entry) ? man.entry : [];
+  const entriesExist = entries.length > 0 && (await Promise.all(entries.map(has))).every(Boolean);
+
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const filledGates = Object.entries(gates).filter(([, cmd]) => String(cmd || "").trim());
+
+  const steps = [
+    {
+      level: 0,
+      title: "манифест и точка входа",
+      ok: Boolean(man?.aqk) && entriesExist,
+      need: "создай .aqk.yml и укажи в entry файл, который агент читает первым (AGENTS.md)",
+      gives: "любой инструмент понимает, что читать в этом репозитории",
+    },
+    {
+      level: 1,
+      title: "правила и работающие гейты",
+      ok: (await has(man?.rules)) && filledGates.length > 0,
+      need: "укажи rules (каталог стандартов) и заполни хотя бы один гейт в gates реальной командой",
+      gives: "проверки объявлены командами, а не описаны словами",
+    },
+    {
+      level: 2,
+      title: "гейты доказаны, долг под храповиком",
+      ok: (await has(man?.samples)) && (await has(man?.ratchets)),
+      need: "заведи samples (красные и зелёные образцы гейтов) и ratchets (реестры долга)",
+      gives: "гейт доказал, что ловит брак и молчит на исправном коде",
+    },
+    {
+      level: 3,
+      title: "уроки возвращаются в работу",
+      ok: isUrl(man?.lessons) || (await has(man?.lessons)),
+      need: "укажи lessons — путь или адрес журнала, где каждый инцидент даёт вывод",
+      gives: "проект учится: одна и та же шишка не набивается дважды",
+    },
+  ];
+
+  let reached = -1;
+  for (const s of steps) {
+    if (!s.ok) break;
+    reached = s.level;
+  }
+  return { reached, steps };
+}
+
+// --- каталог обещаний -------------------------------------------------------
+// Каталог лежит в комплекте, а не в проекте: записи общие для всех, проект лишь
+// решает, какие из них у него стоят. Показывать все подряд нельзя — это и есть
+// разница между каталогом и списком: у каждой записи обязателен триггер, и до
+// глаз человека доходит только применимое к его репозиторию.
+
+const GATES_SRC = join(PKG_ROOT, "kit", "gates");
+
+const EXT_LANG = {
+  ".py": "python", ".js": "javascript", ".jsx": "javascript",
+  ".ts": "typescript", ".tsx": "typescript", ".go": "go",
+  ".rs": "rust", ".rb": "ruby", ".java": "java", ".php": "php",
+  ".cs": "csharp", ".sh": "shell",
+};
+
+const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "dist", "build", "__pycache__", ".aqk"]);
+
+// Факты о репозитории. Только то, что видно машине: спрашивать человека анкетой
+// значит снова получить мнение вместо факта.
+async function detectFacts(man) {
+  const langs = new Set();
+  let files = 0;
+
+  async function walk(dir, depth) {
+    if (depth > 4 || files > 4000) return;
+    let items;
+    try {
+      items = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const it of items) {
+      if (it.isDirectory()) {
+        if (SKIP_DIRS.has(it.name)) continue;
+        // Образцы каталога — код специально сломанный и специально исправный.
+        // Считать его языками проекта значит врать о репозитории.
+        if (join(dir, it.name) === GATES_SRC) continue;
+        await walk(join(dir, it.name), depth + 1);
+      } else {
+        files++;
+        const dot = it.name.lastIndexOf(".");
+        if (dot > 0) {
+          const lang = EXT_LANG[it.name.slice(dot)];
+          if (lang) langs.add(lang);
+        }
+      }
+    }
+  }
+  await walk(CWD, 0);
+
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  return {
+    langs,
+    files,
+    has_gates: Object.values(gates).some((c) => String(c || "").trim()),
+    gateKeys: Object.keys(gates),
+  };
+}
+
+async function readCatalog() {
+  if (!(await exists(GATES_SRC))) return [];
+  const out = [];
+  for (const name of (await readdir(GATES_SRC, { withFileTypes: true })).filter((d) => d.isDirectory())) {
+    const yml = join(GATES_SRC, name.name, "gate.yml");
+    if (!(await exists(yml))) continue;
+    const rec = parseManifest(await readFile(yml, "utf8"));
+    out.push({ slug: name.name, ...rec });
+  }
+  return out.sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+// Применима ли запись к этому репозиторию — и если нет, то почему.
+// Причина обязательна: «скрыто без объяснения» неотличимо от «потеряно».
+function triggerVerdict(rec, facts) {
+  const t = rec.trigger && typeof rec.trigger === "object" ? rec.trigger : {};
+  if (String(t.always) === "true") return { applies: true };
+
+  if (t.langs) {
+    const want = String(t.langs).split(",").map((s) => s.trim()).filter(Boolean);
+    if (want.some((l) => facts.langs.has(l))) return { applies: true };
+    return { applies: false, why: `нет языков: ${want.join(", ")}` };
+  }
+  if (String(t.has_gates) === "true") {
+    if (facts.has_gates) return { applies: true };
+    return { applies: false, why: "в манифесте не объявлено ни одного гейта" };
+  }
+  return { applies: false, why: "триггер не распознан" };
+}
+
+// Арбитр под стек этого проекта: сначала родной рецепт, иначе — переносимый `any`.
+// Подсказка, которую нельзя скопировать и выполнить, бесполезна.
+function recipeFor(rec, facts) {
+  const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+  let cmd = null;
+  for (const lang of facts.langs) if (recipes[lang]) { cmd = recipes[lang]; break; }
+  cmd = cmd || recipes.any;
+  if (!cmd) return "рецепт не описан";
+  return String(cmd)
+    .replace(/\{gate\}/g, join(GATES_SRC, rec.slug))
+    .replace(/\{dir\}/g, ".");
+}
+
+async function reportCatalog(man, facts) {
+  const catalog = await readCatalog();
+  if (!catalog.length) return;
+
+  const held = [], todo = [], skip = [];
+  for (const rec of catalog) {
+    const v = triggerVerdict(rec, facts);
+    if (!v.applies) skip.push([rec, v.why]);
+    else if (facts.gateKeys.includes(rec.slug)) held.push(rec);
+    else todo.push(rec);
+  }
+
+  console.log(c.bold(`\n  Гейты\n`));
+  console.log(c.dim(`  языки: ${[...facts.langs].join(", ") || "не определены"} · файлов: ${facts.files}\n`));
+
+  for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
+  for (const rec of todo) {
+    console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
+    console.log(c.dim(`      проверить: ${recipeFor(rec, facts)}`));
+  }
+  if (skip.length) {
+    console.log(c.dim(`\n  Не применимо к этому репозиторию (${skip.length}):`));
+    for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
+  }
+  console.log(
+    `\n  ${c.bold("Итого:")} держит машина ${held.length}, применимо но не поставлено ${c.yellow(todo.length)}, ` +
+      c.dim(`скрыто ${skip.length}`) + "\n"
+  );
+}
+
+// --- прогон объявленных гейтов ----------------------------------------------
+// «Гейт объявлен» и «гейт работает» — разные утверждения. Первое читается из манифеста,
+// второе узнаётся только запуском. Пока doctor верил манифесту на слово, уровень означал
+// добросовестность автора, а не факт — ровно то, от чего мы защищаемся.
+//
+// Запуск чужих команд — по явной просьбе (--run), а не втихую: гейт бывает долгим и с
+// побочными действиями. Без флага doctor честно говорит, что не проверял.
+
+function declaredGates(man) {
+  const g = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  return Object.entries(g)
+    .map(([name, cmd]) => [name, String(cmd || "").trim()])
+    .filter(([, cmd]) => cmd);
+}
+
+function runGates(man) {
+  const gates = declaredGates(man);
+  if (!gates.length) return { failed: 0, ran: 0 };
+
+  console.log(c.bold("\n  Прогон объявленных гейтов\n"));
+  let failed = 0;
+
+  for (const [name, cmd] of gates) {
+    const t0 = Date.now();
+    const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+
+    if (r.error && r.error.code === "ETIMEDOUT") {
+      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red("не уложился в 5 минут")}`);
+      failed++;
+      continue;
+    }
+    const code = r.status;
+    if (code === 0) {
+      console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+    } else {
+      failed++;
+      const out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
+      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(`код ${code}`)} ${c.dim(`· ${secs}s · ${cmd}`)}`);
+      for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      if (out.length > 3) console.log(c.dim(`        … и ещё ${out.length - 3} строк`));
+    }
+  }
+  return { failed, ran: gates.length };
+}
+
+// --- doctor -----------------------------------------------------------------
+
+async function cmdDoctor() {
+  console.log(c.bold("\naqk doctor\n"));
+
+  const checks = [
+    [".aqk/docs", "методички"],
+    [".aqk/rules", "стандарты"],
+    ["AGENTS.md", "точка входа для агентов"],
+    [".gitignore", "гигиена репозитория"],
+    [".git", "проект под контролем версий"],
+  ];
+
+  let missing = 0;
+  for (const [path, what] of checks) {
+    const ok = await exists(join(CWD, path));
+    if (!ok) missing++;
+    console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
+  }
+
+  // Команды в AGENTS.md заполнены или остались пустыми заготовками?
+  const agents = join(CWD, "AGENTS.md");
+  if (await exists(agents)) {
+    const text = await readFile(agents, "utf8");
+    const emptyCommands = (text.match(/^- [^:]+: ``$/gm) || []).length;
+    if (emptyCommands) {
+      console.log(
+        `\n  ${c.yellow("!")}  В AGENTS.md ${emptyCommands} незаполненных команд. ` +
+          c.dim("Агент не может выполнить пустую строку.")
+      );
+    }
+  }
+
+  const man = await readManifest();
+  const { reached, steps } = await assessLevel(man);
+
+  console.log(c.bold("\n  Уровень соответствия AQK\n"));
+  for (const s of steps) {
+    const mark = s.ok ? c.green("✔") : reached + 1 === s.level ? c.yellow("→") : c.dim("·");
+    console.log(`  ${mark}  AQK-${s.level}  ${s.title}`);
+  }
+
+  const next = steps.find((s) => !s.ok);
+  console.log(
+    reached < 0
+      ? c.yellow(`\n  Уровень: не достигнут даже AQK-0.\n`)
+      : c.green(`\n  Уровень: AQK-${reached}.\n`)
+  );
+
+  if (next) {
+    console.log(`  ${c.bold(`Чтобы достичь AQK-${next.level}:`)} ${next.need}`);
+    console.log(c.dim(`  Что это даст: ${next.gives}\n`));
+  } else {
+    console.log(c.green("  Все ступени пройдены.\n"));
+  }
+
+  const facts = await detectFacts(man);
+  await reportCatalog(man, facts);
+
+  // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.
+  const wantRun = process.argv.includes("--run");
+  const gates = declaredGates(man);
+  let gateFailed = 0;
+  if (wantRun) {
+    gateFailed = runGates(man).failed;
+  } else if (gates.length) {
+    console.log(
+      c.yellow(`  ${gates.length} гейтов объявлено, но не запускалось.`) +
+        c.dim(" «Объявлен» и «работает» — разные утверждения: aqk doctor --run\n")
+    );
+  }
+
+  // Код возврата — для конвейера. Порог задаётся так: aqk doctor --min 1
+  const minIdx = process.argv.indexOf("--min");
+  const min = minIdx > -1 ? Number(process.argv[minIdx + 1]) : null;
+  if (min !== null) {
+    const pass = reached >= min && gateFailed === 0;
+    console.log(
+      pass
+        ? c.green(`  Порог AQK-${min} пройден.\n`)
+        : c.red(`  Порог AQK-${min} НЕ пройден: сейчас AQK-${reached < 0 ? "нет" : reached}.\n`)
+    );
+    process.exit(pass ? 0 : 1);
+  }
+  process.exit(missing || reached < 0 || gateFailed ? 1 : 0);
+}
+
+// --- note -------------------------------------------------------------------
+
+function findJournal() {
+  const fromEnv = process.env.AQK_HOME;
+  const candidates = [
+    fromEnv,
+    join(process.env.HOME || "", "projects", "aqk"),
+    join(process.env.HOME || "", "aqk"),
+  ].filter(Boolean);
+  for (const p of candidates) {
+    const r = spawnSync("git", ["-C", p, "rev-parse", "--git-dir"], { stdio: "ignore" });
+    if (r.status === 0) return p;
+  }
+  return null;
+}
+
+async function cmdNote(args) {
+  const title = args.find((a) => !a.startsWith("--"));
+  if (!title) die('Нужен заголовок: aqk note "что произошло"');
+
+  const home = findJournal();
+  if (!home) {
+    die(`Клон журнала не найден.
+Сделай один раз:
+  git clone https://github.com/arsen-ask-lx/Agent_Quality_Kit.git ~/projects/aqk
+или укажи путь: export AQK_HOME=/путь/к/aqk`);
+  }
+
+  const journal = join(home, "incidents", "README.md");
+  if (!(await exists(journal))) die(`Журнал не найден: ${journal}`);
+
+  let body = "";
+  if (!process.stdin.isTTY) {
+    body = await new Promise((res) => {
+      let buf = "";
+      process.stdin.setEncoding("utf8");
+      process.stdin.on("data", (d) => (buf += d));
+      process.stdin.on("end", () => res(buf));
+    });
+  }
+
+  if (!body.trim()) {
+    die(`Тело записи пустое. Передай его на стандартный ввод, например:
+
+  aqk note "заголовок" <<'EOF'
+  **Класс:** гейт молчал
+  **Что случилось.** ...
+  **Чем это стоило.** ...
+  **Вывод.** 🔧 ...
+  EOF`);
+  }
+
+  // ГЕЙТ. Урок без вывода — это история, а не урок: в следующий раз обожжёмся так же.
+  if (!/Вывод/i.test(body)) {
+    die("В записи нет раздела «Вывод». Урок без вывода — это история, а не урок.");
+  }
+
+  const date = new Date().toISOString().slice(0, 10);
+  const project = CWD.split("/").filter(Boolean).pop() || "неизвестно";
+  const entry = `\n## ${date} — ${title}\n\n**Проект:** ${project}\n\n${body.trim()}\n`;
+
+  const prev = await readFile(journal, "utf8");
+  await writeFile(journal, prev + entry, "utf8");
+
+  const run = (...a) => spawnSync("git", ["-C", home, ...a], { stdio: "inherit" });
+  run("add", "incidents/README.md");
+  run("commit", "-q", "-m", `lesson(${project}): ${title}`);
+  const pushed = run("push", "-q");
+  console.log(
+    pushed.status === 0
+      ? c.green(`Записано и отправлено: ${title}`)
+      : c.yellow(`Записано локально, push не прошёл. Отправить: git -C ${home} push`)
+  );
+}
+
+// --- blob ---------------------------------------------------------------------
+// Один файл со всем текстом комплекта — чтобы разом отдать его в чат.
+// СОБИРАЕТСЯ, А НЕ ХРАНИТСЯ. Копия, которую правят руками, через неделю расходится
+// с оригиналом, и никто не знает, какая из двух настоящая.
+
+async function cmdBlob() {
+  const dir = join(PKG_ROOT, "kit", "docs");
+  if (!(await exists(dir))) die(`Не найдены методички: ${dir}`);
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  let out =
+    `<!-- СОБРАНО КОМАНДОЙ aqk blob ${stamp} из kit/docs. Не править руками:\n` +
+    `     правки затрёт следующая сборка. Источник — отдельные файлы. -->\n\n` +
+    `# AQK — методички одним файлом\n`;
+
+  // Методички могут лежать в подпапках — обходим дерево, порядок стабильный.
+  const found = [];
+  const walk = async (d) => {
+    for (const it of (await readdir(d, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = join(d, it.name);
+      if (it.isDirectory()) await walk(full);
+      else if (it.name.endsWith(".md")) found.push(full);
+    }
+  };
+  await walk(dir);
+
+  for (const full of found) {
+    out += `\n\n${"=".repeat(78)}\n<!-- источник: ${relative(PKG_ROOT, full)} -->\n${"=".repeat(78)}\n\n`;
+    out += await readFile(full, "utf8");
+  }
+
+  const dst = join(CWD, "GOD_AI.md");
+  await writeFile(dst, out, "utf8");
+  console.log(
+    `\n  ${c.green("✔")}  GOD_AI.md — ${found.length} файлов, ` +
+      `${Math.round(Buffer.byteLength(out) / 1024)} КБ\n`
+  );
+  console.log(c.dim("  Собирается заново каждой командой. Править надо оригиналы в kit/docs.\n"));
+}
+
+// --- разбор аргументов ------------------------------------------------------
+
+const [, , cmd, ...rest] = process.argv;
+switch (cmd) {
+  case "init":
+    await cmdInit(rest);
+    break;
+  case "doctor":
+    await cmdDoctor();
+    break;
+  case "note":
+    await cmdNote(rest);
+    break;
+  case "blob":
+    await cmdBlob();
+    break;
+  default:
+    console.log(`
+${c.bold("aqk")} — оснастка для разработки с агентами
+
+  ${c.bold("aqk init")}            разложить правила и методички в текущий проект
+  ${c.bold("aqk init --force")}    перезаписать уже существующие файлы
+  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты
+  ${c.bold("aqk note")} "…"        записать урок в общий журнал шишек
+  ${c.bold("aqk blob")}            собрать методички в один файл GOD_AI.md
+
+${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit init")}
+`);
+    process.exit(cmd ? 1 : 0);
+}

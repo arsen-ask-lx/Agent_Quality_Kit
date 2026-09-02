@@ -10,10 +10,11 @@ entry:
   - AGENTS.md
 
 # AQK-1 — где стандарты и какие проверки обязательны.
-rules: rules
+rules: kit/rules
 gates:
-  syntax: "node --check cli/index.mjs"
-  smoke: "bash gates/smoke.sh"
+  syntax: "node --check tool/program.mjs"
+  smoke: "bash tool/selfcheck/smoke.sh"
+  gates: "bash tool/selfcheck/gates.sh"
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.
@@ -24,4 +25,4 @@ samples: ""
 ratchets: ""
 
 # AQK-3 — где копятся уроки. Путь или адрес.
-lessons: lessons
+lessons: incidents

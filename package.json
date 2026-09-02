@@ -4,15 +4,11 @@
   "description": "AQK — Agent Quality Kit: переносимый комплект, приводящий проект в состояние, пригодное для работы агентов. Правила, механические упоры, накопленные уроки. Одна команда, любой инструмент.",
   "type": "module",
   "bin": {
-    "aqk": "cli/index.mjs"
+    "aqk": "tool/program.mjs"
   },
   "files": [
-    "cli",
-    "references",
-    "guides",
-    "rules",
-    "lessons",
-    "gates",
+    "tool",
+    "kit",
     "README.md",
     "LICENSE"
   ],

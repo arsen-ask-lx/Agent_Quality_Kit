@@ -1,0 +1,7 @@
+aqk: 1
+entry:
+  - AGENTS.md
+rules: rules
+gates:
+  lint: "npm run lint"
+samples: samples

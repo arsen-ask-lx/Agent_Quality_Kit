@@ -1,0 +1,9 @@
+intent: каждый гейт, объявленный в манифесте, существует и запускается
+
+trigger:
+  has_gates: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md — «2026-08-24 правка конфига гейта не создавала конвейер вообще»

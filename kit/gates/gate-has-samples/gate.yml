@@ -1,0 +1,9 @@
+intent: у каждого объявленного гейта есть красный и зелёный образец
+
+trigger:
+  has_gates: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md — «2026-08-24 гейт краснел на том написании, которое сам предписывал»

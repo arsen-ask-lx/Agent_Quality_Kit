@@ -1,0 +1,9 @@
+intent: ключи, пароли и приватные ключи не попадают в код
+
+trigger:
+  always: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: kit/docs/project-baseline.md, пункт 5 — «секреты не хранятся в коде вообще: ни в истории, ни в примерах, ни в тестах»
