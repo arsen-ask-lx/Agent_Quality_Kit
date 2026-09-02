@@ -1,0 +1,19 @@
+{
+  "name": "espada",
+  "description": "Оснастка для разработки с агентами: скиллы, хуки и шаблоны гейтов плюс общий журнал шишек.",
+  "owner": {
+    "name": "Arsen Askaryants",
+    "url": "https://github.com/arsen-ask-lx"
+  },
+  "plugins": [
+    {
+      "name": "espada",
+      "source": "./plugins/espada",
+      "description": "Разворачивает харнес в новом проекте и ведёт общий журнал уроков.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Arsen Askaryants"
+      }
+    }
+  ]
+}

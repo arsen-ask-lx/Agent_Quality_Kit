@@ -1,0 +1,3 @@
+# Скрипты обязаны иметь LF: CRLF ломает shebang в контейнере и WSL.
+*.sh text eol=lf
+plugins/espada/bin/* text eol=lf
