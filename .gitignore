@@ -1,0 +1,5 @@
+# Личные настройки инструментов не коммитятся, общие — коммитятся.
+.claude/settings.local.json
+node_modules/
+*.log
+.DS_Store
