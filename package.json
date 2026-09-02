@@ -1,14 +1,14 @@
 {
-  "name": "@arsen-ask-lx/espada",
+  "name": "@arsen-ask-lx/temper",
   "version": "0.1.0",
   "description": "Оснастка для разработки с агентами: правила, документация и журнал шишек — для любого инструмента, не только Claude Code",
   "type": "module",
   "bin": {
-    "espada": "cli/index.mjs"
+    "temper": "cli/index.mjs"
   },
   "files": [
     "cli",
-    "plugins/espada/references",
+    "plugins/temper/references",
     "lessons",
     "gates",
     "README.md",
@@ -21,7 +21,7 @@
   "author": "Arsen Askaryants",
   "repository": {
     "type": "git",
-    "url": "https://github.com/arsen-ask-lx/espada.git"
+    "url": "https://github.com/arsen-ask-lx/temper.git"
   },
   "keywords": [
     "ai-agents",

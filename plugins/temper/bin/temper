@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# espada — запись урока в общий журнал шишек, не выходя из текущего проекта.
+# temper — запись урока в общий журнал шишек, не выходя из текущего проекта.
 #
 # ЗАЧЕМ. Журнал уроков обязан быть ОДИН на все проекты, а обжигаемся мы всегда внутри
 # конкретного. Если для записи надо открыть второй репозиторий, вспомнить путь и переключить
@@ -8,10 +8,10 @@
 # ЧЕГО НЕ ДЕЛАЕТ. Не придумывает содержание записи и не решает за человека, урок это или
 # продуктовый дефект. Разграничение — в скилле `lesson`.
 #
-#   espada note "заголовок"     дописать запись (откроет редактор для тела)
-#   espada note "заголовок" --stdin   тело читается со стандартного ввода
-#   espada where                показать, где лежит журнал
-#   espada pull                 обновить журнал из удалённого
+#   temper note "заголовок"     дописать запись (откроет редактор для тела)
+#   temper note "заголовок" --stdin   тело читается со стандартного ввода
+#   temper where                показать, где лежит журнал
+#   temper pull                 обновить журнал из удалённого
 
 set -euo pipefail
 
@@ -22,17 +22,17 @@ die() { printf '%s\n' "$*" >&2; exit 1; }
 # если не нашли, говорим, что сделать, — команда, которая тихо ничего не делает,
 # хуже отсутствующей.
 find_home() {
-  if [ -n "${ESPADA_HOME:-}" ]; then
-    [ -d "$ESPADA_HOME/.git" ] || die "ESPADA_HOME=$ESPADA_HOME — это не git-репозиторий."
-    printf '%s' "$ESPADA_HOME"; return
+  if [ -n "${TEMPER_HOME:-}" ]; then
+    [ -d "$TEMPER_HOME/.git" ] || die "TEMPER_HOME=$TEMPER_HOME — это не git-репозиторий."
+    printf '%s' "$TEMPER_HOME"; return
   fi
-  for candidate in "$HOME/projects/espada" "$HOME/espada" "$(dirname "$PWD")/espada"; do
+  for candidate in "$HOME/projects/temper" "$HOME/temper" "$(dirname "$PWD")/temper"; do
     [ -d "$candidate/.git" ] && { printf '%s' "$candidate"; return; }
   done
   die "Клон журнала не найден.
 Сделай один раз:
-  git clone https://github.com/arsen-ask-lx/espada.git ~/projects/espada
-или укажи путь: export ESPADA_HOME=/путь/к/espada"
+  git clone https://github.com/arsen-ask-lx/temper.git ~/projects/temper
+или укажи путь: export TEMPER_HOME=/путь/к/temper"
 }
 
 cmd_where() { find_home; echo; }
@@ -44,7 +44,7 @@ cmd_pull() {
 
 cmd_note() {
   title=${1:-}
-  [ -n "$title" ] || die 'Нужен заголовок: espada note "что произошло"'
+  [ -n "$title" ] || die 'Нужен заголовок: temper note "что произошло"'
   shift || true
 
   home=$(find_home)
@@ -94,5 +94,5 @@ case "${1:-}" in
   note)  shift; cmd_note "$@" ;;
   where) cmd_where ;;
   pull)  cmd_pull ;;
-  *) die "espada note \"заголовок\" | espada where | espada pull" ;;
+  *) die "temper note \"заголовок\" | temper where | temper pull" ;;
 esac

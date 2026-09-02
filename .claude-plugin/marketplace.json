@@ -1,5 +1,5 @@
 {
-  "name": "espada",
+  "name": "temper",
   "description": "Оснастка для разработки с агентами: скиллы, хуки и шаблоны гейтов плюс общий журнал шишек.",
   "owner": {
     "name": "Arsen Askaryants",
@@ -7,8 +7,8 @@
   },
   "plugins": [
     {
-      "name": "espada",
-      "source": "./plugins/espada",
+      "name": "temper",
+      "source": "./plugins/temper",
       "description": "Разворачивает харнес в новом проекте и ведёт общий журнал уроков.",
       "version": "0.1.0",
       "author": {
