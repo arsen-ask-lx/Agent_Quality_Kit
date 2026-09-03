@@ -14,6 +14,7 @@ find "$DIR" $(skip_find "$DIR") -type f \
      \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \
         -o -name '*.go' -o -name '*.rb' -o -name '*.java' -o -name '*.cs' -o -name '*.php' \
         -o -name '*.rs' -o -name '*.vue' \) -print 2>/dev/null \
+  | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r wc -l 2>/dev/null \
   | awk '
       $2 == "total" { next }

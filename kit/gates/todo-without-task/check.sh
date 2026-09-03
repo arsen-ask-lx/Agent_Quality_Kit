@@ -3,13 +3,12 @@
 # планировании, о ней не знает никто, кроме того, кто её оставил, и она переживает автора.
 DIR="${1:-.}"
 . "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
-PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
 
 # shellcheck disable=SC2086
 # Маркер обязан стоять В КОММЕНТАРИИ. Иначе гейт краснеет на имени переменной с таким же
 # названием и на собственном шаблоне поиска — на том, что дефектом не является.
 # Сами эти слова здесь не пишем: гейт нашёл бы себя. Проверено — находил.
-HITS=$(grep -rnE $(skip_grep "$DIR") $PROSE \
+HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) \
   '(#|//|/\*|--|<!--)[^"'"'"']*(^|[^A-Za-z])(TODO|FIXME|HACK|XXX)([^A-Za-z]|$)' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"

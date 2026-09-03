@@ -7,7 +7,6 @@ DIR="${1:-.}"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
-PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
 
 # Где печать законна и дефектом не является: вспомогательные скрипты, оснастка, примеры,
 # записные книжки. Это НЕ общий список исключений: секрет в scripts/ — такой же секрет,
@@ -15,8 +14,8 @@ PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
 #
 # На настоящем проекте без этого различия 285 находок из 330 пришли из scripts/ и оснастки.
 # Гейт, который на 86% состоит из ложных сработок, выключают целиком.
-TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-dir=examples --exclude-dir=notebooks --exclude-dir=.claude --exclude-dir=migrations"
-HITS=$(grep -rnE $(skip_grep "$DIR") $TOOLING $PROSE '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
+TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-dir=examples --exclude-dir=notebooks --exclude-dir=docs --exclude-dir=.claude --exclude-dir=gates --exclude-dir=gates-reference"
+HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: замени на вызов системы логов — тогда запись попадёт в общий журнал и уровень можно приглушить."
