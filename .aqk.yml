@@ -25,6 +25,8 @@ gates:
   swallowed-error: "bash kit/gates/swallowed-error/check.sh ."
   todo-without-task: "bash kit/gates/todo-without-task/check.sh ."
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
+  complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
+  duplicate-code: "bash kit/gates/duplicate-code/check.sh ."
   proof-from-journal: "bash gates/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   # Четыре прогона выше — syntax, smoke, gates и этот — образцов на диске не имеют.
   # Не прячем: записано долгом поимённо, список под храповиком и может только убывать.

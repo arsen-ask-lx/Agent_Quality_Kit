@@ -10,17 +10,23 @@ SKIP_NAMES=".git .aqk node_modules .venv venv env __pycache__ .mypy_cache .pytes
 .tox .ruff_cache site-packages dist build target out .next .nuxt .svelte-kit coverage
 htmlcov vendor bower_components .gradle .idea .vscode"
 
+# Образцы гейтов — искусственный код по построению: красный сломан нарочно, зелёный бывает
+# вырожденным (двести одинаковых строк, чтобы показать предел размера). Сканировать их — значит
+# ловить то, что положил не человек. Исключение снимается, когда цель проверки — сам образец.
+sample_dirs() {
+  case "${1:-}" in
+    */red|*/red/|*/green|*/green/) : ;;
+    *) printf 'red green' ;;
+  esac
+}
+
 # Для grep: --exclude-dir на каждое имя.
 skip_grep() {
-  for N in $SKIP_NAMES; do printf -- '--exclude-dir=%s ' "$N"; done
+  for N in $SKIP_NAMES $(sample_dirs "${1:-}"); do printf -- '--exclude-dir=%s ' "$N"; done
 }
 
 # Для find: -name X -prune -o … Красные образцы исключаются отдельно, только когда цель
 # проверки — не сам образец.
 skip_find() {
-  for N in $SKIP_NAMES; do printf -- '-name %s -prune -o ' "$N"; done
-  case "${1:-}" in
-    */red|*/red/) : ;;
-    *) printf -- '-name red -prune -o ' ;;
-  esac
+  for N in $SKIP_NAMES $(sample_dirs "${1:-}"); do printf -- '-name %s -prune -o ' "$N"; done
 }

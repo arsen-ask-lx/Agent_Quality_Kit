@@ -1,0 +1,13 @@
+intent: функция не вырастает до сложности, в которой её нельзя удержать в голове
+
+trigger:
+  always: true
+
+recipes:
+  # Переносимая мера грубая — глубина вложенности. Готовые правила считают ветвления и
+  # инструкции, это точнее; см. kit/docs/ready-made-rules.md
+  any: bash {gate}/check.sh {dir}
+  python: ruff check --select C901,PLR0912,PLR0915 {dir}
+  typescript: eslint --rule '{"complexity":["error",10],"max-depth":["error",4]}' {dir}
+
+proof: incidents/README.md — «2026-08-27 ревизия гейтов», п. 6: 75 функций сложнее нормы, худшая с 29 ветвлениями

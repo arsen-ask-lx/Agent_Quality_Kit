@@ -1,0 +1,9 @@
+def handle(items):
+    if cond0:
+        if cond1:
+            if cond2:
+                if cond3:
+                    if cond4:
+                        if cond5:
+                            if cond6:
+                                return 1

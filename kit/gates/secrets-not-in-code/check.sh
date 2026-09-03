@@ -6,9 +6,7 @@ DIR="${1:-.}"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
-EXCL=""
-case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-HITS=$(grep -rInE $(skip_grep) $EXCL -e \
+HITS=$(grep -rInE $(skip_grep "$DIR") -e \
   '-----BEGIN [A-Z ]*PRIVATE KEY-----|(sk|pk)_(live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}' \
   "$DIR" 2>/dev/null | grep -v '/\.git/')
 if [ -n "$HITS" ]; then
