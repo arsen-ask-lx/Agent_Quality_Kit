@@ -9,11 +9,13 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CAT="$ROOT/kit/gates"
-PASS=0; FAIL=0; WARN=0
+PASS=0; FAIL=0; WARN=0; UNVERIFIED=0
 
 ok()   { printf '  \033[32m✔\033[0m  %s\n' "$1"; PASS=$((PASS+1)); }
 bad()  { printf '  \033[31m✘\033[0m  %s\n' "$1"; FAIL=$((FAIL+1)); }
 warn() { printf '  \033[33m!\033[0m  %s\n' "$1"; WARN=$((WARN+1)); }
+# «Условная запись» и «нечем проверить здесь» — разные состояния, и счётчики разные.
+skip() { printf '  \033[33m~\033[0m  %s\n' "$1"; UNVERIFIED=$((UNVERIFIED+1)); }
 
 field() { sed -n "s/^$2:[[:space:]]*\(.*\)$/\1/p" "$1" | head -1; }
 
@@ -46,10 +48,28 @@ for GATE in "$CAT"/*/; do
   esac
 
   # --- образцы ---------------------------------------------------------------
+  # Проверяем переносимым рецептом, если он есть. Если его нет — берём первый рецепт под язык,
+  # чью программу видно в системе: запись, которой нужен готовый инструмент, законна (правило
+  # «сперва готовое»), но проверить её можно только там, где инструмент стоит.
   RECIPE="$(sed -n 's/^[[:space:]]*any:[[:space:]]*\(.*\)$/\1/p' "$YML" | head -1)"
   if [ -z "$RECIPE" ]; then
-    warn "$SLUG: нет рецепта any — запись нельзя проверить без внешних инструментов"
-    continue
+    # Каким рецептом написаны образцы — говорит сама запись. Угадывать нельзя: в системе может
+    # стоять npx, и питоновские образцы поедут проверяться фронтовым инструментом. Так и вышло.
+    FOR="$(sed -n 's/^samples_for:[[:space:]]*\(.*\)$/\1/p' "$YML" | head -1)"
+    if [ -z "$FOR" ]; then
+      bad "$SLUG: нет ни рецепта any, ни поля samples_for — нечем проверить образцы"
+      continue
+    fi
+    RECIPE="$(sed -n "s/^[[:space:]]*$FOR:[[:space:]]*\(.*\)\$/\1/p" "$YML" | head -1)"
+    if [ -z "$RECIPE" ]; then
+      bad "$SLUG: samples_for указывает на «$FOR», а такого рецепта нет"
+      continue
+    fi
+    PROG="$(printf '%s' "$RECIPE" | awk '{print $1}')"
+    if ! command -v "$PROG" >/dev/null 2>&1; then
+      skip "$SLUG: НЕ ПРОВЕРЕНА здесь — нужен «$PROG»"
+      continue
+    fi
   fi
   if [ ! -d "$GATE/red" ] || [ ! -d "$GATE/green" ]; then
     bad "$SLUG: нет красного или зелёного образца"; continue
@@ -86,5 +106,6 @@ else
   printf '  \033[31mотклонено: %s из %s\033[0m' "$FAIL" "$((PASS+FAIL))"
 fi
 [ "$WARN" -gt 0 ] && printf '  \033[33m(условных: %s)\033[0m' "$WARN"
+[ "$UNVERIFIED" -gt 0 ] && printf '  \033[33m(не проверено здесь: %s)\033[0m' "$UNVERIFIED"
 printf '\n\n'
 exit "$FAIL"
