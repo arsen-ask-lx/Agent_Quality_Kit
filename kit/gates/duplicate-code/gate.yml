@@ -6,7 +6,7 @@ trigger:
 recipes:
   any: bash {gate}/check.sh {dir}
   # jscpd умеет и Python, и TypeScript одним прогоном и считает похожесть, а не совпадение.
-  javascript: npx --yes jscpd --min-lines 8 --threshold 1 {dir}
-  typescript: npx --yes jscpd --min-lines 8 --threshold 1 {dir}
+  javascript: npx --yes jscpd@5 --min-lines 8 --threshold 1 {dir}
+  typescript: npx --yes jscpd@5 --min-lines 8 --threshold 1 {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: число моделей захардкожено в четырёх местах четырьмя разными значениями

@@ -11,8 +11,8 @@ trigger:
 # и он есть под каждый распространённый стек.
 recipes:
   python: vulture --min-confidence 60 {dir}
-  typescript: npx --yes knip --directory {dir}
-  javascript: npx --yes knip --directory {dir}
+  typescript: npx --yes knip@6 --directory {dir}
+  javascript: npx --yes knip@6 --directory {dir}
   go: staticcheck -checks U1000 {dir}/...
   rust: cargo clippy --manifest-path {dir}/Cargo.toml -- -D dead_code
 
