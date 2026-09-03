@@ -30,10 +30,21 @@ DECL=$(awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-
 say "гейтов объявлено здесь" "$DECL" ".aqk.yml"
 
 # --- журнал ---
-INC=$(grep -c '^## 20' incidents/README.md)
-BECAME=$(grep -c '✅ \*\*Стало гейтом' incidents/README.md)
+# Шишка — раздел с названным классом отказа; вводные и списки работ не в счёт. Считаем разделы,
+# а не строки: у одной шишки бывает две отметки, а в шапке журнала лежит образец записи, — и
+# построчный подсчёт давал 23 при 21 шишке. Ровно та цифра, ради которой заведён этот сторож.
+set -- $(awk '
+  /^## /                  { flush(); inc=0; g=0; f=0; n=0 }
+  /^\*\*Класс:\*\*/       { inc=1 }
+  /^> ✅/                  { g=1 }
+  /^> 🔧/                  { f=1 }
+  /^> 👤/                  { n=1 }
+  END                     { flush(); print I+0, G+0, F+0, N+0 }
+  function flush() { if (inc) { I++; if (g) G++; else if (f) F++; else if (n) N++ } }
+' incidents/README.md)
+INC=$1; GATE=$2; FIX=$3; NEVER=$4
 say "записей в журнале" "$INC" "incidents/README.md"
-say "шишек стало гейтами" "$BECAME из $INC" "пометки ✅ в журнале"
+say "чем кончились" "✅ $GATE  🔧 $FIX  👤 $NEVER" "отметки решения; сторожит lesson-has-outcome"
 
 # --- документация ---
 DOCS=$(find kit/docs -name '*.md' | wc -l)
