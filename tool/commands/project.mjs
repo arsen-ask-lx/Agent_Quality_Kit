@@ -9,6 +9,9 @@ import {
   copyDir, writeIfAbsent,
 } from "../lib/core.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
+import { readManifest } from "../lib/manifest.mjs";
+import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
+import { installGate } from "./gates.mjs";
 
 async function cmdInit(args) {
   const force = args.includes("--force");
@@ -188,4 +191,98 @@ async function cmdBlob() {
   console.log(c.dim("  Собирается заново каждой командой. Править надо оригиналы в kit/docs.\n"));
 }
 
-export { cmdInit, cmdNote, cmdBlob };
+
+// --- start: порядок «с нуля» ---------------------------------------------------
+// Сценарий «кода ещё нет». Главное здесь машинное, а не словесное: сторожей ставят ДО первой
+// строки кода. Поставленный потом, сторож красит весь старый код разом — и его выключают.
+// На пустом проекте долга нет вовсе, храповик не нужен ни одному гейту.
+//
+// Порядок работы — задача, ограничения, сайзинг, архитектура — программа НЕ проверяет и не
+// делает вид, что проверяет: это текст в методичках, который агент может проигнорировать.
+// Сказать об этом вслух дешевле, чем изобразить проверку.
+
+async function cmdStart(args) {
+  const force = args.includes("--force");
+  let man = await readManifest();
+  if (!man) {
+    await cmdInit(args.filter((a) => a !== "--force"));
+    man = await readManifest();
+    if (!man) die(`Не получилось разложить комплект. Начни с ${SELF} init`);
+  }
+
+  const facts = await detectFacts(man);
+  console.log(c.bold("\naqk start\n"));
+
+  if (facts.files > 30 && !force) {
+    console.log(c.yellow(`  В репозитории уже ${facts.files} файлов кода — это другой сценарий.\n`));
+    console.log(`  ${c.bold(`${SELF} doctor`)} осмотрит, что есть, и разделит записи на три списка:`);
+    console.log(c.dim("  держит машина · применимо и не поставлено · не применимо и почему.\n"));
+    console.log(c.dim(`  Всё равно поставить сторожей дня 0: ${SELF} start --force`));
+    console.log(c.dim("  Готовься к красному: сторож, поставленный на живой код, краснеет на нём весь."));
+    console.log(c.dim(`  Это лечится храповиком — ${SELF} ratchet <имя>, — а не отключением.\n`));
+    return;
+  }
+
+  // --- сторожа дня 0 ---------------------------------------------------------
+  const declared = new Set(Object.keys(
+    man.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {}
+  ));
+  const put = [];
+  let skipped = [];
+  const catalog = await readCatalog();
+
+  // Проходим по каталогу, пока он не перестанет расти. Установка меняет признаки репозитория:
+  // первый же поставленный гейт делает применимыми записи с условием has_gates. Один проход
+  // объявлял их неприменимыми «гейтов не объявлено» — ровно в тот момент, когда они появились.
+  let facts0 = facts;
+  for (let pass = 0; pass < 3; pass++) {
+    skipped = [];
+    let added = 0;
+    for (const rec of catalog) {
+      if (declared.has(rec.slug)) continue;
+      const v = triggerVerdict(rec, facts0);
+      if (!v.applies) { skipped.push([rec.slug, v.why]); continue; }
+      const { cmd } = await installGate(rec.slug, man, facts0);
+      put.push([rec.slug, cmd, rec.intent || ""]);
+      declared.add(rec.slug);
+      added++;
+      man = await readManifest();
+    }
+    if (!added) break;
+    facts0 = await detectFacts(man);
+  }
+
+  if (put.length) {
+    console.log(c.green(`  Поставлено сторожей дня 0: ${put.length}\n`));
+    for (const [slug, , intent] of put) console.log(`  ${c.green("✔")}  ${slug.padEnd(22)} ${c.dim(intent)}`);
+    console.log(c.dim("\n  Долга нет: на пустом проекте им нечего пропускать. Тот же сторож, поставленный"));
+    console.log(c.dim("  через полгода, покраснел бы на всём старом коде — и его бы выключили.\n"));
+  } else {
+    console.log(c.dim("  Все применимые записи уже объявлены.\n"));
+  }
+  if (skipped.length) {
+    console.log(c.dim("  Не применимо пока:"));
+    for (const [slug, why] of skipped.slice(0, 6)) console.log(c.dim(`    ${slug.padEnd(22)} ${why}`));
+    console.log(c.dim("  Появится признак — запись покажется сама.\n"));
+  }
+
+  // --- порядок работы --------------------------------------------------------
+  console.log(`${c.bold("Порядок, в котором это делают:")}
+
+  1. ${c.bold("Задача словами.")} Что и кому, без единого технического слова.
+     ${c.dim("Пока задача не описана словами, любая архитектура защищает неизвестно что.")}
+  2. ${c.bold("Ограничения.")} Сроки, деньги, нагрузка, чем нельзя пользоваться.
+     ${c.dim("Ограничения выбирают решение куда чаще, чем вкус: без них выбирают вкусом.")}
+  3. ${c.bold("Сайзинг.")} Сколько данных, запросов, людей — числами, хотя бы порядком.
+     ${c.dim("Число отделяет «нужна очередь» от «хватит таблицы». Без него спорят словами.")}
+  4. ${c.bold("Архитектура.")} И только теперь — из первых трёх, а не до них.
+
+  ${c.dim("Этот порядок программа не проверяет: он в .aqk/docs/, и агент может его")}
+  ${c.dim("проигнорировать. Машина держит другое — сторожей выше. Разница между")}
+  ${c.dim("мягким и жёстким тут ровно такая: текст просят, команду выполняют.")}
+
+${c.bold("Дальше:")}  ${c.bold(`${SELF} doctor --run`)}  ${c.dim("— прогнать всё, что объявлено")}
+`);
+}
+
+export { cmdInit, cmdNote, cmdBlob, cmdStart };

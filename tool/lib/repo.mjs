@@ -2,7 +2,7 @@
 // триггера, выбор рецепта, сверка по намерению.
 
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, GATES_SRC, c, exists } from "./core.mjs";
 import { parseManifest } from "./manifest.mjs";
@@ -39,6 +39,10 @@ const MARKS = [
 ];
 
 async function detectFacts(man) {
+  // Каталог образцов самого проекта: туда `add` копирует красные и зелёные примеры записей.
+  // Считать их кодом проекта значит врать о репозитории — после установки сторожей пустой
+  // проект «становился» проектом на Python, и ему показывались записи про мёртвый код.
+  const samplesDir = man?.samples ? resolve(CWD, String(man.samples)) : null;
   const langs = new Set();
   let files = 0;
   let hasDb = false;
@@ -58,7 +62,7 @@ async function detectFacts(man) {
         if (SKIP_DIRS.has(it.name)) continue;
         // Образцы каталога — код специально сломанный и специально исправный.
         // Считать его языками проекта значит врать о репозитории.
-        if (full === GATES_SRC) continue;
+        if (full === GATES_SRC || (samplesDir && full === samplesDir)) continue;
         if (/^(tests?|spec|__tests__)$/i.test(it.name)) hasTests = true;
         if (/^migrations?$/i.test(it.name)) hasDb = true;
         await walk(full, depth + 1);

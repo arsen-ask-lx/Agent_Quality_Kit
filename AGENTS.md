@@ -32,8 +32,8 @@
 - `tool/program.mjs` — точка входа: справка и диспетчер команд
 - `tool/lib/` — общее: `core.mjs` (пути, вывод), `manifest.mjs` (`.aqk.yml` и ступени),
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению), `templates.mjs`
-- `tool/commands/` — команды: `project.mjs` (`init`, `note`, `blob`), `doctor.mjs`,
-  `gates.mjs` (`add`, `new`, `ratchet`, `find`)
+- `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
+  `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`)
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`

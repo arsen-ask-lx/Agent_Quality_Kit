@@ -17,7 +17,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { c, SELF } from "./lib/core.mjs";
-import { cmdInit, cmdNote, cmdBlob } from "./commands/project.mjs";
+import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
 import { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy } from "./commands/gates.mjs";
 
@@ -35,6 +35,9 @@ if (IS_MAIN) {
   switch (cmd) {
     case "init":
       await cmdInit(rest);
+      break;
+    case "start":
+      await cmdStart(rest);
       break;
     case "doctor":
       await cmdDoctor();
@@ -66,6 +69,7 @@ if (IS_MAIN) {
 
     ${c.bold(`${SELF} init`)}            разложить правила и методички в текущий проект
     ${c.bold(`${SELF} init --force`)}    перезаписать уже существующие файлы
+  ${c.bold(`${SELF} start`)}           кода ещё нет: сторожа дня 0 и порядок работы
     ${c.bold(`${SELF} doctor`)}          проверить, что разложено и чего не хватает\n  ${c.bold(`${SELF} doctor --run`)}    ещё и запустить объявленные гейты\n  ${c.bold(`${SELF} add`)} <имя>       поставить гейт из каталога в проект\n  ${c.bold(`${SELF} find`)} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold(`${SELF} why`)} "…"        поймал ошибку — почему её не поймал сторож\n  ${c.bold(`${SELF} ratchet`)} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold(`${SELF} new`)} <имя>       заготовка своего гейта для каталога
     ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
     ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md

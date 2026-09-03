@@ -18,24 +18,15 @@ import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/te
 // ссылкой в пакет: при установке через npx пакет временный, и завтра команда в манифесте
 // указывала бы в никуда — тот самый класс «гейт объявлен, но не запускается».
 
-async function cmdAdd(args) {
-  const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die(`Укажи имя гейта: ${SELF} add <имя>. Список — ${SELF} doctor`);
-
+// Установка одной записи в проект: копия проверки, общий список исключений, строка в манифест.
+// Отдельно от печати — той же работой пользуется `start`, ставящий сторожей дня 0 пачкой.
+// Скопированная в третий раз, эта работа однажды разъехалась бы: копия гейта без _skip.sh
+// читает окружение и выдаёт тысячу чужих нарушений.
+async function installGate(slug, man, facts) {
   const src = join(GATES_SRC, slug);
   if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — ${SELF} doctor`);
 
-  const man = await readManifest();
-  if (!man) die(`Нет .aqk.yml — сначала ${SELF} init`);
-
   const rec = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
-  const facts = await detectFacts(man);
-  const verdict = triggerVerdict(rec, facts);
-  if (!verdict.applies) {
-    console.log(c.yellow(`\n  Этот гейт к репозиторию не применим: ${verdict.why}`));
-    console.log(c.dim("  Ставлю всё равно — решение твоё, но сторожить ему нечего.\n"));
-  }
-
   const dst = join(CWD, PROJECT_GATES, slug);
   await mkdir(dst, { recursive: true });
   const copied = await copyDir(src, dst, { force: false });
@@ -53,11 +44,32 @@ async function cmdAdd(args) {
 
   const manPath = join(CWD, MANIFEST);
   const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);
+  if (text) await writeFile(manPath, text, "utf8");
+  return { rec, cmd, copied, declared: Boolean(text), why };
+}
+
+async function cmdAdd(args) {
+  const slug = args.find((a) => !a.startsWith("-"));
+  if (!slug) die(`Укажи имя гейта: ${SELF} add <имя>. Список — ${SELF} doctor`);
+
+  const man = await readManifest();
+  if (!man) die(`Нет .aqk.yml — сначала ${SELF} init`);
+  const facts = await detectFacts(man);
+
+  const src = join(GATES_SRC, slug);
+  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — ${SELF} doctor`);
+  const probe = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
+  const verdict = triggerVerdict(probe, facts);
+  if (!verdict.applies) {
+    console.log(c.yellow(`\n  Этот гейт к репозиторию не применим: ${verdict.why}`));
+    console.log(c.dim("  Ставлю всё равно — решение твоё, но сторожить ему нечего.\n"));
+  }
+
+  const { cmd, copied, declared, why } = await installGate(slug, man, facts);
 
   console.log(c.bold(`\naqk add ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(`${copied.length} файлов: проверка и образцы`)}`);
-  if (text) {
-    await writeFile(manPath, text, "utf8");
+  if (declared) {
     console.log(`  ${c.green("✔")}  .aqk.yml       ${c.dim(`гейт объявлен: ${cmd}`)}`);
   } else {
     console.log(`  ${c.yellow("!")}  .aqk.yml       ${c.dim(`не тронут (${why}). Впиши сам: ${slug}: "${cmd}"`)}`);
@@ -422,4 +434,4 @@ async function cmdWhy(args) {
   decide();
 }
 
-export { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy };
+export { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy, installGate };
