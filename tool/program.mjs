@@ -38,6 +38,21 @@ const c = {
 
 const exists = async (p) => access(p, constants.F_OK).then(() => true, () => false);
 
+// Как звать программу — зависит от того, как её запустили. Через npx команды `aqk` в системе
+// нет: подсказка «aqk doctor» отправляет человека в «команда не найдена» на первом же шаге.
+// Печатаем то, что можно скопировать и выполнить прямо сейчас.
+const REPO = "github:arsen-ask-lx/Agent_Quality_Kit";
+
+function selfCmd() {
+  const p = process.argv[1] || "";
+  if (/[\\/]_npx[\\/]/.test(p)) return `npx ${REPO}`;
+  if (/[\\/]node_modules[\\/]\.bin[\\/]/.test(p) || /[\\/]aqk$/.test(p)) return "aqk";
+  const rel = relative(CWD, p);
+  return `node ${rel && !rel.startsWith("..") ? rel : p}`;
+}
+
+const SELF = selfCmd();
+
 function die(msg) {
   console.error(c.red(msg));
   process.exit(1);
@@ -82,6 +97,10 @@ const AGENTS_MD = `# AGENTS.md
 | \`aqk ratchet <имя>\` | старые нарушения записывает долгом, новые перестаёт пускать | проверка краснеет на старом коде, и чинить его сейчас никто не будет |
 | \`aqk find "…"\` | ищет по смыслу, есть ли уже такая проверка | прежде чем изобретать свою |
 | \`aqk note "…"\` | пишет урок в общий журнал | процесс или прибор подвели: проверка соврала, правило обошли |
+
+Если команды \`aqk\` нет в системе — комплект ставили разово, без установки. Тогда вместо
+\`aqk\` пиши \`npx github:arsen-ask-lx/Agent_Quality_Kit\`. Любая команда сама печатает тот
+вызов, который сработает у тебя.
 
 **Три вещи, которые надо понимать, а не запоминать:**
 
@@ -222,22 +241,27 @@ async function cmdInit(args) {
   if (skipped.length) {
     console.log(c.yellow(`\n  уже были на месте, не тронуты (${skipped.length}):`));
     for (const f of skipped) console.log(`    ${f}`);
-    console.log(c.dim("  перезаписать: aqk init --force"));
+    console.log(c.dim(`  перезаписать: ${SELF} init --force`));
   }
+
+  // Путь ищем, а не пишем: раскладка внутри .aqk — дело владельца комплекта, и жёстко
+  // вписанный путь однажды отправит человека в несуществующий файл. Уже отправлял.
+  let baseline = join(TARGET_DIR, "docs", "project-baseline.md");
+  for (const f of created) if (f.endsWith("project-baseline.md")) baseline = f;
 
   console.log(`
 ${c.bold("Что дальше — по порядку:")}
 
   1. Открой ${c.bold("AGENTS.md")} и заполни раздел «Команды». Команда, которую нельзя
      скопировать и выполнить, — не команда, а пожелание.
-  2. Прочитай ${c.bold(".aqk/docs/project-baseline.md")} — это обязательный минимум
+  2. Прочитай ${c.bold(baseline)} — это обязательный минимум
      проекта без привязки к языку. Пройди сверху вниз и отметь, чего нет.
   3. Заполни ${c.bold(".aqk.yml")} — гейты, образцы, журнал. Уровень соответствия AQK
-     считается по нему: ${c.bold("aqk doctor")}.
+     считается по нему: ${c.bold(`${SELF} doctor`)}.
   4. Поднимайся по ступеням ${c.bold("по одной")}. Гейт стережёт существующий артефакт:
      проверка на код, которого ещё нет, — мёртвое правило.
 
-${c.dim('Обжёгся на чём-то — запиши: aqk note "что случилось"')}
+${c.dim(`Обжёгся на чём-то — запиши: ${SELF} note "что случилось"`)}
 `);
 }
 
@@ -559,7 +583,7 @@ async function reportCatalog(man, facts) {
   for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
   for (const rec of todo) {
     console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
-    console.log(c.dim(`      поставить: aqk add ${rec.slug}`));
+    console.log(c.dim(`      поставить: ${SELF} add ${rec.slug}`));
   }
   if (skip.length) {
     console.log(c.dim(`\n  Не применимо к этому репозиторию (${skip.length}):`));
@@ -698,7 +722,7 @@ async function cmdDoctor() {
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${gates.length} гейтов объявлено, но не запускалось.`) +
-        c.dim(" «Объявлен» и «работает» — разные утверждения: aqk doctor --run\n")
+        c.dim(" «Объявлен» и «работает» — разные утверждения: ${SELF} doctor --run\n")
     );
   }
 
@@ -735,7 +759,7 @@ function findJournal() {
 
 async function cmdNote(args) {
   const title = args.find((a) => !a.startsWith("--"));
-  if (!title) die('Нужен заголовок: aqk note "что произошло"');
+  if (!title) die(`Нужен заголовок: ${SELF} note "что произошло"`);
 
   const home = findJournal();
   if (!home) {
@@ -824,13 +848,13 @@ function manifestWithGate(text, slug, cmd) {
 
 async function cmdAdd(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die("Укажи имя гейта: aqk add <имя>. Список — aqk doctor");
+  if (!slug) die(`Укажи имя гейта: ${SELF} add <имя>. Список — ${SELF} doctor`);
 
   const src = join(GATES_SRC, slug);
-  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — aqk doctor`);
+  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — ${SELF} doctor`);
 
   const man = await readManifest();
-  if (!man) die("Нет .aqk.yml — сначала aqk init");
+  if (!man) die(`Нет .aqk.yml — сначала ${SELF} init`);
 
   const rec = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
   const facts = await detectFacts(man);
@@ -889,7 +913,7 @@ ${c.bold("Дальше:")}
      ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/red`)}`)}   ${c.dim("→ ожидается отказ")}
      ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/green`)}`)} ${c.dim("→ ожидается тишина")}
   2. Впиши команду в хук коммита и в конвейер. ${c.dim("Гейт, который никто не запускает, — не гейт.")}
-  3. Прогон всех объявленных: ${c.bold("aqk doctor --run")}
+  3. Прогон всех объявленных: ${c.bold(`${SELF} doctor --run`)}
 `);
 }
 
@@ -956,7 +980,7 @@ const README_TEMPLATE = (slug) => `# ЗАПОЛНИ — заголовок од�
 
 async function cmdNew(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die('Укажи имя: aqk new no-print-in-prod');
+  if (!slug) die(`Укажи имя: ${SELF} new no-print-in-prod`);
   if (!/^[a-z][a-z0-9-]{2,}$/.test(slug)) {
     die(`Имя «${slug}» не годится: латиница через дефис, например secrets-not-in-code.\nИмя читают в чужих проектах — оно часть словаря.`);
   }
@@ -971,7 +995,7 @@ async function cmdNew(args) {
       console.log(c.yellow(`\n  Похоже, такое уже есть: ${c.bold(rec.slug)}`));
       console.log(`  ${rec.intent || ""}\n`);
       console.log(c.dim("  Рецепт под другой стек — это строка в recipes существующей записи."));
-      console.log(c.dim(`  Всё равно завести новую: aqk new ${slug} --force\n`));
+      console.log(c.dim(`  Всё равно завести новую: ${SELF} new ${slug} --force\n`));
       process.exit(1);
     }
   }
@@ -1015,14 +1039,14 @@ const RATCHET_LIB = `${PROJECT_GATES}/_ratchet.sh`;
 
 async function cmdRatchet(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die('Укажи гейт: aqk ratchet <имя>. Он должен быть уже объявлен в .aqk.yml');
+  if (!slug) die(`Укажи гейт: ${SELF} ratchet <имя>. Он должен быть уже объявлен в .aqk.yml`);
 
   const manPath = join(CWD, MANIFEST);
-  if (!(await exists(manPath))) die("Нет .aqk.yml — сначала aqk init");
+  if (!(await exists(manPath))) die(`Нет .aqk.yml — сначала ${SELF} init`);
   let text = await readFile(manPath, "utf8");
 
   const line = text.split("\n").find((l) => new RegExp(`^\\s+${slug}:`).test(l));
-  if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: aqk add ${slug}`);
+  if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: ${SELF} add ${slug}`);
 
   const cmd = line.replace(/^\s*[^:]+:\s*/, "").replace(/^"|"$/g, "");
   if (cmd.includes(RATCHET_LIB)) die(`На гейте «${slug}» храповик уже стоит.`);
@@ -1079,7 +1103,7 @@ ${c.bold("Что это меняет:")}
   ${c.dim("Проверка, что это храповик, а не советчик: «может ли новый код добавить нарушение")}
   ${c.dim("и пройти?» Может — значит гейта нет.")}
 
-  Прогнать: ${c.bold("aqk doctor --run")}
+  Прогнать: ${c.bold(`${SELF} doctor --run`)}
 `);
 }
 
@@ -1121,7 +1145,7 @@ function overlap(query, target) {
 
 async function cmdFind(args) {
   const query = args.filter((a) => !a.startsWith("-")).join(" ").trim();
-  if (!query) die('Опиши намерение словами: aqk find "отладочная печать не доезжает до прода"');
+  if (!query) die(`Опиши намерение словами: ${SELF} find "отладочная печать не доезжает до прода"`);
 
   const q = stems(query);
   const catalog = await readCatalog();
@@ -1284,11 +1308,11 @@ switch (cmd) {
     console.log(`
 ${c.bold("aqk")} — оснастка для разработки с агентами
 
-  ${c.bold("aqk init")}            разложить правила и методички в текущий проект
-  ${c.bold("aqk init --force")}    перезаписать уже существующие файлы
-  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект\n  ${c.bold("aqk find")} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold("aqk ratchet")} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold("aqk new")} <имя>       заготовка своего гейта для каталога
-  ${c.bold("aqk note")} "…"        записать урок в общий журнал шишек
-  ${c.bold("aqk blob")}            собрать методички в один файл GOD_AI.md
+  ${c.bold(`${SELF} init`)}            разложить правила и методички в текущий проект
+  ${c.bold(`${SELF} init --force`)}    перезаписать уже существующие файлы
+  ${c.bold(`${SELF} doctor`)}          проверить, что разложено и чего не хватает\n  ${c.bold(`${SELF} doctor --run`)}    ещё и запустить объявленные гейты\n  ${c.bold(`${SELF} add`)} <имя>       поставить гейт из каталога в проект\n  ${c.bold(`${SELF} find`)} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold(`${SELF} ratchet`)} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold(`${SELF} new`)} <имя>       заготовка своего гейта для каталога
+  ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
+  ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md
 
 ${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit init")}
 `);
