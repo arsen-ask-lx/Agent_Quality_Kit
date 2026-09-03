@@ -1004,8 +1004,12 @@ async function cmdNew(args) {
     }
   }
 
-  const inRepo = await exists(GATES_SRC);
-  const dst = inRepo ? join(GATES_SRC, slug) : join(CWD, slug);
+  // Где заводить заготовку. Проверка «существует ли каталог комплекта» была неверной: он
+  // существует всегда — это каталог самого пакета. Из чужого проекта заготовка уезжала внутрь
+  // пакета, а через npx пакет лежит во временной папке и исчезает вместе с ней: работа сделана,
+  // результата нет. Признак один — работаем ли мы над самим комплектом.
+  const inKit = resolve(CWD) === resolve(PKG_ROOT);
+  const dst = inKit ? join(GATES_SRC, slug) : join(CWD, PROJECT_GATES, slug);
   if (await exists(dst)) die(`${relative(CWD, dst)} уже существует.`);
 
   await mkdir(join(dst, "red"), { recursive: true });
