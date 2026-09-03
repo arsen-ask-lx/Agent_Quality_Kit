@@ -15,14 +15,23 @@ gates:
   syntax: "node --check tool/program.mjs"
   smoke: "bash tool/selfcheck/smoke.sh"
   gates: "bash tool/selfcheck/gates.sh"
+  # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
+  # репозиторий, а копия завтра разойдётся с оригиналом.
+  entry-links-exist: "bash kit/gates/entry-links-exist/check.sh ."
+  secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
+  gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
+  gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
+  proof-from-journal: "bash gates/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
+  # Четыре прогона выше — syntax, smoke, gates и этот — образцов на диске не имеют.
+  # Не прячем: записано долгом поимённо, список под храповиком и может только убывать.
+  gate-has-samples: "bash gates/_ratchet.sh ratchets/gate-has-samples.txt bash kit/gates/gate-has-samples/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.
 # samples: каталог с красными и зелёными образцами (гейт обязан краснеть на первом
 # и молчать на втором). ratchets: списки известных нарушений, которые могут только
 # укорачиваться.
-samples: ""
-ratchets: ""
-
+samples: kit/gates
+ratchets: ratchets
 # AQK-3 — где копятся уроки. Путь или адрес.
 lessons: incidents

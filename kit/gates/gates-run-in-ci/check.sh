@@ -9,6 +9,15 @@ CI=$(find "$DIR/.github/workflows" "$DIR/.gitlab-ci.yml" "$DIR/.circleci" "$DIR/
      -type f 2>/dev/null)
 [ -z "$CI" ] && { echo "конвейера нет — эта проверка не про тебя"; exit 0; }
 
+# Конвейер может гонять гейты не поимённо, а разом: `aqk doctor --run` запускает всё
+# объявленное в манифесте. Тогда добавление гейта само добавляет его в конвейер, и требовать
+# отдельный шаг на каждый — значит требовать лишней работы и ловить несуществующий брак.
+# shellcheck disable=SC2086
+if grep -qE 'doctor[[:space:]]+--run|--run[[:space:]]+.*doctor' $CI 2>/dev/null; then
+  echo "конвейер запускает все объявленные гейты разом: doctor --run"
+  exit 0
+fi
+
 NAMES=$(awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-]+:/{print}' "$MAN")
 [ -z "$NAMES" ] && { echo "гейтов не объявлено"; exit 0; }
 

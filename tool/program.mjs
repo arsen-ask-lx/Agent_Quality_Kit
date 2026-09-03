@@ -566,7 +566,7 @@ function runGates(man) {
   for (const [name, cmd] of gates) {
     const t0 = Date.now();
     const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
-    const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
 
     if (r.error && r.error.code === "ETIMEDOUT") {
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red("не уложился в 5 минут")}`);
