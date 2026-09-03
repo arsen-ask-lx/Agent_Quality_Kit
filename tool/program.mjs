@@ -1173,3 +1173,5 @@ ${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit i
 `);
     process.exit(cmd ? 1 : 0);
 }
+
+это не javascript(((
