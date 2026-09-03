@@ -28,7 +28,7 @@
 
 - `ТЗ.md` — что строим, для кого, что сделано и что осталось. **Начинать отсюда.**
 - `README.md` — что это и как поставить, для постороннего
-- `tool/program.mjs` — вся программа: `init`, `doctor`, `add`, `note`, `blob`
+- `tool/program.mjs` — вся программа: `init`, `doctor`, `add`, `find`, `new`, `ratchet`, `note`, `blob`
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
