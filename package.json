@@ -29,5 +29,13 @@
     "claude-code",
     "codex",
     "harness"
-  ]
+  ],
+  "knip": {
+    "entry": [
+      "tool/selfcheck/units.mjs"
+    ],
+    "project": [
+      "tool/**/*.mjs"
+    ]
+  }
 }

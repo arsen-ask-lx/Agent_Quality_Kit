@@ -34,8 +34,8 @@ gates:
   # Печать в program.mjs — интерфейс программы командной строки, а не забытая отладка. По
   # правилу самой записи такие места закрываются храповиком, а не исключением каталога:
   # исключение спрячет и настоящую отладку, реестр — только те строки, что уже есть.
-  no-print-in-prod: "bash gates/_ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
-  proof-from-journal: "bash gates/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
+  no-print-in-prod: "bash ratchets/_ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
+  proof-from-journal: "bash ratchets/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."
 

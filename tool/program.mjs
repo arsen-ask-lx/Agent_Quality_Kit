@@ -1050,7 +1050,9 @@ ${c.bold("Дальше — по порядку:")}
 // его выключат, и правило не будет действовать вовсе.
 
 const RATCHET_DIR = "ratchets";
-const RATCHET_LIB = `${PROJECT_GATES}/_ratchet.sh`;
+// Обёртка лежит рядом с реестрами, которые она читает, а не среди гейтов: храповик — это
+// обёртка плюс реестр, и разносить их по разным каталогам значит прятать половину механизма.
+const RATCHET_LIB = `${RATCHET_DIR}/_ratchet.sh`;
 
 async function cmdRatchet(args) {
   const slug = args.find((a) => !a.startsWith("-"));
