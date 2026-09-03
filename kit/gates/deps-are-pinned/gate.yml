@@ -1,0 +1,9 @@
+intent: версии зависимостей закреплены — сборка воспроизводима
+
+trigger:
+  has_deps: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md — «2026-08-27 сборка невоспроизводима: версии не закреплены»

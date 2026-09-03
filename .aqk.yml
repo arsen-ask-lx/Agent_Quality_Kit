@@ -21,6 +21,10 @@ gates:
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
+  file-size-limit: "bash kit/gates/file-size-limit/check.sh ."
+  swallowed-error: "bash kit/gates/swallowed-error/check.sh ."
+  todo-without-task: "bash kit/gates/todo-without-task/check.sh ."
+  deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   proof-from-journal: "bash gates/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   # Четыре прогона выше — syntax, smoke, gates и этот — образцов на диске не имеют.
   # Не прячем: записано долгом поимённо, список под храповиком и может только убывать.

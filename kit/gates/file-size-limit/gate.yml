@@ -1,0 +1,9 @@
+intent: файл не вырастает до размера, в котором агент теряется
+
+trigger:
+  always: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: один файл маршрутов на 6305 строк
