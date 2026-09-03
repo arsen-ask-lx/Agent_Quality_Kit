@@ -10,10 +10,7 @@ DIR="${1:-.}"
 # Один обход и один wc на все файлы разом: на проекте в 36 тысяч файлов цикл с wc на каждый
 # не укладывался в две минуты.
 # shellcheck disable=SC2046
-find "$DIR" $(skip_find "$DIR") -type f \
-     \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \
-        -o -name '*.go' -o -name '*.rb' -o -name '*.java' -o -name '*.cs' -o -name '*.php' \
-        -o -name '*.rs' -o -name '*.vue' \) -print 2>/dev/null \
+find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r wc -l 2>/dev/null \
   | awk '
@@ -23,7 +20,10 @@ find "$DIR" $(skip_find "$DIR") -type f \
         limit = 500; kind = "прод-код"
         if (f ~ /(test|spec)/)        { limit = 800; kind = "тест" }
         else if (f ~ /\.(jsx|tsx|vue)$/) { limit = 300; kind = "компонент" }
-        if (n > limit) { print f ": " n " строк, предел для «" kind "» — " limit; bad = 1 }
+        # Число строк стоит в позиции номера строки нарочно: храповик вырезает «:N:» из ключа,
+        # и запись о нарушении не меняется от каждой добавленной строки. Иначе рост файла на
+        # строку читался бы как новое нарушение, а сокращение — тоже как новое.
+        if (n > limit) { print f ":" n ": длиннее предела для «" kind "» — " limit " строк"; bad = 1 }
       }
       END { exit bad ? 1 : 0 }
     ' || {

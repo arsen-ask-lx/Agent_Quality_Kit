@@ -541,7 +541,10 @@ function triggerVerdict(rec, facts) {
 
 // Арбитр под стек этого проекта: сначала родной рецепт, иначе — переносимый `any`.
 // Подсказка, которую нельзя скопировать и выполнить, бесполезна.
-function recipeFor(rec, facts) {
+// Выбор рецепта под стек проекта. Одна логика на два места: и `doctor`, и `add` показывают
+// команду, но подставляют в неё разные пути — один в каталог пакета, другой в каталог проекта.
+// Пока это были две копии, правка доезжала до одной из них — нашёл собственный гейт дублей.
+function pickRecipe(rec, facts) {
   const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
 
   // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
@@ -551,13 +554,16 @@ function recipeFor(rec, facts) {
     const prog = String(c0).trim().split(/\s+/)[0];
     return spawnSync(`command -v ${prog}`, { shell: true, stdio: "ignore" }).status === 0;
   };
-  let cmd = null;
   for (const lang of facts.langs) {
     if (!recipes[lang]) continue;
-    if (runnable(recipes[lang])) { cmd = recipes[lang]; break; }
+    if (runnable(recipes[lang])) return recipes[lang];
     console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
   }
-  cmd = cmd || recipes.any;
+  return recipes.any || null;
+}
+
+function recipeFor(rec, facts) {
+  const cmd = pickRecipe(rec, facts);
   if (!cmd) return "рецепт не описан";
   return String(cmd)
     .replace(/\{gate\}/g, join(GATES_SRC, rec.slug))
@@ -883,22 +889,7 @@ async function cmdAdd(args) {
   if (await exists(skipSrc)) await copyFile(skipSrc, join(CWD, PROJECT_GATES, "_skip.sh"));
 
   // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
-  const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
-
-  // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
-  // команду с неустановленной программой значит завести гейт, который встаёт с «not found»:
-  // отсутствие сигнала неотличимо от успеха.
-  const runnable = (c0) => {
-    const prog = String(c0).trim().split(/\s+/)[0];
-    return spawnSync(`command -v ${prog}`, { shell: true, stdio: "ignore" }).status === 0;
-  };
-  let cmd = null;
-  for (const lang of facts.langs) {
-    if (!recipes[lang]) continue;
-    if (runnable(recipes[lang])) { cmd = recipes[lang]; break; }
-    console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
-  }
-  cmd = String(cmd || recipes.any || "")
+  const cmd = String(pickRecipe(rec, facts) || "")
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
   if (!cmd) die(`У записи ${slug} нет команды ни под ${[...facts.langs].join("/") || "этот стек"}, ни общей.`);
@@ -1066,20 +1057,25 @@ async function cmdRatchet(args) {
   if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: ${SELF} add ${slug}`);
 
   const cmd = line.replace(/^\s*[^:]+:\s*/, "").replace(/^"|"$/g, "");
+  const inKit = resolve(CWD) === resolve(PKG_ROOT);
+  const lib = inKit ? "kit/ratchet/ratchet.sh" : RATCHET_LIB;
 
   // «Обёртка объявлена» и «долг снят» — разные состояния. Если реестра на диске нет, гейт
   // краснеет на всём подряд, а команда отказывалась помочь словами «храповик уже стоит».
   // Тогда снимаем снимок заново по внутренней команде, а строку манифеста не трогаем.
   const reg = join(CWD, RATCHET_DIR, `${slug}.txt`);
-  const wrapped0 = cmd.includes(RATCHET_LIB);
+  const wrapped0 = cmd.includes("ratchet.sh");
   if (wrapped0 && (await exists(reg))) die(`На гейте «${slug}» храповик уже стоит.`);
-  const prefix = `bash ${RATCHET_LIB} ${RATCHET_DIR}/${slug}.txt `;
+  const prefix = `bash ${lib} ${RATCHET_DIR}/${slug}.txt `;
   const inner = wrapped0 && cmd.startsWith(prefix) ? cmd.slice(prefix.length) : cmd;
 
-  // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда.
-  const lib = join(CWD, RATCHET_LIB);
-  await mkdir(dirname(lib), { recursive: true });
-  await copyFile(join(PKG_ROOT, "kit", "ratchet", "ratchet.sh"), lib);
+  // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда. Исключение —
+  // сам комплект: здесь оригинал уже лежит рядом, и копия завтра разошлась бы с ним. Ровно то
+  // правило, по которому здесь не копируются и гейты.
+  if (!inKit) {
+    await mkdir(dirname(join(CWD, lib)), { recursive: true });
+    await copyFile(join(PKG_ROOT, "kit", "ratchet", "ratchet.sh"), join(CWD, lib));
+  }
 
   // Снимок текущих нарушений — это и есть долг. Ключ без номера строки: правка соседней
   // строки не должна читаться как новое нарушение.
@@ -1117,7 +1113,7 @@ async function cmdRatchet(args) {
 
   console.log(c.bold(`\naqk ratchet ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
-  console.log(`  ${c.green("✔")}  ${RATCHET_LIB}  ${c.dim("обёртка скопирована в проект")}`);
+  if (!inKit) console.log(`  ${c.green("✔")}  ${lib}  ${c.dim("обёртка скопирована в проект")}`);
   console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim("команда завёрнута в храповик")}`);
   console.log(`
 ${c.bold("Что это меняет:")}

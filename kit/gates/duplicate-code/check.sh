@@ -16,10 +16,8 @@ TESTS="-name test -prune -o -name tests -prune -o -name spec -prune -o -name __t
 
 # shellcheck disable=SC2046
 find "$DIR" $(skip_find "$DIR") $TESTS -type f \
-     \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \
-        -o -name '*.go' -o -name '*.rb' -o -name '*.java' -o -name '*.cs' -o -name '*.php' \) \
      ! -name 'test_*' ! -name '*_test.*' ! -name '*.test.*' ! -name '*.spec.*' \
-     -print 2>/dev/null \
+     -print 2>/dev/null | only_code \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r awk -v WIN="$WIN" '
       FNR == 1 { n = 0; delete buf }

@@ -52,7 +52,6 @@
 ./tool/program.mjs:  console.log(`
 ./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(`${copied.length} файлов: проверка и образцы`)}`);
 ./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
-./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${RATCHET_LIB}  ${c.dim("обёртка скопирована в проект")}`);
 ./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${relative(CWD, dst)}/  ${c.dim("gate.yml · check.sh · red/ · green/ · README.md")}`);
 ./tool/program.mjs:  console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim("команда завёрнута в храповик")}`);
 ./tool/program.mjs:  console.log(c.bold("\n  Прогон объявленных гейтов\n"));
@@ -66,3 +65,4 @@
 ./tool/program.mjs:  console.log(c.bold(`\naqk ratchet ${slug}\n`));
 ./tool/program.mjs:  console.log(c.dim("  Собирается заново каждой командой. Править надо оригиналы в kit/docs.\n"));
 ./tool/program.mjs:  for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
+./tool/program.mjs:  if (!inKit) console.log(`  ${c.green("✔")}  ${lib}  ${c.dim("обёртка скопирована в проект")}`);

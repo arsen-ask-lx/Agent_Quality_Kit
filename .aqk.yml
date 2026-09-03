@@ -21,21 +21,21 @@ gates:
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
-  file-size-limit: "bash kit/gates/file-size-limit/check.sh ."
+  file-size-limit: "bash kit/ratchet/ratchet.sh ratchets/file-size-limit.txt bash kit/gates/file-size-limit/check.sh ."
   swallowed-error: "bash kit/gates/swallowed-error/check.sh ."
   todo-without-task: "bash kit/gates/todo-without-task/check.sh ."
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
   duplicate-code: "bash kit/gates/duplicate-code/check.sh ."
   units: "node --test tool/selfcheck/units.mjs"
-  # Настройка в knip.json: точкой входа объявлены модульные проверки, областью — tool/.
+  # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip --directory ."
   # Печать в program.mjs — интерфейс программы командной строки, а не забытая отладка. По
   # правилу самой записи такие места закрываются храповиком, а не исключением каталога:
   # исключение спрячет и настоящую отладку, реестр — только те строки, что уже есть.
-  no-print-in-prod: "bash ratchets/_ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
-  proof-from-journal: "bash ratchets/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
+  no-print-in-prod: "bash kit/ratchet/ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
+  proof-from-journal: "bash kit/ratchet/ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."
 

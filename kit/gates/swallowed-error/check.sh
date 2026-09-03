@@ -7,10 +7,7 @@ DIR="${1:-.}"
 # Список файлов собираем заранее. awk без файловых аргументов читает поток ввода и ждёт его
 # вечно: на проекте без файлов этих языков проверка зависала навсегда — в конвейере и в хуке
 # коммита, где поток ввода открыт. Найдено прогоном по проекту на Go.
-FILES=$(find "$DIR" $(skip_find "$DIR") -type f \
-  \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \
-     -o -name '*.java' -o -name '*.cs' -o -name '*.rb' -o -name '*.php' \
-     -o -name '*.go' -o -name '*.rs' \) -print 2>/dev/null)
+FILES=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code)
 [ -z "$FILES" ] && exit 0
 
 printf '%s\n' "$FILES" | xargs -r awk '
