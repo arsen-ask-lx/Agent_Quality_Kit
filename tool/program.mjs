@@ -748,6 +748,126 @@ ${c.bold("Дальше:")}
 `);
 }
 
+// --- find --------------------------------------------------------------------
+// «Есть ли у вас уже такое?» — вопрос, без которого обмен знанием превращается в свалку.
+// Сверка идёт ПО НАМЕРЕНИЮ, а не по тексту команды: «печать не доезжает до прода» — одно
+// намерение, а ruff, eslint и свой поиск — три исполнителя. Принёс рецепт под новый язык —
+// это строка в существующей записи, а не новая запись.
+//
+// Сравниваем огрублённо: русский язык склоняется, и «печать / печати / печатью» обязаны
+// совпасть. Берём начало слова — грубо, зато без словарей и без единой зависимости.
+
+const STOP = new Set([
+  "и","в","на","не","что","с","по","для","как","из","от","до","за","при","или","а","но","же",
+  "это","то","так","бы","бы","ли","у","о","об","под","над","без","есть","быть","был","была",
+  "если","чтобы","только","уже","ещё","еще","мы","он","она","они","их","его","её","ее","все",
+  "всё","код","кода","коде","проект","проекта","должен","должна","должно","надо","нужно",
+]);
+
+const stems = (text) =>
+  new Set(
+    String(text || "")
+      .toLowerCase()
+      .replace(/[^a-zа-яё0-9\s-]/gi, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !STOP.has(w))
+      .map((w) => w.slice(0, 4))
+  );
+
+function overlap(query, target) {
+  if (!query.size) return 0;
+  let hit = 0;
+  for (const q of query) if (target.has(q)) hit++;
+  return hit / query.size;
+}
+
+async function cmdFind(args) {
+  const query = args.filter((a) => !a.startsWith("-")).join(" ").trim();
+  if (!query) die('Опиши намерение словами: aqk find "отладочная печать не доезжает до прода"');
+
+  const q = stems(query);
+  const catalog = await readCatalog();
+
+  // Решает НАМЕРЕНИЕ, а не пояснение. В README каждой записи есть слова «гейт», «красный»,
+  // «образец» — по ним любой запрос совпадёт со всем каталогом. Поэтому README только
+  // подсказывает, а вес несёт intent.
+  const scored = [];
+  for (const rec of catalog) {
+    const readme = join(GATES_SRC, rec.slug, "README.md");
+    const text = (await exists(readme)) ? await readFile(readme, "utf8") : "";
+    const title = (text.match(/^#\s+(.+)$/m) || [, ""])[1];
+
+    // Заголовок — такое же формулирование намерения, как intent, и написан человеком.
+    // Остальной текст пояснения в счёт совпадений не идёт: слова «гейт», «проверка»,
+    // «образец» есть в каждой записи, по ним совпадёт что угодно с чем угодно.
+    const head = stems(`${rec.slug.replace(/-/g, " ")} ${rec.intent || ""} ${title}`);
+    const body = stems(text.slice(0, 1200));
+    // Одно совпавшее слово — это совпадение обрезки, а не смысла: «обратимы» и «образец»
+    // дают одно и то же начало. Считаем ещё и сколько слов совпало, и требуем минимум два.
+    let hits = 0;
+    for (const w of q) if (head.has(w)) hits++;
+    const score = 0.8 * overlap(q, head) + 0.2 * overlap(q, body);
+    scored.push([hits >= 2 || q.size < 2 ? score : 0, rec]);
+  }
+  scored.sort((a, b) => b[0] - a[0]);
+
+  // шишки в журнале: записана, но гейта из неё может не быть
+  const journal = [];
+  const jPath = join(PKG_ROOT, "incidents", "README.md");
+  if (await exists(jPath)) {
+    const text = await readFile(jPath, "utf8");
+    for (const m of text.matchAll(/^## (20\d\d-\d\d-\d\d)\s+—\s+(.+)$/gm)) {
+      const score = overlap(q, stems(m[2]));
+      if (score >= 0.34) journal.push([score, m[1], m[2].trim()]);
+    }
+    journal.sort((a, b) => b[0] - a[0]);
+  }
+
+  console.log(c.bold(`\naqk find «${query}»\n`));
+
+  const same = scored.filter(([sc]) => sc >= 0.6);
+  const near = scored.filter(([sc]) => sc >= 0.3 && sc < 0.6);
+
+  if (same.length) {
+    console.log(c.green("  Такое уже есть — новую запись заводить не надо:\n"));
+    for (const [sc, rec] of same.slice(0, 3)) {
+      console.log(`  ${c.bold(rec.slug)}  ${c.dim(`совпадение ${Math.round(sc * 100)}%`)}`);
+      console.log(`      ${rec.intent || ""}`);
+      const langs = Object.keys(rec.recipes || {}).filter((k) => k !== "any");
+      console.log(c.dim(`      рецепты: ${langs.length ? langs.join(", ") + ", " : ""}общий`));
+    }
+    console.log(c.dim("\n  Если у тебя рецепт под другой стек — это строка в recipes существующей"));
+    console.log(c.dim("  записи, а не новый гейт. Намерение одно, исполнителей может быть много.\n"));
+  } else if (near.length) {
+    console.log(c.yellow("  Точного совпадения нет, но рядом лежит:\n"));
+    for (const [sc, rec] of near.slice(0, 4)) {
+      console.log(`  ${c.bold(rec.slug)}  ${c.dim(`${Math.round(sc * 100)}%`)}  ${rec.intent || ""}`);
+    }
+    console.log(c.dim("\n  Прочитай их README. Если намерение то же — дополняй, а не заводи новое.\n"));
+  } else {
+    console.log(c.yellow("  Такого намерения в каталоге нет.\n"));
+  }
+
+  if (journal.length) {
+    console.log(c.bold("  В журнале есть шишка на эту тему:\n"));
+    for (const [, date, title] of journal.slice(0, 3)) console.log(`  ${c.dim(date)}  ${title}`);
+    console.log(c.dim("\n  Шишка записана — значит доказательство для новой записи уже есть.\n"));
+  }
+
+  if (!same.length) {
+    console.log(`${c.bold("Как добавить свой гейт:")}
+
+  1. ${c.bold("Назови отказ.")} Какой конкретный брак он поймал в живом проекте, чего это стоило.
+     ${c.dim("«Это хорошая практика» не принимается: так каталог набирает сотни пунктов и умирает.")}
+  2. ${c.bold("Заведи папку")} kit/gates/<имя>/ — gate.yml, red/, green/, README.md.
+     ${c.dim("Норма записи со всеми полями — kit/gates/README.md")}
+  3. ${c.bold("Проверь машиной:")} bash tool/selfcheck/gates.sh
+     ${c.dim("Арбитр обязан покраснеть на red/ и промолчать на green/. Не прошло — не запись.")}
+  4. ${c.bold("Пришли изменением")} в репозиторий комплекта.
+`);
+  }
+}
+
 // --- blob ---------------------------------------------------------------------
 // Один файл со всем текстом комплекта — чтобы разом отдать его в чат.
 // СОБИРАЕТСЯ, А НЕ ХРАНИТСЯ. Копия, которую правят руками, через неделю расходится
@@ -810,6 +930,9 @@ switch (cmd) {
   case "add":
     await cmdAdd(rest);
     break;
+  case "find":
+    await cmdFind(rest);
+    break;
   case "blob":
     await cmdBlob();
     break;
@@ -819,7 +942,7 @@ ${c.bold("aqk")} — оснастка для разработки с агент�
 
   ${c.bold("aqk init")}            разложить правила и методички в текущий проект
   ${c.bold("aqk init --force")}    перезаписать уже существующие файлы
-  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект
+  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект\n  ${c.bold("aqk find")} "…"       есть ли уже такой гейт — сверка по намерению
   ${c.bold("aqk note")} "…"        записать урок в общий журнал шишек
   ${c.bold("aqk blob")}            собрать методички в один файл GOD_AI.md
 
