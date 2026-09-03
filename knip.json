@@ -1,0 +1,4 @@
+{
+  "entry": ["tool/selfcheck/units.mjs"],
+  "project": ["tool/**/*.mjs"]
+}

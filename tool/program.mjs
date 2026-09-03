@@ -15,7 +15,7 @@
 //   npx github:arsen-ask-lx/Agent_Quality_Kit doctor   проверить, что разложено и чего не хватает
 
 import { readdir, mkdir, copyFile, writeFile, access, readFile } from "node:fs/promises";
-import { constants } from "node:fs";
+import { constants, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, relative } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -386,11 +386,16 @@ async function assessLevel(man) {
 
 const GATES_SRC = join(PKG_ROOT, "kit", "gates");
 
+// Расширения перечислены полностью, включая модульные варианты: .mjs пропускался, и на самом
+// aqk — где вся программа лежит в .mjs — запись про отладочную печать пряталась с пояснением
+// «нет языков: javascript». Гейт, спрятанный по неверно опознанному языку, молчит так же, как
+// отсутствующий.
 const EXT_LANG = {
   ".py": "python", ".js": "javascript", ".jsx": "javascript",
-  ".ts": "typescript", ".tsx": "typescript", ".go": "go",
-  ".rs": "rust", ".rb": "ruby", ".java": "java", ".php": "php",
-  ".cs": "csharp", ".sh": "shell",
+  ".mjs": "javascript", ".cjs": "javascript",
+  ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript", ".cts": "typescript",
+  ".go": "go", ".rs": "rust", ".rb": "ruby", ".java": "java", ".php": "php",
+  ".cs": "csharp", ".sh": "shell", ".kt": "kotlin", ".swift": "swift", ".scala": "scala",
 };
 
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "dist", "build", "__pycache__", ".aqk"]);
@@ -722,7 +727,7 @@ async function cmdDoctor() {
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${gates.length} гейтов объявлено, но не запускалось.`) +
-        c.dim(" «Объявлен» и «работает» — разные утверждения: ${SELF} doctor --run\n")
+        c.dim(` «Объявлен» и «работает» — разные утверждения: ${SELF} doctor --run\n`)
     );
   }
 
@@ -1055,7 +1060,15 @@ async function cmdRatchet(args) {
   if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: ${SELF} add ${slug}`);
 
   const cmd = line.replace(/^\s*[^:]+:\s*/, "").replace(/^"|"$/g, "");
-  if (cmd.includes(RATCHET_LIB)) die(`На гейте «${slug}» храповик уже стоит.`);
+
+  // «Обёртка объявлена» и «долг снят» — разные состояния. Если реестра на диске нет, гейт
+  // краснеет на всём подряд, а команда отказывалась помочь словами «храповик уже стоит».
+  // Тогда снимаем снимок заново по внутренней команде, а строку манифеста не трогаем.
+  const reg = join(CWD, RATCHET_DIR, `${slug}.txt`);
+  const wrapped0 = cmd.includes(RATCHET_LIB);
+  if (wrapped0 && (await exists(reg))) die(`На гейте «${slug}» храповик уже стоит.`);
+  const prefix = `bash ${RATCHET_LIB} ${RATCHET_DIR}/${slug}.txt `;
+  const inner = wrapped0 && cmd.startsWith(prefix) ? cmd.slice(prefix.length) : cmd;
 
   // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда.
   const lib = join(CWD, RATCHET_LIB);
@@ -1064,10 +1077,10 @@ async function cmdRatchet(args) {
 
   // Снимок текущих нарушений — это и есть долг. Ключ без номера строки: правка соседней
   // строки не должна читаться как новое нарушение.
-  const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+  const r = spawnSync(inner, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
   if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
     die(
-      `Гейт «${slug}» не запускается: ${cmd}\n` +
+      `Гейт «${slug}» не запускается: ${inner}\n` +
         `Снимать долг с несуществующего сторожа нельзя — в реестр попадут его же сообщения\n` +
         `об ошибке, и он станет разрешением. Сначала почини команду.`
     );
@@ -1080,7 +1093,6 @@ async function cmdRatchet(args) {
   )].sort();
 
   await mkdir(join(CWD, RATCHET_DIR), { recursive: true });
-  const reg = join(CWD, RATCHET_DIR, `${slug}.txt`);
   const stamp = new Date().toISOString().slice(0, 10);
   await writeFile(
     reg,
@@ -1091,10 +1103,11 @@ async function cmdRatchet(args) {
     "utf8"
   );
 
-  const wrapped = `bash ${RATCHET_LIB} ${RATCHET_DIR}/${slug}.txt ${cmd}`;
-  text = text.replace(line, `  ${slug}: "${wrapped}"`);
-  text = text.replace(/^ratchets:\s*""\s*$/m, `ratchets: ${RATCHET_DIR}`);
-  await writeFile(manPath, text, "utf8");
+  if (!wrapped0) {
+    text = text.replace(line, `  ${slug}: "${prefix}${cmd}"`);
+    text = text.replace(/^ratchets:\s*""\s*$/m, `ratchets: ${RATCHET_DIR}`);
+    await writeFile(manPath, text, "utf8");
+  }
 
   console.log(c.bold(`\naqk ratchet ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
@@ -1284,43 +1297,59 @@ async function cmdBlob() {
 
 // --- разбор аргументов ------------------------------------------------------
 
-const [, , cmd, ...rest] = process.argv;
-switch (cmd) {
-  case "init":
-    await cmdInit(rest);
-    break;
-  case "doctor":
-    await cmdDoctor();
-    break;
-  case "note":
-    await cmdNote(rest);
-    break;
-  case "add":
-    await cmdAdd(rest);
-    break;
-  case "find":
-    await cmdFind(rest);
-    break;
-  case "ratchet":
-    await cmdRatchet(rest);
-    break;
-  case "new":
-    await cmdNew(rest);
-    break;
-  case "blob":
-    await cmdBlob();
-    break;
-  default:
-    console.log(`
-${c.bold("aqk")} — оснастка для разработки с агентами
+// Разбор аргументов выполняется только при запуске файла как программы. При импорте —
+// а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
+// Сравниваем по реальному пути: npx ставит `aqk` симлинком, и без realpath запуск через него
+// программой считаться перестал бы.
+let IS_MAIN = false;
+try {
+  IS_MAIN = !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+} catch { IS_MAIN = false; }
 
-  ${c.bold(`${SELF} init`)}            разложить правила и методички в текущий проект
-  ${c.bold(`${SELF} init --force`)}    перезаписать уже существующие файлы
-  ${c.bold(`${SELF} doctor`)}          проверить, что разложено и чего не хватает\n  ${c.bold(`${SELF} doctor --run`)}    ещё и запустить объявленные гейты\n  ${c.bold(`${SELF} add`)} <имя>       поставить гейт из каталога в проект\n  ${c.bold(`${SELF} find`)} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold(`${SELF} ratchet`)} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold(`${SELF} new`)} <имя>       заготовка своего гейта для каталога
-  ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
-  ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md
+// Наружу — только чистые функции: разбор манифеста, вычисление триггера, дедупликация.
+// Они считают, а не печатают и не пишут на диск, поэтому проверяются по отдельности.
+export { parseManifest, triggerVerdict, recipeFor, manifestWithGate, stems, overlap, EXT_LANG };
 
-${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit init")}
-`);
-    process.exit(cmd ? 1 : 0);
+
+if (IS_MAIN) {
+  const [, , cmd, ...rest] = process.argv;
+  switch (cmd) {
+    case "init":
+      await cmdInit(rest);
+      break;
+    case "doctor":
+      await cmdDoctor();
+      break;
+    case "note":
+      await cmdNote(rest);
+      break;
+    case "add":
+      await cmdAdd(rest);
+      break;
+    case "find":
+      await cmdFind(rest);
+      break;
+    case "ratchet":
+      await cmdRatchet(rest);
+      break;
+    case "new":
+      await cmdNew(rest);
+      break;
+    case "blob":
+      await cmdBlob();
+      break;
+    default:
+      console.log(`
+  ${c.bold("aqk")} — оснастка для разработки с агентами
+
+    ${c.bold(`${SELF} init`)}            разложить правила и методички в текущий проект
+    ${c.bold(`${SELF} init --force`)}    перезаписать уже существующие файлы
+    ${c.bold(`${SELF} doctor`)}          проверить, что разложено и чего не хватает\n  ${c.bold(`${SELF} doctor --run`)}    ещё и запустить объявленные гейты\n  ${c.bold(`${SELF} add`)} <имя>       поставить гейт из каталога в проект\n  ${c.bold(`${SELF} find`)} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold(`${SELF} ratchet`)} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold(`${SELF} new`)} <имя>       заготовка своего гейта для каталога
+    ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
+    ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md
+
+  ${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit init")}
+  `);
+      process.exit(cmd ? 1 : 0);
+  }
 }

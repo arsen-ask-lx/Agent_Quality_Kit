@@ -8,7 +8,7 @@
 
 SKIP_NAMES=".git .aqk node_modules .venv venv env __pycache__ .mypy_cache .pytest_cache
 .tox .ruff_cache site-packages dist build target out .next .nuxt .svelte-kit coverage
-htmlcov vendor bower_components .gradle .idea .vscode
+htmlcov staticfiles vendor bower_components .gradle .idea .vscode
 playwright-report test-results storybook-static .turbo .cache .parcel-cache
 migrations"
 
@@ -24,7 +24,9 @@ sample_dirs() {
 
 # Расширения, где `print` и маркеры долга — конструкции языка, а не текст. Проверять по ним
 # файлы настроек, разметку и отчёты бессмысленно: там те же слова означают другое.
-CODE_EXT="py js jsx ts tsx vue go rb java cs php rs kt swift scala"
+# Модульные варианты перечислены наравне с обычными: без .mjs проверки молча не смотрели
+# в программу самого aqk, целиком написанную в этом расширении.
+CODE_EXT="py js jsx mjs cjs ts tsx mts cts vue go rb java cs php rs kt swift scala"
 
 include_code() {
   for E in $CODE_EXT; do printf -- '--include=*.%s ' "$E"; done
@@ -47,3 +49,9 @@ skip_grep() {
 skip_find() {
   for N in $SKIP_NAMES $(sample_dirs "${1:-}"); do printf -- '-name %s -prune -o ' "$N"; done
 }
+
+# Отбрасывает находки, сделанные в строках-комментариях. Вход — вывод `grep -rn` в виде
+# «файл:строка:код». Комментарий не выполняется: находка в нём означает, что проверка читает
+# текст, а не код. Найдено прогоном по audit_project: семь находок из JSDoc и закомментированных
+# строк. Проверкам, которые ищут ИМЕННО в комментариях (маркеры долга), этот фильтр не нужен.
+drop_comments() { grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|#|/\*|--)' ; }

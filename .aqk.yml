@@ -27,10 +27,16 @@ gates:
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
   duplicate-code: "bash kit/gates/duplicate-code/check.sh ."
+  units: "node --test tool/selfcheck/units.mjs"
+  # Настройка в knip.json: точкой входа объявлены модульные проверки, областью — tool/.
+  # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
+  dead-code: "npx --yes knip --directory ."
+  # Печать в program.mjs — интерфейс программы командной строки, а не забытая отладка. По
+  # правилу самой записи такие места закрываются храповиком, а не исключением каталога:
+  # исключение спрячет и настоящую отладку, реестр — только те строки, что уже есть.
+  no-print-in-prod: "bash gates/_ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
   proof-from-journal: "bash gates/_ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
-  # Четыре прогона выше — syntax, smoke, gates и этот — образцов на диске не имеют.
-  # Не прячем: записано долгом поимённо, список под храповиком и может только убывать.
-  gate-has-samples: "bash gates/_ratchet.sh ratchets/gate-has-samples.txt bash kit/gates/gate-has-samples/check.sh ."
+  gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.

@@ -1,0 +1,68 @@
+# Реестр долга: no-print-in-prod
+# Снят 2026-09-03. Список разрешается ТОЛЬКО укорачивать.
+# Новое нарушение красит гейт; исправленное вычёркивается автоматически.
+./tool/program.mjs:      console.log(
+./tool/program.mjs:      console.log(`
+./tool/program.mjs:      console.log(`      ${rec.intent || ""}`);
+./tool/program.mjs:      console.log(`  ${c.bold(rec.slug)}  ${c.dim(`${Math.round(sc * 100)}%`)}  ${rec.intent || ""}`);
+./tool/program.mjs:      console.log(`  ${c.bold(rec.slug)}  ${c.dim(`совпадение ${Math.round(sc * 100)}%`)}`);
+./tool/program.mjs:      console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+./tool/program.mjs:      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red("не уложился в 5 минут")}`);
+./tool/program.mjs:      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(`код ${code}`)} ${c.dim(`· ${secs}s · ${cmd}`)}`);
+./tool/program.mjs:      console.log(`  ${rec.intent || ""}\n`);
+./tool/program.mjs:      console.log(c.dim("  Рецепт под другой стек — это строка в recipes существующей записи."));
+./tool/program.mjs:      console.log(c.dim(`      рецепты: ${langs.length ? langs.join(", ") + ", " : ""}общий`));
+./tool/program.mjs:      console.log(c.dim(`  Всё равно завести новую: ${SELF} new ${slug} --force\n`));
+./tool/program.mjs:      console.log(c.yellow(`\n  Похоже, такое уже есть: ${c.bold(rec.slug)}`));
+./tool/program.mjs:      for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+./tool/program.mjs:      if (out.length > 3) console.log(c.dim(`        … и ещё ${out.length - 3} строк`));
+./tool/program.mjs:    console.log(
+./tool/program.mjs:    console.log(`  ${c.bold(`Чтобы достичь AQK-${next.level}:`)} ${next.need}`);
+./tool/program.mjs:    console.log(`  ${c.green("✔")}  .aqk.yml       ${c.dim(`гейт объявлен: ${cmd}`)}`);
+./tool/program.mjs:    console.log(`  ${c.yellow("!")}  .aqk.yml       ${c.dim(`не тронут (${why}). Впиши сам: ${slug}: "${cmd}"`)}`);
+./tool/program.mjs:    console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
+./tool/program.mjs:    console.log(`  ${mark}  AQK-${s.level}  ${s.title}`);
+./tool/program.mjs:    console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
+./tool/program.mjs:    console.log(`${c.bold("Как добавить свой гейт:")}
+./tool/program.mjs:    console.log(c.bold("  В журнале есть шишка на эту тему:\n"));
+./tool/program.mjs:    console.log(c.dim("  Ставлю всё равно — решение твоё, но сторожить ему нечего.\n"));
+./tool/program.mjs:    console.log(c.dim("  записи, а не новый гейт. Намерение одно, исполнителей может быть много.\n"));
+./tool/program.mjs:    console.log(c.dim("\n  Если у тебя рецепт под другой стек — это строка в recipes существующей"));
+./tool/program.mjs:    console.log(c.dim("\n  Прочитай их README. Если намерение то же — дополняй, а не заводи новое.\n"));
+./tool/program.mjs:    console.log(c.dim("\n  Шишка записана — значит доказательство для новой записи уже есть.\n"));
+./tool/program.mjs:    console.log(c.dim(`      поставить: ${SELF} add ${rec.slug}`));
+./tool/program.mjs:    console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
+./tool/program.mjs:    console.log(c.dim(`  Что это даст: ${next.gives}\n`));
+./tool/program.mjs:    console.log(c.dim(`  перезаписать: ${SELF} init --force`));
+./tool/program.mjs:    console.log(c.dim(`\n  Не применимо к этому репозиторию (${skip.length}):`));
+./tool/program.mjs:    console.log(c.green("  Все ступени пройдены.\n"));
+./tool/program.mjs:    console.log(c.green("  Такое уже есть — новую запись заводить не надо:\n"));
+./tool/program.mjs:    console.log(c.green(`  создано (${created.length}):`));
+./tool/program.mjs:    console.log(c.yellow("  Такого намерения в каталоге нет.\n"));
+./tool/program.mjs:    console.log(c.yellow("  Точного совпадения нет, но рядом лежит:\n"));
+./tool/program.mjs:    console.log(c.yellow("\n  Уровень: стандарт в этом репозитории не заведён.\n"));
+./tool/program.mjs:    console.log(c.yellow(`\n  Этот гейт к репозиторию не применим: ${verdict.why}`));
+./tool/program.mjs:    console.log(c.yellow(`\n  уже были на месте, не тронуты (${skipped.length}):`));
+./tool/program.mjs:    for (const [, date, title] of journal.slice(0, 3)) console.log(`  ${c.dim(date)}  ${title}`);
+./tool/program.mjs:    for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
+./tool/program.mjs:    for (const f of created.slice(0, 8)) console.log(`    ${f}`);
+./tool/program.mjs:    for (const f of skipped) console.log(`    ${f}`);
+./tool/program.mjs:    if (created.length > 8) console.log(c.dim(`    … и ещё ${created.length - 8}`));
+./tool/program.mjs:  console.log(
+./tool/program.mjs:  console.log(`
+./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(`${copied.length} файлов: проверка и образцы`)}`);
+./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
+./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${RATCHET_LIB}  ${c.dim("обёртка скопирована в проект")}`);
+./tool/program.mjs:  console.log(`  ${c.green("✔")}  ${relative(CWD, dst)}/  ${c.dim("gate.yml · check.sh · red/ · green/ · README.md")}`);
+./tool/program.mjs:  console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim("команда завёрнута в храповик")}`);
+./tool/program.mjs:  console.log(c.bold("\n  Прогон объявленных гейтов\n"));
+./tool/program.mjs:  console.log(c.bold("\n  Уровень соответствия AQK\n"));
+./tool/program.mjs:  console.log(c.bold("\naqk doctor\n"));
+./tool/program.mjs:  console.log(c.bold("\naqk init\n"));
+./tool/program.mjs:  console.log(c.bold(`\n  Гейты\n`));
+./tool/program.mjs:  console.log(c.bold(`\naqk add ${slug}\n`));
+./tool/program.mjs:  console.log(c.bold(`\naqk find «${query}»\n`));
+./tool/program.mjs:  console.log(c.bold(`\naqk new ${slug}\n`));
+./tool/program.mjs:  console.log(c.bold(`\naqk ratchet ${slug}\n`));
+./tool/program.mjs:  console.log(c.dim("  Собирается заново каждой командой. Править надо оригиналы в kit/docs.\n"));
+./tool/program.mjs:  for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);

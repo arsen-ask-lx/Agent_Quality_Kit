@@ -10,4 +10,6 @@ recipes:
   python: ruff check --select T20 {dir}
   typescript: eslint --rule '{"no-console":"error"}' {dir}
 
-proof: правило arch-lint в audit_project; отдельной записи в журнале нет — доказательство слабое
+proof: incidents/README.md, 2026-09-03 «печать внутри комментария считалась печатью» —
+  прогон по audit_project: 40 находок, из них 5 настоящих (отладочный хук во фронтенде,
+  печатавший размеры окна в консоль пользователя)
