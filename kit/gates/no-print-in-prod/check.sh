@@ -3,17 +3,22 @@
 # не видна в ревью диффа на 400 строк. В проде это либо шум, либо утечка данных
 # мимо системы логов.
 DIR="${1:-.}"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
-# Служебные каталоги не проверяются: .aqk разложил сам комплект, .git — история, остальное
-# приносят пакетные менеджеры и сборка. Гейт, краснеющий на том, что положил не человек,
-# выключат вместе со всеми остальными.
-SKIP="--exclude-dir=.aqk --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=vendor"
 PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
+
+# Где печать законна и дефектом не является: вспомогательные скрипты, оснастка, примеры,
+# записные книжки. Это НЕ общий список исключений: секрет в scripts/ — такой же секрет,
+# а печать там — обычный способ говорить с человеком.
+#
+# На настоящем проекте без этого различия 285 находок из 330 пришли из scripts/ и оснастки.
+# Гейт, который на 86% состоит из ложных сработок, выключают целиком.
+TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-dir=examples --exclude-dir=notebooks --exclude-dir=.claude --exclude-dir=migrations"
 EXCL=""
 case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-HITS=$(grep -rnE $SKIP $PROSE $EXCL '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
+HITS=$(grep -rnE $(skip_grep) $TOOLING $PROSE $EXCL '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: замени на вызов системы логов — тогда запись попадёт в общий журнал и уровень можно приглушить."

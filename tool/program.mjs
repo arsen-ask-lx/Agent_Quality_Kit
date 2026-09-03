@@ -831,6 +831,11 @@ async function cmdAdd(args) {
   await mkdir(dst, { recursive: true });
   const copied = await copyDir(src, dst, { force: false });
 
+  // Общий список исключений едет вместе с проверкой: без него она читает окружение и
+  // зависимости, и человек получает тысячу чужих нарушений вместо сотни своих.
+  const skipSrc = join(GATES_SRC, "_skip.sh");
+  if (await exists(skipSrc)) await copyFile(skipSrc, join(CWD, PROJECT_GATES, "_skip.sh"));
+
   // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
   const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
 

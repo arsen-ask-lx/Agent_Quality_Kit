@@ -2,7 +2,7 @@
 # Маркер «доделать потом» — это задача, спрятанная от очереди работ. Её не видно при
 # планировании, о ней не знает никто, кроме того, кто её оставил, и она переживает автора.
 DIR="${1:-.}"
-SKIP="--exclude-dir=.git --exclude-dir=.aqk --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=vendor"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
 EXCL=""
 case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
@@ -11,7 +11,7 @@ case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
 # Маркер обязан стоять В КОММЕНТАРИИ. Иначе гейт краснеет на имени переменной с таким же
 # названием и на собственном шаблоне поиска — на том, что дефектом не является.
 # Сами эти слова здесь не пишем: гейт нашёл бы себя. Проверено — находил.
-HITS=$(grep -rnE $SKIP $PROSE $EXCL \
+HITS=$(grep -rnE $(skip_grep) $PROSE $EXCL \
   '(#|//|/\*|--|<!--)[^"'"'"']*(^|[^A-Za-z])(TODO|FIXME|HACK|XXX)([^A-Za-z]|$)' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"

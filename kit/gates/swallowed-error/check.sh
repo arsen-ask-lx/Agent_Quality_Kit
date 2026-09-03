@@ -2,6 +2,7 @@
 # Тихо проглоченная ошибка — отказ, о котором никто не узнал. Система продолжает работать
 # «как будто всё хорошо», а причина всплывает через недели и в другом месте.
 DIR="${1:-.}"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 
 awk '
   FILENAME ~ /\/(\.git|\.aqk|node_modules|dist|build|vendor)\// { next }
@@ -25,9 +26,10 @@ awk '
   }
   { prev = $0 }
 ' SKIPRED="$(case "$DIR" in *red) echo 0 ;; *) echo 1 ;; esac)" \
-  $(find "$DIR" -type f \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' \
-      -o -name '*.tsx' -o -name '*.java' -o -name '*.cs' -o -name '*.rb' -o -name '*.php' \) \
-      -not -path '*/.git/*' -not -path '*/.aqk/*' -not -path '*/node_modules/*' 2>/dev/null) > /tmp/.swallowed.$$ 2>/dev/null
+  $(find "$DIR" $(skip_find "$DIR") -type f \
+      \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' \
+         -o -name '*.tsx' -o -name '*.java' -o -name '*.cs' -o -name '*.rb' -o -name '*.php' \) \
+      -print 2>/dev/null) > /tmp/.swallowed.$$ 2>/dev/null
 
 if [ -s /tmp/.swallowed.$$ ]; then
   cat /tmp/.swallowed.$$

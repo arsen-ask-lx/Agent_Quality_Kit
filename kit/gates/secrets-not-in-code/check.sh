@@ -2,16 +2,13 @@
 # Секрет, попавший в историю, из неё уже не убрать: ветку перепишут, а копии останутся у всех,
 # кто её тянул. Поэтому проверка стоит до коммита, а не «иногда руками».
 DIR="${1:-.}"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
-# Служебные каталоги не проверяются: .aqk разложил сам комплект, .git — история, остальное
-# приносят пакетные менеджеры и сборка. Гейт, краснеющий на том, что положил не человек,
-# выключат вместе со всеми остальными.
-SKIP="--exclude-dir=.aqk --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=vendor"
 EXCL=""
 case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-HITS=$(grep -rInE $SKIP $EXCL -e \
+HITS=$(grep -rInE $(skip_grep) $EXCL -e \
   '-----BEGIN [A-Z ]*PRIVATE KEY-----|(sk|pk)_(live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}' \
   "$DIR" 2>/dev/null | grep -v '/\.git/')
 if [ -n "$HITS" ]; then
