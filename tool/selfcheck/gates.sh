@@ -30,6 +30,13 @@ for GATE in "$CAT"/*/; do
   INTENT="$(field "$YML" intent)"
   PROOF="$(field "$YML" proof)"
   [ -n "$INTENT" ] || bad "$SLUG: пустое поле intent — по нему идёт дедупликация"
+
+  # Заготовка от `aqk new` не должна проехать как запись: незаполненный гейт — мёртвое
+  # правило, а мёртвое правило учит игнорировать и живые.
+  if grep -q 'ЗАПОЛНИ' "$YML" "$GATE/README.md" "$GATE/check.sh" 2>/dev/null; then
+    bad "$SLUG: заготовка не заполнена — остались метки ЗАПОЛНИ"
+    continue
+  fi
   [ -n "$PROOF" ]  || bad "$SLUG: пустое поле proof — «это хорошая практика» не принимается"
   grep -q '^trigger:' "$YML" || bad "$SLUG: нет trigger — запись показывалась бы всем подряд"
 
