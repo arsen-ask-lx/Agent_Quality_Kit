@@ -32,10 +32,9 @@ gates:
   # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip@6 --directory ."
-  # Печать в program.mjs — интерфейс программы командной строки, а не забытая отладка. По
-  # правилу самой записи такие места закрываются храповиком, а не исключением каталога:
-  # исключение спрячет и настоящую отладку, реестр — только те строки, что уже есть.
-  no-print-in-prod: "bash kit/ratchet/ratchet.sh ratchets/no-print-in-prod.txt bash kit/gates/no-print-in-prod/check.sh ."
+  # tool/ — исходники программы командной строки: печать там интерфейс, а не забытая отладка.
+  # Названо здесь, а не спрятано в проверке: читающий манифест видит, что именно исключено.
+  no-print-in-prod: "AQK_PRINT_OK_DIRS=tool bash kit/gates/no-print-in-prod/check.sh ."
   proof-from-journal: "bash kit/ratchet/ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."

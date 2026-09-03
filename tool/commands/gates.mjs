@@ -9,7 +9,9 @@ import {
   copyDir,
 } from "../lib/core.mjs";
 import { parseManifest, readManifest, manifestWithGate } from "../lib/manifest.mjs";
-import { detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap } from "../lib/repo.mjs";
+import {
+  detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
+} from "../lib/repo.mjs";
 import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/templates.mjs";
 
 // Ставит гейт из каталога в проект. Проверка КОПИРУЕТСЯ в репозиторий, а не остаётся
@@ -83,13 +85,11 @@ async function cmdNew(args) {
     die(`Имя «${slug}» не годится: латиница через дефис, например secrets-not-in-code.\nИмя читают в чужих проектах — оно часть словаря.`);
   }
 
-  // Сначала сверка: новая запись нужна реже, чем кажется.
-  const q = stems(slug.replace(/-/g, " ") + " " + args.filter((a) => !a.startsWith("-")).slice(1).join(" "));
-  for (const rec of await readCatalog()) {
-    const head = stems(`${rec.slug.replace(/-/g, " ")} ${rec.intent || ""}`);
-    let hits = 0;
-    for (const w of q) if (head.has(w)) hits++;
-    if (hits >= 2 && overlap(q, head) >= 0.5 && !args.includes("--force")) {
+  // Сначала сверка: новая запись нужна реже, чем кажется. Порог берётся по совпадению с
+  // намерением, а не с пояснением: пояснение у всех записей похоже.
+  const words = slug.replace(/-/g, " ") + " " + args.filter((a) => !a.startsWith("-")).slice(1).join(" ");
+  for (const { rec, hits, headScore } of await matchCatalog(words)) {
+    if (hits >= 2 && headScore >= 0.5 && !args.includes("--force")) {
       console.log(c.yellow(`\n  Похоже, такое уже есть: ${c.bold(rec.slug)}`));
       console.log(`  ${rec.intent || ""}\n`);
       console.log(c.dim("  Рецепт под другой стек — это строка в recipes существующей записи."));
@@ -233,30 +233,7 @@ async function cmdFind(args) {
   if (!query) die(`Опиши намерение словами: ${SELF} find "отладочная печать не доезжает до прода"`);
 
   const q = stems(query);
-  const catalog = await readCatalog();
-
-  // Решает НАМЕРЕНИЕ, а не пояснение. В README каждой записи есть слова «гейт», «красный»,
-  // «образец» — по ним любой запрос совпадёт со всем каталогом. Поэтому README только
-  // подсказывает, а вес несёт intent.
-  const scored = [];
-  for (const rec of catalog) {
-    const readme = join(GATES_SRC, rec.slug, "README.md");
-    const text = (await exists(readme)) ? await readFile(readme, "utf8") : "";
-    const title = (text.match(/^#\s+(.+)$/m) || [, ""])[1];
-
-    // Заголовок — такое же формулирование намерения, как intent, и написан человеком.
-    // Остальной текст пояснения в счёт совпадений не идёт: слова «гейт», «проверка»,
-    // «образец» есть в каждой записи, по ним совпадёт что угодно с чем угодно.
-    const head = stems(`${rec.slug.replace(/-/g, " ")} ${rec.intent || ""} ${title}`);
-    const body = stems(text.slice(0, 1200));
-    // Одно совпавшее слово — это совпадение обрезки, а не смысла: «обратимы» и «образец»
-    // дают одно и то же начало. Считаем ещё и сколько слов совпало, и требуем минимум два.
-    let hits = 0;
-    for (const w of q) if (head.has(w)) hits++;
-    const score = 0.8 * overlap(q, head) + 0.2 * overlap(q, body);
-    scored.push([hits >= 2 || q.size < 2 ? score : 0, rec]);
-  }
-  scored.sort((a, b) => b[0] - a[0]);
+  const scored = (await matchCatalog(query)).map((m) => [m.score, m.rec]);
 
   // шишки в журнале: записана, но гейта из неё может не быть
   const journal = [];
@@ -315,4 +292,134 @@ async function cmdFind(args) {
   }
 }
 
-export { cmdAdd, cmdNew, cmdRatchet, cmdFind };
+
+// --- why: почему это не поймали ----------------------------------------------
+// Сценарий «поймал ошибку». Ответ ровно один из трёх, и выбирает его не человек по памяти,
+// а прогон: сторожа не было · сторож есть, но не сработал · сторож есть и ловит, значит его
+// обошли. Разница между вторым и третьим решает, что чинить: саму проверку или её место в
+// конвейере. Без прогона эти два случая неразличимы, и чинят обычно не тот.
+
+// Гоняет ли конвейер именно этот гейт. Прогон всего разом (`doctor --run`) считается: тогда
+// добавление гейта в манифест само добавляет его в конвейер.
+async function runsInCi(slug, cmd) {
+  const files = [];
+  const walk = async (d) => {
+    if (!(await exists(d))) return;
+    for (const it of await readdir(d, { withFileTypes: true })) {
+      const full = join(d, it.name);
+      if (it.isDirectory()) await walk(full);
+      else files.push(full);
+    }
+  };
+  await walk(join(CWD, ".github", "workflows"));
+  for (const f of [".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"]) {
+    if (await exists(join(CWD, f))) files.push(join(CWD, f));
+  }
+  if (!files.length) return { ci: false, runs: false };
+
+  const script = (cmd.match(/[\w./-]+\.(?:sh|mjs|js|py)/) || [])[0];
+  for (const f of files) {
+    const text = await readFile(f, "utf8");
+    if (/doctor\s+--run|--run\s+.*doctor/.test(text)) return { ci: true, runs: true, how: "разом: doctor --run" };
+    if (text.includes(slug) || (script && text.includes(script))) return { ci: true, runs: true, how: "отдельным шагом" };
+  }
+  return { ci: true, runs: false };
+}
+
+async function cmdWhy(args) {
+  const query = args.filter((a) => !a.startsWith("-")).join(" ").trim();
+  if (!query) die(`Опиши, что пропустили: ${SELF} why "файл вырос до девяти тысяч строк"`);
+
+  const man = await readManifest();
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const matches = await matchCatalog(query);
+
+  // Имя записи, названное прямо, отменяет любую догадку. Слова — удобство, имя — точность.
+  const byName = matches.find((m) => m.rec.slug === query.trim());
+  const best = byName || matches[0];
+
+  console.log(c.bold(`\naqk why «${query}»\n`));
+
+  // Сверка огрублённая: «вырос» и «вырастает» — разные корни, их не сведёт никакой стеммер.
+  // Поэтому при неуверенном совпадении команда НЕ выбирает за человека: неверно названный
+  // случай отправляет чинить не то, а это дороже, чем лишний вопрос.
+  const near = matches.filter((x) => x.rawScore >= 0.18).sort((a, b) => b.rawScore - a.rawScore);
+  if (!byName && (!best || best.score < 0.5) && near.length) {
+    console.log(c.yellow("  Уверенного совпадения нет. Похоже на эти записи:\n"));
+    for (const m of near.slice(0, 3)) {
+      console.log(`  ${c.bold(m.rec.slug)}  ${c.dim(`${Math.round(m.rawScore * 100)}%`)}  ${m.rec.intent || ""}`);
+    }
+    console.log(c.dim(`\n  Назови запись именем: ${SELF} why <имя>`));
+    console.log(c.dim(`  Ни одна не подходит — значит сторожа не было: ${SELF} new <имя>\n`));
+    return;
+  }
+
+  const decide = () => {
+    console.log(`${c.bold("Дальше решаешь ты:")} это твоя частность или общий случай?`);
+    console.log(c.dim("  Общий — идёт в каталог и достаётся всем. Частный — остаётся у тебя."));
+    console.log(c.dim(`  Урок в общий журнал в любом случае: ${SELF} note "что случилось"\n`));
+  };
+
+  // --- 1. сторожа не было ----------------------------------------------------
+  if (!best || best.score < 0.25) {
+    console.log(c.yellow("  Сторожа не было.") + c.dim("  В каталоге нет записи с таким намерением.\n"));
+    console.log(`  ${c.bold("Почини так:")} заведи запись — ${c.bold(`${SELF} new <имя>`)}`);
+    console.log(c.dim("  Красный образец бери прямо из этой поломки: она уже случилась, выдумывать нечего.\n"));
+    decide();
+    return;
+  }
+
+  const slug = best.rec.slug;
+  console.log(`  Ближайшая запись каталога: ${c.bold(slug)}  ${c.dim(`совпадение ${Math.round(best.score * 100)}%`)}`);
+  console.log(`  ${c.dim(best.rec.intent || "")}\n`);
+
+  // --- 2. запись есть, но в проекте не объявлена -----------------------------
+  const cmd = gates[slug];
+  if (!cmd || !String(cmd).trim()) {
+    console.log(c.yellow("  Сторож есть в каталоге, но в этом проекте не поставлен.\n"));
+    console.log(`  ${c.bold("Почини так:")} ${c.bold(`${SELF} add ${slug}`)}`);
+    console.log(c.dim("  Он покраснеет на старом коде — это нормально: старое закрывается храповиком,"));
+    console.log(c.dim(`  новое ловится со дня установки. ${SELF} ratchet ${slug}\n`));
+    decide();
+    return;
+  }
+
+  // --- 3. объявлен: спрашиваем у него самого ---------------------------------
+  console.log(c.dim(`  Объявлен: ${cmd}`));
+  const r = spawnSync(String(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+  const ci = await runsInCi(slug, String(cmd));
+
+  if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
+    console.log(c.yellow("\n  Сторож объявлен, но не запускается.") + c.dim("  Худший случай: тишина читается как успех.\n"));
+    console.log(`  ${c.bold("Почини так:")} путь или программа из команды не существуют — проверь их.`);
+    console.log(c.dim("  Отсутствие сигнала неотличимо от успеха, поэтому это не «мелочь в конфиге».\n"));
+    decide();
+    return;
+  }
+
+  if (r.status !== 0) {
+    console.log(c.yellow("\n  Сторож есть и эту поломку ловит — значит его обошли.\n"));
+    if (!ci.ci) {
+      console.log(`  ${c.bold("Почини так:")} конвейера нет. Проверка, которую гоняет только человек,`);
+      console.log(c.dim("  работает ровно до первого «забыл».\n"));
+    } else if (!ci.runs) {
+      console.log(`  ${c.bold("Почини так:")} конвейер есть, но этот гейт в нём не запускается.`);
+      console.log(c.dim(`  Дешевле всего одним шагом: ${SELF} doctor --run — он гоняет всё объявленное.\n`));
+    } else {
+      console.log(`  ${c.bold("Почини так:")} конвейер его гоняет (${ci.how}) — значит красный прогон`);
+      console.log(c.dim("  кто-то пропустил или обошёл. Перенеси правило из текста в механику:"));
+      console.log(c.dim("  блокирующий шаг, а не необязательный; запрет слияния при красном.\n"));
+    }
+    decide();
+    return;
+  }
+
+  console.log(c.yellow("\n  Сторож есть, стоит и запускается — но этой поломки не видит.\n"));
+  console.log(`  ${c.bold("Почини так:")} положи в ${c.bold(`${slug}/red/`)} кусок кода из этой поломки`);
+  console.log(c.dim("  и доведи проверку до красного на нём. Порядок обратный привычному: сначала"));
+  console.log(c.dim("  образец, потом правка — иначе непонятно, что именно починено.\n"));
+  console.log(c.dim(`  Проверить после правки: bash tool/selfcheck/gates.sh\n`));
+  decide();
+}
+
+export { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy };

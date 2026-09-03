@@ -15,6 +15,18 @@ DIR="${1:-.}"
 # На настоящем проекте без этого различия 285 находок из 330 пришли из scripts/ и оснастки.
 # Гейт, который на 86% состоит из ложных сработок, выключают целиком.
 TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-dir=examples --exclude-dir=notebooks --exclude-dir=docs --exclude-dir=.claude --exclude-dir=gates --exclude-dir=gates-reference"
+
+# Проект называет СВОИ каталоги, где печать — интерфейс, а не отладка: у программы командной
+# строки это её исходники целиком. Объявляется в манифесте, рядом с командой, и потому видно
+# глазами: AQK_PRINT_OK_DIRS="tool cli" bash .../check.sh .
+#
+# ЗАЧЕМ ОТДЕЛЬНО ОТ ХРАПОВИКА. Сначала такие места записали долгом — и каждая новая строка
+# вывода красила проверку, требуя переснять реестр. Но долг — это то, что собираются погасить;
+# печать из программы командной строки убирать никто не будет. Долг, который нельзя погасить
+# работой, — не долг, а неверная мера: журнал, 2026-09-03.
+for D in ${AQK_PRINT_OK_DIRS:-}; do
+  TOOLING="$TOOLING --exclude-dir=$D"
+done
 HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\(|fmt\.Print|println!|print!|dbg!|System\.out\.print|Console\.Write)' "$DIR" 2>/dev/null | drop_comments)
 if [ -n "$HITS" ]; then
   echo "$HITS"

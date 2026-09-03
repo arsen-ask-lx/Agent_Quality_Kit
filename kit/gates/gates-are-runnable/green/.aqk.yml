@@ -4,3 +4,6 @@ entry:
 rules: rules
 gates:
   lint: "bash checks/lint.sh"
+  # Присваивание переменной перед командой — обычная форма записи в оболочке. Программа здесь
+  # по-прежнему bash, а не «STRICT=1»: проверка обязана это различать.
+  lint-strict: "STRICT=1 bash checks/lint.sh"

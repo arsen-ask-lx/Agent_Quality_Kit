@@ -223,8 +223,42 @@ function overlap(query, target) {
   return hit / query.size;
 }
 
+
+// Сверка запроса с каталогом ПО НАМЕРЕНИЮ. Одна логика на три места: `find` показывает
+// человеку, `new` не даёт завести дубль, `why` выясняет, был ли вообще такой сторож. Пока это
+// были две копии с разными порогами, «нашлось» в одной команде означало «не нашлось» в другой.
+//
+// Заголовок README считается наравне с intent: это такое же формулирование намерения, написанное
+// человеком. Остальной текст пояснения весит впятеро меньше — слова «гейт», «проверка»,
+// «образец» есть в каждой записи, и по ним совпало бы что угодно с чем угодно.
+async function matchCatalog(query) {
+  const q = stems(query);
+  const out = [];
+  for (const rec of await readCatalog()) {
+    const readme = join(GATES_SRC, rec.slug, "README.md");
+    const text = (await exists(readme)) ? await readFile(readme, "utf8") : "";
+    const title = (text.match(/^#\s+(.+)$/m) || [, ""])[1];
+    const head = stems(`${rec.slug.replace(/-/g, " ")} ${rec.intent || ""} ${title}`);
+    const body = stems(text.slice(0, 1200));
+
+    // Одно совпавшее слово — совпадение обрезки, а не смысла: «обратимы» и «образец» дают
+    // одно и то же начало. Считаем ещё и сколько слов совпало, и требуем минимум два.
+    let hits = 0;
+    for (const w of q) if (head.has(w)) hits++;
+    // Правило «минимум два совпавших слова» защищает от совпадения обрезки. Для уверенного
+    // вывода оно нужно; для подсказки «посмотри вот на эти» — нет: там человек решает сам,
+    // и одно совпавшее слово лучше, чем «ничего не найдено» при существующей записи.
+    const ok = hits >= 2 || q.size < 2;
+    const raw = 0.8 * overlap(q, head) + 0.2 * overlap(q, body);
+    out.push({ rec, hits, rawScore: raw, headScore: ok ? overlap(q, head) : 0, score: ok ? raw : 0 });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out;
+}
+
 // Наружу — то, что действительно импортируют другие файлы и модульные проверки. Экспорт,
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
-  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, stems, overlap,
+  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor,
+  stems, overlap, matchCatalog,
 };
