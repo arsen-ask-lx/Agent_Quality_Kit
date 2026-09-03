@@ -5,9 +5,13 @@ DIR="${1:-.}"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
+# Служебные каталоги не проверяются: .aqk разложил сам комплект, .git — история, остальное
+# приносят пакетные менеджеры и сборка. Гейт, краснеющий на том, что положил не человек,
+# выключат вместе со всеми остальными.
+SKIP="--exclude-dir=.aqk --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=vendor"
 EXCL=""
 case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-HITS=$(grep -rInE $EXCL -e \
+HITS=$(grep -rInE $SKIP $EXCL -e \
   '-----BEGIN [A-Z ]*PRIVATE KEY-----|(sk|pk)_(live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}' \
   "$DIR" 2>/dev/null | grep -v '/\.git/')
 if [ -n "$HITS" ]; then

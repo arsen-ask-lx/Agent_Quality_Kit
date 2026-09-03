@@ -6,9 +6,14 @@ DIR="${1:-.}"
 # Красный образец — намеренно сломанный код в репозитории. Сканирующий гейт обязан его
 # пропускать, иначе будет вечно краснеть на том, что сам же и положил. Исключение снимается,
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
+# Служебные каталоги не проверяются: .aqk разложил сам комплект, .git — история, остальное
+# приносят пакетные менеджеры и сборка. Гейт, краснеющий на том, что положил не человек,
+# выключат вместе со всеми остальными.
+SKIP="--exclude-dir=.aqk --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=vendor"
+PROSE="--exclude=*.md --exclude=*.txt --exclude=*.rst"
 EXCL=""
 case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-HITS=$(grep -rnE $EXCL '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
+HITS=$(grep -rnE $SKIP $PROSE $EXCL '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: замени на вызов системы логов — тогда запись попадёт в общий журнал и уровень можно приглушить."

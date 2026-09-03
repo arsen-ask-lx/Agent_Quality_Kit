@@ -417,8 +417,20 @@ function triggerVerdict(rec, facts) {
 // Подсказка, которую нельзя скопировать и выполнить, бесполезна.
 function recipeFor(rec, facts) {
   const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+
+  // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
+  // команду с неустановленной программой значит завести гейт, который встаёт с «not found»:
+  // отсутствие сигнала неотличимо от успеха.
+  const runnable = (c0) => {
+    const prog = String(c0).trim().split(/\s+/)[0];
+    return spawnSync(`command -v ${prog}`, { shell: true, stdio: "ignore" }).status === 0;
+  };
   let cmd = null;
-  for (const lang of facts.langs) if (recipes[lang]) { cmd = recipes[lang]; break; }
+  for (const lang of facts.langs) {
+    if (!recipes[lang]) continue;
+    if (runnable(recipes[lang])) { cmd = recipes[lang]; break; }
+    console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
+  }
   cmd = cmd || recipes.any;
   if (!cmd) return "рецепт не описан";
   return String(cmd)
@@ -718,8 +730,20 @@ async function cmdAdd(args) {
 
   // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
   const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+
+  // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
+  // команду с неустановленной программой значит завести гейт, который встаёт с «not found»:
+  // отсутствие сигнала неотличимо от успеха.
+  const runnable = (c0) => {
+    const prog = String(c0).trim().split(/\s+/)[0];
+    return spawnSync(`command -v ${prog}`, { shell: true, stdio: "ignore" }).status === 0;
+  };
   let cmd = null;
-  for (const lang of facts.langs) if (recipes[lang]) { cmd = recipes[lang]; break; }
+  for (const lang of facts.langs) {
+    if (!recipes[lang]) continue;
+    if (runnable(recipes[lang])) { cmd = recipes[lang]; break; }
+    console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
+  }
   cmd = String(cmd || recipes.any || "")
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
@@ -745,6 +769,86 @@ ${c.bold("Дальше:")}
      ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/green`)}`)} ${c.dim("→ ожидается тишина")}
   2. Впиши команду в хук коммита и в конвейер. ${c.dim("Гейт, который никто не запускает, — не гейт.")}
   3. Прогон всех объявленных: ${c.bold("aqk doctor --run")}
+`);
+}
+
+// --- ratchet -----------------------------------------------------------------
+// Ставит храповик поверх уже объявленного гейта: снимает список текущих нарушений в реестр
+// и заворачивает команду в обёртку, которая пускает старое и не пускает новое.
+//
+// Без этого правило нельзя ввести в живой проект: гейт покраснеет на всём старом коде,
+// его выключат, и правило не будет действовать вовсе.
+
+const RATCHET_DIR = "ratchets";
+const RATCHET_LIB = `${PROJECT_GATES}/_ratchet.sh`;
+
+async function cmdRatchet(args) {
+  const slug = args.find((a) => !a.startsWith("-"));
+  if (!slug) die('Укажи гейт: aqk ratchet <имя>. Он должен быть уже объявлен в .aqk.yml');
+
+  const manPath = join(CWD, MANIFEST);
+  if (!(await exists(manPath))) die("Нет .aqk.yml — сначала aqk init");
+  let text = await readFile(manPath, "utf8");
+
+  const line = text.split("\n").find((l) => new RegExp(`^\\s+${slug}:`).test(l));
+  if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: aqk add ${slug}`);
+
+  const cmd = line.replace(/^\s*[^:]+:\s*/, "").replace(/^"|"$/g, "");
+  if (cmd.includes(RATCHET_LIB)) die(`На гейте «${slug}» храповик уже стоит.`);
+
+  // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда.
+  const lib = join(CWD, RATCHET_LIB);
+  await mkdir(dirname(lib), { recursive: true });
+  await copyFile(join(PKG_ROOT, "kit", "ratchet", "ratchet.sh"), lib);
+
+  // Снимок текущих нарушений — это и есть долг. Ключ без номера строки: правка соседней
+  // строки не должна читаться как новое нарушение.
+  const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+  if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
+    die(
+      `Гейт «${slug}» не запускается: ${cmd}\n` +
+        `Снимать долг с несуществующего сторожа нельзя — в реестр попадут его же сообщения\n` +
+        `об ошибке, и он станет разрешением. Сначала почини команду.`
+    );
+  }
+  const keys = [...new Set(
+    `${r.stdout || ""}${r.stderr || ""}`
+      .split("\n")
+      .filter((l) => l && !/^\s/.test(l) && l.includes(":"))
+      .map((l) => l.replace(/:\d+:/, ":"))
+  )].sort();
+
+  await mkdir(join(CWD, RATCHET_DIR), { recursive: true });
+  const reg = join(CWD, RATCHET_DIR, `${slug}.txt`);
+  const stamp = new Date().toISOString().slice(0, 10);
+  await writeFile(
+    reg,
+    `# Реестр долга: ${slug}\n` +
+      `# Снят ${stamp}. Список разрешается ТОЛЬКО укорачивать.\n` +
+      `# Новое нарушение красит гейт; исправленное вычёркивается автоматически.\n` +
+      keys.join("\n") + (keys.length ? "\n" : ""),
+    "utf8"
+  );
+
+  const wrapped = `bash ${RATCHET_LIB} ${RATCHET_DIR}/${slug}.txt ${cmd}`;
+  text = text.replace(line, `  ${slug}: "${wrapped}"`);
+  text = text.replace(/^ratchets:\s*""\s*$/m, `ratchets: ${RATCHET_DIR}`);
+  await writeFile(manPath, text, "utf8");
+
+  console.log(c.bold(`\naqk ratchet ${slug}\n`));
+  console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
+  console.log(`  ${c.green("✔")}  ${RATCHET_LIB}  ${c.dim("обёртка скопирована в проект")}`);
+  console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim("команда завёрнута в храповик")}`);
+  console.log(`
+${c.bold("Что это меняет:")}
+
+  Правило действует ${c.bold("со дня установки")}. Старый код трогать не надо, но новое
+  нарушение того же класса гейт не пропустит.
+
+  ${c.dim("Проверка, что это храповик, а не советчик: «может ли новый код добавить нарушение")}
+  ${c.dim("и пройти?» Может — значит гейта нет.")}
+
+  Прогнать: ${c.bold("aqk doctor --run")}
 `);
 }
 
@@ -933,6 +1037,9 @@ switch (cmd) {
   case "find":
     await cmdFind(rest);
     break;
+  case "ratchet":
+    await cmdRatchet(rest);
+    break;
   case "blob":
     await cmdBlob();
     break;
@@ -942,7 +1049,7 @@ ${c.bold("aqk")} — оснастка для разработки с агент�
 
   ${c.bold("aqk init")}            разложить правила и методички в текущий проект
   ${c.bold("aqk init --force")}    перезаписать уже существующие файлы
-  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект\n  ${c.bold("aqk find")} "…"       есть ли уже такой гейт — сверка по намерению
+  ${c.bold("aqk doctor")}          проверить, что разложено и чего не хватает\n  ${c.bold("aqk doctor --run")}    ещё и запустить объявленные гейты\n  ${c.bold("aqk add")} <имя>       поставить гейт из каталога в проект\n  ${c.bold("aqk find")} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold("aqk ratchet")} <имя>   храповик: старые нарушения — долг, новые не пускать
   ${c.bold("aqk note")} "…"        записать урок в общий журнал шишек
   ${c.bold("aqk blob")}            собрать методички в один файл GOD_AI.md
 
