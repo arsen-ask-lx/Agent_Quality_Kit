@@ -15,7 +15,7 @@ DIR="${1:-.}"
 # На настоящем проекте без этого различия 285 находок из 330 пришли из scripts/ и оснастки.
 # Гейт, который на 86% состоит из ложных сработок, выключают целиком.
 TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-dir=examples --exclude-dir=notebooks --exclude-dir=docs --exclude-dir=.claude --exclude-dir=gates --exclude-dir=gates-reference"
-HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\()' "$DIR" 2>/dev/null)
+HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\(|fmt\.Print|println!|print!|dbg!|System\.out\.print|Console\.Write)' "$DIR" 2>/dev/null)
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: замени на вызов системы логов — тогда запись попадёт в общий журнал и уровень можно приглушить."

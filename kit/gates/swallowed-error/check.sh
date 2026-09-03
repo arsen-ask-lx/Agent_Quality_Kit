@@ -4,7 +4,16 @@
 DIR="${1:-.}"
 . "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 
-awk '
+# Список файлов собираем заранее. awk без файловых аргументов читает поток ввода и ждёт его
+# вечно: на проекте без файлов этих языков проверка зависала навсегда — в конвейере и в хуке
+# коммита, где поток ввода открыт. Найдено прогоном по проекту на Go.
+FILES=$(find "$DIR" $(skip_find "$DIR") -type f \
+  \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \
+     -o -name '*.java' -o -name '*.cs' -o -name '*.rb' -o -name '*.php' \
+     -o -name '*.go' -o -name '*.rs' \) -print 2>/dev/null)
+[ -z "$FILES" ] && exit 0
+
+printf '%s\n' "$FILES" | xargs -r awk '
   FILENAME ~ /\/(\.git|\.aqk|node_modules|dist|build|vendor)\// { next }
   SKIPRED == 1 && FILENAME ~ /\/red\// { next }
 
@@ -20,16 +29,23 @@ awk '
   /catch[[:space:]]*(\([^)]*\))?[[:space:]]*\{[[:space:]]*\}/ {
     print FILENAME ":" FNR ": перехват без обработки — " gensub(/^[[:space:]]+/, "", 1, $0)
   }
+  # go: пустое тело после проверки ошибки, либо ошибка присвоена в пустоту
+  prev ~ /if[[:space:]]+err[[:space:]]*!=[[:space:]]*nil/ && $0 ~ /^[[:space:]]*\}[[:space:]]*$/ {
+    print FILENAME ":" FNR ": ошибка проверена и выброшена — " gensub(/^[[:space:]]+/, "", 1, prev)
+  }
+  /^[[:space:]]*_[[:space:]]*=[[:space:]]*err[[:space:]]*$/ {
+    print FILENAME ":" FNR ": ошибка присвоена в пустоту — " gensub(/^[[:space:]]+/, "", 1, $0)
+  }
+  # rust: результат отброшен без разбора
+  /\.ok\(\);[[:space:]]*$/ || /let[[:space:]]+_[[:space:]]*=[^;]*\?[[:space:]]*;/ {
+    print FILENAME ":" FNR ": результат отброшен без разбора — " gensub(/^[[:space:]]+/, "", 1, $0)
+  }
   # обещания: .catch(() => {})
   /\.catch\([^)]*=>[[:space:]]*\{[[:space:]]*\}\)/ {
     print FILENAME ":" FNR ": перехват без обработки — " gensub(/^[[:space:]]+/, "", 1, $0)
   }
   { prev = $0 }
-' SKIPRED="$(case "$DIR" in *red) echo 0 ;; *) echo 1 ;; esac)" \
-  $(find "$DIR" $(skip_find "$DIR") -type f \
-      \( -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' \
-         -o -name '*.tsx' -o -name '*.java' -o -name '*.cs' -o -name '*.rb' -o -name '*.php' \) \
-      -print 2>/dev/null) > /tmp/.swallowed.$$ 2>/dev/null
+' SKIPRED="$(case "$DIR" in *red) echo 0 ;; *) echo 1 ;; esac)" > /tmp/.swallowed.$$ 2>/dev/null
 
 if [ -s /tmp/.swallowed.$$ ]; then
   cat /tmp/.swallowed.$$
