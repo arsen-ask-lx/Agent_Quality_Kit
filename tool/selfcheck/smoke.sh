@@ -182,7 +182,23 @@ case "$OUT" in
   *) bad "храповик пропустил НОВОЕ нарушение — это советчик, а не гейт" ;;
 esac
 
-rm new.py old.py
+# Второй прогон с тем же новым нарушением обязан краснеть так же. Пока реестр перезаписывался
+# всем текущим списком, одно исправленное нарушение затягивало в долг ВСЕ новые: один красный
+# прогон — и дальше зелено навсегда. «Может ли новый код добавить нарушение и пройти?» — мог.
+printf 'def c():\n    print("ещё одно")\n' > another.py
+node "$CLI" doctor --run >/dev/null 2>&1
+rm old.py
+OUT="$(node "$CLI" doctor --run 2>&1)"
+OUT2="$(node "$CLI" doctor --run 2>&1)"
+case "$OUT2" in
+  *"новых нарушений"*) ok "новое нарушение не попадает в реестр вслед за исправленным" ;;
+  *) bad "исправление одного нарушения затянуло новые в долг" "второй прогон зелёный" ;;
+esac
+rm -f another.py
+printf 'def a():\n    print("старое")\n' > old.py
+node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1 || true
+
+rm -f new.py old.py
 node "$CLI" doctor --run >/dev/null 2>&1
 if grep -q 'old.py' ratchets/no-print-in-prod.txt; then
   bad "исправленное осталось в реестре — храповик не затягивается"

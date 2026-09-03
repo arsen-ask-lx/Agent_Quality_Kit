@@ -11,9 +11,8 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  parseManifest, triggerVerdict, recipeFor, manifestWithGate, stems, overlap, EXT_LANG,
-} from "../program.mjs";
+import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
+import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG } from "../lib/repo.mjs";
 
 const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
 

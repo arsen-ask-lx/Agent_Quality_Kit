@@ -29,18 +29,23 @@
 - `ТЗ.md` — что строим, для кого, что сделано и что осталось. **Начинать отсюда.**
 - `README.md` — что это и как поставить, для постороннего
 - `SPEC.md` — сам стандарт отдельно от нашей реализации: ступени, манифест, приёмка записи
-- `tool/program.mjs` — вся программа: `init`, `doctor`, `add`, `find`, `new`, `ratchet`, `note`, `blob`
+- `tool/program.mjs` — точка входа: справка и диспетчер команд
+- `tool/lib/` — общее: `core.mjs` (пути, вывод), `manifest.mjs` (`.aqk.yml` и ступени),
+  `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению), `templates.mjs`
+- `tool/commands/` — команды: `project.mjs` (`init`, `note`, `blob`), `doctor.mjs`,
+  `gates.mjs` (`add`, `new`, `ratchet`, `find`)
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
 - `incidents/README.md` — журнал шишек, общий на все проекты
-- `tool/selfcheck/` — проверки самого комплекта: `units.mjs` (функции), `smoke.sh` (прогон на
-  чистой папке), `gates.sh` (записи каталога), `conditional.sh` (доказательства)
+- `tool/selfcheck/` — проверки самого комплекта: `syntax.sh` (все исходники разбираются),
+  `units.mjs` (функции), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
+  `conditional.sh` (доказательства)
 - `.github/workflows/ci.yml` — те же проверки на чужой машине при каждом пуше
 
 ## Команды
 
-- проверить синтаксис: `node --check tool/program.mjs`
+- проверить синтаксис всех исходников: `bash tool/selfcheck/syntax.sh`
 - прогнать на чистой папке: `T=$(mktemp -d) && cd "$T" && git init -q . && node <путь>/tool/program.mjs init && node <путь>/tool/program.mjs doctor`
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`

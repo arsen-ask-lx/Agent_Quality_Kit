@@ -12,7 +12,7 @@ entry:
 # AQK-1 — где стандарты и какие проверки обязательны.
 rules: kit/rules
 gates:
-  syntax: "node --check tool/program.mjs"
+  syntax: "bash tool/selfcheck/syntax.sh"
   smoke: "bash tool/selfcheck/smoke.sh"
   gates: "bash tool/selfcheck/gates.sh"
   # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
@@ -21,7 +21,8 @@ gates:
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
-  file-size-limit: "bash kit/ratchet/ratchet.sh ratchets/file-size-limit.txt bash kit/gates/file-size-limit/check.sh ."
+  # Храповик снят: программа разделена по назначению и уложилась в собственный предел.
+  file-size-limit: "bash kit/gates/file-size-limit/check.sh ."
   swallowed-error: "bash kit/gates/swallowed-error/check.sh ."
   todo-without-task: "bash kit/gates/todo-without-task/check.sh ."
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
