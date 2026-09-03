@@ -343,9 +343,21 @@ const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "dist", "bui
 
 // Факты о репозитории. Только то, что видно машине: спрашивать человека анкетой
 // значит снова получить мнение вместо факта.
+// Признаки репозитория — по файлам, а не по анкете. Ответы человека это мнение;
+// файлы — факт. Каждый признак нужен какому-то триггеру: признак, который никто не
+// спрашивает, — это лишний обход дерева.
+const MARKS = [
+  ["has_ci", [".github/workflows", ".gitlab-ci.yml", ".circleci", "Jenkinsfile", "azure-pipelines.yml"]],
+  ["has_docker", ["Dockerfile", "compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"]],
+  ["has_deps", ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "composer.json"]],
+  ["has_env", [".env", ".env.example", ".env.sample"]],
+];
+
 async function detectFacts(man) {
   const langs = new Set();
   let files = 0;
+  let hasDb = false;
+  let hasTests = false;
 
   async function walk(dir, depth) {
     if (depth > 4 || files > 4000) return;
@@ -356,14 +368,19 @@ async function detectFacts(man) {
       return;
     }
     for (const it of items) {
+      const full = join(dir, it.name);
       if (it.isDirectory()) {
         if (SKIP_DIRS.has(it.name)) continue;
         // Образцы каталога — код специально сломанный и специально исправный.
         // Считать его языками проекта значит врать о репозитории.
-        if (join(dir, it.name) === GATES_SRC) continue;
-        await walk(join(dir, it.name), depth + 1);
+        if (full === GATES_SRC) continue;
+        if (/^(tests?|spec|__tests__)$/i.test(it.name)) hasTests = true;
+        if (/^migrations?$/i.test(it.name)) hasDb = true;
+        await walk(full, depth + 1);
       } else {
         files++;
+        if (/\.(test|spec)\.[a-z]+$/i.test(it.name) || /^test_.*\.py$/i.test(it.name)) hasTests = true;
+        if (it.name.endsWith(".sql")) hasDb = true;
         const dot = it.name.lastIndexOf(".");
         if (dot > 0) {
           const lang = EXT_LANG[it.name.slice(dot)];
@@ -375,12 +392,19 @@ async function detectFacts(man) {
   await walk(CWD, 0);
 
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
-  return {
+  const facts = {
     langs,
     files,
+    has_db: hasDb,
+    has_tests: hasTests,
     has_gates: Object.values(gates).some((c) => String(c || "").trim()),
     gateKeys: Object.keys(gates),
   };
+  for (const [name, paths] of MARKS) {
+    facts[name] = false;
+    for (const rel of paths) if (await exists(join(CWD, rel))) { facts[name] = true; break; }
+  }
+  return facts;
 }
 
 async function readCatalog() {
@@ -397,20 +421,63 @@ async function readCatalog() {
 
 // Применима ли запись к этому репозиторию — и если нет, то почему.
 // Причина обязательна: «скрыто без объяснения» неотличимо от «потеряно».
-function triggerVerdict(rec, facts) {
-  const t = rec.trigger && typeof rec.trigger === "object" ? rec.trigger : {};
-  if (String(t.always) === "true") return { applies: true };
+// Все условия триггера должны выполниться разом. Раньше проверялось первое попавшееся —
+// значит «есть база И нет конвейера» читалось как «есть база», и запись показывалась не тем.
+//
+// Причина отказа обязательна: скрытое без объяснения неотличимо от потерянного.
+const CONDITIONS = {
+  always: () => ({ ok: true }),
 
-  if (t.langs) {
-    const want = String(t.langs).split(",").map((s) => s.trim()).filter(Boolean);
-    if (want.some((l) => facts.langs.has(l))) return { applies: true };
-    return { applies: false, why: `нет языков: ${want.join(", ")}` };
+  langs: (val, f) => {
+    const want = String(val).split(",").map((x) => x.trim()).filter(Boolean);
+    return want.some((l) => f.langs.has(l))
+      ? { ok: true }
+      : { ok: false, why: `нет языков: ${want.join(", ")}` };
+  },
+
+  files_gt: (val, f) =>
+    f.files > Number(val) ? { ok: true } : { ok: false, why: `меньше ${val} файлов — рано` },
+
+  files_lt: (val, f) =>
+    f.files < Number(val) ? { ok: true } : { ok: false, why: `больше ${val} файлов` },
+};
+
+const FLAG_WHY = {
+  has_gates: ["в манифесте не объявлено ни одного гейта", "гейты уже объявлены"],
+  has_ci: ["в репозитории нет конвейера", "конвейер уже есть"],
+  has_db: ["не видно базы данных: ни миграций, ни sql", "база данных есть"],
+  has_docker: ["нет Dockerfile или compose", "docker уже есть"],
+  has_deps: ["не видно файла зависимостей", "зависимости объявлены"],
+  has_tests: ["не видно тестов", "тесты есть"],
+  has_env: ["нет файла окружения", "файл окружения есть"],
+};
+
+function triggerVerdict(rec, facts) {
+  const t = rec.trigger && typeof rec.trigger === "object" && !Array.isArray(rec.trigger) ? rec.trigger : {};
+  const keys = Object.keys(t);
+  if (!keys.length) return { applies: false, why: "триггер не задан" };
+
+  for (const key of keys) {
+    const raw = String(t[key]).trim();
+
+    if (CONDITIONS[key]) {
+      if (key === "always" && raw !== "true") continue;
+      const r = CONDITIONS[key](raw, facts);
+      if (!r.ok) return { applies: false, why: r.why };
+      continue;
+    }
+
+    if (key in FLAG_WHY) {
+      const want = raw === "true";
+      if (Boolean(facts[key]) !== want) {
+        return { applies: false, why: FLAG_WHY[key][want ? 0 : 1] };
+      }
+      continue;
+    }
+
+    return { applies: false, why: `условие «${key}» программа не умеет считать` };
   }
-  if (String(t.has_gates) === "true") {
-    if (facts.has_gates) return { applies: true };
-    return { applies: false, why: "в манифесте не объявлено ни одного гейта" };
-  }
-  return { applies: false, why: "триггер не распознан" };
+  return { applies: true };
 }
 
 // Арбитр под стек этого проекта: сначала родной рецепт, иначе — переносимый `any`.
@@ -451,7 +518,13 @@ async function reportCatalog(man, facts) {
   }
 
   console.log(c.bold(`\n  Гейты\n`));
-  console.log(c.dim(`  языки: ${[...facts.langs].join(", ") || "не определены"} · файлов: ${facts.files}\n`));
+  const marks = ["has_ci", "has_db", "has_docker", "has_tests", "has_deps"]
+    .filter((k) => facts[k])
+    .map((k) => k.replace("has_", ""));
+  console.log(
+    c.dim(`  языки: ${[...facts.langs].join(", ") || "не определены"} · файлов: ${facts.files}` +
+      (marks.length ? ` · есть: ${marks.join(", ")}` : "") + "\n")
+  );
 
   for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
   for (const rec of todo) {

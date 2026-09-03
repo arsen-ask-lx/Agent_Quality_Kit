@@ -1,0 +1,6 @@
+aqk: 1
+entry:
+  - AGENTS.md
+rules: rules
+gates:
+  lint: "bash checks/lint.sh"
