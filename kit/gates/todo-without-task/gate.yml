@@ -5,5 +5,8 @@ trigger:
 
 recipes:
   any: bash {gate}/check.sh {dir}
+  # Готовое правило точнее самописного и не требует поддержки.
+  python: ruff check --select FIX,TD {dir}
+  typescript: eslint --rule '{"no-warning-comments":["error",{"terms":["todo","fixme","hack","xxx"]}]}' {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: 416 коммитов из 1069 оказались стабилизацией уже выкаченного

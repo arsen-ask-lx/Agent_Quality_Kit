@@ -5,5 +5,8 @@ trigger:
 
 recipes:
   any: bash {gate}/check.sh {dir}
+  # BLE — ловля голого исключения, TRY400 — запись без трейса, SIM105 — перехват ради тишины.
+  python: ruff check --select BLE,TRY400,SIM105 {dir}
+  typescript: eslint --rule '{"no-empty":["error",{"allowEmptyCatch":false}]}' {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: 1436 блоков перехвата, лишь 10% пробрасывают ошибку
