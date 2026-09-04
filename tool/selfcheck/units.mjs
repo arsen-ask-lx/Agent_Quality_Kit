@@ -13,6 +13,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG } from "../lib/repo.mjs";
+import { CATALOGS, pickLang } from "../i18n/index.mjs";
 
 const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
 
@@ -102,4 +103,48 @@ test("без блока gates программа объясняет, чего н
   const r = manifestWithGate("aqk: 1\n", "x", "bash y.sh");
   assert.equal(r.text, null);
   assert.match(r.why, /нет блока gates/);
+});
+
+// --- каталоги строк не расходятся ---------------------------------------------
+// ЗАЧЕМ. «Поддерживаем два языка» — утверждение, которое обязана держать машина, а не память
+// того, кто правил вывод в последний раз. Забытый ключ в одном каталоге даёт `undefined` в
+// выводе — не отказ, а тихую порчу текста ровно у того, кто пришёл на втором языке.
+function keyPaths(obj, prefix = "") {
+  const out = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === "object" && !Array.isArray(v)) out.push(...keyPaths(v, path));
+    else out.push(`${path}:${typeof v}`);
+  }
+  return out.sort();
+}
+
+test("оба каталога строк несут одни и те же ключи одного типа", () => {
+  const a = keyPaths(CATALOGS.ru);
+  const b = keyPaths(CATALOGS.en);
+  const onlyRu = a.filter((k) => !b.includes(k));
+  const onlyEn = b.filter((k) => !a.includes(k));
+  assert.deepEqual(onlyRu, [], `есть только в ru: ${onlyRu.join(", ")}`);
+  assert.deepEqual(onlyEn, [], `есть только в en: ${onlyEn.join(", ")}`);
+  assert.ok(a.length > 0);
+});
+
+test("ни одна строка вывода не осталась пустой", () => {
+  for (const [lang, cat] of Object.entries(CATALOGS)) {
+    for (const path of keyPaths(cat)) {
+      const [key, kind] = path.split(":");
+      if (kind !== "string") continue;
+      const value = key.split(".").reduce((o, k) => o[k], cat);
+      assert.ok(value.trim().length > 0, `пустая строка ${lang}.${key}`);
+    }
+  }
+});
+
+test("язык берётся из AQK_LANG, потом из локали, иначе английский", () => {
+  assert.equal(pickLang({ AQK_LANG: "ru" }), "ru");
+  assert.equal(pickLang({ AQK_LANG: "en_US.UTF-8", LANG: "ru_RU.UTF-8" }), "en");
+  assert.equal(pickLang({ LANG: "ru_RU.UTF-8" }), "ru");
+  assert.equal(pickLang({ LC_ALL: "ru_RU.UTF-8", LANG: "en_US.UTF-8" }), "ru");
+  assert.equal(pickLang({ LANG: "de_DE.UTF-8" }), "en");
+  assert.equal(pickLang({}), "en");
 });

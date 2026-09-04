@@ -17,6 +17,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { c, SELF } from "./lib/core.mjs";
+import { L } from "./i18n/index.mjs";
 import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
 import { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy } from "./commands/gates.mjs";
@@ -63,19 +64,35 @@ if (IS_MAIN) {
     case "blob":
       await cmdBlob();
       break;
-    default:
+    default: {
+      // Ширина колонки считается, а не подбирается пробелами: строки в двух языках разной
+      // длины, и вручную выровненная справка на втором языке разъезжается.
+      const h = L.help;
+      const rows = [
+        [`${SELF} init`, h.init],
+        [`${SELF} init --force`, h.initForce],
+        [`${SELF} start`, h.start],
+        [`${SELF} doctor`, h.doctor],
+        [`${SELF} doctor --run`, h.doctorRun],
+        [`${SELF} add ${h.name}`, h.add],
+        [`${SELF} find "…"`, h.find],
+        [`${SELF} why "…"`, h.why],
+        [`${SELF} ratchet ${h.name}`, h.ratchet],
+        [`${SELF} new ${h.name}`, h.new],
+        [`${SELF} note "…"`, h.note],
+        [`${SELF} blob`, h.blob],
+      ];
+      const width = Math.max(...rows.map(([cmdText]) => cmdText.length));
+      const lines = rows.map(([cmdText, text]) => `  ${c.bold(cmdText.padEnd(width))}   ${text}`);
       console.log(`
-  ${c.bold("aqk")} — оснастка для разработки с агентами
+  ${c.bold("aqk")} — ${h.tagline}
 
-    ${c.bold(`${SELF} init`)}            разложить правила и методички в текущий проект
-    ${c.bold(`${SELF} init --force`)}    перезаписать уже существующие файлы
-  ${c.bold(`${SELF} start`)}           кода ещё нет: сторожа дня 0 и порядок работы
-    ${c.bold(`${SELF} doctor`)}          проверить, что разложено и чего не хватает\n  ${c.bold(`${SELF} doctor --run`)}    ещё и запустить объявленные гейты\n  ${c.bold(`${SELF} add`)} <имя>       поставить гейт из каталога в проект\n  ${c.bold(`${SELF} find`)} "…"       есть ли уже такой гейт — сверка по намерению\n  ${c.bold(`${SELF} why`)} "…"        поймал ошибку — почему её не поймал сторож\n  ${c.bold(`${SELF} ratchet`)} <имя>   храповик: старые нарушения — долг, новые не пускать\n  ${c.bold(`${SELF} new`)} <имя>       заготовка своего гейта для каталога
-    ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
-    ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md
+${lines.join("\n")}
 
-  ${c.dim("Без установки:  npx agent-quality-kit init")}
+  ${c.dim(h.noInstall)}
+  ${c.dim(h.language)}
   `);
       process.exit(cmd ? 1 : 0);
+    }
   }
 }
