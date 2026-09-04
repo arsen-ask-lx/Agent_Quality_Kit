@@ -1,5 +1,9 @@
 # AQK — Agent Quality Kit
 
+[![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
+[![проверки](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![лицензия MIT](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
+
 **Стандарт готовности репозитория к тому, что код в нём пишет агент.** Обещание проекта
 становится командой с кодом возврата — и его держит машина, а не чья-то добрая воля.
 
