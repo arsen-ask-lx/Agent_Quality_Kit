@@ -21,6 +21,9 @@ const AGENTS_MD = `# AGENTS.md
 - **Never swallow an error.** Either handled and logged, or re-raised.
 - **A fork in the road is a question for a human.** Departing from an agreed decision is not
   documented with a code comment.
+- **Report on your work with the kit with a command, not with words.** When you are done, run
+  \`aqk report\`. It is assembled from an actual run: a summary from memory always picks the
+  convenient parts and stays quiet about a gate standing on the weakest recipe.
 
 ## The AQK tooling is your commands, not the human's
 
@@ -38,6 +41,7 @@ Running them is your job. The human looks at the list of holes and decides which
 | \`aqk ratchet <name>\` | records existing violations as debt and stops letting new ones through | the check goes red on old code nobody is going to fix right now |
 | \`aqk find "…"\` | searches by meaning for an existing check | before inventing your own |
 | \`aqk note "…"\` | writes a lesson into the shared journal | the process or an instrument let you down: a check lied, a rule was bypassed |
+| \`aqk report\` | assembles a report from an actual run: what is in place and with which recipe, what is missing, what the kit told you to read | **mandatory** at the end of working with the kit — instead of a summary from memory |
 
 If there is no \`aqk\` command on the system, the kit was used without installing. Then write
 \`npx agent-quality-kit\` instead of \`aqk\`. Every command prints the invocation that will

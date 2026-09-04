@@ -557,6 +557,35 @@ else
 fi
 rm -rf "$FBDIR" "$FBPROJ"
 
+# --- 34. обязательная форма отчёта -------------------------------------------
+# ЗАЧЕМ. Первый чужой прогон дал отчёт «12 гейтов зелёные» — при том что все 12 стояли на
+# слабейшем рецепте, а половина методичек не была прочитана. Пересказ по памяти выбирает
+# удобное; отчёт обязан собираться прогоном.
+REPDIR="$(mktemp -d)"
+(
+  cd "$REPDIR" && git init -q . && mkdir -p src &&
+  printf 'def f():\n    print("debug")\n' > src/a.py &&
+  node "$CLI" start >/dev/null 2>&1
+)
+REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
+if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ no-print-in-prod'; then
+  ok "report краснеет кодом возврата и называет упавший гейт"
+else
+  bad "report не отличает красное от зелёного" "код $REP_CODE"
+fi
+if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
+  ok "report сохраняет .aqk/report.md"
+else
+  bad "report не сохранил файл отчёта" "$REPDIR/.aqk/report.md"
+fi
+# Путь к методичке ИЩЕТСЯ: baseline лежит в подпапке ai/, и жёстко вписанный путь уже соврал.
+if printf '%s' "$REP_OUT" | grep -q '📖 .aqk/docs/ai/project-baseline.md'; then
+  ok "report находит методичку в подпапке, а не пишет путь наизусть"
+else
+  bad "report не нашёл project-baseline.md" "$(printf '%s' "$REP_OUT" | grep -i baseline | head -1)"
+fi
+rm -rf "$REPDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

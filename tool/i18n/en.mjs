@@ -22,6 +22,7 @@ export const en = {
     new: "scaffold your own gate for the catalogue",
     note: "record a lesson in the shared bruise journal",
     blob: "assemble the guides into a single GOD_AI.md",
+    report: "the mandatory report form: what is in place, what is not, what was not read",
     noInstall: "Without installing:  npx agent-quality-kit init",
     language: "Output language: AQK_LANG=ru (or en), otherwise your system locale",
   },
@@ -351,6 +352,37 @@ export const en = {
       "# shorter.",
     ],
     lessons: "# AQK-3 — where lessons accumulate. A path or an address.",
+  },
+
+  report2: {
+    title: "AQK report",
+    noManifest: (cmd) => `No .aqk.yml — nothing to report on. Start with ${cmd}`,
+    level: "Level",
+    holdsTitle: "What a machine holds (from a run, not from the manifest)",
+    nothingRuns: "⬜ no gate is declared",
+    native: (prog) => `native recipe: ${prog}`,
+    portable: "portable check",
+    weakerTitle: "Weaker than it could be",
+    weaker: (progs) => `${progs} is available on this system, but the gate uses the portable check — it catches less`,
+    missingTitle: "What is missing",
+    nothingMissing: "✅ every applicable entry is installed",
+    needsTool: (prog) => `needs ${prog} — not on this system`,
+    notInstalled: "applicable, but not installed",
+    hiddenTitle: "Not applicable to this repository",
+    readTitle: "What the kit told you to read",
+    readWarn:
+      "The mark only means the file is on disk. Whether it was read, the machine does not know " +
+      "and does not pretend to: that is answered by whoever is reporting.",
+    whyTitle: "Why this matters — briefly",
+    whyNothing: "nothing to add: everything applicable is in place",
+    saved: (path) => `Saved: ${path}`,
+    docs: {
+      baseline: "the minimum a project needs, independent of language",
+      readyMade: "the map of off-the-shelf rules: look for a ready one before writing your own",
+      rulesGeneral: "general working rules",
+      rulesTesting: "rules about tests",
+      rulesSecurity: "rules about security",
+    },
   },
 
   levels: [
