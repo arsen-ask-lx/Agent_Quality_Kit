@@ -57,7 +57,9 @@
 - проверить функции программы: `node --test tool/selfcheck/units.mjs`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
-- порог для конвейера: `node tool/program.mjs doctor --min 1`
+- порог для конвейера: `node tool/program.mjs doctor --run --min 1` — `--min` без `--run` не
+  проваливается по вине упавших гейтов вообще: тишина неотличима от успеха, тот самый принцип,
+  ради которого весь этот стандарт существует
 
 ## Чего в этом проекте нет
 
