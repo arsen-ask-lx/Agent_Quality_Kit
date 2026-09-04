@@ -1,7 +1,7 @@
 {
   "name": "agent-quality-kit",
-  "version": "0.4.1",
-  "description": "AQK — Agent Quality Kit: переносимый комплект, приводящий проект в состояние, пригодное для работы агентов. Правила, механические упоры, накопленные уроки. Одна команда, любой инструмент.",
+  "version": "0.4.2",
+  "description": "Turns the rules an agent is supposed to follow into commands with exit codes, and reports which of them actually run. Zero dependencies.",
   "type": "module",
   "bin": {
     "aqk": "tool/program.mjs"
@@ -34,7 +34,11 @@
     "codex",
     "cursor",
     "harness",
-    "repository-standard"
+    "repository-standard",
+    "agents-md",
+    "agents",
+    "github-action",
+    "npx"
   ],
   "knip": {
     "entry": [

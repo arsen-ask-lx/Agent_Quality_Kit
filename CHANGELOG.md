@@ -2,6 +2,18 @@
 
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/). Версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.4.2] — 2026-09-04
+
+### Изменено
+
+- **Описание пакета и репозитория — по-английски.** README перевели в 0.2.5, а две строки,
+  которые человек видит РАНЬШЕ любого README, остались русскими: описание в выдаче поиска npm
+  и подпись репозитория на GitHub. Кириллица в результатах поиска закрывает страницу до того,
+  как её открыли, — то самое рассуждение, ради которого README и переводили
+- Ключевые слова пакета и темы репозитория: добавлены `agents-md`, `agents`, `github-action`,
+  `npx`. Убрана тема `claude-code-plugin` — комплект плагином не является, а тема утверждала
+  обратное
+
 ## [0.4.1] — 2026-09-04
 
 ### Добавлено
@@ -204,6 +216,7 @@
   исправлены 2 дефекта: конвенция тестов Go (`*_test.go`), обёрнутые внешние ссылки в markdown
 - Полная самопроверка: 40 проверок в `smoke.sh`, 13 модульных тестов, 14 записей каталога
 
+[0.4.2]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.4.2
 [0.4.1]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.4.1
 [0.4.0]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.4.0
 [0.3.0]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.3.0
