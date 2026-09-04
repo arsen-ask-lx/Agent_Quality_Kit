@@ -9,7 +9,9 @@ for MD in "$DIR"/*.md; do
   # вытащить цели ссылок вида [текст](путь)
   TARGETS=$(sed -n 's/.*](\([^)]*\)).*/\1/p' "$MD")
   for T in $TARGETS; do
-    case "$T" in http*|\#*|mailto:*) continue ;; esac
+    # автоссылки бывают обёрнуты как <(https://...)> — искать http где угодно внутри,
+    # не только в начале строки.
+    case "$T" in *http://*|*https://*|\#*|mailto:*) continue ;; esac
     T=${T%%#*}
     [ -z "$T" ] && continue
     if [ ! -e "$DIR/$T" ]; then
