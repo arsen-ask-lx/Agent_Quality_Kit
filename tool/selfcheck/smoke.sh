@@ -399,6 +399,28 @@ else
 fi
 rm -rf "$FAKEHOME" "$D1" "$D2"
 
+# --- 25. ссылки в kit/docs/ не битые -----------------------------------------
+# entry-links-exist проверяет только корень проекта-получателя, а не kit/docs/ комплекта —
+# методички туда не попадают вовсе. Нашли переносом файла: ../app-owner-strategy.md указывал
+# мимо после того, как файл переехал в тот же каталог, что и index.md, — .md-ссылка молчала,
+# доктор комплекта не краснел, потому что не туда смотрит.
+BROKEN=0
+while IFS= read -r -d '' MD; do
+  DIR=$(dirname "$MD")
+  grep -oE '\]\([^)]+\.md[^)]*\)' "$MD" 2>/dev/null | sed -E 's/^\]\(//; s/\)$//' | while IFS= read -r LINK; do
+    TARGET="${LINK%%#*}"
+    [ -z "$TARGET" ] && continue
+    case "$TARGET" in http*) continue ;; esac
+    [ -e "$DIR/$TARGET" ] || echo "$MD -> $LINK"
+  done
+done < <(find "$ROOT/kit/docs" -name '*.md' -print0) > /tmp/aqk-broken-doc-links.$$
+if [ -s /tmp/aqk-broken-doc-links.$$ ]; then
+  bad "в kit/docs/ есть битые ссылки на .md" "$(cat /tmp/aqk-broken-doc-links.$$)"
+else
+  ok "ссылки в kit/docs/ не битые"
+fi
+rm -f /tmp/aqk-broken-doc-links.$$
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
