@@ -75,3 +75,38 @@ jobs:
       # коммита и какого прогона собран пакет. Проверить сборку можно не веря на слово.
       - name: публикация
         run: npm publish --provenance --access public
+
+  # Отдельным заданием, а не шагом выше, ради прав: создать релиз нельзя без contents: write,
+  # а давать право записи тому же заданию, которое публикует пакет, незачем. Здесь право есть,
+  # но нет ни OIDC, ни доступа к реестру.
+  #
+  # ЗАЧЕМ ВООБЩЕ. Метка v0.2.3 однажды осталась без релиза и без выпуска: снаружи версия
+  # выглядела существующей, а её не было. Пока релиз делают руками, такое повторится.
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Раздел этой версии из журнала изменений — он и есть заметки к релизу. Держать второй
+      # текст «что нового» отдельно от первого значит однажды их рассинхронизировать.
+      - name: заметки из журнала изменений
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          awk -v v="$V" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/         { exit }
+            on                     { print }
+          ' CHANGELOG.md > NOTES.md
+          if [ ! -s NOTES.md ]; then
+            echo "в CHANGELOG.md нет раздела для версии $V — релиз без заметок не создаём"
+            exit 1
+          fi
+          printf '\n```bash\nnpx agent-quality-kit doctor\n```\n' >> NOTES.md
+
+      - name: релиз на GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file NOTES.md
