@@ -1,6 +1,6 @@
 {
   "name": "agent-quality-kit",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "AQK — Agent Quality Kit: переносимый комплект, приводящий проект в состояние, пригодное для работы агентов. Правила, механические упоры, накопленные уроки. Одна команда, любой инструмент.",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
     "tool",
     "kit",
     "README.md",
+    "README.ru.md",
     "LICENSE"
   ],
   "engines": {
