@@ -34,14 +34,29 @@ async function installGate(slug, man, facts) {
 
   // Общий список исключений едет вместе с проверкой: без него она читает окружение и
   // зависимости, и человек получает тысячу чужих нарушений вместо сотни своих.
-  const skipSrc = join(GATES_SRC, "_skip.sh");
-  if (await exists(skipSrc)) await copyFile(skipSrc, join(CWD, PROJECT_GATES, "_skip.sh"));
+  for (const helper of ["_skip.sh", "_native.sh"]) {
+    const from = join(GATES_SRC, helper);
+    if (await exists(from)) await copyFile(from, join(CWD, PROJECT_GATES, helper));
+  }
 
   // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
-  const cmd = String(pickRecipe(rec, facts) || "")
+  const picked = String(pickRecipe(rec, facts) || "");
+  let cmd = picked
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
   if (!cmd) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
+
+  // Родной инструмент не знает про наши образцы и выдаёт их как находки — в любом проекте,
+  // куда поставили гейты. Заворачиваем его в общий фильтр. Переносимая проверка фильтрует
+  // себя сама, её заворачивать незачем.
+  //
+  // Обёртка ставится ЗДЕСЬ, а не в самом рецепте, ровно по одной причине: приёмка каталога
+  // (`gates.sh`) гоняет рецепт по красному образцу напрямую, без обёртки, — и продолжает
+  // видеть то, что должна. Статичный флаг исключения в рецепте спрятал бы образец от
+  // приёмки, и запись прошла бы зелёной на красном.
+  const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+  const isPortable = picked === String(recipes.any || "");
+  if (!isPortable) cmd = `bash ${PROJECT_GATES}/_native.sh . ${cmd}`;
 
   const manPath = join(CWD, MANIFEST);
   const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);

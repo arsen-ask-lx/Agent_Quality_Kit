@@ -624,6 +624,31 @@ else
 fi
 rm -rf "$IGNDIR"
 
+# --- 37. родной рецепт не ругается на образцы гейтов --------------------------
+# ЗАЧЕМ. Переносимая проверка прячет gates/<имя>/red|green через own_samples_filter, а родной
+# инструмент о них не знает и выдаёт их как находки — в ЛЮБОМ проекте, куда поставили гейты.
+# Всплыло, только когда починка поиска программ в PATH сделала родные рецепты достижимыми:
+# до этого они молча не запускались. Гейт, который на 90% состоит из своих же образцов,
+# выключают целиком — см. журнал, 2026-09-04.
+if command -v vulture >/dev/null 2>&1; then
+  NATDIR="$(mktemp -d)"
+  (
+    cd "$NATDIR" && git init -q . && git config user.email t@t && git config user.name t &&
+    mkdir -p src && printf 'def used():\n    return 1\n\nprint(used())\n' > src/ok.py &&
+    node "$CLI" init >/dev/null 2>&1 && node "$CLI" add dead-code >/dev/null 2>&1
+  )
+  NAT_CMD=$(sed -n 's/^  dead-code: "\(.*\)"$/\1/p' "$NATDIR/.aqk.yml")
+  NAT_OUT=$( cd "$NATDIR" && eval "$NAT_CMD" 2>&1 )
+  if printf '%s' "$NAT_OUT" | grep -q 'gates/'; then
+    bad "родной рецепт выдаёт образцы гейтов как находки" "$(printf '%s' "$NAT_OUT" | head -2)"
+  else
+    ok "родной рецепт не ругается на образцы гейтов"
+  fi
+  rm -rf "$NATDIR"
+else
+  ok "родной рецепт не проверен здесь — нет vulture"
+fi
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
