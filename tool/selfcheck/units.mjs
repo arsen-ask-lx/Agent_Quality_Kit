@@ -12,8 +12,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
-import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
+import { dirname } from "node:path";
 
 const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
 
@@ -152,4 +153,28 @@ test("язык берётся из AQK_LANG, потом из локали, ин�
   assert.equal(pickLang({ LC_ALL: "ru_RU.UTF-8", LANG: "en_US.UTF-8" }), "ru");
   assert.equal(pickLang({ LANG: "de_DE.UTF-8" }), "en");
   assert.equal(pickLang({}), "en");
+});
+
+// --- поиск программы в PATH ---------------------------------------------------
+// ЗАЧЕМ. Раньше наличие программы проверялось через `command -v` в оболочке. На Windows
+// оболочка — cmd.exe, где такой команды нет, и ответ был «не установлено» ДЛЯ ЛЮБОЙ
+// программы: родной рецепт становился недостижим, гейт молча вставал на слабейший
+// переносимый вариант, а прогон показывал зелёное. Нашлось на чужом прогоне, не у нас.
+test("программа в PATH находится, несуществующая — нет", () => {
+  assert.ok(whichSync("node"), "node обязан находиться: им же запущена эта проверка");
+  assert.equal(whichSync("нет-такой-программы-12345"), null);
+  assert.equal(whichSync(""), null);
+});
+
+test("поиск не зависит от оболочки — работает с пустым окружением", () => {
+  // Тот самый случай: оболочки нет или она другая. Ответ обязан быть «не нашли»,
+  // а не исключение и не ложное «нашли».
+  assert.equal(whichSync("node", { PATH: "" }), null);
+  const dir = dirname(process.execPath);
+  assert.ok(whichSync(process.platform === "win32" ? "node" : "node", { PATH: dir }));
+});
+
+test("команда путём, а не именем, ищется на диске, а не в PATH", () => {
+  assert.ok(whichSync(process.execPath));
+  assert.equal(whichSync("./нет-такого-файла.sh"), null);
 });

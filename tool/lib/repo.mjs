@@ -2,6 +2,7 @@
 // триггера, выбор рецепта, сверка по намерению.
 
 import { readdir, readFile } from "node:fs/promises";
+import { existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, GATES_SRC, c, exists } from "./core.mjs";
@@ -168,6 +169,34 @@ function triggerVerdict(rec, facts) {
   return { applies: true };
 }
 
+// Есть ли такая программа в PATH. Своим обходом, а не `command -v`: на Windows оболочка —
+// cmd.exe, где такой команды нет вовсе, и проверка возвращала «не установлено» ДЛЯ ЛЮБОЙ
+// программы. Следствие было тихим и потому худшим: родной рецепт (ruff, eslint, jscpd) там
+// недостижим в принципе, гейт молча вставал на слабейший переносимый вариант, а `doctor --run`
+// показывал зелёное. Нашлось только на чужом прогоне — журнал, 2026-09-04.
+function whichSync(prog, env = process.env) {
+  if (!prog) return null;
+  // Путь, а не имя: команду вроде ./scripts/check.sh искать в PATH бессмысленно.
+  if (prog.includes("/") || prog.includes("\\")) return existsSync(prog) ? prog : null;
+
+  const sep = process.platform === "win32" ? ";" : ":";
+  const dirs = String(env.PATH || env.Path || "").split(sep).filter(Boolean);
+  // На Windows исполняемость задаёт расширение, а не флаг доступа: ruff — это ruff.exe.
+  const exts = process.platform === "win32"
+    ? String(env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean)
+    : [""];
+
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      const full = join(dir.replace(/^"|"$/g, ""), prog + ext);
+      try {
+        if (statSync(full).isFile()) return full;
+      } catch { /* нет такого файла — идём дальше, это не ошибка */ }
+    }
+  }
+  return null;
+}
+
 // Арбитр под стек этого проекта: сначала родной рецепт, иначе — переносимый `any`.
 // Подсказка, которую нельзя скопировать и выполнить, бесполезна.
 // Выбор рецепта под стек проекта. Одна логика на два места: и `doctor`, и `add` показывают
@@ -179,10 +208,7 @@ function pickRecipe(rec, facts) {
   // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
   // команду с неустановленной программой значит завести гейт, который встаёт с «not found»:
   // отсутствие сигнала неотличимо от успеха.
-  const runnable = (c0) => {
-    const prog = String(c0).trim().split(/\s+/)[0];
-    return spawnSync(`command -v ${prog}`, { shell: true, stdio: "ignore" }).status === 0;
-  };
+  const runnable = (c0) => Boolean(whichSync(String(c0).trim().split(/\s+/)[0]));
   for (const lang of facts.langs) {
     if (!recipes[lang]) continue;
     if (runnable(recipes[lang])) return recipes[lang];
@@ -262,6 +288,7 @@ async function matchCatalog(query) {
 // Наружу — то, что действительно импортируют другие файлы и модульные проверки. Экспорт,
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
+  whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor,
   stems, overlap, matchCatalog,
 };
