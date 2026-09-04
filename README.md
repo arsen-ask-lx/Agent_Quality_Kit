@@ -22,6 +22,33 @@ Nothing to install — `npx` fetches the package itself (230 KB). The bleeding e
 the repository is `npx github:arsen-ask-lx/Agent_Quality_Kit doctor`, but the first run that way
 stays silent for two or three minutes: it clones the whole repository.
 
+## What this looks like
+
+Someone else's project, three files, nothing configured:
+
+```console
+$ npx agent-quality-kit start        # installs the guards and declares them in the manifest
+$ npx agent-quality-kit doctor --run # runs them
+
+  ✘  secrets-not-in-code   exit 1
+        ./src/api/mailer.py:1:API_KEY = "sk_live_51Hxx…"
+          fix: take the value out of the file, put it in an environment variable
+          and revoke the old key. it cannot be scrubbed from history any more.
+  ✘  swallowed-error       exit 1
+        ./src/api/mailer.py:7: caught and dropped — except Exception:
+          fix: either handle it and log it, or re-raise.
+  ✘  no-print-in-prod      exit 1
+        ./src/web/app.js:3:  console.log("debug", x);
+        ./src/api/mailer.py:8:    print("sent", to)
+  ✘  todo-without-task     exit 1
+        ./src/web/app.js:1:// TODO: rewrite this
+  ✔  file-size-limit · entry-links-exist · complexity-limit
+```
+
+The failure text is written for an agent: it says **what exactly to do**. The exit code is for
+your pipeline. Not one finding inside the kit's own samples: the native tool runs through the
+same filter as the portable check.
+
 **Requirements.** Node 18+ and an `sh` shell — present on macOS, Linux and WSL; Git Bash works on
 Windows. The portable checks are written in `sh` on purpose: it exists everywhere code is built.
 
@@ -34,6 +61,18 @@ an issue, once. Nothing is posted anywhere — it is text for a human, and it ne
 without them; if the project already has `ruff`, `eslint` or `vulture`, the entry will use the
 native rule instead — it is more precise. One entry, `dead-code`, does not work at all without a
 real tool and honestly hides itself: you cannot build a call graph with a text search.
+
+## What this is not
+
+| Looks like | The difference |
+|---|---|
+| **a linter** (`ruff`, `eslint`) | AQK does not replace them, it **uses** them: if the tool is on the system, the entry takes its rule — it is more precise. A linter answers "this code is clean"; AQK answers "in this repository, this particular promise is held by a machine, and here is the proof" |
+| **`pre-commit` and hooks** | they run checks. AQK answers a different question: which checks exist here at all, whether they work, and what this project has already been burned by — machine-readably, for an agent, a pipeline and a newcomer |
+| **a checklist or an awesome list** | an entry is accepted only if it names a **real failure** it caught, and its arbiter goes red on the red sample and stays quiet on the green one. A machine checks that, not a reviewer |
+| **a repository scorecard** (compliance badges) | they measure maturity and hand out a grade. The AQK level measures how **machine-readable** your practice is, and says outright that it is not a verdict on the project: a hundred working checks with no manifest is AQK-0 |
+
+In one sentence: **a promise the project makes turns into a command with an exit code, and from
+then on a machine holds it, not somebody's attention.**
 
 ## How it works
 
