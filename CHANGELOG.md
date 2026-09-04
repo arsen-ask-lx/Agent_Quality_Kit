@@ -2,6 +2,20 @@
 
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/). Версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.2.3] — 2026-09-04
+
+### Добавлено
+
+- Комплект опубликован в npm: `npx agent-quality-kit doctor`. Пакет — 230 КБ вместо клона всего
+  репозитория, поэтому первая команда отвечает сразу, а не после двух-трёх минут тишины
+
+### Изменено
+
+- Программа печатает в подсказках короткую форму вызова, а не адрес репозитория: подсказку
+  копируют и выполняют, и она должна быть той, которой пользуются
+- `repository.url`, `homepage`, `bugs` в `package.json` — npm поправлял первое сам при каждой
+  публикации, остальных не было вовсе
+
 ## [0.2.2] — 2026-09-04
 
 ### Исправлено
@@ -84,6 +98,7 @@
   исправлены 2 дефекта: конвенция тестов Go (`*_test.go`), обёрнутые внешние ссылки в markdown
 - Полная самопроверка: 40 проверок в `smoke.sh`, 13 модульных тестов, 14 записей каталога
 
+[0.2.3]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.2.3
 [0.2.2]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.2.2
 [0.2.1]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.2.1
 [0.2.0]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.2.0

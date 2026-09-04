@@ -9,10 +9,10 @@
 // цепочке поставок. Инструмент, который ставят одной командой в чужой проект, обязан быть
 // проверяемым глазами за один присест.
 //
-//   npx github:arsen-ask-lx/Agent_Quality_Kit init     разложить комплект в текущий проект
-//   npx github:arsen-ask-lx/Agent_Quality_Kit init --force   перезаписать уже существующие файлы
-//   npx github:arsen-ask-lx/Agent_Quality_Kit note "..."     записать урок в общий журнал
-//   npx github:arsen-ask-lx/Agent_Quality_Kit doctor   проверить, что разложено и чего не хватает
+//   npx agent-quality-kit init     разложить комплект в текущий проект
+//   npx agent-quality-kit init --force   перезаписать уже существующие файлы
+//   npx agent-quality-kit note "..."     записать урок в общий журнал
+//   npx agent-quality-kit doctor   проверить, что разложено и чего не хватает
 
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -74,7 +74,7 @@ if (IS_MAIN) {
     ${c.bold(`${SELF} note`)} "…"        записать урок в общий журнал шишек
     ${c.bold(`${SELF} blob`)}            собрать методички в один файл GOD_AI.md
 
-  ${c.dim("Без установки:  npx github:arsen-ask-lx/Agent_Quality_Kit init")}
+  ${c.dim("Без установки:  npx agent-quality-kit init")}
   `);
       process.exit(cmd ? 1 : 0);
   }
