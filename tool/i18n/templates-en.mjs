@@ -60,6 +60,12 @@ actually work for you.
 **A defect of the same class repeating is not a reason to be more careful — it is a reason to add
 a check.** Discipline does not scale; mechanics do.
 
+## Third-party code inside the repository
+
+Code that lives here but was not written here (a reference copy, vendored code, generated
+clients) is excluded with \`.aqkignore\` in the root — one pattern per line. Editing the copy of
+\`_skip.sh\` is not configuration: the next \`aqk add\` overwrites it.
+
 ## Where things live
 
 - \`.aqk/rules/\` — standards: general, tests, security

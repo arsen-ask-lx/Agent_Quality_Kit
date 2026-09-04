@@ -13,7 +13,7 @@
 // Она печатает список — дальше отвечает человек или агент. Разница между «не прочитал» и
 // «прочитал и решил не применять» машине не видна, и притворяться иначе было бы враньём.
 
-import { mkdir, writeFile, readdir } from "node:fs/promises";
+import { mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
@@ -155,6 +155,22 @@ async function cmdReport() {
   }
   say("");
   say(`> ${L.report2.readWarn}`);
+
+  say("");
+  say(`## ${L.report2.ignoreTitle}`);
+  say("");
+  // Читаем тем же способом, каким это делает _skip.sh: комментарии и пустые строки прочь.
+  let ignored = [];
+  try {
+    ignored = (await readFile(join(CWD, ".aqkignore"), "utf8"))
+      .split("\n").map((l) => l.replace(/#.*$/, "").trim()).filter(Boolean);
+  } catch { /* файла нет — это норма, а не ошибка */ }
+  if (!ignored.length) say(`- ✅ ${L.report2.ignoreNone}`);
+  for (const pat of ignored) say(`- 🚫 ${pat}`);
+  if (ignored.length) {
+    say("");
+    say(`> ${L.report2.ignoreWarn}`);
+  }
 
   say("");
   say(`## ${L.report2.whyTitle}`);

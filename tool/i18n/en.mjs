@@ -374,6 +374,11 @@ export const en = {
     readWarn:
       "The mark only means the file is on disk. Whether it was read, the machine does not know " +
       "and does not pretend to: that is answered by whoever is reporting.",
+    ignoreTitle: "What .aqkignore hides",
+    ignoreNone: "no .aqkignore file — nothing is hidden",
+    ignoreWarn:
+      "Hiding things silently is the same class as a silent gate: the gates do not look at these " +
+      "paths at all. A line here means there is no protection there, and will not be.",
     whyTitle: "Why this matters — briefly",
     whyNothing: "nothing to add: everything applicable is in place",
     saved: (path) => `Saved: ${path}`,

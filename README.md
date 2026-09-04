@@ -104,6 +104,23 @@ let it grow. The rule applies from the day it is installed — the old code stay
 via `npx` the package is temporary, and tomorrow the command in your manifest would point at
 nothing.
 
+## Third-party code inside the repository
+
+A reference copy, vendored code, generated clients — code that lives here but was not written
+here. The scanning checks will skip it if you add `.aqkignore` in the root: one pattern per line,
+`#` starts a comment, and `*` does not cross `/`.
+
+```
+# brought in from another repository
+third-party/
+vendor/
+*.generated.js
+```
+
+`aqk report` prints the contents of this file as its own section. Hiding things silently is the
+same class as a silent gate: a line here means there is no protection along that path, and will
+not be.
+
 ## The catalogue of promises
 
 `doctor` inspects the repository — languages, existing gates — and shows **only what applies**:

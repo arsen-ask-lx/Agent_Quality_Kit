@@ -604,6 +604,26 @@ else
 fi
 rm -rf "$NOTEDIR" "$NOTEHOME"
 
+# --- 36. .aqkignore прячет принесённый извне код ------------------------------
+# ЗАЧЕМ. В чужом проекте референс, принесённый из другого репозитория, попадал в находки
+# всех сканирующих гейтов. Единственным лечением была правка КОПИИ _skip.sh в проекте —
+# то есть настройка правкой чужого файла, которую затрёт следующий `aqk add`.
+IGNDIR="$(mktemp -d)"
+mkdir -p "$IGNDIR/third-party/inner" "$IGNDIR/src"
+printf 'def f():\n    print("свой")\n' > "$IGNDIR/src/mine.py"
+printf 'def f():\n    print("чужой")\n' > "$IGNDIR/third-party/inner/theirs.py"
+OUT_BEFORE="$(bash "$ROOT/kit/gates/no-print-in-prod/check.sh" "$IGNDIR" 2>&1)"
+printf '# принесено из другого репозитория\nthird-party/\n' > "$IGNDIR/.aqkignore"
+OUT_AFTER="$(bash "$ROOT/kit/gates/no-print-in-prod/check.sh" "$IGNDIR" 2>&1)"
+if printf '%s' "$OUT_BEFORE" | grep -q 'theirs.py' &&
+   ! printf '%s' "$OUT_AFTER" | grep -q 'theirs.py' &&
+   printf '%s' "$OUT_AFTER" | grep -q 'mine.py'; then
+  ok ".aqkignore прячет чужой код и не трогает свой"
+else
+  bad ".aqkignore не работает" "до: $(printf '%s' "$OUT_BEFORE" | head -2) | после: $(printf '%s' "$OUT_AFTER" | head -2)"
+fi
+rm -rf "$IGNDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
