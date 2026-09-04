@@ -8,10 +8,18 @@
 # на что стоит потратить внимание сейчас, а не через неделю.
 #
 # СЕКРЕТЫ (Settings → Secrets and variables → Actions в этом репозитории):
-#   ANTHROPIC_API_KEY   — ключ для api.anthropic.com
-#   TELEGRAM_BOT_TOKEN  — токен бота, выданный @BotFather
-#   TELEGRAM_CHAT_ID    — куда слать (свой user id или id чата)
+#   CLAUDE_CODE_OAUTH_TOKEN — токен подписки Claude Code: `claude setup-token` в терминале,
+#                             где уже выполнен `claude login`. Не платный API-ключ — свой лимит.
+#   TELEGRAM_BOT_TOKEN      — токен бота, выданный @BotFather
+#   TELEGRAM_CHAT_ID        — куда слать (свой user id или id чата)
 # Без любого из трёх шаг доставки просто промолчит — это не авария конвейера.
+#
+# ПОЧЕМУ ПРАВА НА ЗАПИСЬ НЕ ВЫДАНЫ. `claude-code-action` — полноценный агент: у него есть свои
+# инструменты для комментариев и правок. Мы зовём его только спросить вердикт, а не действовать
+# от имени проекта. Отключать это официальным флагом ненадёжно — того стоило бы гадание по
+# недокументированному поведению, а не проверка. Вместо этого правим то, что можно проверить
+# самим механизмом GitHub: у токена `permissions:` ниже нет прав записи, значит попытка что-то
+# опубликовать — если агент вообще её предпримет — провалится на уровне API, а не на честном слове.
 
 name: разбор обратной связи
 
@@ -77,54 +85,38 @@ jobs:
             echo "AQKEOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: спросить нейросеть, стоит ли смотреть
+      - name: спросить Claude Code по подписке, стоит ли смотреть
         id: ask
         if: steps.gather.outputs.title != ''
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          KIND: ${{ steps.gather.outputs.kind }}
-          TITLE: ${{ steps.gather.outputs.title }}
-          BODY: ${{ steps.gather.outputs.body }}
-        run: |
-          set -eu
-          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-            echo "verdict=нет" >> "$GITHUB_OUTPUT"
-            echo "reason=ANTHROPIC_API_KEY не задан" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          SYSTEM='Ты разбираешь входящие issue и pull request репозитория AQK — CLI-инструмента,
-          который проверяет готовность проекта к работе AI-агентов набором гейтов (скриптов-сторожей).
-          Тебе показывают заголовок и текст одного обращения. Ответь СТРОГО в две строки, без другого текста:
-          ВЕРДИКТ: да — если это похоже на настоящий баг, воспроизводимую поломку или разумный PR с правкой;
-          ВЕРДИКТ: нет — если это спам, дубликат, вопрос без сути, оффтоп или неясно без диалога.
-          Вторая строка: ПРИЧИНА: одно короткое предложение почему.'
-          PAYLOAD=$(jq -n --arg sys "$SYSTEM" --arg kind "$KIND" --arg title "$TITLE" --arg body "$BODY" '{
-            model: "claude-opus-5",
-            max_tokens: 300,
-            system: $sys,
-            output_config: { effort: "low" },
-            messages: [{ role: "user", content: ("Тип: " + $kind + "\nЗаголовок: " + $title + "\nТекст:\n" + $body) }]
-          }')
-          RESP=$(curl -sS https://api.anthropic.com/v1/messages \
-            -H "x-api-key: $ANTHROPIC_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d "$PAYLOAD")
-          TEXT=$(echo "$RESP" | jq -r '[.content[]? | select(.type=="text") | .text] | join("\n")')
-          VERDICT=$(echo "$TEXT" | grep -i '^ВЕРДИКТ:' | head -1 | sed -E 's/^ВЕРДИКТ:[[:space:]]*//i' | tr '[:upper:]' '[:lower:]')
-          REASON=$(echo "$TEXT" | grep -i '^ПРИЧИНА:' | head -1 | sed -E 's/^ПРИЧИНА:[[:space:]]*//i')
-          echo "verdict=${VERDICT:-нет}" >> "$GITHUB_OUTPUT"
-          echo "reason=${REASON:-разбор не удался: $(echo "$RESP" | jq -c '.error // empty')}" >> "$GITHUB_OUTPUT"
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Разбери одно обращение в репозиторий AQK — CLI, который проверяет готовность проекта
+            к работе AI-агентов набором гейтов (скриптов-сторожей). Только оцени, ничего не меняй:
+            не редактируй файлы, не создавай ветки, не публикуй комментарии.
+
+            Тип: ${{ steps.gather.outputs.kind }}
+            Заголовок: ${{ steps.gather.outputs.title }}
+            Текст:
+            ${{ steps.gather.outputs.body }}
+
+            Реши: это похоже на настоящий баг, воспроизводимую поломку или разумный PR с правкой —
+            или это спам, дубликат, вопрос без сути, оффтоп, неясно без диалога.
+          claude_args: |
+            --max-turns 1
+            --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["да","нет"]},"reason":{"type":"string","description":"одно короткое предложение по-русски"}},"required":["verdict","reason"]}'
 
       - name: сообщить в Telegram
-        if: steps.ask.outputs.verdict == 'да'
+        if: steps.ask.outcome == 'success' && fromJSON(steps.ask.outputs.structured_output || '{}').verdict == 'да'
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           KIND: ${{ steps.gather.outputs.kind }}
           TITLE: ${{ steps.gather.outputs.title }}
           URL: ${{ steps.gather.outputs.url }}
-          REASON: ${{ steps.ask.outputs.reason }}
+          REASON: ${{ fromJSON(steps.ask.outputs.structured_output).reason }}
         run: |
           set -eu
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
