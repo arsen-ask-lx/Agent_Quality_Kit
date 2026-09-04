@@ -448,6 +448,20 @@ else
 fi
 rm -rf "$REDDIR"
 
+# --- 28. note требует ту же отметку, что потом проверяет lesson-has-outcome -
+# Раньше note принимал любой текст со словом "вывод" — запись проходила note и тут же
+# краснела на doctor --run, потому что гейт требует одну из трёх настоящих отметок.
+NOTEJ="$(mktemp -d)"
+( cd "$NOTEJ" && git init -q . && git config user.email t@t.com && git config user.name t \
+  && mkdir -p incidents && echo "# Журнал" > incidents/README.md && git add -A && git commit -q -m init )
+NOWORD=$(cd /tmp && AQK_HOME="$NOTEJ" sh -c 'echo "слово вывод здесь есть, но отметки нет" | node "'"$CLI"'" note "без отметки"' 2>&1; echo "EXIT:$?")
+if printf '%s' "$NOWORD" | grep -q "EXIT:0"; then
+  bad "note принял запись без настоящей отметки решения" "$(printf '%s' "$NOWORD" | head -3)"
+else
+  ok "note требует настоящую отметку (✅🔧📜👤), не просто слово «вывод»"
+fi
+rm -rf "$NOTEJ"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
