@@ -10,7 +10,7 @@ DIR="${1:-.}"
 # Один обход и один wc на все файлы разом: на проекте в 36 тысяч файлов цикл с wc на каждый
 # не укладывался в две минуты.
 # shellcheck disable=SC2046
-find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code \
+find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r wc -l 2>/dev/null \
   | awk '

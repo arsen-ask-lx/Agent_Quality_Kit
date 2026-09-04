@@ -8,7 +8,7 @@ DIR="${1:-.}"
 # когда проверяют сам образец: тогда каталог red и есть цель проверки.
 HITS=$(grep -rInE $(skip_grep "$DIR") -e \
   '-----BEGIN [A-Z ]*PRIVATE KEY-----|(sk|pk)_(live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}' \
-  "$DIR" 2>/dev/null | grep -v '/\.git/')
+  "$DIR" 2>/dev/null | grep -v '/\.git/' | own_samples_filter "$DIR")
 if [ -n "$HITS" ]; then
   echo "$HITS" | cut -c1-160
   echo "  почини: убери значение из файла, положи его в переменную окружения и отзови старый ключ."

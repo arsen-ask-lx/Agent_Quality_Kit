@@ -7,12 +7,11 @@ DIR="${1:-.}"
 # Список файлов собираем заранее. awk без файловых аргументов читает поток ввода и ждёт его
 # вечно: на проекте без файлов этих языков проверка зависала навсегда — в конвейере и в хуке
 # коммита, где поток ввода открыт. Найдено прогоном по проекту на Go.
-FILES=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code)
+FILES=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code | own_samples_filter "$DIR")
 [ -z "$FILES" ] && exit 0
 
 printf '%s\n' "$FILES" | xargs -r awk '
   FILENAME ~ /\/(\.git|\.aqk|node_modules|dist|build|vendor)\// { next }
-  SKIPRED == 1 && FILENAME ~ /\/red\// { next }
 
   # python: except ...: с пустым телом
   prev ~ /^[[:space:]]*except([[:space:]]|:)/ && $0 ~ /^[[:space:]]*(pass|\.\.\.)[[:space:]]*$/ {
@@ -42,7 +41,7 @@ printf '%s\n' "$FILES" | xargs -r awk '
     print FILENAME ":" FNR ": перехват без обработки — " gensub(/^[[:space:]]+/, "", 1, $0)
   }
   { prev = $0 }
-' SKIPRED="$(case "$DIR" in *red) echo 0 ;; *) echo 1 ;; esac)" > /tmp/.swallowed.$$ 2>/dev/null
+' > /tmp/.swallowed.$$ 2>/dev/null
 
 if [ -s /tmp/.swallowed.$$ ]; then
   cat /tmp/.swallowed.$$

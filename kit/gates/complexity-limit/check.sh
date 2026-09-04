@@ -10,7 +10,7 @@ DIR="${1:-.}"
 MAX="${AQK_MAX_DEPTH:-5}"
 
 # shellcheck disable=SC2046
-find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code \
+find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r awk -v MAX="$MAX" '
         # Один обход на все файлы: процесс на каждый файл дал 19 секунд на 4000 файлов.

@@ -27,7 +27,7 @@ TOOLING="--exclude-dir=scripts --exclude-dir=tools --exclude-dir=bin --exclude-d
 for D in ${AQK_PRINT_OK_DIRS:-}; do
   TOOLING="$TOOLING --exclude-dir=$D"
 done
-HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\(|fmt\.Print|println!|print!|dbg!|System\.out\.print|Console\.Write)' "$DIR" 2>/dev/null | drop_comments)
+HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) $TOOLING '(^|[^A-Za-z_.])(print\(|console\.log\(|fmt\.Print|println!|print!|dbg!|System\.out\.print|Console\.Write)' "$DIR" 2>/dev/null | drop_comments | own_samples_filter "$DIR")
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: замени на вызов системы логов — тогда запись попадёт в общий журнал и уровень можно приглушить."

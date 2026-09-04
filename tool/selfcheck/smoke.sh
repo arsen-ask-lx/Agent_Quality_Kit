@@ -432,6 +432,22 @@ else
   bad "doctor не печатает версию" "package.json: $PKGVER; шапка doctor: $(printf '%s' "$DOCVER" | tr '\n' ' ')"
 fi
 
+# --- 27. пользовательская red/green не путается с образцами каталога -------
+# `--exclude-dir=red` смотрит только на имя папки, не на путь — реальный секрет в чужой red/
+# (red-team тесты, что угодно) был невидим во всех проектах, куда ставили гейт. Проверка на
+# самом опасном случае: secrets-not-in-code.
+REDDIR="$(mktemp -d)"
+mkdir -p "$REDDIR/red"
+# Собран из частей, а не написан буквально: иначе secrets-not-in-code находит эту строку
+# в собственном исходнике smoke.sh — гейт теперь смотрит по всему дереву, включая себя.
+printf 'AKIA%s\n' 'ABCDEFGHIJKLMNOP' > "$REDDIR/red/config.py"
+if bash "$ROOT/kit/gates/secrets-not-in-code/check.sh" "$REDDIR" >/dev/null 2>&1; then
+  bad "секрет в пользовательской red/ невидим" "own_samples_filter смотрит по имени, не по пути"
+else
+  ok "секрет в пользовательской red/ виден (не путается с образцами каталога)"
+fi
+rm -rf "$REDDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
