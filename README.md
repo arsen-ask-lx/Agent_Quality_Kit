@@ -1,3 +1,13 @@
+```
+ █████╗   ██████╗ ██╗  ██╗
+██╔══██╗ ██╔═══██╗██║ ██╔╝
+███████║ ██║   ██║█████╔╝
+██╔══██║ ██║▄▄ ██║██╔═██╗
+██║  ██║ ╚██████╔╝██║  ██╗
+╚═╝  ╚═╝  ╚══▀▀═╝ ╚═╝  ╚═╝
+   a promise without an exit code is just a sentence
+```
+
 # AQK — Agent Quality Kit
 
 **English** · [Русский](README.ru.md)
@@ -10,6 +20,17 @@
 **A standard for whether a repository is ready to have its code written by agents.** Every
 promise the project makes turns into a command with an exit code — held by a machine, not by
 someone's good intentions.
+
+```
+        promise                   command                  fact
+  ┌──────────────────┐     ┌──────────────────┐     ┌──────────────┐
+  │    AGENTS.md     │     │     .aqk.yml     │     │  exit code   │
+  │  "never commit   │ ──▶ │  secrets-not-in- │ ──▶ │   0  or  1   │
+  │     secrets"     │     │  code: bash …    │     │              │
+  └──────────────────┘     └──────────────────┘     └──────────────┘
+    a human reads it        a machine holds it        CI acts on it
+     and may ignore it       and cannot forget        and cannot argue
+```
 
 What a project needs before that is even possible, in plain words, independent of language and
 tooling: [the dark factory and the minimum that isn't optional](kit/docs/ai/project-baseline.md).
