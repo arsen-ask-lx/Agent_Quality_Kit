@@ -22,7 +22,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # Два коммита, а не один: по умолчанию checkout берёт мелкий клон, в котором у коммита
+      # не видно родителя и состав изменений не определить. Гейт commit-explains-itself в таком
+      # клоне честно пропускает себя — то есть здесь бы не проверял ничего.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
