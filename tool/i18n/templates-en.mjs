@@ -42,6 +42,7 @@ Running them is your job. The human looks at the list of holes and decides which
 | \`aqk find "…"\` | searches by meaning for an existing check | before inventing your own |
 | \`aqk note "…"\` | writes a lesson into the shared journal | the process or an instrument let you down: a check lied, a rule was bypassed |
 | \`aqk report\` | assembles a report from an actual run: what is in place and with which recipe, what is missing, what the kit told you to read | **mandatory** at the end of working with the kit — instead of a summary from memory |
+| \`aqk badge\` | prints a level badge for the README — but only after running the declared gates, and stays silent over a red one; \`--check\` fails the pipeline when the badge stops matching the run | the human asked to show the level, or you are setting up CI |
 
 If there is no \`aqk\` command on the system, the kit was used without installing. Then write
 \`npx agent-quality-kit\` instead of \`aqk\`. Every command prints the invocation that will

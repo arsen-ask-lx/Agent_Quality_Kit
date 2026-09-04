@@ -361,7 +361,7 @@ export const en = {
     notReached: (cmd) => `AQK-0 is not reached — there is nothing to put on a badge. What is missing: ${cmd}`,
     redGates: (n, names) =>
       `Red gates: ${n} (${names}). A badge issued over a red gate is the author's claim, not a machine's fact.`,
-    hint: (n) => `Proven by a run: ${n} gates, all green. Paste the line above into your README.`,
+    hint: (n) => `Proven by a run. Green gates: ${n}. Paste the line above into your README.`,
     keepTrue: (cmd) => `To keep the badge from turning into a lie, put this in your pipeline: ${cmd}`,
     checkMissing: (places) => `No AQK badge in any of: ${places}. This is the line to paste:`,
     checkMismatch: (where, level) => `The badge lies: ${where}, while the run says AQK-${level}. Replace it with:`,

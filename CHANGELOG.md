@@ -2,6 +2,16 @@
 
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/). Версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.4.1] — 2026-09-04
+
+### Исправлено
+
+- `aqk badge` печатал «1 gates» и «гейтов 1, все зелёные» — согласование по числу ломалось
+  ровно в том случае, который увидит новый пользователь: один поставленный гейт. Формулировка
+  переписана так, что не зависит от числа
+- В таблице команд `AGENTS.md`, которую `init` кладёт в проект, не было `aqk badge` — агент,
+  которому велели показать уровень, о команде не узнавал
+
 ## [0.4.0] — 2026-09-04
 
 ### Добавлено
@@ -185,6 +195,7 @@
   исправлены 2 дефекта: конвенция тестов Go (`*_test.go`), обёрнутые внешние ссылки в markdown
 - Полная самопроверка: 40 проверок в `smoke.sh`, 13 модульных тестов, 14 записей каталога
 
+[0.4.1]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.4.1
 [0.4.0]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.4.0
 [0.3.0]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.3.0
 [0.2.5]: https://github.com/arsen-ask-lx/Agent_Quality_Kit/releases/tag/v0.2.5
