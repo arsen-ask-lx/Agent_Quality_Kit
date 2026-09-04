@@ -105,7 +105,7 @@ jobs:
             Реши: это похоже на настоящий баг, воспроизводимую поломку или разумный PR с правкой —
             или это спам, дубликат, вопрос без сути, оффтоп, неясно без диалога.
           claude_args: |
-            --max-turns 1
+            --max-turns 3
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["да","нет"]},"reason":{"type":"string","description":"одно короткое предложение по-русски"}},"required":["verdict","reason"]}'
 
       - name: сообщить в Telegram
@@ -116,7 +116,9 @@ jobs:
           KIND: ${{ steps.gather.outputs.kind }}
           TITLE: ${{ steps.gather.outputs.title }}
           URL: ${{ steps.gather.outputs.url }}
-          REASON: ${{ fromJSON(steps.ask.outputs.structured_output).reason }}
+          # Условие if: не мешает GitHub вычислить env: для этого шага заранее — падает
+          # на пустом structured_output того же класса, что и раньше (журнал, 2026-09-04).
+          REASON: ${{ fromJSON(steps.ask.outputs.structured_output || '{}').reason }}
         run: |
           set -eu
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
