@@ -3,6 +3,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, MANIFEST, PROJECT_GATES, exists } from "./core.mjs";
+import { L } from "../i18n/index.mjs";
 
 // СТАНДАРТ. Уровень — не самооценка и не галочка в README, а вычисляемое утверждение:
 // каждая ступень проверяется файлами на диске. Утверждение, которое нельзя проверить
@@ -75,36 +76,16 @@ async function assessLevel(man) {
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   const filledGates = Object.entries(gates).filter(([, cmd]) => String(cmd || "").trim());
 
-  const steps = [
-    {
-      level: 0,
-      title: "манифест и точка входа",
-      ok: Boolean(man?.aqk) && entriesExist,
-      need: "создай .aqk.yml и укажи в entry файл, который агент читает первым (AGENTS.md)",
-      gives: "любой инструмент понимает, что читать в этом репозитории",
-    },
-    {
-      level: 1,
-      title: "правила и работающие гейты",
-      ok: (await has(man?.rules)) && filledGates.length > 0,
-      need: "укажи rules (каталог стандартов) и заполни хотя бы один гейт в gates реальной командой",
-      gives: "проверки объявлены командами, а не описаны словами",
-    },
-    {
-      level: 2,
-      title: "гейты доказаны, долг под храповиком",
-      ok: (await has(man?.samples)) && (await has(man?.ratchets)),
-      need: "заведи samples (красные и зелёные образцы гейтов) и ratchets (реестры долга)",
-      gives: "гейт доказал, что ловит брак и молчит на исправном коде",
-    },
-    {
-      level: 3,
-      title: "уроки возвращаются в работу",
-      ok: isUrl(man?.lessons) || (await has(man?.lessons)),
-      need: "укажи lessons — путь или адрес журнала, где каждый инцидент даёт вывод",
-      gives: "проект учится: одна и та же шишка не набивается дважды",
-    },
+  // Условие ступени — здесь, её описание — в каталоге строк: текст переводится, условие нет.
+  // Разложить их по разным файлам стоило того, чтобы перевод не мог случайно поменять смысл
+  // проверки; порядок ступеней связывает их по индексу и сверяется модульной проверкой.
+  const conditions = [
+    Boolean(man?.aqk) && entriesExist,
+    (await has(man?.rules)) && filledGates.length > 0,
+    (await has(man?.samples)) && (await has(man?.ratchets)),
+    isUrl(man?.lessons) || (await has(man?.lessons)),
   ];
+  const steps = conditions.map((ok, level) => ({ level, ok, ...L.levels[level] }));
 
   let reached = -1;
   for (const s of steps) {

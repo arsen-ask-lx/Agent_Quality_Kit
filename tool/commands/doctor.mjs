@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
+import { L } from "../i18n/index.mjs";
 
 async function reportCatalog(man, facts) {
   const catalog = await readCatalog();
@@ -19,27 +20,27 @@ async function reportCatalog(man, facts) {
     else todo.push(rec);
   }
 
-  console.log(c.bold(`\n  Гейты\n`));
+  console.log(c.bold(`\n  ${L.doctor.gatesHeading}\n`));
   const marks = ["has_ci", "has_db", "has_docker", "has_tests", "has_deps"]
     .filter((k) => facts[k])
     .map((k) => k.replace("has_", ""));
   console.log(
-    c.dim(`  языки: ${[...facts.langs].join(", ") || "не определены"} · файлов: ${facts.files}` +
-      (marks.length ? ` · есть: ${marks.join(", ")}` : "") + "\n")
+    c.dim(`  ${L.doctor.langs}: ${[...facts.langs].join(", ") || L.doctor.langsUnknown} · ${L.doctor.files}: ${facts.files}` +
+      (marks.length ? ` · ${L.doctor.hasThings}: ${marks.join(", ")}` : "") + "\n")
   );
 
   for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
   for (const rec of todo) {
     console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
-    console.log(c.dim(`      поставить: ${SELF} add ${rec.slug}`));
+    console.log(c.dim(`      ${L.doctor.install(`${SELF} add ${rec.slug}`)}`));
   }
   if (skip.length) {
-    console.log(c.dim(`\n  Не применимо к этому репозиторию (${skip.length}):`));
+    console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
     for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
   }
   console.log(
-    `\n  ${c.bold("Итого:")} держит машина ${held.length}, применимо но не поставлено ${c.yellow(todo.length)}, ` +
-      c.dim(`скрыто ${skip.length}`) + "\n"
+    `\n  ${c.bold(L.doctor.total)} ${L.doctor.totalHeld(held.length)}, ${L.doctor.totalTodo(c.yellow(todo.length))}, ` +
+      c.dim(L.doctor.totalSkip(skip.length)) + "\n"
   );
 }
 
@@ -61,7 +62,7 @@ function runGates(man) {
   const gates = declaredGates(man);
   if (!gates.length) return { failed: 0, ran: 0, results: [] };
 
-  console.log(c.bold("\n  Прогон объявленных гейтов\n"));
+  console.log(c.bold(`\n  ${L.doctor.runHeading}\n`));
   let failed = 0;
   const results = [];
 
@@ -71,9 +72,9 @@ function runGates(man) {
     const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
 
     if (r.error && r.error.code === "ETIMEDOUT") {
-      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red("не уложился в 5 минут")}`);
+      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.timeout)}`);
       failed++;
-      results.push({ name, cmd, ok: false, secs, note: "не уложился в 5 минут" });
+      results.push({ name, cmd, ok: false, secs, note: L.doctor.timeout });
       continue;
     }
     const code = r.status;
@@ -83,9 +84,9 @@ function runGates(man) {
     } else {
       failed++;
       const out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
-      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(`код ${code}`)} ${c.dim(`· ${secs}s · ${cmd}`)}`);
+      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${secs}s · ${cmd}`)}`);
       for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
-      if (out.length > 3) console.log(c.dim(`        … и ещё ${out.length - 3} строк`));
+      if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
       results.push({ name, cmd, ok: false, secs, code });
     }
   }
@@ -100,13 +101,13 @@ async function writeRunReport({ version, reached, results }) {
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const ok = results.filter((r) => r.ok).length;
   const lines = [
-    `# aqk doctor --run — ${stamp}`,
-    version ? `версия: ${version}` : null,
-    `уровень: AQK-${reached < 0 ? "нет" : reached}`,
+    `# ${L.report.title} — ${stamp}`,
+    version ? `${L.report.version}: ${version}` : null,
+    `${L.report.level}: AQK-${reached < 0 ? L.doctor.levelNone : reached}`,
     "",
-    ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || `код ${r.code}`})`}`),
+    ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || L.doctor.exitCode(r.code)})`}`),
     "",
-    `итого: ${ok} из ${results.length} зелёных`,
+    L.report.summary(ok, results.length),
   ].filter((l) => l !== null);
 
   const dst = join(CWD, TARGET_DIR, "last-run.md");
@@ -129,11 +130,11 @@ async function cmdDoctor() {
   // репозитории и требовал разложить комплект в комплект.
   const inKit = resolve(CWD) === resolve(PKG_ROOT);
   const checks = [
-    inKit ? ["kit/docs", "методички — здесь оригиналы, а не копия"] : [".aqk/docs", "методички"],
-    inKit ? ["kit/rules", "стандарты — здесь оригиналы, а не копия"] : [".aqk/rules", "стандарты"],
-    ["AGENTS.md", "точка входа для агентов"],
-    [".gitignore", "гигиена репозитория"],
-    [".git", "проект под контролем версий"],
+    inKit ? ["kit/docs", L.doctor.docsKit] : [".aqk/docs", L.doctor.docs],
+    inKit ? ["kit/rules", L.doctor.rulesKit] : [".aqk/rules", L.doctor.rules],
+    ["AGENTS.md", L.doctor.agents],
+    [".gitignore", L.doctor.gitignore],
+    [".git", L.doctor.git],
   ];
 
   let missing = 0;
@@ -150,8 +151,8 @@ async function cmdDoctor() {
     const emptyCommands = (text.match(/^- [^:]+: ``$/gm) || []).length;
     if (emptyCommands) {
       console.log(
-        `\n  ${c.yellow("!")}  В AGENTS.md ${emptyCommands} незаполненных команд. ` +
-          c.dim("Агент не может выполнить пустую строку.")
+        `\n  ${c.yellow("!")}  ${L.doctor.emptyCommands(emptyCommands)} ` +
+          c.dim(L.doctor.emptyCommandsWhy)
       );
     }
   }
@@ -159,7 +160,7 @@ async function cmdDoctor() {
   const man = await readManifest();
   const { reached, steps } = await assessLevel(man);
 
-  console.log(c.bold("\n  Уровень соответствия AQK\n"));
+  console.log(c.bold(`\n  ${L.doctor.levelHeading}\n`));
   for (const s of steps) {
     const mark = s.ok ? c.green("✔") : reached + 1 === s.level ? c.yellow("→") : c.dim("·");
     console.log(`  ${mark}  AQK-${s.level}  ${s.title}`);
@@ -171,25 +172,21 @@ async function cmdDoctor() {
   // работающих проверок и без манифеста стоит на нуле — и это сообщение обязано это объяснить,
   // иначе человек услышит «у тебя плохо» и закроет.
   if (reached < 0 && !man) {
-    console.log(c.yellow("\n  Уровень: стандарт в этом репозитории не заведён.\n"));
-    console.log(
-      c.dim("  Это не оценка проекта. Уровень мерит не зрелость практики, а то, можно ли\n") +
-      c.dim("  прочитать её машиной. Проверки могут стоять и работать — но пока они не\n") +
-      c.dim("  объявлены в .aqk.yml, ни агент, ни конвейер, ни новый человек о них не знают.\n")
-    );
+    console.log(c.yellow(`\n  ${L.doctor.levelNotSet}\n`));
+    console.log(L.doctor.levelNotSetWhy.map((line) => c.dim(`  ${line}`)).join("\n") + "\n");
   } else {
     console.log(
       reached < 0
-        ? c.yellow(`\n  Уровень: манифест есть, но AQK-0 не пройден.\n`)
-        : c.green(`\n  Уровень: AQK-${reached}.\n`)
+        ? c.yellow(`\n  ${L.doctor.levelManifestNoZero}\n`)
+        : c.green(`\n  ${L.doctor.level(reached)}\n`)
     );
   }
 
   if (next) {
-    console.log(`  ${c.bold(`Чтобы достичь AQK-${next.level}:`)} ${next.need}`);
-    console.log(c.dim(`  Что это даст: ${next.gives}\n`));
+    console.log(`  ${c.bold(L.doctor.toReach(next.level))} ${next.need}`);
+    console.log(c.dim(`  ${L.doctor.gives(next.gives)}\n`));
   } else {
-    console.log(c.green("  Все ступени пройдены.\n"));
+    console.log(c.green(`  ${L.doctor.allDone}\n`));
   }
 
   const facts = await detectFacts(man);
@@ -205,8 +202,8 @@ async function cmdDoctor() {
     await writeRunReport({ version, reached, results: run.results });
   } else if (gates.length) {
     console.log(
-      c.yellow(`  ${gates.length} гейтов объявлено, но не запускалось.`) +
-        c.dim(` «Объявлен» и «работает» — разные утверждения: ${SELF} doctor --run\n`)
+      c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
+        c.dim(L.doctor.declaredNotRunWhy(`${SELF} doctor --run`) + "\n")
     );
   }
 
@@ -217,8 +214,8 @@ async function cmdDoctor() {
     const pass = reached >= min && gateFailed === 0;
     console.log(
       pass
-        ? c.green(`  Порог AQK-${min} пройден.\n`)
-        : c.red(`  Порог AQK-${min} НЕ пройден: сейчас AQK-${reached < 0 ? "нет" : reached}.\n`)
+        ? c.green(`  ${L.doctor.thresholdPass(min)}\n`)
+        : c.red(`  ${L.doctor.thresholdFail(min, reached < 0 ? L.doctor.levelNone : reached)}\n`)
     );
     process.exit(pass ? 0 : 1);
   }

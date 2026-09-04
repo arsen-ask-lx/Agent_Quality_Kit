@@ -22,4 +22,83 @@ export const en = {
     noInstall: "Without installing:  npx agent-quality-kit init",
     language: "Output language: AQK_LANG=ru (or en), otherwise your system locale",
   },
+
+  doctor: {
+    docsKit: "guides — the originals live here, not a copy",
+    docs: "guides",
+    rulesKit: "standards — the originals live here, not a copy",
+    rules: "standards",
+    agents: "entry point for agents",
+    gitignore: "repository hygiene",
+    git: "project under version control",
+
+    emptyCommands: (n) => `AGENTS.md has ${n} unfilled commands.`,
+    emptyCommandsWhy: "An agent cannot execute an empty line.",
+
+    levelHeading: "AQK compliance level",
+    levelNone: "none",
+    levelNotSet: "Level: the standard is not set up in this repository.",
+    levelNotSetWhy: [
+      "This is not a verdict on the project. The level measures how machine-readable",
+      "your practice is, not how mature it is. Checks may exist and work — but until",
+      "they are declared in .aqk.yml, no agent, no pipeline and no newcomer knows.",
+    ],
+    levelManifestNoZero: "Level: a manifest exists, but AQK-0 is not reached.",
+    level: (n) => `Level: AQK-${n}.`,
+    toReach: (n) => `To reach AQK-${n}:`,
+    gives: (what) => `What it buys you: ${what}`,
+    allDone: "All levels reached.",
+
+    gatesHeading: "Gates",
+    langs: "languages",
+    langsUnknown: "not detected",
+    files: "files",
+    hasThings: "has",
+    install: (cmd) => `install: ${cmd}`,
+    notApplicable: (n) => `Not applicable to this repository (${n}):`,
+    total: "Total:",
+    totalHeld: (n) => `held by a machine ${n}`,
+    totalTodo: (n) => `applicable but not installed ${n}`,
+    totalSkip: (n) => `hidden ${n}`,
+
+    runHeading: "Running the declared gates",
+    timeout: "did not finish within 5 minutes",
+    exitCode: (code) => `exit ${code}`,
+    moreLines: (n) => `… and ${n} more lines`,
+    declaredNotRun: (n) => `${n} gates declared, but never run.`,
+    declaredNotRunWhy: (cmd) => ` "declared" and "works" are different claims: ${cmd}`,
+
+    thresholdPass: (min) => `Threshold AQK-${min} passed.`,
+    thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
+  },
+
+  levels: [
+    {
+      title: "a manifest and an entry point",
+      need: "create .aqk.yml and point entry at the file an agent reads first (AGENTS.md)",
+      gives: "any tool understands what to read in this repository",
+    },
+    {
+      title: "rules and working gates",
+      need: "set rules (the standards directory) and fill at least one gate in gates with a real command",
+      gives: "checks are declared as commands, not described in prose",
+    },
+    {
+      title: "gates are proven, debt is under a ratchet",
+      need: "set samples (red and green gate samples) and ratchets (debt registries)",
+      gives: "the gate has proven it catches defects and stays quiet on correct code",
+    },
+    {
+      title: "lessons come back into the work",
+      need: "set lessons — the path or address of a journal where every incident yields a conclusion",
+      gives: "the project learns: the same bruise is not collected twice",
+    },
+  ],
+
+  report: {
+    title: "aqk doctor --run",
+    version: "version",
+    level: "level",
+    summary: (ok, all) => `total: ${ok} of ${all} green`,
+  },
 };
