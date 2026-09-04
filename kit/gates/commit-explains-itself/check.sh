@@ -19,7 +19,10 @@ else
   # Коммит, который трогает только журнал, отчёта в теле не требует: сама запись и есть отчёт,
   # причём подробнее — и её сторожит `lesson-has-outcome`. Иначе гейт воюет с командой `note`,
   # которая коммитит запись сама. Путь журнала берётся из манифеста, а не угадывается.
-  LESSONS=$(sed -n 's/^lessons:[[:space:]]*//p' "$DIR/.aqk.yml" 2>/dev/null | head -1 | tr -d '"'"'"' \r')
+  # «#…» режется так же, как это делает сама программа при разборе манифеста
+  # (tool/lib/manifest.mjs): один файл обязан читаться по одним правилам.
+  LESSONS=$(sed -n 's/^lessons:[[:space:]]*//p' "$DIR/.aqk.yml" 2>/dev/null | head -1 |
+    sed 's/#.*$//' | tr -d '"'"'"' \r' | sed 's/[[:space:]]*$//')
   [ -z "$LESSONS" ] && LESSONS="incidents"
   case "$LESSONS" in http*) LESSONS="" ;; esac   # journal по адресу, а не путём — не применимо
   if [ -n "$LESSONS" ]; then

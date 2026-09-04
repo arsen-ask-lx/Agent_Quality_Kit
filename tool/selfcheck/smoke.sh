@@ -494,7 +494,9 @@ CEDIR="$(mktemp -d)"
 (
   cd "$CEDIR" && git init -q . && git config user.email t@t && git config user.name t
   mkdir -p incidents && echo "# журнал" > incidents/README.md
-  printf 'lessons: incidents\n' > .aqk.yml
+  # С комментарием в той же строке намеренно: программа режет «#…» при разборе манифеста
+  # (tool/lib/manifest.mjs), и гейт обязан читать тот же файл по тем же правилам.
+  printf 'lessons: incidents   # где копятся уроки\n' > .aqk.yml
   echo "код" > a.js
   git add -A && git commit -q -m "первый"
   echo "## запись" >> incidents/README.md && git add -A && git commit -q -m "lesson(aqk): шишка"
