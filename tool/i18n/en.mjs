@@ -72,6 +72,33 @@ export const en = {
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
   },
 
+  trigger: {
+    noLangs: (langs) => `none of these languages: ${langs}`,
+    tooFewFiles: (n) => `fewer than ${n} files — too early`,
+    tooManyFiles: (n) => `more than ${n} files`,
+    notSet: "no trigger declared",
+    unknown: (key) => `the program cannot evaluate the condition "${key}"`,
+    flags: {
+      has_gates: ["no gates declared in the manifest", "gates are already declared"],
+      has_ci: ["no pipeline in this repository", "a pipeline already exists"],
+      has_db: ["no database in sight: no migrations, no sql", "a database exists"],
+      has_docker: ["no Dockerfile or compose", "docker is already here"],
+      has_deps: ["no dependency file in sight", "dependencies are declared"],
+      has_tests: ["no tests in sight", "tests exist"],
+      has_env: ["no environment file", "an environment file exists"],
+    },
+  },
+
+  recipe: {
+    skipped: (lang, prog) => `skipped the ${lang} recipe: "${prog}" is not installed`,
+    none: "no recipe described",
+  },
+
+  manifest: {
+    noGatesBlock: "no gates: block in .aqk.yml",
+    alreadyDeclared: "already declared",
+  },
+
   levels: [
     {
       title: "a manifest and an entry point",

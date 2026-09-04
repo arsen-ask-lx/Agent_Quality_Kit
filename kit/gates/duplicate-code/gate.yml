@@ -1,4 +1,5 @@
 intent: один и тот же код не размножается по проекту копиями
+intent_en: the same code does not multiply into copies across the project
 
 trigger:
   files_gt: 20

@@ -101,8 +101,8 @@ function manifestWithGate(text, slug, cmd) {
   const entry = `  ${slug}: "${cmd}"`;
 
   const gi = lines.findIndex((l) => /^gates:\s*$/.test(l));
-  if (gi === -1) return { text: null, why: "в .aqk.yml нет блока gates:" };
-  if (lines.some((l) => new RegExp(`^\\s+${slug}:`).test(l))) return { text: null, why: "уже объявлен" };
+  if (gi === -1) return { text: null, why: L.manifest.noGatesBlock };
+  if (lines.some((l) => new RegExp(`^\\s+${slug}:`).test(l))) return { text: null, why: L.manifest.alreadyDeclared };
 
   let last = gi;
   for (let i = gi + 1; i < lines.length; i++) {

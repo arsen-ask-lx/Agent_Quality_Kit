@@ -30,4 +30,4 @@ const CATALOGS = { ru, en };
 const LANG = pickLang();
 const L = CATALOGS[LANG];
 
-export { L, pickLang, CATALOGS };
+export { L, LANG, pickLang, CATALOGS };

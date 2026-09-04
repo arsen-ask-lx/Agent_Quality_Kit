@@ -1,4 +1,5 @@
 intent: каждый гейт, объявленный в манифесте, существует и запускается
+intent_en: every gate declared in the manifest exists and runs
 
 trigger:
   has_gates: true

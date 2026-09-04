@@ -1,4 +1,5 @@
 intent: файл не вырастает до размера, в котором агент теряется
+intent_en: a file does not grow to a size where the agent gets lost
 
 trigger:
   always: true

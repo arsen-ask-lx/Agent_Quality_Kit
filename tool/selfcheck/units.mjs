@@ -13,7 +13,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG } from "../lib/repo.mjs";
-import { CATALOGS, pickLang } from "../i18n/index.mjs";
+import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 
 const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
 
@@ -53,7 +53,8 @@ test("условия складываются по И: одно ложное с�
 
 test("причина, по которой запись скрыта, называется словами", () => {
   const v = triggerVerdict({ trigger: { langs: "python, typescript" } }, facts({ langs: new Set(["go"]) }));
-  assert.match(v.why, /нет языков: python, typescript/);
+  // Сверяем с каталогом, а не с буквами: текст переводится, а выбор причины — нет.
+  assert.equal(v.why, L.trigger.noLangs("python, typescript"));
 });
 
 test("always: false значит «никогда не применимо», а не «условие пропущено»", () => {
@@ -65,7 +66,7 @@ test("неизвестное условие скрывает запись, а н
   // Молча пропустить незнакомое условие значит показать запись всем подряд.
   const v = triggerVerdict({ trigger: { has_kubernetes: "true" } }, facts());
   assert.equal(v.applies, false);
-  assert.match(v.why, /не умеет считать/);
+  assert.equal(v.why, L.trigger.unknown("has_kubernetes"));
 });
 
 // --- выбор рецепта ------------------------------------------------------------
@@ -75,7 +76,7 @@ test("без родного языка берётся переносимый р�
 });
 
 test("рецепта нет — так и сказано, а не пустая строка", () => {
-  assert.equal(recipeFor({ slug: "x", recipes: {} }, facts()), "рецепт не описан");
+  assert.equal(recipeFor({ slug: "x", recipes: {} }, facts()), L.recipe.none);
 });
 
 // --- дедупликация по намерению ------------------------------------------------
@@ -102,7 +103,7 @@ test("гейт дописывается в блок gates и не дублиру
 test("без блока gates программа объясняет, чего не хватает", () => {
   const r = manifestWithGate("aqk: 1\n", "x", "bash y.sh");
   assert.equal(r.text, null);
-  assert.match(r.why, /нет блока gates/);
+  assert.equal(r.why, L.manifest.noGatesBlock);
 });
 
 // --- каталоги строк не расходятся ---------------------------------------------

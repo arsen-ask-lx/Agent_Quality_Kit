@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, GATES_SRC, c, exists } from "./core.mjs";
 import { parseManifest } from "./manifest.mjs";
+import { L, LANG } from "../i18n/index.mjs";
 
 // Каталог лежит в комплекте, а не в проекте: записи общие для всех, проект лишь
 // решает, какие из них у него стоят. Показывать все подряд нельзя — это и есть
@@ -103,7 +104,11 @@ async function readCatalog() {
     const yml = join(GATES_SRC, name.name, "gate.yml");
     if (!(await exists(yml))) continue;
     const rec = parseManifest(await readFile(yml, "utf8"));
-    out.push({ slug: name.name, ...rec });
+    // Намерение показывается на языке вывода. Английское поле необязательно: запись, принесённая
+    // без него, покажет русское намерение — это хуже перевода, но честнее пустой строки, и
+    // не закрывает вклад тому, кто пишет на одном языке.
+    const intent = (LANG === "en" ? rec.intent_en : rec.intent) || rec.intent || rec.intent_en || "";
+    out.push({ slug: name.name, ...rec, intent });
   }
   return out.sort((a, b) => a.slug.localeCompare(b.slug));
 }
@@ -121,30 +126,22 @@ const CONDITIONS = {
     const want = String(val).split(",").map((x) => x.trim()).filter(Boolean);
     return want.some((l) => f.langs.has(l))
       ? { ok: true }
-      : { ok: false, why: `нет языков: ${want.join(", ")}` };
+      : { ok: false, why: L.trigger.noLangs(want.join(", ")) };
   },
 
   files_gt: (val, f) =>
-    f.files > Number(val) ? { ok: true } : { ok: false, why: `меньше ${val} файлов — рано` },
+    f.files > Number(val) ? { ok: true } : { ok: false, why: L.trigger.tooFewFiles(val) },
 
   files_lt: (val, f) =>
-    f.files < Number(val) ? { ok: true } : { ok: false, why: `больше ${val} файлов` },
+    f.files < Number(val) ? { ok: true } : { ok: false, why: L.trigger.tooManyFiles(val) },
 };
 
-const FLAG_WHY = {
-  has_gates: ["в манифесте не объявлено ни одного гейта", "гейты уже объявлены"],
-  has_ci: ["в репозитории нет конвейера", "конвейер уже есть"],
-  has_db: ["не видно базы данных: ни миграций, ни sql", "база данных есть"],
-  has_docker: ["нет Dockerfile или compose", "docker уже есть"],
-  has_deps: ["не видно файла зависимостей", "зависимости объявлены"],
-  has_tests: ["не видно тестов", "тесты есть"],
-  has_env: ["нет файла окружения", "файл окружения есть"],
-};
+const FLAG_WHY = L.trigger.flags;
 
 function triggerVerdict(rec, facts) {
   const t = rec.trigger && typeof rec.trigger === "object" && !Array.isArray(rec.trigger) ? rec.trigger : {};
   const keys = Object.keys(t);
-  if (!keys.length) return { applies: false, why: "триггер не задан" };
+  if (!keys.length) return { applies: false, why: L.trigger.notSet };
 
   for (const key of keys) {
     const raw = String(t[key]).trim();
@@ -166,7 +163,7 @@ function triggerVerdict(rec, facts) {
       continue;
     }
 
-    return { applies: false, why: `условие «${key}» программа не умеет считать` };
+    return { applies: false, why: L.trigger.unknown(key) };
   }
   return { applies: true };
 }
@@ -189,14 +186,14 @@ function pickRecipe(rec, facts) {
   for (const lang of facts.langs) {
     if (!recipes[lang]) continue;
     if (runnable(recipes[lang])) return recipes[lang];
-    console.log(c.dim(`  ${c.yellow("!")}  рецепт под ${lang} пропущен: «${String(recipes[lang]).split(/\s+/)[0]}» не установлен`));
+    console.log(c.dim(`  ${c.yellow("!")}  ${L.recipe.skipped(lang, String(recipes[lang]).split(/\s+/)[0])}`));
   }
   return recipes.any || null;
 }
 
 function recipeFor(rec, facts) {
   const cmd = pickRecipe(rec, facts);
-  if (!cmd) return "рецепт не описан";
+  if (!cmd) return L.recipe.none;
   return String(cmd)
     .replace(/\{gate\}/g, join(GATES_SRC, rec.slug))
     .replace(/\{dir\}/g, ".");

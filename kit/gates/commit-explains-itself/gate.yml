@@ -1,4 +1,5 @@
 intent: коммит несёт мини-отчёт — что сделано и в чём агент не уверен
+intent_en: the commit carries a mini-report — what was done and what the agent is unsure about
 
 trigger:
   always: true

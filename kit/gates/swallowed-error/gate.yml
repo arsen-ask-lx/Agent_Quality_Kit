@@ -1,4 +1,5 @@
 intent: ошибка не глушится молча — она обработана и записана либо проброшена
+intent_en: an error is not silently swallowed — it is handled and logged, or re-raised
 
 trigger:
   always: true

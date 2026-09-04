@@ -1,4 +1,5 @@
 intent: ключи, пароли и приватные ключи не попадают в код
+intent_en: keys, passwords and private keys do not end up in the code
 
 trigger:
   always: true

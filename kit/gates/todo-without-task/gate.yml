@@ -1,4 +1,5 @@
 intent: маркеров «доделать потом» нет в готовом коде — вместо них заведённая задача
+intent_en: "fix later" markers are absent from finished code — a filed task replaces them
 
 trigger:
   always: true

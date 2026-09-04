@@ -1,4 +1,5 @@
 intent: каждая записанная шишка кончается решением, а не рассказом
+intent_en: every recorded bruise ends in a decision, not a story
 
 # Проверять нечего там, где журнала нет: запись сама скажет об этом и промолчит.
 trigger:

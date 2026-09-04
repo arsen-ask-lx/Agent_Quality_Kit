@@ -1,4 +1,5 @@
 intent: функция не вырастает до сложности, в которой её нельзя удержать в голове
+intent_en: a function does not grow past the complexity you can hold in your head
 
 trigger:
   always: true

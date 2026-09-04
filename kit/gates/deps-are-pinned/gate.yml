@@ -1,4 +1,5 @@
 intent: версии зависимостей закреплены — сборка воспроизводима
+intent_en: dependency versions are pinned — the build is reproducible
 
 trigger:
   has_deps: true
