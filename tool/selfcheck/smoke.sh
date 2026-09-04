@@ -421,6 +421,17 @@ else
 fi
 rm -f /tmp/aqk-broken-doc-links.$$
 
+# --- 26. doctor печатает версию комплекта ------------------------------------
+# Баг-репорт без версии нечем привязать к коммиту — заметили, заполняя .github/ISSUE_TEMPLATE/,
+# где просили версию из шапки doctor, а шапка её не печатала вовсе.
+PKGVER=$(node -e "console.log(require('$ROOT/package.json').version)")
+DOCVER=$( cd "$ROOT" && node "$CLI" doctor 2>&1 | head -3)
+if printf '%s' "$DOCVER" | grep -qF "$PKGVER"; then
+  ok "doctor печатает версию комплекта ($PKGVER)"
+else
+  bad "doctor не печатает версию" "package.json: $PKGVER; шапка doctor: $(printf '%s' "$DOCVER" | tr '\n' ' ')"
+fi
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

@@ -1,0 +1,25 @@
+name: Баг
+description: Сторож молчит там, где должен краснеть — или наоборот
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось
+      description: Какой конкретно отказ поймали (или не поймали). Не «не работает» — что именно.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Как воспроизвести
+      description: Команда и вход, на которых видно поломку. Лучше всего — кусок кода, на котором она проявилась.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия
+      description: "`aqk doctor` печатает её в шапке, или git-тег/коммит, если ставили не из релиза"
+    validations:
+      required: false

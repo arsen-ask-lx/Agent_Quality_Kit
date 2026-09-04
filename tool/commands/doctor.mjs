@@ -89,7 +89,14 @@ function runGates(man) {
 }
 
 async function cmdDoctor() {
-  console.log(c.bold("\naqk doctor\n"));
+  // Версия в шапке — единственное, что привязывает баг-репорт к коммиту, если ставили не из
+  // релиза: без неё "у меня не работает" ничем не отличается от любой другой версии за год.
+  let version = "";
+  try {
+    const pkg = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8"));
+    version = pkg.version || "";
+  } catch { /* пакет без package.json — версия просто не покажется */ }
+  console.log(c.bold(`\naqk doctor${version ? ` v${version}` : ""}\n`));
 
   // В самом комплекте разложенной копии `.aqk/` нет и быть не должно: здесь лежат оригиналы,
   // а копия завтра разошлась бы с ними. Без этого различия `doctor` краснел на собственном

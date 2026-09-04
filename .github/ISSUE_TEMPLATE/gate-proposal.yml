@@ -1,0 +1,23 @@
+name: Предложить гейт
+description: Знаешь класс брака, который стоит ловить машиной, но ещё не умеешь его записать
+labels: [gate-proposal]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Перед тем как заполнять — `aqk find "..."` покажет, нет ли уже такой записи. Полный
+        порядок приёмки: [`CONTRIBUTING.md`](https://github.com/arsen-ask-lx/Agent_Quality_Kit/blob/main/CONTRIBUTING.md).
+  - type: textarea
+    id: intent
+    attributes:
+      label: Какой класс брака это ловит
+      description: Одной фразой — что запрещено, а не как это проверять.
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: Реальный отказ, который это поймало бы
+      description: "«Это хорошая практика» не принимается — нужен конкретный случай: что сломалось, где, чего это стоило."
+    validations:
+      required: true
