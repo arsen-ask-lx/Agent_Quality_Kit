@@ -150,13 +150,12 @@ const CHECK_SH_TEMPLATE = `#!/usr/bin/env sh
 # Проверка. Возвращает 0 — чисто, не 0 — брак. В тексте отказа должно быть НАПИСАНО,
 # что сделать: он попадает прямо в контекст агента, и с инструкцией он чинит сам.
 DIR="\${1:-.}"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 
-# Служебные каталоги и красные образцы не проверяем — см. kit/gates/README.md
-SKIP="--exclude-dir=.aqk --exclude-dir=.git --exclude-dir=node_modules"
-EXCL=""
-case "$(basename "$DIR")" in red) ;; *) EXCL="--exclude-dir=red" ;; esac
-
-HITS=$(grep -rnE $SKIP $EXCL 'ЗАПОЛНИ_ШАБЛОН_ПОИСКА' "$DIR" 2>/dev/null)
+# own_samples_filter прячет ТОЛЬКО gates/<имя>/red|green/ — не любую папку с таким именем
+# в проекте. --exclude-dir=red по голому имени однажды спрятал бы настоящую пользовательскую
+# папку red/ (нашли на secrets-not-in-code — kit/docs/ai/... журнал, 2026-09-04).
+HITS=$(grep -rnE $(skip_grep "$DIR") 'ЗАПОЛНИ_ШАБЛОН_ПОИСКА' "$DIR" 2>/dev/null | own_samples_filter "$DIR")
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: ЗАПОЛНИ — что именно сделать"

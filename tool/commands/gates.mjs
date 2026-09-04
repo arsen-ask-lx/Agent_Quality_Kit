@@ -126,6 +126,14 @@ async function cmdNew(args) {
   await writeFile(join(dst, "red", ".keep"), "", "utf8");
   await writeFile(join(dst, "green", ".keep"), "", "utf8");
 
+  // check.sh шаблона зовёт skip_grep/own_samples_filter из _skip.sh — тем же путём, каким его
+  // зовут установленные записи каталога. В самом комплекте оригинал уже лежит на месте (../),
+  // в чужом проекте его никто не клал, пока не было ни одной установленной записи через `add`.
+  if (!inKit) {
+    const skipSrc = join(GATES_SRC, "_skip.sh");
+    if (await exists(skipSrc)) await copyFile(skipSrc, join(CWD, PROJECT_GATES, "_skip.sh"));
+  }
+
   console.log(c.bold(`\naqk new ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${relative(CWD, dst)}/  ${c.dim("gate.yml · check.sh · red/ · green/ · README.md")}`);
   console.log(`

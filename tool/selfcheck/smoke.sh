@@ -462,6 +462,18 @@ else
 fi
 rm -rf "$NOTEJ"
 
+# --- 29. заготовка aqk new использует own_samples_filter, а не голое имя red/green -
+# CHECK_SH_TEMPLATE нёс тот же баг, что чинили в семи существующих гейтах: --exclude-dir=red
+# по имени, а не по пути. Каждый новый гейт, заведённый через `aqk new`, наследовал бы дыру.
+NEWDIR2="$(mktemp -d)"
+( cd "$NEWDIR2" && node "$CLI" init >/dev/null 2>&1 && node "$CLI" new probe-template >/dev/null 2>&1 )
+if [ -f "$NEWDIR2/gates/_skip.sh" ] && grep -q 'own_samples_filter' "$NEWDIR2/gates/probe-template/check.sh"; then
+  ok "заготовка aqk new использует own_samples_filter и несёт _skip.sh"
+else
+  bad "заготовка aqk new не подключает own_samples_filter или не копирует _skip.sh" "$NEWDIR2"
+fi
+rm -rf "$NEWDIR2"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
