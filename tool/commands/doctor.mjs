@@ -1,9 +1,9 @@
 // tool/commands/doctor.mjs — что разложено, какая ступень, какие гейты применимы и работают.
 
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { CWD, PKG_ROOT, SELF, c, exists } from "../lib/core.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 
@@ -59,10 +59,11 @@ function declaredGates(man) {
 
 function runGates(man) {
   const gates = declaredGates(man);
-  if (!gates.length) return { failed: 0, ran: 0 };
+  if (!gates.length) return { failed: 0, ran: 0, results: [] };
 
   console.log(c.bold("\n  Прогон объявленных гейтов\n"));
   let failed = 0;
+  const results = [];
 
   for (const [name, cmd] of gates) {
     const t0 = Date.now();
@@ -72,20 +73,45 @@ function runGates(man) {
     if (r.error && r.error.code === "ETIMEDOUT") {
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red("не уложился в 5 минут")}`);
       failed++;
+      results.push({ name, cmd, ok: false, secs, note: "не уложился в 5 минут" });
       continue;
     }
     const code = r.status;
     if (code === 0) {
       console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+      results.push({ name, cmd, ok: true, secs });
     } else {
       failed++;
       const out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(`код ${code}`)} ${c.dim(`· ${secs}s · ${cmd}`)}`);
       for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
       if (out.length > 3) console.log(c.dim(`        … и ещё ${out.length - 3} строк`));
+      results.push({ name, cmd, ok: false, secs, code });
     }
   }
-  return { failed, ran: gates.length };
+  return { failed, ran: gates.length, results };
+}
+
+// Короткий отчёт «что из этого реально брали» — не для человека, а для агента в следующей
+// сессии и для самого владельца: список объявленных гейтов молчит о том, сколько из них
+// действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
+// история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
+async function writeRunReport({ version, reached, results }) {
+  const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+  const ok = results.filter((r) => r.ok).length;
+  const lines = [
+    `# aqk doctor --run — ${stamp}`,
+    version ? `версия: ${version}` : null,
+    `уровень: AQK-${reached < 0 ? "нет" : reached}`,
+    "",
+    ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || `код ${r.code}`})`}`),
+    "",
+    `итого: ${ok} из ${results.length} зелёных`,
+  ].filter((l) => l !== null);
+
+  const dst = join(CWD, TARGET_DIR, "last-run.md");
+  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+  await writeFile(dst, lines.join("\n") + "\n", "utf8");
 }
 
 async function cmdDoctor() {
@@ -174,7 +200,9 @@ async function cmdDoctor() {
   const gates = declaredGates(man);
   let gateFailed = 0;
   if (wantRun) {
-    gateFailed = runGates(man).failed;
+    const run = runGates(man);
+    gateFailed = run.failed;
+    await writeRunReport({ version, reached, results: run.results });
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${gates.length} гейтов объявлено, но не запускалось.`) +

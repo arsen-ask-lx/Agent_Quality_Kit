@@ -474,6 +474,18 @@ else
 fi
 rm -rf "$NEWDIR2"
 
+# --- 30. doctor --run пишет короткий отчёт .aqk/last-run.md -----------------
+# Список объявленных гейтов молчит о том, сколько из них реально работают именно сейчас —
+# короткий отчёт после каждого прогона нужен и агенту в следующей сессии, и владельцу.
+RUNDIR="$(mktemp -d)"
+( cd "$RUNDIR" && node "$CLI" start >/dev/null 2>&1 && node "$CLI" doctor --run >/dev/null 2>&1 )
+if [ -f "$RUNDIR/.aqk/last-run.md" ] && grep -q 'итого:' "$RUNDIR/.aqk/last-run.md"; then
+  ok "doctor --run пишет .aqk/last-run.md"
+else
+  bad "doctor --run не написал отчёт" "$RUNDIR/.aqk/last-run.md"
+fi
+rm -rf "$RUNDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
