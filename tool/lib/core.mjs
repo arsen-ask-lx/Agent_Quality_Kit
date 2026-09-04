@@ -36,6 +36,10 @@ const exists = async (p) => access(p, constants.F_OK).then(() => true, () => fal
 // Имя в реестре, а не адрес репозитория: короче, скачивается 230 КБ вместо клона всего
 // репозитория и не заставляет человека ждать три минуты в тишине на первой же команде.
 const REPO = "agent-quality-kit";
+// Адрес репозитория отдельно от имени пакета. Когда имя стало коротким, ссылка «поставь
+// звезду» собиралась из него и вела на github.com/agent-quality-kit — несуществующую
+// страницу. Два разных адреса, собранные из одной строки, однажды разъезжаются.
+const REPO_URL = "https://github.com/arsen-ask-lx/Agent_Quality_Kit";
 
 function selfCmd() {
   const p = process.argv[1] || "";
@@ -96,5 +100,5 @@ export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, REPO, c, exists, die, FEEDBACK_MARK,
+  SELF, REPO, REPO_URL, c, exists, die, FEEDBACK_MARK,
 };

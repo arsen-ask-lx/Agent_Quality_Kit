@@ -234,6 +234,97 @@ export const en = {
     blindCheck: "Verify after the fix: bash tool/selfcheck/gates.sh",
   },
 
+  init: {
+    noDocs: (dir) => `Guides not found: ${dir}\nLooks like the package is not fully installed.`,
+    created: (n) => `created (${n}):`,
+    andMore: (n) => `… and ${n} more`,
+    kept: (n) => `already there, left untouched (${n}):`,
+    overwrite: (cmd) => `overwrite: ${cmd}`,
+    nextTitle: "What to do next, in order:",
+    n1a: "Open",
+    n1b: 'and fill in the "Commands" section. A command you cannot',
+    n1c: "copy and run is not a command, it is a wish.",
+    n2a: "Read",
+    n2b: "— it is the minimum a project needs,",
+    n2c: "independent of language. Go through it top to bottom and mark what is missing.",
+    n3a: "Fill in",
+    n3b: "— gates, samples, journal. Your AQK level",
+    n3c: (cmd) => `is computed from it: ${cmd}.`,
+    n4a: "Climb the levels",
+    n4b: "one at a time",
+    n4c: ". A gate guards an artefact that exists:",
+    n4d: "a check for code that is not written yet is a dead rule.",
+    burned: (cmd) => `Got burned by something — write it down: ${cmd}`,
+  },
+
+  feedback: {
+    title: "If this was useful:",
+    star: (url) => `Star it — ${url}`,
+    issue: "Found a bug or it did not fit — open an issue; both are the most useful feedback there is.",
+    once: "This message is shown once: it will not appear again on this machine.",
+  },
+
+  note: {
+    needTitle: (cmd) => `A title is required: ${cmd}`,
+    noJournal: (url) => `No journal clone found.\nDo this once:\n  git clone ${url}.git ~/projects/aqk\nor point at it: export AQK_HOME=/path/to/aqk`,
+    journalMissing: (path) => `Journal not found: ${path}`,
+    emptyBody: `The entry body is empty. Pass it on standard input, for example:\n\n  aqk note "title" <<'EOF'\n  **What happened.** ...\n  **What it cost.** ...\n  **Conclusion.** 🔧 ...\n  EOF`,
+    noOutcome:
+      "The entry carries no decision mark. A lesson without a conclusion is a story, not a lesson.\n" +
+      "Add one of the three:\n" +
+      "  ✅ **Became a gate:** <catalogue entry name>\n" +
+      "  🔧 **Became a change to the tooling:** <what exactly changed>\n" +
+      "  👤 **Will not become a gate:** <why>",
+    unknownProject: "unknown",
+    projectField: "Project",
+    pushed: (title) => `Recorded and pushed: ${title}`,
+    localOnly: (cmd) => `Recorded locally, the push failed. Push it: ${cmd}`,
+  },
+
+  blob: {
+    noDocs: (dir) => `Guides not found: ${dir}`,
+    header: (stamp) =>
+      `<!-- ASSEMBLED BY aqk blob ${stamp} from kit/docs. Do not edit by hand:\n` +
+      `     the next assembly overwrites it. The source is the separate files. -->\n\n` +
+      `# AQK — the guides in one file\n`,
+    source: (path) => `source: ${path}`,
+    done: (n, kb) => `GOD_AI.md — ${n} files, ${kb} KB`,
+    rebuilt: "Reassembled by every run. Edit the originals in kit/docs.",
+  },
+
+  start: {
+    initFailed: (cmd) => `Could not lay out the kit. Start with ${cmd}`,
+    tooManyFiles: (n) => `This repository already has ${n} code files — that is a different scenario.`,
+    useDoctor: (cmd) => `${cmd} will inspect what is here and split the entries into three lists:`,
+    threeLists: "held by a machine · applicable but not installed · not applicable, and why.",
+    anyway: (cmd) => `Install the day-zero guards anyway: ${cmd}`,
+    expectRed: "Expect red: a guard installed onto living code goes red across all of it.",
+    expectRedFix: (cmd) => `That is cured by a ratchet — ${cmd} — not by switching it off.`,
+    installed: (n) => `Day-zero guards installed: ${n}`,
+    noDebt1: "There is no debt: on an empty project they have nothing to let through. The same guard,",
+    noDebt2: "installed six months later, would go red on all the old code — and be switched off.",
+    allDeclared: "Every applicable entry is already declared.",
+    notYet: "Not applicable yet:",
+    notYetWhy: "Once the sign appears, the entry shows up on its own.",
+    orderTitle: "The order people actually do this in:",
+    o1: "The task, in words.",
+    o1What: "What, and for whom, without a single technical term.",
+    o1Why: "Until the task is described in words, any architecture protects who knows what.",
+    o2: "Constraints.",
+    o2What: "Deadlines, money, load, what you are not allowed to use.",
+    o2Why: "Constraints pick the solution far more often than taste does: without them, taste picks.",
+    o3: "Sizing.",
+    o3What: "How much data, how many requests, how many people — in numbers, at least an order of magnitude.",
+    o3Why: 'A number separates "we need a queue" from "a table is enough". Without it, people argue in words.',
+    o4: "Architecture.",
+    o4What: "And only now — out of the first three, not before them.",
+    softNote1: "The program does not check this order: it lives in .aqk/docs/, and an agent can",
+    softNote2: "ignore it. The machine holds something else — the guards above. The difference between",
+    softNote3: "soft and hard is exactly this: text is asked for, a command is executed.",
+    next: "Next:",
+    nextWhy: "— run everything that is declared",
+  },
+
   levels: [
     {
       title: "a manifest and an entry point",
