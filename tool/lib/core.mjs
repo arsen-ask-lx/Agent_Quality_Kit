@@ -8,6 +8,7 @@ import { access, readdir, mkdir, copyFile, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, relative } from "node:path";
+import { homedir } from "node:os";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Два уровня вверх: файл лежит в tool/lib/. Ошибка здесь тихая — программа стала бы искать
@@ -59,6 +60,11 @@ const RATCHET_DIR = "ratchets";
 // обёртка плюс реестр, и разносить их по разным каталогам значит прятать половину механизма.
 const RATCHET_LIB = `${RATCHET_DIR}/_ratchet.sh`;
 
+// Отметка «просьбу про звезду уже показали» — вне репозитория, в доме пользователя. Внутри
+// .aqk/ она либо закоммитится в чужой проект как наш мусор, либо пропадёт при init --force:
+// то и другое врёт о том, видел человек просьбу или нет.
+const FEEDBACK_MARK = join(homedir(), ".config", "aqk", "feedback-shown");
+
 async function copyDir(src, dst, { force }) {
   await mkdir(dst, { recursive: true });
   const entries = await readdir(src, { withFileTypes: true });
@@ -88,5 +94,5 @@ export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, c, exists, die,
+  SELF, REPO, c, exists, die, FEEDBACK_MARK,
 };

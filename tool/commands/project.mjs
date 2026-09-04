@@ -5,8 +5,8 @@ import { readdir, mkdir, writeFile, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join, dirname, relative } from "node:path";
 import {
-  CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, c, exists, die,
-  copyDir, writeIfAbsent,
+  CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO, c, exists, die,
+  copyDir, writeIfAbsent, FEEDBACK_MARK,
 } from "../lib/core.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
 import { readManifest } from "../lib/manifest.mjs";
@@ -71,6 +71,24 @@ ${c.bold("Что дальше — по порядку:")}
 
 ${c.dim(`Обжёгся на чём-то — запиши: ${SELF} note "что случилось"`)}
 `);
+  await maybeAskFeedback();
+}
+
+// Печатается один раз на машину, не на проект: второй init в другом репозитории на том же
+// компьютере её не повторяет — отметка живёт в доме пользователя, вне любого git.
+// Ничего не постится само: ссылки печатаются, дальше решает человек. Обратная связь важнее
+// звезды, но без звезды меньше шансов, что кто-то вообще дойдёт до фидбека.
+async function maybeAskFeedback() {
+  if (await exists(FEEDBACK_MARK)) return;
+  const url = `https://github.com/${REPO.replace(/^github:/, "")}`;
+  console.log(`
+${c.bold("Если пригодилось:")}
+  Поставь звезду — ${url}
+  Нашёл баг или не подошло — заведи Issue, самая полезная обратная связь: и то и другое.
+    ${url}/issues/new
+${c.dim("  Это разовое сообщение: больше не покажется на этой машине.")}
+`);
+  await writeIfAbsent(FEEDBACK_MARK, "shown\n", { force: false });
 }
 
 function findJournal() {
@@ -283,6 +301,7 @@ async function cmdStart(args) {
 
 ${c.bold("Дальше:")}  ${c.bold(`${SELF} doctor --run`)}  ${c.dim("— прогнать всё, что объявлено")}
 `);
+  await maybeAskFeedback();
 }
 
 export { cmdInit, cmdNote, cmdBlob, cmdStart };
