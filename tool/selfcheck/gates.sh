@@ -41,7 +41,7 @@ for GATE in "$CAT"/*/; do
 
   # Заготовка от `aqk new` не должна проехать как запись: незаполненный гейт — мёртвое
   # правило, а мёртвое правило учит игнорировать и живые.
-  if grep -q 'ЗАПОЛНИ' "$YML" "$GATE/README.md" "$GATE/check.sh" 2>/dev/null; then
+  if grep -qE 'ЗАПОЛНИ|FILL IN|FILL_IN' "$YML" "$GATE/README.md" "$GATE/check.sh" 2>/dev/null; then
     bad "$SLUG: заготовка не заполнена — остались метки ЗАПОЛНИ"
     continue
   fi

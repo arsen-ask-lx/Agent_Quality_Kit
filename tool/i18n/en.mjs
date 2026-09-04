@@ -3,7 +3,10 @@
 // Правка здесь обязана иметь пару в ru.mjs с тем же ключом: расхождение ловит модульная
 // проверка «оба каталога несут одни и те же ключи».
 
+import { templates } from "./templates-en.mjs";
+
 export const en = {
+  templates,
   help: {
     tagline: "tooling for building software with agents",
     name: "<name>",
@@ -323,6 +326,31 @@ export const en = {
     softNote3: "soft and hard is exactly this: text is asked for, a command is executed.",
     next: "Next:",
     nextWhy: "— run everything that is declared",
+  },
+
+  manifestDoc: {
+    head: [
+      "# .aqk.yml — the Agent Quality Kit manifest",
+      "# What this is: a machine-readable description of how agents live in this repository.",
+      "# `aqk doctor` computes the compliance level. An empty field = the level is not reached,",
+      "# and that is honest: filling it with placeholders is pointless, files are checked, not words.",
+    ],
+    entry: "# AQK-0 — what the agent reads first.",
+    rules: "# AQK-1 — where the standards are and which checks are mandatory.",
+    gates: [
+      "  # name: a command returning 0 or non-zero. An empty declaration protects nothing and is",
+      '  # rejected by the "a declared gate runs" check — hence examples here, not placeholders.',
+      '  #   lint: "ruff check ."',
+      '  #   test: "pytest -q"',
+      "  # To install a ready entry from the catalogue together with its samples: aqk add <name>",
+    ],
+    samples: [
+      "# AQK-2 — what proves the gates work, and where the debt registries are.",
+      "# samples: the directory with red and green samples (a gate must go red on the first and",
+      "# stay quiet on the second). ratchets: lists of known violations that may only get",
+      "# shorter.",
+    ],
+    lessons: "# AQK-3 — where lessons accumulate. A path or an address.",
   },
 
   levels: [
