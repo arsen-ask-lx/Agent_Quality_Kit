@@ -55,6 +55,11 @@ test("причина, по которой запись скрыта, назыв�
   assert.match(v.why, /нет языков: python, typescript/);
 });
 
+test("always: false значит «никогда не применимо», а не «условие пропущено»", () => {
+  const v = triggerVerdict({ trigger: { always: "false" } }, facts());
+  assert.equal(v.applies, false);
+});
+
 test("неизвестное условие скрывает запись, а не пропускает её", () => {
   // Молча пропустить незнакомое условие значит показать запись всем подряд.
   const v = triggerVerdict({ trigger: { has_kubernetes: "true" } }, facts());

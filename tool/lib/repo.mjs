@@ -150,7 +150,9 @@ function triggerVerdict(rec, facts) {
     const raw = String(t[key]).trim();
 
     if (CONDITIONS[key]) {
-      if (key === "always" && raw !== "true") continue;
+      // always: false — не «условие отсутствует», а «запись никогда не применима». Раньше
+      // continue пропускал ключ молча, и `always: false` читалось как отсутствие ограничения.
+      if (key === "always" && raw !== "true") return { applies: false, why: "always: false" };
       const r = CONDITIONS[key](raw, facts);
       if (!r.ok) return { applies: false, why: r.why };
       continue;
