@@ -13,6 +13,7 @@ import {
   detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
 } from "../lib/repo.mjs";
 import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/templates.mjs";
+import { L } from "../i18n/index.mjs";
 
 // Ставит гейт из каталога в проект. Проверка КОПИРУЕТСЯ в репозиторий, а не остаётся
 // ссылкой в пакет: при установке через npx пакет временный, и завтра команда в манифесте
@@ -24,7 +25,7 @@ import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/te
 // читает окружение и выдаёт тысячу чужих нарушений.
 async function installGate(slug, man, facts) {
   const src = join(GATES_SRC, slug);
-  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — ${SELF} doctor`);
+  if (!(await exists(src))) die(L.add.noSuchGate(slug, `${SELF} doctor`));
 
   const rec = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
   const dst = join(CWD, PROJECT_GATES, slug);
@@ -40,7 +41,7 @@ async function installGate(slug, man, facts) {
   const cmd = String(pickRecipe(rec, facts) || "")
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
-  if (!cmd) die(`У записи ${slug} нет команды ни под ${[...facts.langs].join("/") || "этот стек"}, ни общей.`);
+  if (!cmd) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
 
   const manPath = join(CWD, MANIFEST);
   const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);
@@ -50,39 +51,39 @@ async function installGate(slug, man, facts) {
 
 async function cmdAdd(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die(`Укажи имя гейта: ${SELF} add <имя>. Список — ${SELF} doctor`);
+  if (!slug) die(L.add.needName(`${SELF} add ${L.help.name}`, `${SELF} doctor`));
 
   const man = await readManifest();
-  if (!man) die(`Нет .aqk.yml — сначала ${SELF} init`);
+  if (!man) die(L.add.noManifest(`${SELF} init`));
   const facts = await detectFacts(man);
 
   const src = join(GATES_SRC, slug);
-  if (!(await exists(src))) die(`Нет такого гейта: ${slug}\nСписок применимых — ${SELF} doctor`);
+  if (!(await exists(src))) die(L.add.noSuchGate(slug, `${SELF} doctor`));
   const probe = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
   const verdict = triggerVerdict(probe, facts);
   if (!verdict.applies) {
-    console.log(c.yellow(`\n  Этот гейт к репозиторию не применим: ${verdict.why}`));
-    console.log(c.dim("  Ставлю всё равно — решение твоё, но сторожить ему нечего.\n"));
+    console.log(c.yellow(`\n  ${L.add.notApplicable(verdict.why)}`));
+    console.log(c.dim(`  ${L.add.installAnyway}\n`));
   }
 
   const { cmd, copied, declared, why } = await installGate(slug, man, facts);
 
   console.log(c.bold(`\naqk add ${slug}\n`));
-  console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(`${copied.length} файлов: проверка и образцы`)}`);
+  console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(L.add.copied(copied.length))}`);
   if (declared) {
-    console.log(`  ${c.green("✔")}  .aqk.yml       ${c.dim(`гейт объявлен: ${cmd}`)}`);
+    console.log(`  ${c.green("✔")}  .aqk.yml       ${c.dim(L.add.declared(cmd))}`);
   } else {
-    console.log(`  ${c.yellow("!")}  .aqk.yml       ${c.dim(`не тронут (${why}). Впиши сам: ${slug}: "${cmd}"`)}`);
+    console.log(`  ${c.yellow("!")}  .aqk.yml       ${c.dim(L.add.notDeclared(why, slug, cmd))}`);
   }
 
   console.log(`
-${c.bold("Дальше:")}
+${c.bold(L.add.nextTitle)}
 
-  1. Проверь, что он краснеет и молчит там, где должен:
-     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/red`)}`)}   ${c.dim("→ ожидается отказ")}
-     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/green`)}`)} ${c.dim("→ ожидается тишина")}
-  2. Впиши команду в хук коммита и в конвейер. ${c.dim("Гейт, который никто не запускает, — не гейт.")}
-  3. Прогон всех объявленных: ${c.bold(`${SELF} doctor --run`)}
+  1. ${L.add.next1}
+     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/red`)}`)}   ${c.dim(L.add.expectFail)}
+     ${c.bold(`${cmd.replace(/ \.$/, ` ${PROJECT_GATES}/${slug}/green`)}`)} ${c.dim(L.add.expectSilence)}
+  2. ${L.add.next2} ${c.dim(L.add.next2Why)}
+  3. ${L.add.next3(c.bold(`${SELF} doctor --run`))}
 `);
 }
 
@@ -92,9 +93,9 @@ ${c.bold("Дальше:")}
 
 async function cmdNew(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die(`Укажи имя: ${SELF} new no-print-in-prod`);
+  if (!slug) die(L.gnew.needName(`${SELF} new no-print-in-prod`));
   if (!/^[a-z][a-z0-9-]{2,}$/.test(slug)) {
-    die(`Имя «${slug}» не годится: латиница через дефис, например secrets-not-in-code.\nИмя читают в чужих проектах — оно часть словаря.`);
+    die(L.gnew.badName(slug));
   }
 
   // Сначала сверка: новая запись нужна реже, чем кажется. Порог берётся по совпадению с
@@ -102,10 +103,10 @@ async function cmdNew(args) {
   const words = slug.replace(/-/g, " ") + " " + args.filter((a) => !a.startsWith("-")).slice(1).join(" ");
   for (const { rec, hits, headScore } of await matchCatalog(words)) {
     if (hits >= 2 && headScore >= 0.5 && !args.includes("--force")) {
-      console.log(c.yellow(`\n  Похоже, такое уже есть: ${c.bold(rec.slug)}`));
+      console.log(c.yellow(`\n  ${L.gnew.looksExisting(c.bold(rec.slug))}`));
       console.log(`  ${rec.intent || ""}\n`);
-      console.log(c.dim("  Рецепт под другой стек — это строка в recipes существующей записи."));
-      console.log(c.dim(`  Всё равно завести новую: ${SELF} new ${slug} --force\n`));
+      console.log(c.dim(`  ${L.gnew.recipeNotGate}`));
+      console.log(c.dim(`  ${L.gnew.forceHint(`${SELF} new ${slug} --force`)}\n`));
       process.exit(1);
     }
   }
@@ -116,7 +117,7 @@ async function cmdNew(args) {
   // результата нет. Признак один — работаем ли мы над самим комплектом.
   const inKit = resolve(CWD) === resolve(PKG_ROOT);
   const dst = inKit ? join(GATES_SRC, slug) : join(CWD, PROJECT_GATES, slug);
-  if (await exists(dst)) die(`${relative(CWD, dst)} уже существует.`);
+  if (await exists(dst)) die(L.gnew.exists(relative(CWD, dst)));
 
   await mkdir(join(dst, "red"), { recursive: true });
   await mkdir(join(dst, "green"), { recursive: true });
@@ -137,17 +138,17 @@ async function cmdNew(args) {
   console.log(c.bold(`\naqk new ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${relative(CWD, dst)}/  ${c.dim("gate.yml · check.sh · red/ · green/ · README.md")}`);
   console.log(`
-${c.bold("Дальше — по порядку:")}
+${c.bold(L.gnew.nextTitle)}
 
-  1. ${c.bold("Проверь, нет ли готового правила")} в ruff, eslint, semgrep.
-     ${c.dim("Готовое точнее, подробнее и его поддерживают без тебя. Своя проверка — запасная.")}
-  2. ${c.bold("Положи образцы.")} В ${c.bold("red/")} — код, на котором проверка обязана сработать.
-     В ${c.bold("green/")} — тот же код, но правильный.
-     ${c.dim("Зелёный важнее: он ловит проверку, которая краснеет на исправном коде.")}
-  3. ${c.bold("Напиши проверку")} в check.sh. В тексте отказа — что именно сделать.
-  4. ${c.bold("Заполни gate.yml:")} намерение, триггер, доказательство отказом.
-  5. ${c.bold("Прогони:")} bash tool/selfcheck/gates.sh
-     ${c.dim("Арбитр обязан покраснеть на red/ и промолчать на green/. Не прошло — не запись.")}
+  1. ${c.bold(L.gnew.n1)} ${L.gnew.n1Where}
+     ${c.dim(L.gnew.n1Why)}
+  2. ${c.bold(L.gnew.n2)} ${c.bold("red/")} ${L.gnew.n2Red}
+     ${c.bold("green/")} ${L.gnew.n2Green}
+     ${c.dim(L.gnew.n2Why)}
+  3. ${c.bold(L.gnew.n3)} ${L.gnew.n3Where}
+  4. ${c.bold(L.gnew.n4)} ${L.gnew.n4What}
+  5. ${c.bold(L.gnew.n5)} bash tool/selfcheck/gates.sh
+     ${c.dim(L.gnew.n5Why)}
 `);
 }
 
@@ -159,14 +160,14 @@ ${c.bold("Дальше — по порядку:")}
 
 async function cmdRatchet(args) {
   const slug = args.find((a) => !a.startsWith("-"));
-  if (!slug) die(`Укажи гейт: ${SELF} ratchet <имя>. Он должен быть уже объявлен в .aqk.yml`);
+  if (!slug) die(L.ratchet.needName(`${SELF} ratchet ${L.help.name}`));
 
   const manPath = join(CWD, MANIFEST);
-  if (!(await exists(manPath))) die(`Нет .aqk.yml — сначала ${SELF} init`);
+  if (!(await exists(manPath))) die(L.ratchet.noManifest(`${SELF} init`));
   let text = await readFile(manPath, "utf8");
 
   const line = text.split("\n").find((l) => new RegExp(`^\\s+${slug}:`).test(l));
-  if (!line) die(`Гейт «${slug}» не объявлен в .aqk.yml. Сначала: ${SELF} add ${slug}`);
+  if (!line) die(L.ratchet.notDeclared(slug, `${SELF} add ${slug}`));
 
   const cmd = line.replace(/^\s*[^:]+:\s*/, "").replace(/^"|"$/g, "");
   const inKit = resolve(CWD) === resolve(PKG_ROOT);
@@ -177,7 +178,7 @@ async function cmdRatchet(args) {
   // Тогда снимаем снимок заново по внутренней команде, а строку манифеста не трогаем.
   const reg = join(CWD, RATCHET_DIR, `${slug}.txt`);
   const wrapped0 = cmd.includes("ratchet.sh");
-  if (wrapped0 && (await exists(reg))) die(`На гейте «${slug}» храповик уже стоит.`);
+  if (wrapped0 && (await exists(reg))) die(L.ratchet.already(slug));
   const prefix = `bash ${lib} ${RATCHET_DIR}/${slug}.txt `;
   const inner = wrapped0 && cmd.startsWith(prefix) ? cmd.slice(prefix.length) : cmd;
 
@@ -193,11 +194,7 @@ async function cmdRatchet(args) {
   // строки не должна читаться как новое нарушение.
   const r = spawnSync(inner, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
   if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
-    die(
-      `Гейт «${slug}» не запускается: ${inner}\n` +
-        `Снимать долг с несуществующего сторожа нельзя — в реестр попадут его же сообщения\n` +
-        `об ошибке, и он станет разрешением. Сначала почини команду.`
-    );
+    die(L.ratchet.notRunnable(slug, inner));
   }
   const keys = [...new Set(
     `${r.stdout || ""}${r.stderr || ""}`
@@ -210,10 +207,7 @@ async function cmdRatchet(args) {
   const stamp = new Date().toISOString().slice(0, 10);
   await writeFile(
     reg,
-    `# Реестр долга: ${slug}\n` +
-      `# Снят ${stamp}. Список разрешается ТОЛЬКО укорачивать.\n` +
-      `# Новое нарушение красит гейт; исправленное вычёркивается автоматически.\n` +
-      keys.join("\n") + (keys.length ? "\n" : ""),
+    L.ratchet.registryHead(slug, stamp) + keys.join("\n") + (keys.length ? "\n" : ""),
     "utf8"
   );
 
@@ -224,19 +218,19 @@ async function cmdRatchet(args) {
   }
 
   console.log(c.bold(`\naqk ratchet ${slug}\n`));
-  console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(`${keys.length} нарушений записано долгом`)}`);
-  if (!inKit) console.log(`  ${c.green("✔")}  ${lib}  ${c.dim("обёртка скопирована в проект")}`);
-  console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim("команда завёрнута в храповик")}`);
+  console.log(`  ${c.green("✔")}  ${RATCHET_DIR}/${slug}.txt  ${c.dim(L.ratchet.recorded(keys.length))}`);
+  if (!inKit) console.log(`  ${c.green("✔")}  ${lib}  ${c.dim(L.ratchet.libCopied)}`);
+  console.log(`  ${c.green("✔")}  .aqk.yml  ${c.dim(L.ratchet.wrapped)}`);
   console.log(`
-${c.bold("Что это меняет:")}
+${c.bold(L.ratchet.changesTitle)}
 
-  Правило действует ${c.bold("со дня установки")}. Старый код трогать не надо, но новое
-  нарушение того же класса гейт не пропустит.
+  ${L.ratchet.changes1(c.bold(L.ratchet.fromToday))}
+  ${L.ratchet.changes2}
 
-  ${c.dim("Проверка, что это храповик, а не советчик: «может ли новый код добавить нарушение")}
-  ${c.dim("и пройти?» Может — значит гейта нет.")}
+  ${c.dim(L.ratchet.test1)}
+  ${c.dim(L.ratchet.test2)}
 
-  Прогнать: ${c.bold(`${SELF} doctor --run`)}
+  ${L.ratchet.run(c.bold(`${SELF} doctor --run`))}
 `);
 }
 
@@ -250,7 +244,7 @@ ${c.bold("Что это меняет:")}
 
 async function cmdFind(args) {
   const query = args.filter((a) => !a.startsWith("-")).join(" ").trim();
-  if (!query) die(`Опиши намерение словами: ${SELF} find "отладочная печать не доезжает до прода"`);
+  if (!query) die(L.find.needQuery(`${SELF} ${L.find.example}`));
 
   const q = stems(query);
   const scored = (await matchCatalog(query)).map((m) => [m.score, m.rec]);
@@ -273,41 +267,41 @@ async function cmdFind(args) {
   const near = scored.filter(([sc]) => sc >= 0.3 && sc < 0.6);
 
   if (same.length) {
-    console.log(c.green("  Такое уже есть — новую запись заводить не надо:\n"));
+    console.log(c.green(`  ${L.find.exists}\n`));
     for (const [sc, rec] of same.slice(0, 3)) {
-      console.log(`  ${c.bold(rec.slug)}  ${c.dim(`совпадение ${Math.round(sc * 100)}%`)}`);
+      console.log(`  ${c.bold(rec.slug)}  ${c.dim(L.find.match(Math.round(sc * 100)))}`);
       console.log(`      ${rec.intent || ""}`);
       const langs = Object.keys(rec.recipes || {}).filter((k) => k !== "any");
-      console.log(c.dim(`      рецепты: ${langs.length ? langs.join(", ") + ", " : ""}общий`));
+      console.log(c.dim(`      ${L.find.recipes(langs.length ? langs.join(", ") + ", " : "")}`));
     }
-    console.log(c.dim("\n  Если у тебя рецепт под другой стек — это строка в recipes существующей"));
-    console.log(c.dim("  записи, а не новый гейт. Намерение одно, исполнителей может быть много.\n"));
+    console.log(c.dim(`\n  ${L.find.existsWhy1}`));
+    console.log(c.dim(`  ${L.find.existsWhy2}\n`));
   } else if (near.length) {
-    console.log(c.yellow("  Точного совпадения нет, но рядом лежит:\n"));
+    console.log(c.yellow(`  ${L.find.near}\n`));
     for (const [sc, rec] of near.slice(0, 4)) {
       console.log(`  ${c.bold(rec.slug)}  ${c.dim(`${Math.round(sc * 100)}%`)}  ${rec.intent || ""}`);
     }
-    console.log(c.dim("\n  Прочитай их README. Если намерение то же — дополняй, а не заводи новое.\n"));
+    console.log(c.dim(`\n  ${L.find.nearWhy}\n`));
   } else {
-    console.log(c.yellow("  Такого намерения в каталоге нет.\n"));
+    console.log(c.yellow(`  ${L.find.none}\n`));
   }
 
   if (journal.length) {
-    console.log(c.bold("  В журнале есть шишка на эту тему:\n"));
+    console.log(c.bold(`  ${L.find.journal}\n`));
     for (const [, date, title] of journal.slice(0, 3)) console.log(`  ${c.dim(date)}  ${title}`);
-    console.log(c.dim("\n  Шишка записана — значит доказательство для новой записи уже есть.\n"));
+    console.log(c.dim(`\n  ${L.find.journalWhy}\n`));
   }
 
   if (!same.length) {
-    console.log(`${c.bold("Как добавить свой гейт:")}
+    console.log(`${c.bold(L.find.howTitle)}
 
-  1. ${c.bold("Назови отказ.")} Какой конкретный брак он поймал в живом проекте, чего это стоило.
-     ${c.dim("«Это хорошая практика» не принимается: так каталог набирает сотни пунктов и умирает.")}
-  2. ${c.bold("Заведи папку")} kit/gates/<имя>/ — gate.yml, red/, green/, README.md.
-     ${c.dim("Норма записи со всеми полями — kit/gates/README.md")}
-  3. ${c.bold("Проверь машиной:")} bash tool/selfcheck/gates.sh
-     ${c.dim("Арбитр обязан покраснеть на red/ и промолчать на green/. Не прошло — не запись.")}
-  4. ${c.bold("Пришли изменением")} в репозиторий комплекта.
+  1. ${c.bold(L.find.how1)} ${L.find.how1What}
+     ${c.dim(L.find.how1Why)}
+  2. ${c.bold(L.find.how2)} kit/gates/${L.help.name}/ ${L.find.how2What}
+     ${c.dim(L.find.how2Why)}
+  3. ${c.bold(L.find.how3)} bash tool/selfcheck/gates.sh
+     ${c.dim(L.find.how3Why)}
+  4. ${c.bold(L.find.how4)} ${L.find.how4What}
 `);
   }
 }
@@ -340,15 +334,15 @@ async function runsInCi(slug, cmd) {
   const script = (cmd.match(/[\w./-]+\.(?:sh|mjs|js|py)/) || [])[0];
   for (const f of files) {
     const text = await readFile(f, "utf8");
-    if (/doctor\s+--run|--run\s+.*doctor/.test(text)) return { ci: true, runs: true, how: "разом: doctor --run" };
-    if (text.includes(slug) || (script && text.includes(script))) return { ci: true, runs: true, how: "отдельным шагом" };
+    if (/doctor\s+--run|--run\s+.*doctor/.test(text)) return { ci: true, runs: true, how: L.why.ciAtOnce };
+    if (text.includes(slug) || (script && text.includes(script))) return { ci: true, runs: true, how: L.why.ciOwnStep };
   }
   return { ci: true, runs: false };
 }
 
 async function cmdWhy(args) {
   const query = args.filter((a) => !a.startsWith("-")).join(" ").trim();
-  if (!query) die(`Опиши, что пропустили: ${SELF} why "файл вырос до девяти тысяч строк"`);
+  if (!query) die(L.why.needQuery(`${SELF} ${L.why.example}`));
 
   const man = await readManifest();
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
@@ -365,80 +359,80 @@ async function cmdWhy(args) {
   // случай отправляет чинить не то, а это дороже, чем лишний вопрос.
   const near = matches.filter((x) => x.rawScore >= 0.18).sort((a, b) => b.rawScore - a.rawScore);
   if (!byName && (!best || best.score < 0.5) && near.length) {
-    console.log(c.yellow("  Уверенного совпадения нет. Похоже на эти записи:\n"));
+    console.log(c.yellow(`  ${L.why.unsure}\n`));
     for (const m of near.slice(0, 3)) {
       console.log(`  ${c.bold(m.rec.slug)}  ${c.dim(`${Math.round(m.rawScore * 100)}%`)}  ${m.rec.intent || ""}`);
     }
-    console.log(c.dim(`\n  Назови запись именем: ${SELF} why <имя>`));
-    console.log(c.dim(`  Ни одна не подходит — значит сторожа не было: ${SELF} new <имя>\n`));
+    console.log(c.dim(`\n  ${L.why.unsureByName(`${SELF} why ${L.help.name}`)}`));
+    console.log(c.dim(`  ${L.why.unsureNone(`${SELF} new ${L.help.name}`)}\n`));
     return;
   }
 
   const decide = () => {
-    console.log(`${c.bold("Дальше решаешь ты:")} это твоя частность или общий случай?`);
-    console.log(c.dim("  Общий — идёт в каталог и достаётся всем. Частный — остаётся у тебя."));
-    console.log(c.dim(`  Урок в общий журнал в любом случае: ${SELF} note "что случилось"\n`));
+    console.log(`${c.bold(L.why.decideTitle)} ${L.why.decideQ}`);
+    console.log(c.dim(`  ${L.why.decideWhy}`));
+    console.log(c.dim(`  ${L.why.decideNote(`${SELF} note "…"`)}\n`));
   };
 
   // --- 1. сторожа не было ----------------------------------------------------
   if (!best || best.score < 0.25) {
-    console.log(c.yellow("  Сторожа не было.") + c.dim("  В каталоге нет записи с таким намерением.\n"));
-    console.log(`  ${c.bold("Почини так:")} заведи запись — ${c.bold(`${SELF} new <имя>`)}`);
-    console.log(c.dim("  Красный образец бери прямо из этой поломки: она уже случилась, выдумывать нечего.\n"));
+    console.log(c.yellow(`  ${L.why.noGuard}`) + c.dim(`  ${L.why.noGuardWhy}\n`));
+    console.log(`  ${c.bold(L.why.fix)} ${L.why.noGuardFix(c.bold(`${SELF} new ${L.help.name}`))}`);
+    console.log(c.dim(`  ${L.why.noGuardHint}\n`));
     decide();
     return;
   }
 
   const slug = best.rec.slug;
-  console.log(`  Ближайшая запись каталога: ${c.bold(slug)}  ${c.dim(`совпадение ${Math.round(best.score * 100)}%`)}`);
+  console.log(`  ${L.why.closest(c.bold(slug), Math.round(best.score * 100))}`);
   console.log(`  ${c.dim(best.rec.intent || "")}\n`);
 
   // --- 2. запись есть, но в проекте не объявлена -----------------------------
   const cmd = gates[slug];
   if (!cmd || !String(cmd).trim()) {
-    console.log(c.yellow("  Сторож есть в каталоге, но в этом проекте не поставлен.\n"));
-    console.log(`  ${c.bold("Почини так:")} ${c.bold(`${SELF} add ${slug}`)}`);
-    console.log(c.dim("  Он покраснеет на старом коде — это нормально: старое закрывается храповиком,"));
-    console.log(c.dim(`  новое ловится со дня установки. ${SELF} ratchet ${slug}\n`));
+    console.log(c.yellow(`  ${L.why.notInstalled}\n`));
+    console.log(`  ${c.bold(L.why.fix)} ${c.bold(`${SELF} add ${slug}`)}`);
+    console.log(c.dim(`  ${L.why.notInstalledHint1}`));
+    console.log(c.dim(`  ${L.why.notInstalledHint2(`${SELF} ratchet ${slug}`)}\n`));
     decide();
     return;
   }
 
   // --- 3. объявлен: спрашиваем у него самого ---------------------------------
-  console.log(c.dim(`  Объявлен: ${cmd}`));
+  console.log(c.dim(`  ${L.why.declaredAs(cmd)}`));
   const r = spawnSync(String(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
   const ci = await runsInCi(slug, String(cmd));
 
   if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
-    console.log(c.yellow("\n  Сторож объявлен, но не запускается.") + c.dim("  Худший случай: тишина читается как успех.\n"));
-    console.log(`  ${c.bold("Почини так:")} путь или программа из команды не существуют — проверь их.`);
-    console.log(c.dim("  Отсутствие сигнала неотличимо от успеха, поэтому это не «мелочь в конфиге».\n"));
+    console.log(c.yellow(`\n  ${L.why.notRunning}`) + c.dim(`  ${L.why.notRunningWhy}\n`));
+    console.log(`  ${c.bold(L.why.fix)} ${L.why.notRunningFix}`);
+    console.log(c.dim(`  ${L.why.notRunningHint}\n`));
     decide();
     return;
   }
 
   if (r.status !== 0) {
-    console.log(c.yellow("\n  Сторож есть и эту поломку ловит — значит его обошли.\n"));
+    console.log(c.yellow(`\n  ${L.why.bypassed}\n`));
     if (!ci.ci) {
-      console.log(`  ${c.bold("Почини так:")} конвейера нет. Проверка, которую гоняет только человек,`);
-      console.log(c.dim("  работает ровно до первого «забыл».\n"));
+      console.log(`  ${c.bold(L.why.fix)} ${L.why.noCiFix}`);
+      console.log(c.dim(`  ${L.why.noCiHint}\n`));
     } else if (!ci.runs) {
-      console.log(`  ${c.bold("Почини так:")} конвейер есть, но этот гейт в нём не запускается.`);
-      console.log(c.dim(`  Дешевле всего одним шагом: ${SELF} doctor --run — он гоняет всё объявленное.\n`));
+      console.log(`  ${c.bold(L.why.fix)} ${L.why.notInCiFix}`);
+      console.log(c.dim(`  ${L.why.notInCiHint(`${SELF} doctor --run`)}\n`));
     } else {
-      console.log(`  ${c.bold("Почини так:")} конвейер его гоняет (${ci.how}) — значит красный прогон`);
-      console.log(c.dim("  кто-то пропустил или обошёл. Перенеси правило из текста в механику:"));
-      console.log(c.dim("  блокирующий шаг, а не необязательный; запрет слияния при красном.\n"));
+      console.log(`  ${c.bold(L.why.fix)} ${L.why.inCiFix(ci.how)}`);
+      console.log(c.dim(`  ${L.why.inCiHint1}`));
+      console.log(c.dim(`  ${L.why.inCiHint2}\n`));
     }
     decide();
     return;
   }
 
-  console.log(c.yellow("\n  Сторож есть, стоит и запускается — но этой поломки не видит.\n"));
-  console.log(`  ${c.bold("Почини так:")} положи в ${c.bold(`${slug}/red/`)} кусок кода из этой поломки`);
-  console.log(c.dim("  и доведи проверку до красного на нём. Порядок обратный привычному: сначала"));
-  console.log(c.dim("  образец, потом правка — иначе непонятно, что именно починено.\n"));
-  console.log(c.dim(`  Проверить после правки: bash tool/selfcheck/gates.sh\n`));
+  console.log(c.yellow(`\n  ${L.why.blind}\n`));
+  console.log(`  ${c.bold(L.why.fix)} ${L.why.blindFix(c.bold(`${slug}/red/`))}`);
+  console.log(c.dim(`  ${L.why.blindHint1}`));
+  console.log(c.dim(`  ${L.why.blindHint2}\n`));
+  console.log(c.dim(`  ${L.why.blindCheck}\n`));
   decide();
 }
 
