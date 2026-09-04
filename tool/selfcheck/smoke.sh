@@ -649,6 +649,53 @@ else
   ok "родной рецепт не проверен здесь — нет vulture"
 fi
 
+# --- 38. badge выдаёт значок с тем же уровнем, что и doctor -------------------
+# ЗАЧЕМ. Значок в чужом README — единственное, что делает стандарт видимым за пределами
+# нашего репозитория. Если он покажет уровень, отличный от того, что считает doctor, это
+# ровно то враньё, против которого весь стандарт.
+BDIR="$(mktemp -d)"
+(
+  cd "$BDIR" && git init -q . && git config user.email t@t && git config user.name t &&
+  mkdir -p src && printf 'def f():\n    return 1\n' > src/a.py &&
+  node "$CLI" init >/dev/null 2>&1 && node "$CLI" add file-size-limit >/dev/null 2>&1
+)
+B_OUT=$( cd "$BDIR" && node "$CLI" badge 2>&1 )
+B_LVL=$(printf '%s' "$B_OUT" | sed -n 's|.*img.shields.io/badge/AQK-\([0-9]\)-.*|\1|p' | head -1)
+D_LVL=$( cd "$BDIR" && node "$CLI" doctor 2>&1 | sed -n 's/.*Уровень: AQK-\([0-9]\).*/\1/p' | head -1 )
+if [ -n "$B_LVL" ] && [ "$B_LVL" = "$D_LVL" ]; then
+  ok "badge выдаёт значок с уровнем doctor (AQK-$B_LVL)"
+else
+  bad "badge и doctor разошлись в уровне" "badge=[$B_LVL] doctor=[$D_LVL]"
+fi
+
+# --- 39. badge молчит, когда гейт красный ------------------------------------
+# ЗАЧЕМ. Значок, выданный при красном гейте, — это заявление автора, а не факт машины.
+sed -i.bak 's|^  file-size-limit: .*|&\n  broken: "sh -c '"'"'exit 1'"'"'"|' "$BDIR/.aqk.yml"
+B_RED=$( cd "$BDIR" && node "$CLI" badge 2>&1 ); B_RED_CODE=$?
+# Условие «нет значка» само по себе зелёное и у несуществующей команды — поэтому здесь
+# требуется ещё и названный виновник: иначе проверка не умеет краснеть.
+if [ "$B_RED_CODE" -ne 0 ] && ! printf '%s' "$B_RED" | grep -q 'img.shields.io' &&
+   printf '%s' "$B_RED" | grep -q 'broken'; then
+  ok "badge отказывает при красном гейте"
+else
+  bad "badge выдал значок при красном гейте" "код=$B_RED_CODE $(printf '%s' "$B_RED" | head -2)"
+fi
+mv "$BDIR/.aqk.yml.bak" "$BDIR/.aqk.yml"
+
+# --- 40. badge --check ловит устаревший значок в README ----------------------
+# ЗАЧЕМ. Значок, который никто не пересчитывает, через месяц врёт. Смысл он приобретает
+# только вместе с командой, которая роняет конвейер, когда README разошёлся с фактом.
+printf '# проект\n\n[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://x)\n' > "$BDIR/README.md"
+( cd "$BDIR" && node "$CLI" badge --check >/dev/null 2>&1 ); CHK_LIE=$?
+printf '# проект\n\n[![AQK-%s](https://img.shields.io/badge/AQK-%s-2ea44f)](https://x)\n' "$D_LVL" "$D_LVL" > "$BDIR/README.md"
+( cd "$BDIR" && node "$CLI" badge --check >/dev/null 2>&1 ); CHK_TRUE=$?
+if [ "$CHK_LIE" -ne 0 ] && [ "$CHK_TRUE" -eq 0 ]; then
+  ok "badge --check ловит устаревший значок и пропускает верный"
+else
+  bad "badge --check не различает верный и устаревший значок" "врущий=$CHK_LIE верный=$CHK_TRUE"
+fi
+rm -rf "$BDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

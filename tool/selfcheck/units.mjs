@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
+import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
 import { dirname } from "node:path";
 
 const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
@@ -177,4 +178,24 @@ test("поиск не зависит от оболочки — работает 
 test("команда путём, а не именем, ищется на диске, а не в PATH", () => {
   assert.ok(whichSync(process.execPath));
   assert.equal(whichSync("./нет-такого-файла.sh"), null);
+});
+
+// --- значок уровня ------------------------------------------------------------
+// ЗАЧЕМ. Значок печатает одна функция, а читает его обратно другое выражение — в том же
+// файле, но независимо. Разойдись они, и `badge --check` перестал бы узнавать собственный
+// значок: конвейер молча зеленел бы на любом README. Тишина, неотличимая от успеха.
+test("значок читается тем же разбором, каким печатается", () => {
+  for (const level of [0, 1, 2, 3]) {
+    const found = BADGE_RE.exec(badgeMarkdown(level));
+    assert.ok(found, `значок AQK-${level} не разобрался`);
+    assert.equal(Number(found[1]), level);
+  }
+});
+
+test("значок ищется в точке входа и в README, без повторов", () => {
+  const places = placesToCheck({ entry: ["AGENTS.md", "README.md"] });
+  assert.ok(places.includes("AGENTS.md"));
+  assert.ok(places.includes("README.md"));
+  assert.equal(places.filter((p) => p === "README.md").length, 1);
+  assert.ok(placesToCheck({}).includes("README.md"), "без entry README всё равно проверяется");
 });

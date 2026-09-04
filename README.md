@@ -5,6 +5,7 @@
 [![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
 [![checks](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
 [![MIT licence](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
 
 **A standard for whether a repository is ready to have its code written by agents.** Every
 promise the project makes turns into a command with an exit code — held by a machine, not by
@@ -17,6 +18,9 @@ tooling: [the dark factory and the minimum that isn't optional](kit/docs/ai/proj
 npx agent-quality-kit start     # no code yet: day-zero guards, right away
 npx agent-quality-kit doctor    # code already exists: your level and what to install
 ```
+
+`doctor` only reads: it writes no file and sends nothing anywhere. It is safe to point at
+a repository you have not decided anything about yet.
 
 Nothing to install — `npx` fetches the package itself (230 KB). The bleeding edge straight from
 the repository is `npx github:arsen-ask-lx/Agent_Quality_Kit doctor`, but the first run that way
@@ -108,6 +112,18 @@ would mean trust in the author rather than a fact.
 ```bash
 aqk doctor --run --min 1   # in CI: fails below AQK-1 OR if any gate failed
 ```
+
+## The badge
+
+```bash
+aqk badge          # runs the declared gates, prints the markdown — only if every one is green
+aqk badge --check  # in CI: exit 1 the day the badge in your README stops matching the run
+```
+
+A badge nobody re-computes is a claim, not a fact — which is the very thing this project
+replaces. So `aqk badge` prints nothing over a red gate, and `aqk badge --check` fails your
+pipeline on the day the README and the repository part ways. The badge at the top of this file
+is checked that way on every push.
 
 ## Installing a gate
 

@@ -5,6 +5,7 @@
 [![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
 [![проверки](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
 [![лицензия MIT](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
 
 **Стандарт готовности репозитория к тому, что код в нём пишет агент.** Обещание проекта
 становится командой с кодом возврата — и его держит машина, а не чья-то добрая воля.
@@ -16,6 +17,9 @@
 npx agent-quality-kit start     # кода ещё нет: сторожа дня 0 сразу
 npx agent-quality-kit doctor    # код уже есть: уровень и что поставить
 ```
+
+`doctor` только читает: ни одного файла не пишет и никуда ничего не отправляет. Его можно
+направить на репозиторий, о котором ещё ничего не решено.
 
 Ставить ничего не нужно, `npx` скачает пакет сам (230 КБ). Свежая версия прямо из репозитория —
 `npx github:arsen-ask-lx/Agent_Quality_Kit doctor`, но первый запуск такого вида молчит две-три
@@ -107,6 +111,18 @@ lessons:  incidents        # где копятся уроки
 ```bash
 aqk doctor --run --min 1   # в конвейере: ошибка, если ниже AQK-1 ИЛИ упал хоть один гейт
 ```
+
+## Значок
+
+```bash
+aqk badge          # прогоняет объявленные гейты и печатает строку — только если все зелёные
+aqk badge --check  # в конвейере: код 1 в тот день, когда значок в README разошёлся с прогоном
+```
+
+Значок, который никто не пересчитывает, — это заявление, а не факт: ровно то, что этот проект
+и заменяет. Поэтому при красном гейте `aqk badge` не печатает ничего, а `aqk badge --check`
+роняет конвейер в тот день, когда README и репозиторий разошлись. Значок в начале этого файла
+проверяется так на каждом пуше.
 
 ## Поставить гейт
 

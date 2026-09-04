@@ -22,6 +22,7 @@ import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
 import { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy } from "./commands/gates.mjs";
 import { cmdReport } from "./commands/report.mjs";
+import { cmdBadge } from "./commands/badge.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -68,6 +69,9 @@ if (IS_MAIN) {
     case "report":
       await cmdReport();
       break;
+    case "badge":
+      await cmdBadge(rest);
+      break;
     default: {
       // Ширина колонки считается, а не подбирается пробелами: строки в двух языках разной
       // длины, и вручную выровненная справка на втором языке разъезжается.
@@ -86,6 +90,7 @@ if (IS_MAIN) {
         [`${SELF} note "…"`, h.note],
         [`${SELF} blob`, h.blob],
         [`${SELF} report`, h.report],
+        [`${SELF} badge`, h.badge],
       ];
       const width = Math.max(...rows.map(([cmdText]) => cmdText.length));
       const lines = rows.map(([cmdText, text]) => `  ${c.bold(cmdText.padEnd(width))}   ${text}`);
