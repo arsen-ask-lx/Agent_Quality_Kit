@@ -68,7 +68,7 @@ async function detectFacts(man) {
         await walk(full, depth + 1);
       } else {
         files++;
-        if (/\.(test|spec)\.[a-z]+$/i.test(it.name) || /^test_.*\.py$/i.test(it.name)) hasTests = true;
+        if (/\.(test|spec)\.[a-z]+$/i.test(it.name) || /^test_.*\.py$/i.test(it.name) || /_test\.go$/i.test(it.name)) hasTests = true;
         if (it.name.endsWith(".sql")) hasDb = true;
         const dot = it.name.lastIndexOf(".");
         if (dot > 0) {

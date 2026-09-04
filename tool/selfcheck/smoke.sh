@@ -362,6 +362,22 @@ else
   bad "doctor краснеет на самом комплекте" "оригиналы лежат в kit/, разложенной копии здесь не бывает"
 fi
 
+# --- 23. Go-конвенция *_test.go опознаётся как тесты ------------------------
+# Найдено прогоном на gin-gonic/gin: тесты лежат рядом с кодом как foo_test.go, без
+# отдельной папки tests/ — признак has_tests молчал на полностью протестированном репозитории.
+GODIR="$(mktemp -d)"
+mkdir -p "$GODIR/pkg"
+printf 'package pkg\nfunc Foo() {}\n' > "$GODIR/pkg/foo.go"
+printf 'package pkg\nfunc TestFoo(t *testing.T) {}\n' > "$GODIR/pkg/foo_test.go"
+( cd "$GODIR" && node "$CLI" init >/dev/null 2>&1 )
+GOOUT=$( cd "$GODIR" && node "$CLI" doctor 2>&1 )
+if printf '%s' "$GOOUT" | grep -E 'есть:.*\btests\b' >/dev/null; then
+  ok "*_test.go опознаётся как тесты (Go)"
+else
+  bad "*_test.go не опознан как тесты" "признак has_tests молчит на репозитории gin-типа"
+fi
+rm -rf "$GODIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
