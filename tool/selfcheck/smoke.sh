@@ -486,6 +486,32 @@ else
 fi
 rm -rf "$RUNDIR"
 
+# --- 31. commit-explains-itself и note не спорят друг с другом ---------------
+# Собственная команда `note` делает коммит сама, и её тело — заголовок записи, без разделов
+# «Сделано:»/«Не уверен:». Пока гейт этого не различал, каждая запись в журнал красила
+# репозиторий, где стоят оба, — то есть инструмент воевал сам с собой.
+CEDIR="$(mktemp -d)"
+(
+  cd "$CEDIR" && git init -q . && git config user.email t@t && git config user.name t
+  mkdir -p incidents && echo "# журнал" > incidents/README.md
+  printf 'lessons: incidents\n' > .aqk.yml
+  echo "код" > a.js
+  git add -A && git commit -q -m "первый"
+  echo "## запись" >> incidents/README.md && git add -A && git commit -q -m "lesson(aqk): шишка"
+)
+if bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CEDIR" >/dev/null 2>&1; then
+  ok "коммит только в журнал не требует мини-отчёта: запись и есть отчёт"
+else
+  bad "гейт краснеет на записи в журнал — спорит с собственной командой note"
+fi
+( cd "$CEDIR" && echo "ещё" >> a.js && git add -A && git commit -q -m "fix: без отчёта" )
+if bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CEDIR" >/dev/null 2>&1; then
+  bad "гейт молчит на коммите в код без мини-отчёта"
+else
+  ok "коммит, трогающий код, мини-отчёт всё так же обязан нести"
+fi
+rm -rf "$CEDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

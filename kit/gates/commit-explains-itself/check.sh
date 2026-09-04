@@ -15,6 +15,23 @@ else
     exit 0
   fi
   MSG=$(cd "$DIR" && git log -1 --format=%B 2>/dev/null)
+
+  # Коммит, который трогает только журнал, отчёта в теле не требует: сама запись и есть отчёт,
+  # причём подробнее — и её сторожит `lesson-has-outcome`. Иначе гейт воюет с командой `note`,
+  # которая коммитит запись сама. Путь журнала берётся из манифеста, а не угадывается.
+  LESSONS=$(sed -n 's/^lessons:[[:space:]]*//p' "$DIR/.aqk.yml" 2>/dev/null | head -1 | tr -d '"'"'"' \r')
+  [ -z "$LESSONS" ] && LESSONS="incidents"
+  case "$LESSONS" in http*) LESSONS="" ;; esac   # journal по адресу, а не путём — не применимо
+  if [ -n "$LESSONS" ]; then
+    FILES=$(cd "$DIR" && git show --pretty=format: --name-only HEAD 2>/dev/null | grep -v '^$')
+    if [ -n "$FILES" ]; then
+      OUTSIDE=$(printf '%s\n' "$FILES" | grep -v "^$LESSONS/" | grep -v "^$LESSONS\$")
+      if [ -z "$OUTSIDE" ]; then
+        echo "коммит трогает только журнал ($LESSONS) — запись и есть отчёт"
+        exit 0
+      fi
+    fi
+  fi
 fi
 [ -z "$MSG" ] && { echo "нет ни одного коммита — проверять нечего"; exit 0; }
 
