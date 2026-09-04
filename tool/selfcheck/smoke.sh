@@ -586,6 +586,24 @@ else
 fi
 rm -rf "$REPDIR"
 
+# --- 35. note пишет в журнал ЭТОГО проекта, а не в чужой ---------------------
+# Команда требовала клон нашего репозитория и писала урок туда, игнорируя lessons: из
+# манифеста проекта. Найдено первым чужим прогоном: человек завёл журнал руками.
+NOTEDIR="$(mktemp -d)"; NOTEHOME="$(mktemp -d)"
+(
+  cd "$NOTEDIR" && git init -q . && git config user.email t@t && git config user.name t &&
+  node "$CLI" init >/dev/null 2>&1 &&
+  mkdir -p incidents &&
+  sed -i 's|^lessons: ""|lessons: incidents|' .aqk.yml &&
+  printf '**Вывод.** 🔧 завели проверку\n' | HOME="$NOTEHOME" AQK_HOME="" node "$CLI" note "шишка" >/dev/null 2>&1
+)
+if [ -f "$NOTEDIR/incidents/README.md" ] && grep -q 'шишка' "$NOTEDIR/incidents/README.md"; then
+  ok "note пишет в journal этого проекта — lessons: из манифеста"
+else
+  bad "note проигнорировал lessons: и ушёл искать чужой клон" "$NOTEDIR/incidents/README.md"
+fi
+rm -rf "$NOTEDIR" "$NOTEHOME"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

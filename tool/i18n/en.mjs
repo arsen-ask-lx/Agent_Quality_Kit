@@ -269,6 +269,7 @@ export const en = {
   },
 
   note: {
+    journalTitle: "Bruise journal",
     needTitle: (cmd) => `A title is required: ${cmd}`,
     noJournal: (url) => `No journal clone found.\nDo this once:\n  git clone ${url}.git ~/projects/aqk\nor point at it: export AQK_HOME=/path/to/aqk`,
     journalMissing: (path) => `Journal not found: ${path}`,

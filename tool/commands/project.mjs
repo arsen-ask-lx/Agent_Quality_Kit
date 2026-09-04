@@ -110,13 +110,31 @@ async function cmdNote(args) {
   const title = args.find((a) => !a.startsWith("--"));
   if (!title) die(L.note.needTitle(`${SELF} note "…"`));
 
-  const home = findJournal();
-  if (!home) {
-    die(L.note.noJournal(REPO_URL));
+  // Сначала журнал ЭТОГО проекта: `lessons:` в манифесте — это и есть ответ на вопрос «куда
+  // складывать уроки», данный владельцем репозитория. Пока команда его игнорировала, она
+  // требовала клон нашего репозитория и писала урок туда — то есть в чужой проект. Найдено
+  // первым же чужим прогоном: человек завёл журнал руками, потому что команда не сработала.
+  const man = await readManifest();
+  const own = String(man?.lessons || "").trim();
+  let home = null;
+  let journal = null;
+  if (own && !/^https?:/i.test(own)) {
+    const dir = join(CWD, own);
+    if (await exists(dir)) {
+      home = CWD;
+      journal = join(dir, "README.md");
+      // Журнал объявлен, но файла нет — заводим, а не отказываем: пустой журнал это норма
+      // первого дня, и отказ на нём отучает пользоваться командой.
+      if (!(await exists(journal))) await writeFile(journal, `# ${L.note.journalTitle}\n`, "utf8");
+    }
   }
 
-  const journal = join(home, "incidents", "README.md");
-  if (!(await exists(journal))) die(L.note.journalMissing(journal));
+  if (!home) {
+    home = findJournal();
+    if (!home) die(L.note.noJournal(REPO_URL));
+    journal = join(home, "incidents", "README.md");
+    if (!(await exists(journal))) die(L.note.journalMissing(journal));
+  }
 
   let body = "";
   if (!process.stdin.isTTY) {

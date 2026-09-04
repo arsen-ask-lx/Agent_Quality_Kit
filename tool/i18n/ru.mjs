@@ -270,6 +270,7 @@ export const ru = {
   },
 
   note: {
+    journalTitle: "Журнал шишек",
     needTitle: (cmd) => `Нужен заголовок: ${cmd}`,
     noJournal: (url) => `Клон журнала не найден.\nСделай один раз:\n  git clone ${url}.git ~/projects/aqk\nили укажи путь: export AQK_HOME=/путь/к/aqk`,
     journalMissing: (path) => `Журнал не найден: ${path}`,
