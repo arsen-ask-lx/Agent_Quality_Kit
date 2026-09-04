@@ -38,6 +38,7 @@ gates:
   proof-from-journal: "bash kit/ratchet/ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."
+  commit-explains-itself: "bash kit/gates/commit-explains-itself/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.
