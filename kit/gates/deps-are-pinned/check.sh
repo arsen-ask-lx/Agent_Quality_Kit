@@ -10,6 +10,9 @@ BAD=0
 has_deps_declared() {
   case "$1" in
     package.json)  grep -qE '"(dependencies|devDependencies|peerDependencies)"[[:space:]]*:[[:space:]]*\{[[:space:]]*"' "$DIR/$1" ;;
+    # go.sum вообще не создаётся, если модуль использует только стандартную библиотеку —
+    # требовать его там означает красить гейт на пустом месте, а не ловить нарушение.
+    go.mod)        grep -qE '^require\b' "$DIR/$1" ;;
     *)             return 0 ;;
   esac
 }
