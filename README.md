@@ -125,6 +125,21 @@ replaces. So `aqk badge` prints nothing over a red gate, and `aqk badge --check`
 pipeline on the day the README and the repository part ways. The badge at the top of this file
 is checked that way on every push.
 
+## In your pipeline
+
+```yaml
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.1
+  with:
+    min: 1   # the build fails below AQK-1, or if any declared gate failed
+```
+
+The action is a thin wrapper around one command and holds no logic of its own — without it,
+the same thing in a single line:
+
+```yaml
+- run: npx agent-quality-kit doctor --run --min 1
+```
+
 ## Installing a gate
 
 ```bash

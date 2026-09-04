@@ -1,0 +1,36 @@
+# Действие для GitHub Actions — чтобы поставить AQK в чужой конвейер тремя строками, а не
+# вспоминать команду. Тонкая обёртка над `npx agent-quality-kit doctor --run` и ничего больше:
+# как только здесь появится собственная логика, она разойдётся с программой, и конвейер начнёт
+# проверять не то, что проверяет doctor.
+#
+# Проверено: задание `действие для чужого конвейера` в .github/workflows/ci.yml запускает это
+# же действие через `uses: ./` при каждом пуше.
+
+name: 'Agent Quality Kit (AQK)'
+description: 'Runs the checks a repository declares in .aqk.yml and fails the build below the level you require.'
+author: 'arsen-ask-lx'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  min:
+    description: 'Minimum AQK level the repository must reach (0-3). The build fails below it, or if any declared gate failed.'
+    required: false
+    default: '1'
+  version:
+    description: 'Version of agent-quality-kit to run. Pin it for a reproducible build.'
+    required: false
+    default: 'latest'
+
+runs:
+  using: 'composite'
+  steps:
+    # Значения приходят через окружение, а не подстановкой в строку команды: подставленный
+    # прямо в `run` ввод — это выполнение чужого текста оболочкой.
+    - shell: bash
+      env:
+        AQK_MIN: ${{ inputs.min }}
+        AQK_VERSION: ${{ inputs.version }}
+      run: npx --yes "agent-quality-kit@$AQK_VERSION" doctor --run --min "$AQK_MIN"

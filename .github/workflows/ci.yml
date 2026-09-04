@@ -64,3 +64,33 @@ jobs:
       # этот значок другим проектам, и первое, чем он обязан быть подтверждён, — наш собственный.
       - name: значок в README не врёт
         run: node tool/program.mjs badge --check
+
+  # Действие для чужого конвейера (`uses: arsen-ask-lx/Agent_Quality_Kit@v…`) — файл action.yml
+  # в корне. Проверять его тем же прогоном, что и всё остальное, нельзя: он запускает не наш
+  # код, а выпущенный в реестр пакет, и ломается ровно там, где мы бы этого не увидели.
+  # Поэтому отдельное задание, и подопытный — не мы: репозиторий кладётся в kit/, а в корне
+  # собирается чистый проект, каким его увидит посторонний.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: kit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: подопытный проект в корне рабочей папки
+        run: |
+          git init -q .
+          mkdir -p src
+          printf 'def f():\n    return 1\n' > src/a.py
+          printf 'kit/\n' > .aqkignore
+          node kit/tool/program.mjs init
+          node kit/tool/program.mjs add file-size-limit
+
+      - name: действие ставит проверки в чужой конвейер
+        uses: ./kit
+        with:
+          min: 1
