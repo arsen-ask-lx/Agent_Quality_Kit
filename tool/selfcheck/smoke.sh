@@ -547,7 +547,12 @@ if printf '%s' "$EN_OUT" | grep -q "install a gate from the catalogue" &&
    printf '%s' "$RU_OUT" | grep -q "поставить гейт из каталога"; then
   ok "справка печатается на двух языках, в английской нет кириллицы"
 else
-  bad "выбор языка не доехал до вывода" "$(printf '%s' "$EN_OUT" | head -4)"
+  # Диагностика по каждому условию отдельно. Прежняя печатала первые строки вывода — по ним
+  # видно, что вывод английский, и совершенно не видно, какая из трёх сверок не сошлась.
+  EN_HAS=$(printf '%s' "$EN_OUT" | grep -c "install a gate from the catalogue")
+  EN_CYR=$(printf '%s' "$EN_OUT" | grep -c '[а-яА-ЯёЁ]')
+  RU_HAS=$(printf '%s' "$RU_OUT" | grep -c "поставить гейт из каталога")
+  bad "выбор языка не доехал до вывода" "англ.фраза=$EN_HAS кириллица_в_англ=$EN_CYR рус.фраза=$RU_HAS"
 fi
 
 # --- 33. ссылка на репозиторий ведёт в репозиторий -----------------------------
@@ -577,7 +582,11 @@ REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
 if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ no-print-in-prod'; then
   ok "report краснеет кодом возврата и называет упавший гейт"
 else
-  bad "report не отличает красное от зелёного" "код $REP_CODE"
+  # Код возврата отчёта не говорит, ПОЧЕМУ он ноль: гейт не сработал, не установился или
+  # установился не тот. Спрашиваем сам гейт напрямую — это и есть разница между «отчёт врёт»
+  # и «проверка не ловит на этой системе».
+  G_OUT=$( cd "$REPDIR" && bash gates/no-print-in-prod/check.sh . 2>&1 | head -2 ); G_CODE=$?
+  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; объявлено: $(cd "$REPDIR" && grep -c . .aqk.yml 2>/dev/null)"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
   ok "report сохраняет .aqk/report.md"
