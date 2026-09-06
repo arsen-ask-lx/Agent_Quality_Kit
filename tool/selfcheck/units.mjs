@@ -453,3 +453,19 @@ test("advisory — известное поле манифеста", () => {
   assert.equal(KNOWN_KEYS.includes("advisory"), true);
   assert.deepEqual(unknownKeys({ aqk: 1, advisory: [] }), []);
 });
+
+
+// --- правила на языке проекта ------------------------------------------------
+// ЗАЧЕМ. Русский текст правил в англоязычном проекте — это первое, что там откроет человек,
+// и первое, чего он не прочитает. Русская версия остаётся источником истины, английская —
+// переводом. Совпадение содержания машина не сторожит, а вот НАБОР ФАЙЛОВ обязана: добавили
+// правило на одном языке и забыли про другой — половина мира получит комплект без него.
+test("наборы файлов правил совпадают на обоих языках", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const at = (d) => fileURLToPath(new URL(`../../kit/${d}`, import.meta.url));
+  const ru = (await readdir(at("rules"))).filter((f) => f.endsWith(".md")).sort();
+  const en = (await readdir(at("rules-en"))).filter((f) => f.endsWith(".md")).sort();
+  assert.deepEqual(en, ru);
+  assert.equal(ru.length > 0, true);
+});
