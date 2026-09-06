@@ -45,6 +45,8 @@ gates:
   commit-explains-itself: "bash kit/gates/commit-explains-itself/check.sh ."
   # Первая запись, ловящая приём, а не стиль: не «код плохой», а «сигнал о плохом коде выключен».
   gate-not-weakened: "bash kit/gates/gate-not-weakened/check.sh ."
+  # Дыра, найденная у себя: gates-run-in-ci проверял «упомянут», а не «может провалиться».
+  ci-actually-fails: "bash kit/gates/ci-actually-fails/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.

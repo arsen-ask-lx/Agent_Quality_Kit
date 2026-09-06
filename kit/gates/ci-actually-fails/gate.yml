@@ -1,0 +1,14 @@
+intent: шаг конвейера, выносящий вердикт, может провалиться — а не только выполниться
+intent_en: a pipeline step that renders a verdict can actually fail, not merely run
+
+# Только там, где конвейер есть. Проверять его отсутствие — дело другой записи.
+trigger:
+  has_ci: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md, 2026-09-06 «упомянут и работает — разные утверждения» — дыра
+  найдена в собственной оснастке (`gates-run-in-ci` пропускал `pytest || true` зелёным),
+  замер по пятнадцати чужим репозиториям подтвердил класс: у `reviewdog` два шага
+  собственных линтеров идут под `continue-on-error: true`
