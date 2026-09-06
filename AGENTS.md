@@ -63,7 +63,9 @@
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
   `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
   собранная прогоном), `badge.mjs` (`badge`, `badge --check` — значок уровня)
-- `tool/i18n/` — язык вывода: `ru.mjs`, `en.mjs` (строки программы), `templates-ru.mjs`,
+- `tool/i18n/` — язык вывода: `ru.mjs`, `en.mjs` (то, что программа ГОВОРИТ в терминал),
+  `ru-docs.mjs`, `en-docs.mjs` (то, что она ПИШЕТ в файлы: комментарии манифеста, названия
+  ступеней, форма отчёта), `templates-ru.mjs`,
   `templates-en.mjs` (тексты, которые `init` кладёт в чужой проект), `index.mjs` (выбор языка)
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)

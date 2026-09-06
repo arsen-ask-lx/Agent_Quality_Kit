@@ -977,6 +977,42 @@ else
 fi
 rm -rf "$ADIR"
 
+# --- 53. у долга есть цель и срок, и оба с последствием ------------------------
+# ЗАЧЕМ. Реестр, который может только сокращаться, всё равно не знает, когда кончится, — и
+# потому не кончается. Цель и срок без машинного последствия были бы украшением, поэтому
+# проверяем ровно последствия: срок вышел — красное; цель достигнута — сказано вслух.
+RDIR="$(mktemp -d)"
+(
+  cd "$RDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+)
+R_REG="$RDIR/ratchets/no-print-in-prod.txt"
+if [ -f "$R_REG" ] && grep -q 'aqk-goal' "$R_REG"; then
+  # Долг снят, новых нарушений нет — зелено.
+  R_BASE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 ); R_BASE_CODE=$?
+  # Срок в прошлом — обязано покраснеть без единого нового нарушения.
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' "$R_REG"
+  R_LATE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
+  if printf '%s' "$R_LATE" | grep -qi 'срок\|deadline'; then
+    ok "срок долга вышел — храповик краснеет без новых нарушений"
+  else
+    bad "просроченный долг прошёл молча" "код базового прогона $R_BASE_CODE"
+  fi
+  # Цель заведомо достигнута — храповик обязан сказать, что обёртку пора убрать.
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline:/; s/^# aqk-goal:.*/# aqk-goal: 99/' "$R_REG"
+  R_DONE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
+  if printf '%s' "$R_DONE" | grep -qi 'погашен\|paid off'; then
+    ok "цель достигнута — храповик говорит убрать обёртку"
+  else
+    bad "погашенный долг не назван" "$(printf '%s' "$R_DONE" | grep -i ratchet | head -1)"
+  fi
+else
+  bad "реестр долга не создан или без цели" "$R_REG"
+fi
+rm -rf "$RDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

@@ -134,6 +134,12 @@ function runGates(man, opts = {}) {
     const code = r.status;
     if (code === 0) {
       console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+      // Зелёный гейт иногда всё-таки говорит человеку что-то важное: храповик, дошедший до цели,
+      // просит убрать обёртку. Вывод успешного гейта не показывался вовсе, и это сообщение
+      // уходило в никуда — тот же класс, что обрезанный совет у красного, только тише.
+      // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
+      const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
+      for (const line of okAdvice) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: true, secs });
     } else {
       let out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
