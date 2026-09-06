@@ -1,0 +1,15 @@
+intent: проверка выключается точечно и с причиной, а не целиком
+intent_en: a check is suppressed narrowly and with a reason, never wholesale
+
+# Применимо везде, где есть код: подавление проверки — приём, а не язык. Список маркеров
+# покрывает python, typescript, javascript, go, rust, java, ruby и оболочку сразу.
+trigger:
+  always: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md, 2026-09-06 «замер по пятнадцати чужим репозиториям» — 22 находки
+  на 20 774 файлах, из них 19 настоящих: `@ts-nocheck` на боевой странице в kodus-ai,
+  сломанный `# noqa E501` без двоеточия в pr-agent (flake8 читает его как безадресный),
+  `/** @ts-ignore */` и `eslint-disable-line` без имени правила в repolinter

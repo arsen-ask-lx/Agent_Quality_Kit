@@ -43,6 +43,8 @@ gates:
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."
   commit-explains-itself: "bash kit/gates/commit-explains-itself/check.sh ."
+  # Первая запись, ловящая приём, а не стиль: не «код плохой», а «сигнал о плохом коде выключен».
+  gate-not-weakened: "bash kit/gates/gate-not-weakened/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.
