@@ -59,7 +59,7 @@
 - `tool/lib/` — общее: `core.mjs` (пути, вывод), `manifest.mjs` (`.aqk.yml` и ступени),
   `baseline.mjs` (обязательный минимум проекта: какие пункты методички машина умеет подтвердить),
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению),
-  `scope.mjs` (сужение вывода гейта до того, что внёс диф), `templates.mjs`
+  `scope.mjs` (разбор вывода гейта: сужение до дифа, отделение совета от находок), `templates.mjs`
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
   `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
   собранная прогоном), `badge.mjs` (`badge`, `badge --check` — значок уровня)

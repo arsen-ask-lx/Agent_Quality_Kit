@@ -13,7 +13,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
-import { scopeOutput } from "../lib/scope.mjs";
+import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
@@ -357,4 +357,39 @@ test("сужение по дифу: гейт без путей в выводе �
   const r = scopeOutput(["коммит не несёт раздела «Сделано:»"], new Set(["src/new.py"]));
   assert.equal(r.scopable, false);
   assert.equal(scopeOutput(["src/old.py:1: печать"], new Set(["src/new.py"])).scopable, true);
+});
+
+
+// --- совет по починке не теряется в обрезке ----------------------------------
+// ЗАЧЕМ. Все девятнадцать записей каталога печатают строку «почини: …» последней. `doctor --run`
+// показывает три первые строки вывода и обрезает остальное — то есть ровно ту строку, ради
+// которой человек и смотрит на красное, он не видит никогда. Находка без действия — это повод
+// закрыть окно, а не починить.
+test("совет по починке отделяется от находок и не обрезается", () => {
+  const out = [
+    "src/a.py:3: печать",
+    "src/b.py:9: печать",
+    "src/c.py:1: печать",
+    "src/d.py:7: печать",
+    "  почини: замени на вызов системы логов",
+    "  тогда запись попадёт в общий журнал",
+  ];
+  const r = splitAdvice(out);
+  assert.equal(r.findings.length, 4);
+  assert.equal(r.advice.length, 2);
+  // Продолжение совета едет вместе с ним: без второй строки первая обрывается на полуслове.
+  assert.equal(r.advice[1].includes("общий журнал"), true);
+});
+
+test("совет по починке опознаётся на обоих языках", () => {
+  assert.equal(splitAdvice(["a.py:1: x", "  fix: replace with a logger call"]).advice.length, 1);
+  assert.equal(splitAdvice(["a.py:1: x", "  почини: замени на логгер"]).advice.length, 1);
+});
+
+// Вывод без совета — это не ошибка разбора, а признак записи, которая не говорит, что делать.
+// Разбор обязан вернуть пустой совет, а не выдумать его из последней строки.
+test("вывод без совета не превращается в совет", () => {
+  const r = splitAdvice(["src/a.py:3: печать", "src/b.py:9: печать"]);
+  assert.equal(r.advice.length, 0);
+  assert.equal(r.findings.length, 2);
 });

@@ -3,7 +3,7 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { scopeOutput, changedFiles } from "../lib/scope.mjs";
+import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
@@ -160,9 +160,14 @@ function runGates(man, opts = {}) {
       }
 
       failed++;
+      // Находки обрезаются, совет — никогда. Все записи каталога печатают «почини: …» последней
+      // строкой, и при обрезке до трёх строк человек не видел именно её: находка без действия
+      // закрывает окно, а не дефект.
+      const { findings, advice } = splitAdvice(out);
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${secs}s · ${cmd}`)}`);
-      for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
-      if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
+      for (const line of findings.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      if (findings.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(findings.length - 3)}`));
+      for (const line of advice) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: false, secs, code });
     }
   }
