@@ -198,7 +198,7 @@ aqk badge --check  # в конвейере: код 1 в тот день, ког�
 ```yaml
 repos:
   - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
-    rev: v0.4.2
+    rev: v0.5.0
     hooks:
       - id: aqk            # запускает объявленное; роняет коммит ниже AQK-1
       # - id: aqk-doctor   # только осмотр: уровень и чего не хватает, ничего не роняет
@@ -217,7 +217,7 @@ repos:
 [![в GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Agent%20Quality%20Kit-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ```yaml
-- uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.1
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.5.0
   with:
     min: 1   # сборка падает ниже AQK-1 или если упал любой объявленный гейт
 ```
