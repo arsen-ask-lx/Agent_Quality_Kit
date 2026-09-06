@@ -4,6 +4,12 @@
 DIR="${1:-.}"
 MAN="$DIR/.aqk.yml"
 [ -f "$MAN" ] || { echo "нет .aqk.yml — проверять нечего"; exit 0; }
+# Перевод строк из windows-чекаута снимается ДО разбора. Жадный захват в sed («[^"#]*») и
+# якорь конца строки («s/"$//») проглатывают \r: путь получался с кавычкой на хвосте, а
+# красный образец переставал краснеть. Найдено мутационной проверкой
+# (tool/selfcheck/mutation.sh), а не на Windows-машине — её у нас до сих пор нет.
+MANTEXT="$(tr -d '\r' < "$MAN")"
+
 
 CI=$(find "$DIR/.github/workflows" "$DIR/.gitlab-ci.yml" "$DIR/.circleci" "$DIR/Jenkinsfile" \
      -type f 2>/dev/null)
@@ -18,7 +24,7 @@ if grep -qE 'doctor[[:space:]]+--run|--run[[:space:]]+.*doctor' $CI 2>/dev/null;
   exit 0
 fi
 
-NAMES=$(awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-]+:/{print}' "$MAN")
+NAMES=$(printf '%s\n' "$MANTEXT" | awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-]+:/{print}')
 [ -z "$NAMES" ] && { echo "гейтов не объявлено"; exit 0; }
 
 BAD=0

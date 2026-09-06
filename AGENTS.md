@@ -47,7 +47,8 @@
 - `incidents/README.md` — журнал шишек, общий на все проекты
 - `tool/selfcheck/` — проверки самого комплекта: `syntax.sh` (все исходники разбираются),
   `units.mjs` (функции), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
-  `conditional.sh` (доказательства)
+  `conditional.sh` (доказательства), `mutation.sh` (вердикт переживает изменения образца,
+  которые не должны его менять)
 - `.github/workflows/ci.yml` — те же проверки на чужой машине при каждом пуше
 - `.github/workflows/triage.yml` — разбор входящих issue/PR: Claude Code по подписке решает,
   похоже ли на настоящий баг, и шлёт вердикт в Telegram. Прав на запись в GitHub не выдано —
@@ -62,6 +63,7 @@
 - проверить функции программы: `node --test tool/selfcheck/units.mjs`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
+- проверить, что гейт краснеет на КЛАССЕ примеров, а не на одном: `bash tool/selfcheck/mutation.sh`
 - отчёт по репозиторию: `node tool/program.mjs report`
 - значок уровня в README: `node tool/program.mjs badge` — сверить: `badge --check`
 - порог для конвейера: `node tool/program.mjs doctor --run --min 1` — `--min` без `--run` не

@@ -15,9 +15,15 @@
 DIR="${1:-.}"
 MAN="$DIR/.aqk.yml"
 [ -f "$MAN" ] || { echo "нет .aqk.yml — проверять нечего"; exit 0; }
+# Перевод строк из windows-чекаута снимается ДО разбора. Жадный захват в sed («[^"#]*») и
+# якорь конца строки («s/"$//») проглатывают \r: путь получался с кавычкой на хвосте, а
+# красный образец переставал краснеть. Найдено мутационной проверкой
+# (tool/selfcheck/mutation.sh), а не на Windows-машине — её у нас до сих пор нет.
+MANTEXT="$(tr -d '\r' < "$MAN")"
 
-SAMPLES=$(sed -n 's/^samples:[[:space:]]*"\{0,1\}\([^"#]*\)"\{0,1\}[[:space:]]*$/\1/p' "$MAN" | head -1)
-KEYS=$(awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-]+:/{sub(/:.*/,"");gsub(/[[:space:]]/,"");print}' "$MAN")
+
+SAMPLES=$(printf '%s\n' "$MANTEXT" | sed -n 's/^samples:[[:space:]]*"\{0,1\}\([^"#]*\)"\{0,1\}[[:space:]]*$/\1/p' | head -1)
+KEYS=$(printf '%s\n' "$MANTEXT" | awk '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && /^[[:space:]]+[A-Za-z0-9_-]+:/{sub(/:.*/,"");gsub(/[[:space:]]/,"");print}')
 
 [ -z "$KEYS" ] && { echo "гейтов не объявлено — проверять нечего"; exit 0; }
 
@@ -32,7 +38,7 @@ fi
 BAD=0
 for K in $KEYS; do
   # Команда записи целиком — по ней видно, сканер это или собственный прогон проекта.
-  CMD=$(awk -v k="$K" '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && $0 ~ "^[[:space:]]+" k ":" {sub(/^[[:space:]]*[A-Za-z0-9_-]+:[[:space:]]*/,"");gsub(/^"|"$/,"");print;exit}' "$MAN")
+  CMD=$(printf '%s\n' "$MANTEXT" | awk -v k="$K" '/^gates:/{g=1;next} /^[A-Za-z]/{g=0} g && $0 ~ "^[[:space:]]+" k ":" {sub(/^[[:space:]]*[A-Za-z0-9_-]+:[[:space:]]*/,"");gsub(/^"|"$/,"");print;exit}')
   case "$CMD" in
     *"$SAMPLES/"*) ;;                 # сканер из каталога — образцы обязательны
     *) continue ;;                    # свой прогон — арбитр внутри него
