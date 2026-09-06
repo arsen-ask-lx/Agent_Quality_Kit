@@ -23,10 +23,12 @@ FILES=$(find "$DIR" $(skip_find) -type f \( \
     -o -name '*_test.go' -o -name '*_test.rb' -o -name '*_spec.rb' \) -print 2>/dev/null)
 [ -z "$FILES" ] && { echo "файлов тестов не нашлось — эта проверка не про тебя"; exit 0; }
 
-# Сгенерированный файл правят не руками: тест в нём написал инструмент.
-KEEP=""
-for F in $FILES; do is_generated "$F" || KEEP="$KEEP $F"; done
-[ -n "$KEEP" ] || exit 0
+# Сгенерированный файл правят не руками: тест в нём написал инструмент. Признак проверяется
+# внутри awk по первым строкам, а не циклом с `head` на файл.
+#
+# ПОЧЕМУ БЕЗ ЦИКЛА. Накопление списка строкой («KEEP="$KEEP $F"») — квадрат по длине: оболочка
+# копирует растущую строку на каждой итерации. На соседней проверке это дало 44 секунды вместо
+# одной на том же репозитории.
 
 # Тройная одинарная кавычка нужна разбору докстрок, но написать её внутри awk-программы нельзя:
 # она закроет кавычки самой программы. Передаём переменной.
@@ -100,7 +102,8 @@ OUT=$(awk -v q3="$Q3" '
   # Границы файла: awk без gawk не знает ENDFILE, поэтому предыдущий файл разбирается на первой
   # строке следующего, а последний — в END. Буферы обнуляются вместе с именем: общий буфер
   # склеил бы скобки соседних файлов и сдвинул все границы.
-  FNR == 1 { if (n > 0) report(); n = 0; delete line; delete pre; delete prb; delete tck; cur = FILENAME }
+  FNR == 1 { if (n > 0) report(); n = 0; delete line; delete pre; delete prb; delete tck; cur = FILENAME; skipFile = 0 }
+  FNR <= 5 && /@[Gg]enerated|[Dd]o not edit|DO NOT EDIT|[Aa]utogenerated|[Aa]uto-generated|[Gg]enerated by|сгенерирован/ { skipFile = 1 }
   {
     n++; line[n] = $0
     t = $0; o = gsub(/\(/, "(", t); t = $0; c = gsub(/\)/, ")", t)
@@ -115,6 +118,7 @@ OUT=$(awk -v q3="$Q3" '
   END { if (n > 0) report() }
 
   function report(   i, j, l, t0, e, ind, start, found, hasBody, b, bi) {
+    if (skipFile) return
     for (i = 1; i <= n; i++) {
       l = line[i]; cursor = i
       if (l ~ /^[[:space:]]*(#|\/\/|\*)/) continue
@@ -180,7 +184,7 @@ OUT=$(awk -v q3="$Q3" '
       }
     }
   }
-' $KEEP 2>/dev/null)
+' $FILES 2>/dev/null)
 
 LEFT="$(printf '%s' "$OUT" | grep -v '^$' | own_samples_filter "$DIR")"
 [ -z "$LEFT" ] && exit 0
