@@ -107,8 +107,15 @@ jobs:
         run: |
           if [ -n "$T" ]; then echo "claude=yes" >> "$GITHUB_OUTPUT"; else echo "claude=no" >> "$GITHUB_OUTPUT"; fi
 
+      # continue-on-error здесь ЗАКОННО, и это стоит различать. Разбор входящих — совещательный:
+      # у него нет прав на запись, он не выносит вердикт о коде, его вывод — сообщение в мессенджер.
+      # Когда сторонний экшен падает с внутренней ошибкой (так и вышло: «directory mismatch for
+      # directory …/tsconfig.json»), красный круг на пул-реквесте означает «разбор не состоялся»,
+      # а читается как «с изменениями что-то не так». Мы сами красим шаги, которые выносят вердикт
+      # и не могут провалиться, — этот вердикта не выносит, и его провал назван вслух ниже.
       - name: спросить Claude Code по подписке, стоит ли смотреть
         id: ask
+        continue-on-error: true
         if: steps.gather.outputs.title != '' && steps.keys.outputs.claude == 'yes'
         uses: anthropics/claude-code-action@v1
         with:
@@ -141,6 +148,14 @@ jobs:
         run: |
           echo "::notice::разбор пропущен: не задан секрет CLAUDE_CODE_OAUTH_TOKEN."
           echo "::notice::обращение НЕ рассмотрено — это «не проверяли», а не «всё в порядке»."
+
+      # Молчание после сбоя было бы неотличимо от успешного разбора «ничего интересного» —
+      # тот самый класс, ради которого весь репозиторий и написан.
+      - name: сказать вслух, что разбор сорвался
+        if: steps.ask.outcome == 'failure'
+        run: |
+          echo "::warning::разбор сорвался: шаг Claude Code завершился ошибкой."
+          echo "::warning::обращение НЕ рассмотрено — посмотри глазами."
 
       - name: сообщить в Telegram
         if: steps.ask.outcome == 'success' && fromJSON(steps.ask.outputs.structured_output || '{}').verdict == 'да'
