@@ -22,6 +22,7 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   `npx agent-quality-kit doctor --baseline` (14 of 50 points confirmed by a run, ecosystem-neutral;
   the other 36 are named as a number, not hidden)
 - Fail a pipeline below a level or on a failed gate: `npx agent-quality-kit doctor --run --min 1`
+- Show only what a diff introduced, so a legacy repo is usable from day one: `doctor --run --since main`
 - Exit codes: 0 pass, 1 below the level or a gate failed
 - As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
   `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the

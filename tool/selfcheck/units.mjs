@@ -13,6 +13,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
+import { scopeOutput } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
@@ -314,4 +315,46 @@ test("выведенная запись обязана назвать замен
   assert.equal(ok.state, "deprecated");
   assert.equal(ok.supersededBy, "no-print-in-prod");
   assert.equal(ok.problem, null);
+});
+
+
+// --- сужение вывода до дифа --------------------------------------------------
+// ЗАЧЕМ. Первый прогон на живом проекте даёт тысячи находок из кода, который писали годами.
+// Человек видит стену красного и выключает инструмент целиком — это причина номер один, по
+// которой такие проверки снимают. Три независимых проекта из нашего разбора умеют показывать
+// только внесённое дифом (reviewdog, ratchets `--since`, четыре режима шума у react-doctor).
+test("сужение по дифу: находка вне диапазона отбрасывается, внутри — остаётся", () => {
+  const files = new Set(["src/new.py"]);
+  const r = scopeOutput(["src/new.py:3: печать", "src/old.py:9: печать"], files);
+  assert.deepEqual(r.kept, ["src/new.py:3: печать"]);
+  assert.equal(r.findings, 1);
+});
+
+test("сужение по дифу: «./путь» и «путь» — один и тот же файл", () => {
+  const r = scopeOutput(["./src/new.py:3: печать", "src\\new.py:4: печать"], new Set(["src/new.py"]));
+  assert.equal(r.findings, 2);
+});
+
+// Тот же урок, что стоил починки в _native.sh: родные инструменты печатают путь ВНУТРИ
+// escape-последовательности, и сравнение по границе пути его не видит. Тогда «вывод
+// сократился с 5597 до 5505 строк» выглядело как работающая правка.
+test("сужение по дифу: цвет снимается до сравнения путей", () => {
+  const esc = String.fromCharCode(27);
+  const line = esc + "[32m" + "src/new.py" + esc + "[0m" + ":3: печать";
+  assert.equal(scopeOutput([line], new Set(["src/new.py"])).findings, 1);
+});
+
+test("сужение по дифу: строка без пути остаётся, но находкой не считается", () => {
+  const r = scopeOutput(["Итого: 4 нарушения", "src/old.py:1: печать"], new Set(["src/new.py"]));
+  assert.equal(r.findings, 0);
+  assert.equal(r.kept.includes("Итого: 4 нарушения"), true);
+});
+
+// САМОЕ ВАЖНОЕ ЗДЕСЬ. Гейт, который печатает вердикт без путей (проверка коммита, проверка
+// конфига конвейера), сузить дифом нельзя. Молча признать его успешным — это ровно та тишина,
+// против которой построен весь стандарт, только теперь внутри нашего же флага.
+test("сужение по дифу: гейт без путей в выводе не сужается и остаётся красным", () => {
+  const r = scopeOutput(["коммит не несёт раздела «Сделано:»"], new Set(["src/new.py"]));
+  assert.equal(r.scopable, false);
+  assert.equal(scopeOutput(["src/old.py:1: печать"], new Set(["src/new.py"])).scopable, true);
 });

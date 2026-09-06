@@ -15,6 +15,7 @@ export const en = {
     start: "no code yet: day-zero guards and the order of work",
     doctor: "check what is laid out and what is missing",
     doctorRun: "and also run the declared gates",
+    doctorSince: "the same, but show only what the diff against a ref introduced",
     add: "install a gate from the catalogue into the project",
     find: "is there already such a gate — matched by intent",
     why: "a bug slipped through — why did no guard catch it",
@@ -66,6 +67,10 @@ export const en = {
     totalTodo: (n) => `applicable but not installed ${n}`,
     totalSkip: (n) => `hidden ${n}`,
 
+    sinceHeading: (ref, n) => `narrowed to the diff against ${ref}: ${n} files touched`,
+    sinceBadRef: (ref) => `cannot compare against "${ref}": no such ref, or this is not a git repository`,
+    notScopable: "output carries no paths — cannot be narrowed by diff, left red",
+    outsideDiff: (n) => `findings exist, but outside the diff (${n})`,
     runHeading: "Running the declared gates",
     timeout: "did not finish within 5 minutes",
     exitCode: (code) => `exit ${code}`,

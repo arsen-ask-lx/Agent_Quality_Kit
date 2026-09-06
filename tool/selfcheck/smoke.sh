@@ -926,6 +926,37 @@ else
 fi
 rm -rf "$DEPKG" "$DEPRJ"
 
+# --- 50. --since показывает только то, что внёс диф ---------------------------
+# ЗАЧЕМ. Первый прогон в живом проекте показывает долг за все годы. Стену красного не разбирают
+# — проверку выключают целиком. Проверяем три исхода разом: старый долг молчит, новый краснеет,
+# а гейт, который печатает вердикт без путей, НЕ становится зелёным от того, что его нечем сузить.
+SCDIR="$(mktemp -d)"
+(
+  cd "$SCDIR" && git init -q . && git config user.email t@t && git config user.name t
+  mkdir -p src && printf 'def old():\n    print("старый долг")\n' > src/old.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  git add -A && git commit -qm "база" >/dev/null 2>&1
+  printf 'def fresh():\n    print("новый долг")\n' > src/fresh.py
+)
+SC_WIDE=$( cd "$SCDIR" && node "$CLI" doctor --run 2>&1 )
+SC_NARROW=$( cd "$SCDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
+if printf '%s' "$SC_WIDE"   | grep -q 'old.py' &&
+   printf '%s' "$SC_NARROW" | grep -q 'fresh.py' &&
+   ! printf '%s' "$SC_NARROW" | grep -q 'old.py'; then
+  ok "--since прячет старый долг и показывает внесённый дифом"
+else
+  bad "--since сузил не то" "широкий: $(printf '%s' "$SC_WIDE" | grep -c 'py:'), узкий: $(printf '%s' "$SC_NARROW" | grep -c 'py:')"
+fi
+# Несуществующая ссылка обязана быть отказом, а не тихим «сравнили с ничем».
+SC_BAD=$( cd "$SCDIR" && node "$CLI" doctor --run --since net-takoy-vetki 2>&1 ); SC_BADCODE=$?
+if [ "$SC_BADCODE" -ne 0 ] && printf '%s' "$SC_BAD" | grep -qi 'net-takoy-vetki'; then
+  ok "--since с несуществующей ссылкой — отказ, а не тихое сравнение с ничем"
+else
+  bad "--since проглотил неверную ссылку" "код $SC_BADCODE"
+fi
+rm -rf "$SCDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
