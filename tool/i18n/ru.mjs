@@ -142,6 +142,19 @@ export const ru = {
     none: "рецепт не описан",
   },
 
+  // Зрелость записи каталога. Считается по доказательству; объявить её нельзя — см.
+  // entryLifecycle в tool/lib/manifest.mjs.
+  lifecycle: {
+    stable: "доказана шишкой из журнала",
+    experimental: "доказательство не из журнала — запись условная",
+    deprecated: "выведена из употребления",
+    unknownReplacement: (v) => `superseded_by: ${v} — такой записи в каталоге нет`,
+    noReplacement: "lifecycle: deprecated без superseded_by — не назван тот, кто заменяет",
+    notDeclarable: (v) => `lifecycle: ${v} объявлять нельзя — зрелость считается по доказательству`,
+    unknown: (v) => `lifecycle: ${v} — такого состояния нет; объявляется только deprecated`,
+    installDeprecated: (slug, by) =>
+      `запись ${slug} выведена из употребления, её заменяет ${by}`,
+  },
   manifest: {
     noGatesBlock: "в .aqk.yml нет блока gates:",
     alreadyDeclared: "уже объявлен",

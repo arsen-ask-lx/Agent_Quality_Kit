@@ -904,6 +904,28 @@ else
 fi
 rm -rf "$NRDIR" "$NRBIN"
 
+# --- 49. выведенную запись не ставят, а называют преемника --------------------
+# ЗАЧЕМ. Зрелость записи считается по доказательству, и объявить её нельзя — кроме одного
+# состояния: `deprecated`. Оно объявляется, и весь его смысл в отказе: запись, которую всё ещё
+# можно поставить одной командой, не выведена, а просто помечена. Проверяем сам отказ и то, что
+# папка гейта в проекте НЕ появилась: половина установки хуже, чем её отсутствие.
+#
+# Каталог мутируем в КОПИИ пакета, а не в этом репозитории: проверка, которая правит собственные
+# исходники, однажды упадёт посередине и оставит дерево грязным.
+DEPKG="$(mktemp -d)"; DEPRJ="$(mktemp -d)"
+cp -r "$ROOT/tool" "$ROOT/kit" "$ROOT/package.json" "$DEPKG/" 2>/dev/null
+printf 'lifecycle: deprecated\nsuperseded_by: no-print-in-prod\n' >> "$DEPKG/kit/gates/todo-without-task/gate.yml"
+( cd "$DEPRJ" && git init -q . && printf 'x = 1\n' > a.py && node "$DEPKG/tool/program.mjs" init >/dev/null 2>&1 )
+DE_OUT=$( cd "$DEPRJ" && node "$DEPKG/tool/program.mjs" add todo-without-task 2>&1 ); DE_CODE=$?
+if [ "$DE_CODE" -ne 0 ] &&
+   printf '%s' "$DE_OUT" | grep -q 'no-print-in-prod' &&
+   [ ! -d "$DEPRJ/gates/todo-without-task" ]; then
+  ok "add отказывает в выведенной записи и называет ту, что её заменяет"
+else
+  bad "выведенная запись установилась или преемник не назван" "код $DE_CODE, папка: $([ -d "$DEPRJ/gates/todo-without-task" ] && echo есть || echo нет)"
+fi
+rm -rf "$DEPKG" "$DEPRJ"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

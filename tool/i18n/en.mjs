@@ -136,6 +136,18 @@ export const en = {
     none: "no recipe described",
   },
 
+  // Entry maturity. Computed from the entry's proof; it cannot be declared — see
+  // entryLifecycle in tool/lib/manifest.mjs.
+  lifecycle: {
+    stable: "proven by an incident from the journal",
+    experimental: "proof is not from the journal — the entry is provisional",
+    deprecated: "retired",
+    unknownReplacement: (v) => `superseded_by: ${v} — no such entry in the catalogue`,
+    noReplacement: "lifecycle: deprecated without superseded_by — no replacement is named",
+    notDeclarable: (v) => `lifecycle: ${v} cannot be declared — maturity is computed from the proof`,
+    unknown: (v) => `lifecycle: ${v} — no such state; only deprecated is declared`,
+    installDeprecated: (slug, by) => `entry ${slug} is retired, ${by} replaces it`,
+  },
   manifest: {
     noGatesBlock: "no gates: block in .aqk.yml",
     alreadyDeclared: "already declared",

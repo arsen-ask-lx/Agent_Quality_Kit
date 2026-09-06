@@ -11,7 +11,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseManifest, manifestWithGate, unknownKeys } from "../lib/manifest.mjs";
+import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
@@ -273,4 +273,45 @@ test("триггер по интерфейсу отделяет фронтенд
   assert.equal(triggerVerdict(rec, { ...base, has_ui: false }).applies, false);
   // Причина сокрытия называется, а не молчит: иначе «не показано» неотличимо от «нечего показать».
   assert.equal(typeof triggerVerdict(rec, { ...base, has_ui: false }).why, "string");
+});
+
+// --- зрелость записи ---------------------------------------------------------
+// ЗАЧЕМ. У всех трёх соседей поле зрелости есть, и у всех троих его ЗАПОЛНЯЕТ АВТОР: `lifecycle`
+// у зондов Scorecard, `future`/`obsolete` у критериев значка OpenSSF. Поле, которое объявляет
+// автор, означает доверие к автору, а не факт, — ровно то, против чего построен весь стандарт.
+// Поэтому зрелость здесь ВЫЧИСЛЯЕТСЯ из доказательства, а объявить её нельзя.
+test("зрелость записи считается по доказательству, а не по объявлению", () => {
+  const proven = entryLifecycle({ proof: "incidents/README.md, 2026-08-27 «печать в проде»" });
+  assert.equal(proven.state, "stable");
+  assert.equal(proven.problem, null);
+
+  const claimed = entryLifecycle({ proof: "это общепринятая хорошая практика" });
+  assert.equal(claimed.state, "experimental");
+  assert.equal(claimed.problem, null);
+  // Причина обязательна: «запись условная» без объяснения неотличимо от придирки.
+  assert.equal(typeof claimed.why, "string");
+});
+
+test("объявить себя зрелым нельзя — это самооценка", () => {
+  for (const claim of ["stable", "experimental"]) {
+    const r = entryLifecycle({ lifecycle: claim, proof: "incidents/README.md, 2026-01-01" });
+    assert.notEqual(r.problem, null);
+    // Вердикт всё равно считается сам: объявление не влияет ни на что, кроме отказа.
+    assert.equal(r.state, "stable");
+  }
+  assert.notEqual(entryLifecycle({ lifecycle: "beta", proof: "incidents/x" }).problem, null);
+});
+
+// Единственное состояние, которое ОБЪЯВЛЯЕТСЯ: из фактов записи «её больше не ставят» не
+// выводится никак. Цена объявления — обязательная замена: запись, выведенная в никуда,
+// оставляет человека без ответа на вопрос «а что теперь».
+test("выведенная запись обязана назвать замену", () => {
+  const noReplacement = entryLifecycle({ lifecycle: "deprecated", proof: "incidents/x" });
+  assert.equal(noReplacement.state, "deprecated");
+  assert.notEqual(noReplacement.problem, null);
+
+  const ok = entryLifecycle({ lifecycle: "deprecated", superseded_by: "no-print-in-prod", proof: "incidents/x" });
+  assert.equal(ok.state, "deprecated");
+  assert.equal(ok.supersededBy, "no-print-in-prod");
+  assert.equal(ok.problem, null);
 });
