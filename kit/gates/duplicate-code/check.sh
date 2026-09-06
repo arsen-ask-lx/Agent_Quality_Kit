@@ -19,7 +19,8 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
      ! -name 'test_*' ! -name '*_test.*' ! -name '*.test.*' ! -name '*.spec.*' \
      -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
-  | xargs -r awk -v WIN="$WIN" '
+  | LC_ALL=C sort \
+  | xargs -r env LC_ALL=C awk -v WIN="$WIN" '
       FNR == 1 { n = 0; delete buf }
       {
         line = $0
@@ -37,11 +38,19 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
         }
       }
     ' 2>/dev/null | sort -u \
-  | awk -F' и |: ' '
+  | LC_ALL=C awk -F' и |: ' '
       # Один повторённый кусок даёт столько сообщений, на сколько окон он делится: восемь
       # строк — восемь почти одинаковых строк отчёта. Схлопываем в одну на пару файлов.
-      { split($1, a, ":"); split($2, b, ":"); pair = a[1] " и " b[1]
-        if (!(pair in seen)) { seen[pair] = $1 " и " $2 }
+      #
+      # Пара упорядочивается лексикографически, а НЕ в порядке обхода. Порядок, в котором
+      # find отдаёт файлы, свой на каждой системе (здесь — по хешу имени), и реестр, снятый
+      # на одной машине, краснел в конвейере целиком: те же дубли читались как новые, а
+      # храповик объявлял их исправленными и вычёркивал. Одной сортировки списка файлов мало:
+      # когда кусок лежит в трёх файлах, «первым» становится тот, кого раньше отдал обход.
+      { split($1, a, ":"); split($2, b, ":")
+        if (a[1] <= b[1]) { pair = a[1] " и " b[1]; loc = $1 " и " $2 }
+        else              { pair = b[1] " и " a[1]; loc = $2 " и " $1 }
+        if (!(pair in seen)) { seen[pair] = loc }
         cnt[pair]++ }
       END { for (p in seen) print seen[p] ": одинаковый кусок" (cnt[p] > 1 ? " (окон: " cnt[p] ")" : "") }
     ' | sort > /tmp/.dup.$$
