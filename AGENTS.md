@@ -35,7 +35,10 @@
 - `tool/lib/` — общее: `core.mjs` (пути, вывод), `manifest.mjs` (`.aqk.yml` и ступени),
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению), `templates.mjs`
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
-  `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`)
+  `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
+  собранная прогоном), `badge.mjs` (`badge`, `badge --check` — значок уровня)
+- `tool/i18n/` — язык вывода: `ru.mjs`, `en.mjs` (строки программы), `templates-ru.mjs`,
+  `templates-en.mjs` (тексты, которые `init` кладёт в чужой проект), `index.mjs` (выбор языка)
 - `kit/rules/` — правила текстом (переносятся в проекты как `.aqk/rules/`)
 - `kit/docs/` — методички (переносятся как `.aqk/docs/`)
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
@@ -57,6 +60,8 @@
 - проверить функции программы: `node --test tool/selfcheck/units.mjs`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
+- отчёт по репозиторию: `node tool/program.mjs report`
+- значок уровня в README: `node tool/program.mjs badge` — сверить: `badge --check`
 - порог для конвейера: `node tool/program.mjs doctor --run --min 1` — `--min` без `--run` не
   проваливается по вине упавших гейтов вообще: тишина неотличима от успеха, тот самый принцип,
   ради которого весь этот стандарт существует
