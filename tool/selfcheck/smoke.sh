@@ -768,6 +768,38 @@ else
 fi
 rm -rf "$MDIR"
 
+# --- 45. родной рецепт не читает то, что не читают переносимые -----------------
+# ЗАЧЕМ. own_samples_filter знал про образцы гейтов и .aqkignore, но не про SKIP_NAMES:
+# их применяли только переносимые проверки при обходе, а родному инструменту список не
+# доставался вовсе. На живом проекте (Django + React, 2750 файлов кода) первой находкой
+# duplicate-code оказались методички САМОГО комплекта в .aqk/docs — родной jscpd прошёлся
+# по каталогу, который положил init. Вывод — 5597 строк. Такой гейт выключают целиком,
+# ровно как сказано в шапке _skip.sh про 94% чужих находок.
+NDIR="$(mktemp -d)"
+mkdir -p "$NDIR/.aqk/docs" "$NDIR/node_modules/pkg" "$NDIR/src"
+printf 'нарушение\n' > "$NDIR/.aqk/docs/guide.md"
+printf 'нарушение\n' > "$NDIR/node_modules/pkg/index.js"
+printf 'нарушение\n' > "$NDIR/src/mine.py"
+# «Инструмент» печатает пути и возвращает отказ — как настоящий родной линтер.
+# Пути в цветовых кодах — как их печатает jscpd: имя каталога идёт не после «/» и не с начала
+# строки, а сразу за escape-последовательностью. Фильтр по границе пути их не видел, и на живом
+# проекте вывод сократился с 5597 строк до 5505 — то есть не сократился.
+cat > "$NDIR/fake-tool.sh" <<'EOT'
+printf ' - \033[1m\033[32m.aqk/docs/guide.md:markdown\033[39m\033[22m [8:1 - 20:5]\n'
+printf ' - \033[1m\033[32mnode_modules/pkg/index.js:javascript\033[39m\033[22m [1:1 - 9:2]\n'
+printf ' - \033[1m\033[32msrc/mine.py:python\033[39m\033[22m [1:1 - 9:2]\n'
+exit 1
+EOT
+OUT_N="$(cd "$NDIR" && sh "$ROOT/kit/gates/_native.sh" . sh ./fake-tool.sh 2>&1)"
+if printf '%s' "$OUT_N" | grep -q 'src/mine.py' &&
+   ! printf '%s' "$OUT_N" | grep -q '\.aqk/docs' &&
+   ! printf '%s' "$OUT_N" | grep -q 'node_modules'; then
+  ok "родной рецепт молчит про .aqk и node_modules, но видит свой код"
+else
+  bad "родной инструмент выдаёт то, что переносимые не читают" "$(printf '%s' "$OUT_N" | tr '\n' ' ')"
+fi
+rm -rf "$NDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
