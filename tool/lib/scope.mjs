@@ -87,11 +87,27 @@ function scopeOutput(lines, files) {
 // записи, которой нечего ответить, и приёмка каталога такую запись отклоняет.
 const ADVICE_RE = /^\s*(почини|fix)\s*:/i;
 
+// Находка опознаётся по «путь:строка:» — тем же признаком, что и при сужении по дифу.
+// Нужен здесь, чтобы отличить продолжение совета от находки, стоящей сразу за ним.
+const FINDING_RE = /:\d+:/;
+
 function splitAdvice(lines) {
-  const arr = Array.isArray(lines) ? lines : [];
-  const at = arr.findIndex((l) => ADVICE_RE.test(String(l).replace(ANSI, "")));
-  if (at < 0) return { findings: arr, advice: [] };
-  return { findings: arr.slice(0, at), advice: arr.slice(at) };
+  const findings = [];
+  const advice = [];
+  let inAdvice = false;
+
+  for (const raw of Array.isArray(lines) ? lines : []) {
+    const plain = String(raw).replace(ANSI, "");
+    if (ADVICE_RE.test(plain)) { inAdvice = true; advice.push(raw); continue; }
+    // Продолжение совета — строка с отступом, в которой нет находки. Всё остальное закрывает
+    // совет: иначе первая же метка утаскивала бы в жёлтое весь оставшийся вывод, а гейты
+    // печатают совет и посреди находок тоже. На живом выводе это давало сорок строк без
+    // обрезки — ровно ту стену, против которой написан весь модуль.
+    if (inAdvice && /^\s/.test(plain) && !FINDING_RE.test(plain)) { advice.push(raw); continue; }
+    inAdvice = false;
+    findings.push(raw);
+  }
+  return { findings, advice };
 }
 
 // Файлы, изменённые относительно ссылки. Новые файлы, ещё не добавленные в индекс, тоже входят:

@@ -1013,6 +1013,57 @@ else
 fi
 rm -rf "$RDIR"
 
+# --- 54. упавший гейт не стирает реестр долга ----------------------------------
+# ЗАЧЕМ. Провал без единой разобранной находки — это отказ инструмента, а не чистый прогон.
+# Храповик вычёркивал ВЕСЬ реестр как исправленный, возвращал ноль и — после появления цели —
+# предлагал снять защиту: «долг погашен, убери обёртку». Снятие защиты по итогам прогона,
+# которого не было. Найдено ревью 2026-09-06.
+WDIR="$(mktemp -d)"
+mkdir -p "$WDIR/ratchets"
+printf '# Реестр долга: проба\n# aqk-goal: 0\nsrc/a.py: печать\n' > "$WDIR/ratchets/t.txt"
+W_OUT=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'exit 3' 2>&1 ); W_CODE=$?
+W_LEFT=$(grep -c 'src/a.py' "$WDIR/ratchets/t.txt" || true)
+if [ "$W_CODE" -ne 0 ] && [ "$W_LEFT" -eq 1 ] &&
+   ! printf '%s' "$W_OUT" | grep -qi 'погашен'; then
+  ok "упавший гейт не стирает реестр и не предлагает снять защиту"
+else
+  bad "упавший гейт съел реестр" "код $W_CODE, строк долга осталось $W_LEFT"
+fi
+# Директива с опечаткой обязана быть слышной: молчаливо отключённая цель — та же тишина.
+printf '# Реестр\n# aqk-goal: скоро\nsrc/a.py: печать\n' > "$WDIR/ratchets/t.txt"
+W_BAD=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'echo "src/a.py: печать"' 2>&1 )
+if printf '%s' "$W_BAD" | grep -qi 'не число'; then
+  ok "опечатка в директиве храповика названа, а не проглочена"
+else
+  bad "нечисловая цель отключилась молча" "$(printf '%s' "$W_BAD" | head -1)"
+fi
+rm -rf "$WDIR"
+
+# --- 55. просроченный долг краснеет и при сужении по дифу ----------------------
+# ЗАЧЕМ. Сообщение храповика про срок называет путь к реестру, а реестра в дифе нет: фильтр по
+# путям отбрасывал единственную строку, находок не оставалось, и гейт печатался зелёным с
+# пометкой «находки вне дифа». То есть `--since` отменял правило SPEC.md §7.6 ровно в том
+# режиме, в котором его и запускают. Найдено ревью 2026-09-06.
+DDIR="$(mktemp -d)"
+(
+  cd "$DDIR" && git init -q . && git config user.email t@t && git config user.name t
+  mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' ratchets/no-print-in-prod.txt
+  git add -A >/dev/null 2>&1 && git commit -qm base >/dev/null 2>&1
+)
+D_WIDE=$( cd "$DDIR" && node "$CLI" doctor --run 2>&1 )
+D_NARROW=$( cd "$DDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
+if printf '%s' "$D_WIDE" | grep -q 'no-print-in-prod' &&
+   printf '%s' "$D_NARROW" | grep -qE 'no-print-in-prod.*(код|exit)' ; then
+  ok "просроченный долг краснеет и при --since"
+else
+  bad "--since отменил срок долга" "узкий прогон: $(printf '%s' "$D_NARROW" | grep no-print | head -1 | cut -c1-90)"
+fi
+rm -rf "$DDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

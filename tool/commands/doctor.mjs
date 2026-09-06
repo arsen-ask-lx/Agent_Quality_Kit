@@ -139,15 +139,24 @@ function runGates(man, opts = {}) {
       // уходило в никуда — тот же класс, что обрезанный совет у красного, только тише.
       // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
       const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
-      for (const line of okAdvice) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
+      for (const line of okAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: true, secs });
     } else {
-      let out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
+      const raw = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
+      // Совет отделяется ДО сужения. Иначе он сам попадает под фильтр по путям: сообщение
+      // храповика про вышедший срок называет путь к реестру, реестра в дифе нет, и гейт,
+      // обязанный краснеть по сроку, печатался зелёным с пометкой «находки вне дифа».
+      // Ровно то, что стандарт запрещает: срок без последствия. Найдено ревью 2026-09-06.
+      const parted = splitAdvice(raw);
+      let out = parted.findings;
+      const alwaysAdvice = parted.advice;
 
       // Сужение до дифа. Три исхода, и все три называются вслух.
       if (scoped) {
         const s = scopeOutput(out, scoped);
-        if (!s.scopable) {
+        // Гейт, у которого находок нет вовсе, а есть только совет, сузить нечем: его вердикт
+        // не про файлы. Признать такой успешным — вернуть ту же тишину другим путём.
+        if (!s.scopable || out.length === 0) {
           // Гейт печатает вердикт без путей — сузить нечем. Признать его успешным значило бы
           // выдать провал за тишину; остаётся красным, и причина названа.
           console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${L.doctor.notScopable}`)}`);
@@ -169,11 +178,11 @@ function runGates(man, opts = {}) {
       // Находки обрезаются, совет — никогда. Все записи каталога печатают «почини: …» последней
       // строкой, и при обрезке до трёх строк человек не видел именно её: находка без действия
       // закрывает окно, а не дефект.
-      const { findings, advice } = splitAdvice(out);
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${secs}s · ${cmd}`)}`);
-      for (const line of findings.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
-      if (findings.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(findings.length - 3)}`));
-      for (const line of advice) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
+      for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
+      // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
+      for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: false, secs, code });
     }
   }
