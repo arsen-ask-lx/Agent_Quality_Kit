@@ -384,18 +384,22 @@ rm -rf "$GODIR"
 
 # --- 24. просьба про звезду и обратную связь — один раз на машину -----------
 # Печатается один раз на установку (не на проект): второй init на этой же HOME её не повторяет.
+# USERPROFILE задаётся рядом с HOME: `os.homedir()` на Windows читает именно его, и без этого
+# отметка уезжала в настоящий домашний каталог раннера — к этой проверке она там уже лежала от
+# предыдущих прогонов init, и просьба не печаталась. Изоляция, которая не изолирует, хуже её
+# отсутствия: проверка краснела не на дефекте.
 # Отметка живёт вне репозитория — внутри .aqk/ она либо закоммитится в чужой проект, либо
 # потеряется при повторном init --force.
 FAKEHOME="$(mktemp -d)"
 D1="$(mktemp -d)"
-OUT1=$( cd "$D1" && HOME="$FAKEHOME" node "$CLI" init 2>&1 )
+OUT1=$( cd "$D1" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
 if printf '%s' "$OUT1" | grep -qi 'звезд'; then
   ok "первый init на новой машине зовёт поставить звезду"
 else
   bad "первый init не упомянул звезду/обратную связь" "$OUT1"
 fi
 D2="$(mktemp -d)"
-OUT2=$( cd "$D2" && HOME="$FAKEHOME" node "$CLI" init 2>&1 )
+OUT2=$( cd "$D2" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
 if printf '%s' "$OUT2" | grep -qi 'звезд'; then
   bad "init повторил просьбу про звезду на той же машине" "второй проект, та же HOME"
 else
@@ -428,7 +432,9 @@ rm -f /tmp/aqk-broken-doc-links.$$
 # --- 26. doctor печатает версию комплекта ------------------------------------
 # Баг-репорт без версии нечем привязать к коммиту — заметили, заполняя .github/ISSUE_TEMPLATE/,
 # где просили версию из шапки doctor, а шапка её не печатала вовсе.
-PKGVER=$(node -e "console.log(require('$ROOT/package.json').version)")
+# Путь отдаётся оболочкой, а Node на Windows не понимает «/d/a/…» из Git Bash. Читаем из
+# текущего каталога, а не подставляем абсолютный путь в код.
+PKGVER=$( cd "$ROOT" && node -p "require('./package.json').version" )
 DOCVER=$( cd "$ROOT" && node "$CLI" doctor 2>&1 | head -3)
 if printf '%s' "$DOCVER" | grep -qF "$PKGVER"; then
   ok "doctor печатает версию комплекта ($PKGVER)"
@@ -532,16 +538,25 @@ fi
 rm -rf "$SHDIR" "$CEDIR"
 
 # --- 32. вывод действительно на двух языках -----------------------------------
+# Утечку русского ищем СЛОВАМИ, а не диапазоном [а-яА-ЯёЁ]. Диапазон непереносим: в сборке grep
+# из MSYS он сравнивает байты, и «—», «·», ««»» из обычной типографики попадают в него — на
+# Windows проверка насчитывала пять «кириллических» строк в чисто английском выводе. Литеральные
+# слова совпадают одинаково везде, что тот же прогон и подтвердил.
 # Сверка ключей каталогов (units.mjs) доказывает, что строки не разошлись, но не доказывает,
 # что выбор языка вообще доехал до вывода. Это проверяется только запуском.
 EN_OUT=$(AQK_LANG=en node "$CLI" 2>&1)
 RU_OUT=$(AQK_LANG=ru node "$CLI" 2>&1)
 if printf '%s' "$EN_OUT" | grep -q "install a gate from the catalogue" &&
-   ! printf '%s' "$EN_OUT" | grep -q '[а-яА-ЯёЁ]' &&
+   ! printf '%s' "$EN_OUT" | grep -qE 'гейт|каталог|проверк|уровен|репозитор' &&
    printf '%s' "$RU_OUT" | grep -q "поставить гейт из каталога"; then
   ok "справка печатается на двух языках, в английской нет кириллицы"
 else
-  bad "выбор языка не доехал до вывода" "$(printf '%s' "$EN_OUT" | head -4)"
+  # Диагностика по каждому условию отдельно. Прежняя печатала первые строки вывода — по ним
+  # видно, что вывод английский, и совершенно не видно, какая из трёх сверок не сошлась.
+  EN_HAS=$(printf '%s' "$EN_OUT" | grep -c "install a gate from the catalogue")
+  EN_CYR=$(printf '%s' "$EN_OUT" | grep -cE 'гейт|каталог|проверк|уровен|репозитор')
+  RU_HAS=$(printf '%s' "$RU_OUT" | grep -c "поставить гейт из каталога")
+  bad "выбор языка не доехал до вывода" "англ.фраза=$EN_HAS кириллица_в_англ=$EN_CYR рус.фраза=$RU_HAS"
 fi
 
 # --- 33. ссылка на репозиторий ведёт в репозиторий -----------------------------
@@ -549,7 +564,7 @@ fi
 # «github:владелец/репозиторий»), просьба про звезду поехала на github.com/agent-quality-kit —
 # несуществующую страницу. Единственное место, где мы просим человека о чём-то, вело в никуда.
 FBDIR="$(mktemp -d)"; FBPROJ="$(mktemp -d)"
-FB_OUT=$( cd "$FBPROJ" && git init -q . && HOME="$FBDIR" node "$CLI" init 2>&1 )
+FB_OUT=$( cd "$FBPROJ" && git init -q . && HOME="$FBDIR" USERPROFILE="$FBDIR" node "$CLI" init 2>&1 )
 if printf '%s' "$FB_OUT" | grep -qE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'; then
   ok "просьба про звезду ведёт на репозиторий, а не на github.com/<имя пакета>"
 else
@@ -565,13 +580,19 @@ REPDIR="$(mktemp -d)"
 (
   cd "$REPDIR" && git init -q . && mkdir -p src &&
   printf 'def f():\n    print("debug")\n' > src/a.py &&
-  node "$CLI" start >/dev/null 2>&1
+  node "$CLI" start > /tmp/aqk-start.log 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
 if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ no-print-in-prod'; then
   ok "report краснеет кодом возврата и называет упавший гейт"
 else
-  bad "report не отличает красное от зелёного" "код $REP_CODE"
+  # Код возврата отчёта не говорит, ПОЧЕМУ он ноль: гейт не сработал, не установился или
+  # установился не тот. Спрашиваем сам гейт напрямую — это и есть разница между «отчёт врёт»
+  # и «проверка не ловит на этой системе».
+  G_LS=$( cd "$REPDIR" && ls gates 2>&1 | tr '\n' ' ' )
+  G_DECL=$( cd "$REPDIR" && sed -n '/^gates:/,$p' .aqk.yml 2>/dev/null | grep -cE '^[[:space:]]+[A-Za-z0-9_-]+:' )
+  G_OUT=$( cd "$REPDIR" && bash gates/no-print-in-prod/check.sh . 2>&1 | head -2 ); G_CODE=$?
+  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 /tmp/aqk-start.log 2>/dev/null | tr '\n' ' ')»"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
   ok "report сохраняет .aqk/report.md"
@@ -864,6 +885,24 @@ else
   bad "baseline не видит признаков или не называет доказательство" "было ✔ $BEFORE, стало $AFTER"
 fi
 rm -rf "$BDIR2"
+
+# --- 48. start не бросает установку из-за одной записи ------------------------
+# ЗАЧЕМ. Записи вроде dead-code нужен настоящий инструмент; переносимого рецепта у неё нет.
+# На машине без него установка ПАДАЛА целиком: человек получал три сторожа вместо двенадцати и
+# ни слова про остальные девять. Найдено прогоном на Windows, где нет ни ruff, ни vulture.
+# Воспроизводим без Windows: урезаем PATH до одного node — инструментов не видно так же.
+NRDIR="$(mktemp -d)"; NRBIN="$(mktemp -d)"
+ln -sf "$(command -v node)" "$NRBIN/node"
+( cd "$NRDIR" && git init -q . && mkdir -p src && printf 'def f():\n    print("debug")\n' > src/a.py )
+NR_OUT=$( cd "$NRDIR" && PATH="$NRBIN" node "$CLI" start 2>&1 ); NR_CODE=$?
+NR_GATES=$( ls "$NRDIR/gates" 2>/dev/null | grep -cv '^_' )
+if [ "$NR_CODE" -eq 0 ] && [ "$NR_GATES" -ge 5 ] &&
+   [ -f "$NRDIR/gates/no-print-in-prod/check.sh" ]; then
+  ok "start пропускает запись без пригодного инструмента и ставит остальные ($NR_GATES)"
+else
+  bad "start бросил установку из-за одной записи" "код $NR_CODE, поставлено $NR_GATES, хвост: $(printf '%s' "$NR_OUT" | tail -2 | tr '\n' ' ')"
+fi
+rm -rf "$NRDIR" "$NRBIN"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'

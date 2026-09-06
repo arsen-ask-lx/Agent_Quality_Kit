@@ -7,7 +7,7 @@
 import { access, readdir, mkdir, copyFile, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join, resolve, relative } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -71,6 +71,14 @@ const RATCHET_LIB = `${RATCHET_DIR}/_ratchet.sh`;
 // то и другое врёт о том, видел человек просьбу или нет.
 const FEEDBACK_MARK = join(homedir(), ".config", "aqk", "feedback-shown");
 
+// Путь, попадающий в ДОКУМЕНТ, всегда пишется через «/». `relative()` отдаёт разделитель
+// платформы, и на Windows склейка методичек и отчёт получались с «kit\\docs» вместо «kit/docs»:
+// артефакт, который человек читает и пересылает, оказывался разным на разных системах. Найдено
+// заданием конвейера на windows-latest — шестьдесят шесть проверок на Linux этого не видели.
+function docPath(from, to) {
+  return relative(from, to).split(sep).join("/");
+}
+
 async function copyDir(src, dst, { force }) {
   await mkdir(dst, { recursive: true });
   const entries = await readdir(src, { withFileTypes: true });
@@ -98,7 +106,7 @@ async function writeIfAbsent(path, content, { force }) {
 
 export {
   copyDir, writeIfAbsent,
-  PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR,
+  PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
   SELF, REPO_URL, c, exists, die, FEEDBACK_MARK,
 };

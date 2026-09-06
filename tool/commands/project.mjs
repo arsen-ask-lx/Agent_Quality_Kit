@@ -6,8 +6,7 @@ import { spawnSync } from "node:child_process";
 import { join, dirname, relative } from "node:path";
 import {
   CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
-  copyDir, writeIfAbsent, FEEDBACK_MARK,
-} from "../lib/core.mjs";
+  copyDir, writeIfAbsent, FEEDBACK_MARK, docPath } from "../lib/core.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
 import { readManifest } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
@@ -199,7 +198,7 @@ async function cmdBlob() {
   await walk(dir);
 
   for (const full of found) {
-    out += `\n\n${"=".repeat(78)}\n<!-- ${L.blob.source(relative(PKG_ROOT, full))} -->\n${"=".repeat(78)}\n\n`;
+    out += `\n\n${"=".repeat(78)}\n<!-- ${L.blob.source(docPath(PKG_ROOT, full))} -->\n${"=".repeat(78)}\n\n`;
     // Ссылки на соседние файлы в склейке ведут в никуда: соседей рядом больше нет,
     // все они внутри этого же текста. Оставляем подпись, снимаем разметку.
     const body = (await readFile(full, "utf8")).replace(
@@ -268,7 +267,11 @@ async function cmdStart(args) {
       if (declared.has(rec.slug)) continue;
       const v = triggerVerdict(rec, facts0);
       if (!v.applies) { skipped.push([rec.slug, v.why]); continue; }
-      const { cmd } = await installGate(rec.slug, man, facts0);
+      const { cmd, noRecipe } = await installGate(rec.slug, man, facts0);
+      // Записи, которой нужен инструмент, а его на машине нет, здесь не место — но и вся
+      // установка из-за неё останавливаться не должна. Причина называется вслух и попадает
+      // в тот же список пропущенного, что и записи, не подошедшие по триггеру.
+      if (noRecipe) { skipped.push([rec.slug, L.start.noRecipeHere]); declared.add(rec.slug); continue; }
       put.push([rec.slug, cmd, rec.intent || ""]);
       declared.add(rec.slug);
       added++;

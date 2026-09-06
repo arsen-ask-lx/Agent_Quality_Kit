@@ -44,7 +44,13 @@ async function installGate(slug, man, facts) {
   let cmd = picked
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
-  if (!cmd) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
+  // Отказ, а не смерть. `add` ставит одну запись — там смерть уместна и остаётся в вызывающем.
+  // `start` ставит пачку, и падение на одной записи оставляло проект с тремя сторожами вместо
+  // двенадцати, без единого слова про остальные девять. Найдено прогоном на Windows: там нет
+  // ни `ruff`, ни `vulture`, и установка обрывалась на записи `dead-code`, которой нужен
+  // настоящий инструмент. Отсутствие сигнала неотличимо от успеха — здесь оно было внутри
+  // самой установки.
+  if (!cmd) return { rec, cmd: null, copied, declared: false, why: null, noRecipe: true };
 
   // Родной инструмент не знает про наши образцы и выдаёт их как находки — в любом проекте,
   // куда поставили гейты. Заворачиваем его в общий фильтр. Переносимая проверка фильтрует
@@ -81,7 +87,8 @@ async function cmdAdd(args) {
     console.log(c.dim(`  ${L.add.installAnyway}\n`));
   }
 
-  const { cmd, copied, declared, why } = await installGate(slug, man, facts);
+  const { cmd, copied, declared, why, noRecipe } = await installGate(slug, man, facts);
+  if (noRecipe) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
 
   console.log(c.bold(`\naqk add ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(L.add.copied(copied.length))}`);
