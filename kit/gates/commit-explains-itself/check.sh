@@ -26,7 +26,25 @@ else
     exit 0
   fi
 
-  MSG=$(cd "$DIR" && git log -1 --format=%B 2>/dev/null)
+  # При разборе предложения изменений GitHub выкладывает не коммит автора, а синтетический
+  # merge-коммит с сообщением «Merge <sha> into <sha>». Читая его, гейт краснел на КАЖДОМ
+  # предложении изменений в КАЖДОМ проекте, куда его поставили: отчёта в таком сообщении нет и
+  # быть не может. Смотрим на второго родителя — это и есть последний коммит автора.
+  # Найдено настоящим прогоном конвейера, а не рассуждением.
+  REF=HEAD
+  case "$(cd "$DIR" && git log -1 --format=%s 2>/dev/null)" in
+    "Merge "*" into "*)
+      if (cd "$DIR" && git rev-parse -q --verify HEAD^2 >/dev/null 2>&1); then
+        REF=HEAD^2
+      else
+        echo "синтетический merge-коммит, второго родителя не видно — проверка пропущена"
+        echo "  дай конвейеру два коммита истории: actions/checkout@v4 с fetch-depth: 2"
+        exit 0
+      fi
+      ;;
+  esac
+
+  MSG=$(cd "$DIR" && git log -1 --format=%B "$REF" 2>/dev/null)
 
   # Коммит, который трогает только журнал, отчёта в теле не требует: сама запись и есть отчёт,
   # причём подробнее — и её сторожит `lesson-has-outcome`. Иначе гейт воюет с командой `note`,
@@ -38,7 +56,7 @@ else
   [ -z "$LESSONS" ] && LESSONS="incidents"
   case "$LESSONS" in http*) LESSONS="" ;; esac   # journal по адресу, а не путём — не применимо
   if [ -n "$LESSONS" ]; then
-    FILES=$(cd "$DIR" && git show --pretty=format: --name-only HEAD 2>/dev/null | grep -v '^$')
+    FILES=$(cd "$DIR" && git show --pretty=format: --name-only "$REF" 2>/dev/null | grep -v '^$')
     if [ -n "$FILES" ]; then
       OUTSIDE=$(printf '%s\n' "$FILES" | grep -v "^$LESSONS/" | grep -v "^$LESSONS\$")
       if [ -z "$OUTSIDE" ]; then

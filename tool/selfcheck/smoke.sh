@@ -800,6 +800,31 @@ else
 fi
 rm -rf "$NDIR"
 
+# --- 46. commit-explains-itself и синтетический merge-коммит -------------------
+# ЗАЧЕМ. При разборе предложения изменений GitHub выкладывает не коммит автора, а синтетический
+# merge-коммит с сообщением «Merge <sha> into <sha>». Гейт читал именно его, не находил разделов
+# отчёта и краснел — на КАЖДОМ предложении изменений в КАЖДОМ проекте, куда его поставили.
+# Поймано настоящим прогоном конвейера на этой же ветке, а не рассуждением.
+CDIR="$(mktemp -d)"
+(
+  cd "$CDIR" && git init -q . && git config user.email a@b.c && git config user.name a
+  printf 'один\n' > f.txt && git add -A
+  git commit -q -m "feat: первый" -m "Сделано: завёл файл" -m "Не уверен: ни в чём"
+  git checkout -q -b feature
+  printf 'два\n' >> f.txt && git add -A
+  git commit -q -m "feat: второй" -m "Сделано: дописал строку" -m "Не уверен: ни в чём"
+  git checkout -q master 2>/dev/null || git checkout -q main
+  # Ровно та форма сообщения, которую делает GitHub для ветки предложения изменений.
+  git merge -q --no-ff feature -m "Merge $(git rev-parse --short feature) into $(git rev-parse --short HEAD)"
+) >/dev/null 2>&1
+OUT_M="$(bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CDIR" 2>&1)"; RC_M=$?
+if [ "$RC_M" -eq 0 ]; then
+  ok "commit-explains-itself смотрит на коммит автора, а не на merge-коммит конвейера"
+else
+  bad "гейт краснеет на каждом предложении изменений" "$(printf '%s' "$OUT_M" | head -1)"
+fi
+rm -rf "$CDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
