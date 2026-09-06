@@ -262,3 +262,15 @@ test("baseline: заявленное число пунктов совпадае�
   assert.equal(Math.max(...nums), BASELINE_TOTAL);
   assert.equal(ITEMS.every((i) => i.n <= BASELINE_TOTAL), true);
 });
+
+// ЗАЧЕМ. Запись про внешний вид, показанная бэкенду или утилите командной строки, — это совет
+// не по адресу; таким записям перестают верить, и вместе с ними всему каталогу. Признак
+// интерфейса отличает проект со стилями от проекта на тех же языках без них.
+test("триггер по интерфейсу отделяет фронтенд от бэкенда на том же языке", () => {
+  const rec = { trigger: { has_ui: true } };
+  const base = { langs: new Set(["typescript"]), files: 100, gateKeys: [] };
+  assert.equal(triggerVerdict(rec, { ...base, has_ui: true }).applies, true);
+  assert.equal(triggerVerdict(rec, { ...base, has_ui: false }).applies, false);
+  // Причина сокрытия называется, а не молчит: иначе «не показано» неотличимо от «нечего показать».
+  assert.equal(typeof triggerVerdict(rec, { ...base, has_ui: false }).why, "string");
+});

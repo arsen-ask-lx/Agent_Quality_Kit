@@ -1,0 +1,5 @@
+.card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+}
