@@ -4,6 +4,7 @@
 // пределе в 500. Разделена по назначению, а не пополам — так требует наше же правило про
 // размер файла. Зависимостей по-прежнему нет ни одной: только встроенные модули Node.
 
+import { LANG } from "../i18n/index.mjs";
 import { access, readdir, mkdir, copyFile, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -17,7 +18,12 @@ const PKG_ROOT = resolve(HERE, "..", "..");
 const CWD = process.cwd();
 
 const DOCS_SRC = join(PKG_ROOT, "kit", "docs");
-const RULES_SRC = join(PKG_ROOT, "kit", "rules");
+// Правила переносятся в проект НА ЯЗЫКЕ ВЫВОДА. Русский текст в англоязычном проекте — не
+// мелочь: это первое, что там откроет человек, и первое, чего он не прочитает. Русская версия
+// остаётся источником истины, английская — переводом; расходиться им нельзя, и совпадение
+// НАБОРА ФАЙЛОВ сторожит модульная проверка. Совпадение содержания машина не сторожит — это
+// названо в AGENTS.md, а не спрятано.
+const RULES_SRC = join(PKG_ROOT, "kit", LANG === "en" ? "rules-en" : "rules");
 const TARGET_DIR = ".aqk";
 
 const c = {

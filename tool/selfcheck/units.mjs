@@ -11,9 +11,9 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle } from "../lib/manifest.mjs";
+import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
-import { scopeOutput } from "../lib/scope.mjs";
+import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
@@ -357,4 +357,115 @@ test("сужение по дифу: гейт без путей в выводе �
   const r = scopeOutput(["коммит не несёт раздела «Сделано:»"], new Set(["src/new.py"]));
   assert.equal(r.scopable, false);
   assert.equal(scopeOutput(["src/old.py:1: печать"], new Set(["src/new.py"])).scopable, true);
+});
+
+
+// --- совет по починке не теряется в обрезке ----------------------------------
+// ЗАЧЕМ. Все девятнадцать записей каталога печатают строку «почини: …» последней. `doctor --run`
+// показывает три первые строки вывода и обрезает остальное — то есть ровно ту строку, ради
+// которой человек и смотрит на красное, он не видит никогда. Находка без действия — это повод
+// закрыть окно, а не починить.
+test("совет по починке отделяется от находок и не обрезается", () => {
+  const out = [
+    "src/a.py:3: печать",
+    "src/b.py:9: печать",
+    "src/c.py:1: печать",
+    "src/d.py:7: печать",
+    "  почини: замени на вызов системы логов",
+    "  тогда запись попадёт в общий журнал",
+  ];
+  const r = splitAdvice(out);
+  assert.equal(r.findings.length, 4);
+  assert.equal(r.advice.length, 2);
+  // Продолжение совета едет вместе с ним: без второй строки первая обрывается на полуслове.
+  assert.equal(r.advice[1].includes("общий журнал"), true);
+});
+
+test("совет по починке опознаётся на обоих языках", () => {
+  assert.equal(splitAdvice(["a.py:1: x", "  fix: replace with a logger call"]).advice.length, 1);
+  assert.equal(splitAdvice(["a.py:1: x", "  почини: замени на логгер"]).advice.length, 1);
+});
+
+// Вывод без совета — это не ошибка разбора, а признак записи, которая не говорит, что делать.
+// Разбор обязан вернуть пустой совет, а не выдумать его из последней строки.
+test("вывод без совета не превращается в совет", () => {
+  const r = splitAdvice(["src/a.py:3: печать", "src/b.py:9: печать"]);
+  assert.equal(r.advice.length, 0);
+  assert.equal(r.findings.length, 2);
+});
+
+
+// Совет бывает не только в конце: `deps-are-pinned` печатает его внутри вспомогательной
+// функции, вызываемой шесть раз, и находки идут ПОСЛЕ. Пока советом считалось «всё от первой
+// метки до конца», сорок находок уезжали в жёлтый список без обрезки — ровно та стена красного,
+// против которой написан этот модуль. Найдено ревью 2026-09-06.
+test("совет, вставленный посреди вывода, не проглатывает находки", () => {
+  const r = splitAdvice([
+    "  почини: закрепи версии",
+    "src/a.py:1: x",
+    "src/b.py:2: x",
+    "src/c.py:3: x",
+    "  почини: и вот это тоже",
+    "    вторая строка совета",
+  ]);
+  assert.equal(r.findings.length, 3);
+  assert.equal(r.advice.length, 3);
+});
+
+// Продолжение совета не должно съедать находку, стоящую сразу за ним.
+test("находка сразу после совета остаётся находкой", () => {
+  const r = splitAdvice(["  почини: сделай так", "    пояснение", "src/z.py:9: x"]);
+  assert.equal(r.findings.length, 1);
+  assert.equal(r.findings[0].includes("src/z.py"), true);
+});
+
+
+// --- правило, введённое совещательным ----------------------------------------
+// ЗАЧЕМ. Правило вводят в проект, где старый код ему не соответствует. Храповик отвечает на
+// это одним способом: старое становится долгом. Второй способ — показывать, не роняя, пока
+// команда договаривается. Сегодня его нет вовсе: находка либо роняет сборку, либо не существует.
+//
+// ПОЧЕМУ ОБЪЯВЛЕНИЕМ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это `continue-on-error`,
+// против которого написана наша же запись ci-actually-fails: он понижает всё разом, не виден
+// в дифе и не назван в сводке. Список в манифесте виден, именуется и считается всегда.
+test("совещательные гейты читаются из манифеста списком", () => {
+  const man = parseManifest("aqk: 1\nadvisory:\n  - complexity-limit\n  - duplicate-code\n");
+  const a = advisorySet(man);
+  assert.equal(a.has("complexity-limit"), true);
+  assert.equal(a.has("duplicate-code"), true);
+  assert.equal(a.has("secrets-not-in-code"), false);
+});
+
+test("список в одну строку читается так же", () => {
+  const a = advisorySet(parseManifest("advisory: [complexity-limit, duplicate-code]\n"));
+  assert.equal(a.size, 2);
+});
+
+// Отсутствие блока — это ноль совещательных, а не «все совещательные».
+test("без блока advisory совещательных нет", () => {
+  assert.equal(advisorySet(parseManifest("aqk: 1\n")).size, 0);
+  assert.equal(advisorySet(null).size, 0);
+});
+
+// Поле обязано быть известным манифесту: иначе опечатка «advisery:» молча означала бы
+// «совещательных нет», и правило, которое человек считал введённым, роняло бы сборку.
+test("advisory — известное поле манифеста", () => {
+  assert.equal(KNOWN_KEYS.includes("advisory"), true);
+  assert.deepEqual(unknownKeys({ aqk: 1, advisory: [] }), []);
+});
+
+
+// --- правила на языке проекта ------------------------------------------------
+// ЗАЧЕМ. Русский текст правил в англоязычном проекте — это первое, что там откроет человек,
+// и первое, чего он не прочитает. Русская версия остаётся источником истины, английская —
+// переводом. Совпадение содержания машина не сторожит, а вот НАБОР ФАЙЛОВ обязана: добавили
+// правило на одном языке и забыли про другой — половина мира получит комплект без него.
+test("наборы файлов правил совпадают на обоих языках", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const at = (d) => fileURLToPath(new URL(`../../kit/${d}`, import.meta.url));
+  const ru = (await readdir(at("rules"))).filter((f) => f.endsWith(".md")).sort();
+  const en = (await readdir(at("rules-en"))).filter((f) => f.endsWith(".md")).sort();
+  assert.deepEqual(en, ru);
+  assert.equal(ru.length > 0, true);
 });

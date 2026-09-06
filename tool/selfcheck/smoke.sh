@@ -957,6 +957,145 @@ else
 fi
 rm -rf "$SCDIR"
 
+# --- 52. совет по починке не теряется в обрезке --------------------------------
+# ЗАЧЕМ. Все записи каталога печатают «почини: …» последней строкой, а прогон показывал три
+# первые и обрезал остальное — то есть ровно ту строку, ради которой человек смотрит на красное,
+# он не видел никогда. Находка без действия закрывает окно, а не дефект.
+ADIR="$(mktemp -d)"
+(
+  cd "$ADIR" && git init -q . && mkdir -p src
+  for n in a b c d e; do printf 'def %s():\n    print("%s")\n' "$n" "$n" > "src/$n.py"; done
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+)
+A_OUT=$( cd "$ADIR" && node "$CLI" doctor --run 2>&1 )
+if printf '%s' "$A_OUT" | grep -qiE '(почини|fix)[[:space:]]*:' &&
+   printf '%s' "$A_OUT" | grep -qE 'py:[0-9]+'; then
+  ok "совет по починке виден при обрезанных находках"
+else
+  bad "совет по починке потерялся" "находок в выводе: $(printf '%s' "$A_OUT" | grep -c 'py:')"
+fi
+rm -rf "$ADIR"
+
+# --- 53. у долга есть цель и срок, и оба с последствием ------------------------
+# ЗАЧЕМ. Реестр, который может только сокращаться, всё равно не знает, когда кончится, — и
+# потому не кончается. Цель и срок без машинного последствия были бы украшением, поэтому
+# проверяем ровно последствия: срок вышел — красное; цель достигнута — сказано вслух.
+RDIR="$(mktemp -d)"
+(
+  cd "$RDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+)
+R_REG="$RDIR/ratchets/no-print-in-prod.txt"
+if [ -f "$R_REG" ] && grep -q 'aqk-goal' "$R_REG"; then
+  # Долг снят, новых нарушений нет — зелено.
+  R_BASE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 ); R_BASE_CODE=$?
+  # Срок в прошлом — обязано покраснеть без единого нового нарушения.
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' "$R_REG"
+  R_LATE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
+  if printf '%s' "$R_LATE" | grep -qi 'срок\|deadline'; then
+    ok "срок долга вышел — храповик краснеет без новых нарушений"
+  else
+    bad "просроченный долг прошёл молча" "код базового прогона $R_BASE_CODE"
+  fi
+  # Цель заведомо достигнута — храповик обязан сказать, что обёртку пора убрать.
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline:/; s/^# aqk-goal:.*/# aqk-goal: 99/' "$R_REG"
+  R_DONE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
+  if printf '%s' "$R_DONE" | grep -qi 'погашен\|paid off'; then
+    ok "цель достигнута — храповик говорит убрать обёртку"
+  else
+    bad "погашенный долг не назван" "$(printf '%s' "$R_DONE" | grep -i ratchet | head -1)"
+  fi
+else
+  bad "реестр долга не создан или без цели" "$R_REG"
+fi
+rm -rf "$RDIR"
+
+# --- 54. упавший гейт не стирает реестр долга ----------------------------------
+# ЗАЧЕМ. Провал без единой разобранной находки — это отказ инструмента, а не чистый прогон.
+# Храповик вычёркивал ВЕСЬ реестр как исправленный, возвращал ноль и — после появления цели —
+# предлагал снять защиту: «долг погашен, убери обёртку». Снятие защиты по итогам прогона,
+# которого не было. Найдено ревью 2026-09-06.
+WDIR="$(mktemp -d)"
+mkdir -p "$WDIR/ratchets"
+printf '# Реестр долга: проба\n# aqk-goal: 0\nsrc/a.py: печать\n' > "$WDIR/ratchets/t.txt"
+W_OUT=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'exit 3' 2>&1 ); W_CODE=$?
+W_LEFT=$(grep -c 'src/a.py' "$WDIR/ratchets/t.txt" || true)
+if [ "$W_CODE" -ne 0 ] && [ "$W_LEFT" -eq 1 ] &&
+   ! printf '%s' "$W_OUT" | grep -qi 'погашен'; then
+  ok "упавший гейт не стирает реестр и не предлагает снять защиту"
+else
+  bad "упавший гейт съел реестр" "код $W_CODE, строк долга осталось $W_LEFT"
+fi
+# Директива с опечаткой обязана быть слышной: молчаливо отключённая цель — та же тишина.
+printf '# Реестр\n# aqk-goal: скоро\nsrc/a.py: печать\n' > "$WDIR/ratchets/t.txt"
+W_BAD=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'echo "src/a.py: печать"' 2>&1 )
+if printf '%s' "$W_BAD" | grep -qi 'не число'; then
+  ok "опечатка в директиве храповика названа, а не проглочена"
+else
+  bad "нечисловая цель отключилась молча" "$(printf '%s' "$W_BAD" | head -1)"
+fi
+rm -rf "$WDIR"
+
+# --- 55. просроченный долг краснеет и при сужении по дифу ----------------------
+# ЗАЧЕМ. Сообщение храповика про срок называет путь к реестру, а реестра в дифе нет: фильтр по
+# путям отбрасывал единственную строку, находок не оставалось, и гейт печатался зелёным с
+# пометкой «находки вне дифа». То есть `--since` отменял правило SPEC.md §7.6 ровно в том
+# режиме, в котором его и запускают. Найдено ревью 2026-09-06.
+DDIR="$(mktemp -d)"
+(
+  cd "$DDIR" && git init -q . && git config user.email t@t && git config user.name t
+  mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' ratchets/no-print-in-prod.txt
+  git add -A >/dev/null 2>&1 && git commit -qm base >/dev/null 2>&1
+)
+D_WIDE=$( cd "$DDIR" && node "$CLI" doctor --run 2>&1 )
+D_NARROW=$( cd "$DDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
+if printf '%s' "$D_WIDE" | grep -q 'no-print-in-prod' &&
+   printf '%s' "$D_NARROW" | grep -qE 'no-print-in-prod.*(код|exit)' ; then
+  ok "просроченный долг краснеет и при --since"
+else
+  bad "--since отменил срок долга" "узкий прогон: $(printf '%s' "$D_NARROW" | grep no-print | head -1 | cut -c1-90)"
+fi
+rm -rf "$DDIR"
+
+# --- 56. совещательный гейт показан, но прогон не уронен -----------------------
+# ЗАЧЕМ. Правило вводят в проект, где старый код ему не соответствует. Без третьего пути выбор
+# из двух крайностей: включить и сломать сборку либо не включать вовсе. Проверяем обе стороны:
+# без списка — роняет; со списком — показано и НАЗВАНО, а прогон зелёный. Молчание о
+# совещательном гейте было бы выключенной проверкой, притворяющейся отсутствующей.
+VDIR="$(mktemp -d)"
+(
+  cd "$VDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+)
+( cd "$VDIR" && node "$CLI" doctor --run --min 1 >/dev/null 2>&1 ); V_HARD=$?
+printf '\nadvisory:\n  - no-print-in-prod\n' >> "$VDIR/.aqk.yml"
+V_OUT=$( cd "$VDIR" && node "$CLI" doctor --run --min 1 2>&1 ); V_SOFT=$?
+if [ "$V_HARD" -ne 0 ] && [ "$V_SOFT" -eq 0 ] &&
+   printf '%s' "$V_OUT" | grep -qE 'advisory|совещательн' &&
+   printf '%s' "$V_OUT" | grep -q 'src/a.py'; then
+  ok "совещательный гейт показывает находки, называется и не роняет прогон"
+else
+  bad "совещательный режим работает не так" "обычный код $V_HARD, совещательный $V_SOFT"
+fi
+# Опечатка в имени поля обязана быть названа: «advisery:» молча означало бы «совещательных нет»,
+# и правило, которое человек считал введённым, роняло бы сборку.
+sed -i.bak 's/^advisory:/advisery:/' "$VDIR/.aqk.yml"
+V_TYPO=$( cd "$VDIR" && node "$CLI" doctor 2>&1 )
+if printf '%s' "$V_TYPO" | grep -qi 'advisery'; then
+  ok "опечатка в имени поля манифеста названа"
+else
+  bad "опечатка в advisory проглочена" "$(printf '%s' "$V_TYPO" | tail -2 | head -1)"
+fi
+rm -rf "$VDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

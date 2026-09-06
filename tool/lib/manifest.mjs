@@ -79,7 +79,7 @@ function parseManifest(text) {
 // Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
 // лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
 // только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
-const KNOWN_KEYS = ["aqk", "entry", "rules", "gates", "samples", "ratchets", "lessons"];
+const KNOWN_KEYS = ["aqk", "entry", "rules", "gates", "samples", "ratchets", "lessons", "advisory"];
 
 function unknownKeys(man) {
   if (!man || typeof man !== "object" || Array.isArray(man)) return [];
@@ -117,6 +117,22 @@ function entryLifecycle(rec) {
   else if (declared && declared !== "deprecated") problem = L.lifecycle.unknown(declared);
 
   return { state, why, supersededBy: supersededBy || null, problem };
+}
+
+// СОВЕЩАТЕЛЬНЫЕ ГЕЙТЫ. Правило вводят в проект, где старый код ему не соответствует. Храповик
+// отвечает на это одним способом: старое становится долгом, новое блокируется. Второй способ —
+// показывать, не роняя, пока команда договаривается о правиле. Без него у человека остаётся
+// выбор из двух крайностей: включить и сломать сборку либо не включать вовсе.
+//
+// ПОЧЕМУ СПИСКОМ В МАНИФЕСТЕ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это тот самый
+// `continue-on-error`, против которого написана наша запись ci-actually-fails: он понижает всё
+// разом, не виден в дифе и не назван в сводке. Список виден в манифесте, называется поимённо и
+// печатается КАЖДЫЙ прогон: совещательный гейт, о котором забыли, — это выключенная проверка,
+// и молчать о нём нельзя.
+function advisorySet(man) {
+  const v = man?.advisory;
+  if (Array.isArray(v)) return new Set(v.map((x) => String(x).trim()).filter(Boolean));
+  return new Set();
 }
 
 async function readManifest() {
@@ -184,5 +200,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle,
+  entryLifecycle, advisorySet,
 };

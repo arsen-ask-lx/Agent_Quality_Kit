@@ -3,9 +3,12 @@
 // Правка здесь обязана иметь пару в ru.mjs с тем же ключом: расхождение ловит модульная
 // проверка «оба каталога несут одни и те же ключи».
 
+import { enDocs } from "./en-docs.mjs";
+
 import { templates } from "./templates-en.mjs";
 
 export const en = {
+  ...enDocs,
   templates,
   help: {
     tagline: "tooling for building software with agents",
@@ -71,6 +74,10 @@ export const en = {
     sinceBadRef: (ref) => `cannot compare against "${ref}": no such ref, or this is not a git repository`,
     notScopable: "output carries no paths — cannot be narrowed by diff, left red",
     outsideDiff: (n) => `findings exist, but outside the diff (${n})`,
+    advisoryMark: "advisory — shown, the run was not failed",
+    advisorySummary: (names) =>
+      `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
+      `either fix them and drop them from advisory, or admit the rule does not exist.`,
     runHeading: "Running the declared gates",
     timeout: "did not finish within 5 minutes",
     exitCode: (code) => `exit ${code}`,
@@ -213,7 +220,14 @@ export const en = {
     registryHead: (slug, stamp) =>
       `# Debt registry: ${slug}\n` +
       `# Captured ${stamp}. This list may ONLY get shorter.\n` +
-      `# A new violation turns the gate red; a fixed one is struck out automatically.\n`,
+      `# A new violation turns the gate red; a fixed one is struck out automatically.\n` +
+      `#\n` +
+      `# Debt with no goal and no deadline never ends. The goal is how many violations count as\n` +
+      `# paid off; on reaching it the ratchet tells you to remove the wrapper. The deadline is\n` +
+      `# optional, but if set, debt still open past that date turns the gate red — a deadline\n` +
+      `# without a consequence is not a deadline.\n` +
+      `# aqk-goal: 0\n` +
+      `# aqk-deadline:\n`,
     recorded: (n) => `${n} violations recorded as debt`,
     libCopied: "wrapper copied into the project",
     wrapped: "command wrapped in the ratchet",
@@ -386,30 +400,6 @@ export const en = {
     nextWhy: "— run everything that is declared",
   },
 
-  manifestDoc: {
-    head: [
-      "# .aqk.yml — the Agent Quality Kit manifest",
-      "# What this is: a machine-readable description of how agents live in this repository.",
-      "# `aqk doctor` computes the compliance level. An empty field = the level is not reached,",
-      "# and that is honest: filling it with placeholders is pointless, files are checked, not words.",
-    ],
-    entry: "# AQK-0 — what the agent reads first.",
-    rules: "# AQK-1 — where the standards are and which checks are mandatory.",
-    gates: [
-      "  # name: a command returning 0 or non-zero. An empty declaration protects nothing and is",
-      '  # rejected by the "a declared gate runs" check — hence examples here, not placeholders.',
-      '  #   lint: "ruff check ."',
-      '  #   test: "pytest -q"',
-      "  # To install a ready entry from the catalogue together with its samples: aqk add <name>",
-    ],
-    samples: [
-      "# AQK-2 — what proves the gates work, and where the debt registries are.",
-      "# samples: the directory with red and green samples (a gate must go red on the first and",
-      "# stay quiet on the second). ratchets: lists of known violations that may only get",
-      "# shorter.",
-    ],
-    lessons: "# AQK-3 — where lessons accumulate. A path or an address.",
-  },
 
   badge: {
     noManifest: (cmd) => `No .aqk.yml — there is no level yet. Start with ${cmd}`,
@@ -459,33 +449,5 @@ export const en = {
     },
   },
 
-  levels: [
-    {
-      title: "a manifest and an entry point",
-      need: "create .aqk.yml and point entry at the file an agent reads first (AGENTS.md)",
-      gives: "any tool understands what to read in this repository",
-    },
-    {
-      title: "rules and working gates",
-      need: "set rules (the standards directory) and fill at least one gate in gates with a real command",
-      gives: "checks are declared as commands, not described in prose",
-    },
-    {
-      title: "gates are proven, debt is under a ratchet",
-      need: "set samples (red and green gate samples) and ratchets (debt registries)",
-      gives: "the gate has proven it catches defects and stays quiet on correct code",
-    },
-    {
-      title: "lessons come back into the work",
-      need: "set lessons — the path or address of a journal where every incident yields a conclusion",
-      gives: "the project learns: the same bruise is not collected twice",
-    },
-  ],
 
-  report: {
-    title: "aqk doctor --run",
-    version: "version",
-    level: "level",
-    summary: (ok, all) => `total: ${ok} of ${all} green`,
-  },
 };
