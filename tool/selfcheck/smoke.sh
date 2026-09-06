@@ -886,6 +886,24 @@ else
 fi
 rm -rf "$BDIR2"
 
+# --- 48. start не бросает установку из-за одной записи ------------------------
+# ЗАЧЕМ. Записи вроде dead-code нужен настоящий инструмент; переносимого рецепта у неё нет.
+# На машине без него установка ПАДАЛА целиком: человек получал три сторожа вместо двенадцати и
+# ни слова про остальные девять. Найдено прогоном на Windows, где нет ни ruff, ни vulture.
+# Воспроизводим без Windows: урезаем PATH до одного node — инструментов не видно так же.
+NRDIR="$(mktemp -d)"; NRBIN="$(mktemp -d)"
+ln -sf "$(command -v node)" "$NRBIN/node"
+( cd "$NRDIR" && git init -q . && mkdir -p src && printf 'def f():\n    print("debug")\n' > src/a.py )
+NR_OUT=$( cd "$NRDIR" && PATH="$NRBIN" node "$CLI" start 2>&1 ); NR_CODE=$?
+NR_GATES=$( ls "$NRDIR/gates" 2>/dev/null | grep -cv '^_' )
+if [ "$NR_CODE" -eq 0 ] && [ "$NR_GATES" -ge 5 ] &&
+   [ -f "$NRDIR/gates/no-print-in-prod/check.sh" ]; then
+  ok "start пропускает запись без пригодного инструмента и ставит остальные ($NR_GATES)"
+else
+  bad "start бросил установку из-за одной записи" "код $NR_CODE, поставлено $NR_GATES, хвост: $(printf '%s' "$NR_OUT" | tail -2 | tr '\n' ' ')"
+fi
+rm -rf "$NRDIR" "$NRBIN"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

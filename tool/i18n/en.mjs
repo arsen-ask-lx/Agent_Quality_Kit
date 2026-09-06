@@ -336,6 +336,7 @@ export const en = {
   },
 
   start: {
+    noRecipeHere: "needs a tool that is not on this machine",
     initFailed: (cmd) => `Could not lay out the kit. Start with ${cmd}`,
     tooManyFiles: (n) => `This repository already has ${n} code files — that is a different scenario.`,
     useDoctor: (cmd) => `${cmd} will inspect what is here and split the entries into three lists:`,

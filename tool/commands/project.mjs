@@ -267,7 +267,11 @@ async function cmdStart(args) {
       if (declared.has(rec.slug)) continue;
       const v = triggerVerdict(rec, facts0);
       if (!v.applies) { skipped.push([rec.slug, v.why]); continue; }
-      const { cmd } = await installGate(rec.slug, man, facts0);
+      const { cmd, noRecipe } = await installGate(rec.slug, man, facts0);
+      // Записи, которой нужен инструмент, а его на машине нет, здесь не место — но и вся
+      // установка из-за неё останавливаться не должна. Причина называется вслух и попадает
+      // в тот же список пропущенного, что и записи, не подошедшие по триггеру.
+      if (noRecipe) { skipped.push([rec.slug, L.start.noRecipeHere]); declared.add(rec.slug); continue; }
       put.push([rec.slug, cmd, rec.intent || ""]);
       declared.add(rec.slug);
       added++;
