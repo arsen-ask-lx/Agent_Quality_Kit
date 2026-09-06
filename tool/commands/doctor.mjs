@@ -196,9 +196,11 @@ async function cmdDoctor() {
   const wantRun = process.argv.includes("--run");
   const gates = declaredGates(man);
   let gateFailed = 0;
+  let failedNames = [];
   if (wantRun) {
     const run = runGates(man);
     gateFailed = run.failed;
+    failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
     await writeRunReport({ version, reached, results: run.results });
   } else if (gates.length) {
     console.log(
@@ -211,12 +213,16 @@ async function cmdDoctor() {
   const minIdx = process.argv.indexOf("--min");
   const min = minIdx > -1 ? Number(process.argv[minIdx + 1]) : null;
   if (min !== null) {
-    const pass = reached >= min && gateFailed === 0;
-    console.log(
-      pass
-        ? c.green(`  ${L.doctor.thresholdPass(min)}\n`)
-        : c.red(`  ${L.doctor.thresholdFail(min, reached < 0 ? L.doctor.levelNone : reached)}\n`)
-    );
+    const levelOk = reached >= min;
+    const pass = levelOk && gateFailed === 0;
+    // Две разные развилки, и сообщение обязано их различать. «Порог не пройден: сейчас AQK-1»
+    // при пороге AQK-1 противоречит само себе и отправляет чинить манифест, когда падал гейт.
+    const now = reached < 0 ? L.doctor.levelNone : reached;
+    let line;
+    if (pass) line = c.green(`  ${L.doctor.thresholdPass(min)}\n`);
+    else if (!levelOk) line = c.red(`  ${L.doctor.thresholdFail(min, now)}\n`);
+    else line = c.red(`  ${L.doctor.thresholdGateFail(min, now, failedNames)}\n`);
+    console.log(line);
     process.exit(pass ? 0 : 1);
   }
   process.exit(missing || reached < 0 || gateFailed ? 1 : 0);

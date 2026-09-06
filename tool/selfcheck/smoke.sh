@@ -696,6 +696,27 @@ else
 fi
 rm -rf "$BDIR"
 
+# --- 41. порог различает «ступень ниже» и «упал гейт» -------------------------
+# ЗАЧЕМ. При упавшем гейте печаталось «Порог AQK-1 НЕ пройден: сейчас AQK-1» — утверждение,
+# противоречащее само себе. Человек шёл чинить манифест, а падал гейт. Это две разные
+# развилки, и сообщение обязано их различать, иначе оно отправляет чинить не то.
+TDIR="$(mktemp -d)"
+( cd "$TDIR" && git init -q . && node "$CLI" init >/dev/null 2>&1 )
+printf 'gates:\n  always-fails: "false"\n' >> "$TDIR/.aqk.yml"
+OUT_GATE="$( cd "$TDIR" && node "$CLI" doctor --run --min 1 2>&1 )"; RC_GATE=$?
+# Ступень ниже порога: пустой манифест без входа и правил.
+EDIR="$(mktemp -d)"; ( cd "$EDIR" && git init -q . && printf 'aqk: 1\n' > .aqk.yml )
+OUT_LVL="$( cd "$EDIR" && node "$CLI" doctor --min 3 2>&1 )"; RC_LVL=$?
+if [ "$RC_GATE" -ne 0 ] && [ "$RC_LVL" -ne 0 ] &&
+   printf '%s' "$OUT_GATE" | grep -q 'always-fails' &&
+   ! printf '%s' "$OUT_GATE" | grep -qE '(НЕ пройден|NOT passed): (сейчас|currently) AQK-1' &&
+   printf '%s' "$OUT_LVL" | grep -qE '(НЕ пройден|NOT passed)'; then
+  ok "порог различает упавший гейт и недобранную ступень"
+else
+  bad "сообщение о пороге не различает две развилки" "гейт: $(printf '%s' "$OUT_GATE" | tail -2 | tr '\n' ' ')"
+fi
+rm -rf "$TDIR" "$EDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

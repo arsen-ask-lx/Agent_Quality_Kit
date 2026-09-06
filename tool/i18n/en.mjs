@@ -75,6 +75,8 @@ export const en = {
 
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
+    thresholdGateFail: (min, now, names) =>
+      `Threshold AQK-${min} passed (currently AQK-${now}), but a gate failed: ${names.join(", ")}.`,
   },
 
   trigger: {

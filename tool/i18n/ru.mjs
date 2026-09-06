@@ -76,6 +76,10 @@ export const ru = {
 
     thresholdPass: (min) => `Порог AQK-${min} пройден.`,
     thresholdFail: (min, now) => `Порог AQK-${min} НЕ пройден: сейчас AQK-${now}.`,
+    // Ступень взята, но прогон красный — это другое утверждение, и виновника называем сразу:
+    // иначе его ищут глазами выше по логу конвейера.
+    thresholdGateFail: (min, now, names) =>
+      `Порог AQK-${min} пройден (сейчас AQK-${now}), но упал гейт: ${names.join(", ")}.`,
   },
 
   trigger: {
