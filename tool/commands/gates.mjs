@@ -8,7 +8,7 @@ import {
   CWD, PKG_ROOT, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB, MANIFEST, SELF, c, exists, die,
   copyDir,
 } from "../lib/core.mjs";
-import { parseManifest, readManifest, manifestWithGate } from "../lib/manifest.mjs";
+import { parseManifest, readManifest, manifestWithGate, entryLifecycle } from "../lib/manifest.mjs";
 import {
   detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
 } from "../lib/repo.mjs";
@@ -28,6 +28,13 @@ async function installGate(slug, man, facts) {
   if (!(await exists(src))) die(L.add.noSuchGate(slug, `${SELF} doctor`));
 
   const rec = { slug, ...parseManifest(await readFile(join(src, "gate.yml"), "utf8")) };
+
+  // Выведенную запись не ставим. Молча пропустить нельзя — человек пришёл за конкретной
+  // проверкой и обязан узнать, кто её заменил; ответ «а что теперь» и есть цена вывода.
+  // Проверка ДО копирования: иначе в проекте остаётся папка гейта, которого не будет в манифесте.
+  const life = entryLifecycle(rec);
+  if (life.state === "deprecated") return { rec, cmd: null, copied: [], declared: false, why: null, retired: life.supersededBy || "" };
+
   const dst = join(CWD, PROJECT_GATES, slug);
   await mkdir(dst, { recursive: true });
   const copied = await copyDir(src, dst, { force: false });
@@ -87,7 +94,8 @@ async function cmdAdd(args) {
     console.log(c.dim(`  ${L.add.installAnyway}\n`));
   }
 
-  const { cmd, copied, declared, why, noRecipe } = await installGate(slug, man, facts);
+  const { cmd, copied, declared, why, noRecipe, retired } = await installGate(slug, man, facts);
+  if (retired !== undefined) die(L.lifecycle.installDeprecated(slug, retired ? `${SELF} add ${retired}` : "—"));
   if (noRecipe) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
 
   console.log(c.bold(`\naqk add ${slug}\n`));

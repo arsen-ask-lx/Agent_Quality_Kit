@@ -904,6 +904,59 @@ else
 fi
 rm -rf "$NRDIR" "$NRBIN"
 
+# --- 49. выведенную запись не ставят, а называют преемника --------------------
+# ЗАЧЕМ. Зрелость записи считается по доказательству, и объявить её нельзя — кроме одного
+# состояния: `deprecated`. Оно объявляется, и весь его смысл в отказе: запись, которую всё ещё
+# можно поставить одной командой, не выведена, а просто помечена. Проверяем сам отказ и то, что
+# папка гейта в проекте НЕ появилась: половина установки хуже, чем её отсутствие.
+#
+# Каталог мутируем в КОПИИ пакета, а не в этом репозитории: проверка, которая правит собственные
+# исходники, однажды упадёт посередине и оставит дерево грязным.
+DEPKG="$(mktemp -d)"; DEPRJ="$(mktemp -d)"
+cp -r "$ROOT/tool" "$ROOT/kit" "$ROOT/package.json" "$DEPKG/" 2>/dev/null
+printf 'lifecycle: deprecated\nsuperseded_by: no-print-in-prod\n' >> "$DEPKG/kit/gates/todo-without-task/gate.yml"
+( cd "$DEPRJ" && git init -q . && printf 'x = 1\n' > a.py && node "$DEPKG/tool/program.mjs" init >/dev/null 2>&1 )
+DE_OUT=$( cd "$DEPRJ" && node "$DEPKG/tool/program.mjs" add todo-without-task 2>&1 ); DE_CODE=$?
+if [ "$DE_CODE" -ne 0 ] &&
+   printf '%s' "$DE_OUT" | grep -q 'no-print-in-prod' &&
+   [ ! -d "$DEPRJ/gates/todo-without-task" ]; then
+  ok "add отказывает в выведенной записи и называет ту, что её заменяет"
+else
+  bad "выведенная запись установилась или преемник не назван" "код $DE_CODE, папка: $([ -d "$DEPRJ/gates/todo-without-task" ] && echo есть || echo нет)"
+fi
+rm -rf "$DEPKG" "$DEPRJ"
+
+# --- 50. --since показывает только то, что внёс диф ---------------------------
+# ЗАЧЕМ. Первый прогон в живом проекте показывает долг за все годы. Стену красного не разбирают
+# — проверку выключают целиком. Проверяем три исхода разом: старый долг молчит, новый краснеет,
+# а гейт, который печатает вердикт без путей, НЕ становится зелёным от того, что его нечем сузить.
+SCDIR="$(mktemp -d)"
+(
+  cd "$SCDIR" && git init -q . && git config user.email t@t && git config user.name t
+  mkdir -p src && printf 'def old():\n    print("старый долг")\n' > src/old.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  git add -A && git commit -qm "база" >/dev/null 2>&1
+  printf 'def fresh():\n    print("новый долг")\n' > src/fresh.py
+)
+SC_WIDE=$( cd "$SCDIR" && node "$CLI" doctor --run 2>&1 )
+SC_NARROW=$( cd "$SCDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
+if printf '%s' "$SC_WIDE"   | grep -q 'old.py' &&
+   printf '%s' "$SC_NARROW" | grep -q 'fresh.py' &&
+   ! printf '%s' "$SC_NARROW" | grep -q 'old.py'; then
+  ok "--since прячет старый долг и показывает внесённый дифом"
+else
+  bad "--since сузил не то" "широкий: $(printf '%s' "$SC_WIDE" | grep -c 'py:'), узкий: $(printf '%s' "$SC_NARROW" | grep -c 'py:')"
+fi
+# Несуществующая ссылка обязана быть отказом, а не тихим «сравнили с ничем».
+SC_BAD=$( cd "$SCDIR" && node "$CLI" doctor --run --since net-takoy-vetki 2>&1 ); SC_BADCODE=$?
+if [ "$SC_BADCODE" -ne 0 ] && printf '%s' "$SC_BAD" | grep -qi 'net-takoy-vetki'; then
+  ok "--since с несуществующей ссылкой — отказ, а не тихое сравнение с ничем"
+else
+  bad "--since проглотил неверную ссылку" "код $SC_BADCODE"
+fi
+rm -rf "$SCDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

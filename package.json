@@ -43,7 +43,8 @@
   ],
   "knip": {
     "entry": [
-      "tool/selfcheck/units.mjs"
+      "tool/selfcheck/units.mjs",
+    "tool/selfcheck/lifecycle.mjs"
     ],
     "project": [
       "tool/**/*.mjs"

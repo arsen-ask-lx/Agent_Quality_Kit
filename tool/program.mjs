@@ -82,6 +82,7 @@ if (IS_MAIN) {
         [`${SELF} start`, h.start],
         [`${SELF} doctor`, h.doctor],
         [`${SELF} doctor --run`, h.doctorRun],
+        [`${SELF} doctor --run --since main`, h.doctorSince],
         [`${SELF} add ${h.name}`, h.add],
         [`${SELF} find "…"`, h.find],
         [`${SELF} why "…"`, h.why],

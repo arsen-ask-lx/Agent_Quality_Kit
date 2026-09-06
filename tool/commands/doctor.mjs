@@ -3,7 +3,8 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
+import { scopeOutput, changedFiles } from "../lib/scope.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -94,9 +95,26 @@ function declaredGates(man) {
     .filter(([, cmd]) => cmd);
 }
 
-function runGates(man) {
+// Ссылка, относительно которой сужается вывод: `--since main`, `--since HEAD~5`.
+// Без значения флаг бессмыслен — молча взять умолчание нельзя: «сужено не тем» неотличимо
+// от «не сужено».
+function sinceRef(argv = process.argv) {
+  const i = argv.indexOf("--since");
+  if (i === -1) return null;
+  const v = argv[i + 1];
+  return v && !v.startsWith("-") ? v : null;
+}
+
+function runGates(man, opts = {}) {
   const gates = declaredGates(man);
   if (!gates.length) return { failed: 0, ran: 0, results: [] };
+
+  // Сужение по дифу — договор с человеком, и он должен видеть, ЧТО именно сужено. Пустой диф
+  // называется вслух: иначе «все гейты зелёные» означало бы «сравнили не с тем» и читалось бы
+  // как успех. Это тот же класс, что и весь стандарт, только внутри нашего флага.
+  const scoped = opts.since ? changedFiles(opts.since, CWD) : null;
+  if (opts.since && scoped === null) die(L.doctor.sinceBadRef(opts.since));
+  if (scoped) console.log(c.dim(`\n  ${L.doctor.sinceHeading(opts.since, scoped.size)}`));
 
   console.log(c.bold(`\n  ${L.doctor.runHeading}\n`));
   let failed = 0;
@@ -118,8 +136,30 @@ function runGates(man) {
       console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
       results.push({ name, cmd, ok: true, secs });
     } else {
+      let out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
+
+      // Сужение до дифа. Три исхода, и все три называются вслух.
+      if (scoped) {
+        const s = scopeOutput(out, scoped);
+        if (!s.scopable) {
+          // Гейт печатает вердикт без путей — сузить нечем. Признать его успешным значило бы
+          // выдать провал за тишину; остаётся красным, и причина названа.
+          console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${L.doctor.notScopable}`)}`);
+          failed++;
+          results.push({ name, cmd, ok: false, secs, code, note: L.doctor.notScopable });
+          continue;
+        }
+        if (s.findings === 0) {
+          // Долг есть, но не в том, что внёс диф. Зелёный — но с числом спрятанного: молчаливое
+          // «всё хорошо» здесь было бы неправдой.
+          console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
+          results.push({ name, cmd, ok: true, secs, scopedAway: out.length });
+          continue;
+        }
+        out = s.kept;
+      }
+
       failed++;
-      const out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${secs}s · ${cmd}`)}`);
       for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
       if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
@@ -247,7 +287,7 @@ async function cmdDoctor() {
   let gateFailed = 0;
   let failedNames = [];
   if (wantRun) {
-    const run = runGates(man);
+    const run = runGates(man, { since: sinceRef() });
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
     await writeRunReport({ version, reached, results: run.results });

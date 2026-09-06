@@ -236,8 +236,25 @@ aqk find "print statements in production"   # is there already such a gate — m
 aqk doctor                                  # what applies to this repository and what is missing
 aqk add secrets-not-in-code                 # copies the check and its samples in, declares it
 aqk doctor --run                            # runs the declared gates and shows the result
+aqk doctor --run --since main               # ... but only what the diff introduced
 aqk ratchet no-print-in-prod                # existing violations become debt, new ones are blocked
 ```
+
+### The first run on a real project
+
+An established repository carries years of debt. Run every gate over all of it and you get a wall
+of red that nobody reads — so the tool gets switched off. `--since <ref>` narrows the output to
+files the diff touched:
+
+```bash
+aqk doctor --run --since main    # only what this branch introduced
+```
+
+Three outcomes, all of them said out loud. Findings inside the diff — red, as usual. Findings only
+outside it — green, with the number that was hidden, never a silent "all clear". And a gate whose
+output carries no paths at all (a commit-message check, a CI-config check) **cannot** be narrowed:
+it stays red, and says why. Calling it green because there was nothing to narrow would be exactly
+the silence this tool exists to remove.
 
 Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actually ran and how
 long it took. The list of gates in the manifest says nothing about how many of them are alive

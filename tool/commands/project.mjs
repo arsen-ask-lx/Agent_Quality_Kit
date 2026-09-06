@@ -267,7 +267,13 @@ async function cmdStart(args) {
       if (declared.has(rec.slug)) continue;
       const v = triggerVerdict(rec, facts0);
       if (!v.applies) { skipped.push([rec.slug, v.why]); continue; }
-      const { cmd, noRecipe } = await installGate(rec.slug, man, facts0);
+      const { cmd, noRecipe, retired } = await installGate(rec.slug, man, facts0);
+      // Выведенная запись в пачку не идёт, но и молчать о ней нельзя: она попадает в тот же
+      // список пропущенного с названным преемником.
+      if (retired !== undefined) {
+        skipped.push([rec.slug, L.lifecycle.installDeprecated(rec.slug, retired || "—")]);
+        declared.add(rec.slug); continue;
+      }
       // Записи, которой нужен инструмент, а его на машине нет, здесь не место — но и вся
       // установка из-за неё останавливаться не должна. Причина называется вслух и попадает
       // в тот же список пропущенного, что и записи, не подошедшие по триггеру.

@@ -1,0 +1,14 @@
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm ci
+      - name: тесты
+        run: pytest
+      - name: типы
+        run: tsc --noEmit
+      - name: выгрузить отчёт
+        run: bash scripts/upload-report.sh
+        continue-on-error: true

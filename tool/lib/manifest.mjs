@@ -86,6 +86,39 @@ function unknownKeys(man) {
   return Object.keys(man).filter((k) => !KNOWN_KEYS.includes(k));
 }
 
+// ЗРЕЛОСТЬ ЗАПИСИ. Каталог без зрелости — это список, в котором нельзя отличить проверенное от
+// свежего; при шестнадцати записях это держится на памяти, при чужих записях — уже нет.
+//
+// ПОЧЕМУ ВЫЧИСЛЯЕТСЯ, А НЕ ОБЪЯВЛЯЕТСЯ. Поле зрелости есть у всех троих соседей — `lifecycle`
+// у зондов Scorecard, `future`/`obsolete` у критериев значка OpenSSF — и у всех троих его
+// заполняет автор. Значение, которое написал автор, означает доверие к автору, а не факт: это
+// ровно тот способ, которым «зелёный» перестаёт что-либо значить. Здесь зрелость считается по
+// доказательству записи, и объявить её нельзя — попытка отклоняется приёмкой каталога.
+//
+// Исключение одно: `deprecated`. «Запись больше не ставят» из её собственных файлов не выводится
+// никак — это решение, а не факт. Цена решения — обязательная замена: запись, выведенная в
+// никуда, оставляет человека без ответа на вопрос «а что теперь».
+const LIFECYCLE_COMPUTED = ["stable", "experimental"];
+
+function entryLifecycle(rec) {
+  const declared = typeof rec?.lifecycle === "string" ? rec.lifecycle.trim() : "";
+  const supersededBy = typeof rec?.superseded_by === "string" ? rec.superseded_by.trim() : "";
+  // Тот же признак, которым каталог отделяет условную запись с первого дня: доказательство
+  // ссылается на журнал шишек — значит, запись родилась из настоящей поломки, а не из
+  // «это хорошая практика». Признак один на всю программу: разъехавшись, он дал бы приёмке
+  // и отчёту разные ответы про одну и ту же запись.
+  const proven = /incidents\//.test(String(rec?.proof || ""));
+  const state = declared === "deprecated" ? "deprecated" : proven ? "stable" : "experimental";
+  const why = L.lifecycle[state];
+
+  let problem = null;
+  if (declared === "deprecated" && !supersededBy) problem = L.lifecycle.noReplacement;
+  else if (LIFECYCLE_COMPUTED.includes(declared)) problem = L.lifecycle.notDeclarable(declared);
+  else if (declared && declared !== "deprecated") problem = L.lifecycle.unknown(declared);
+
+  return { state, why, supersededBy: supersededBy || null, problem };
+}
+
 async function readManifest() {
   const p = join(CWD, MANIFEST);
   if (!(await exists(p))) return null;
@@ -149,4 +182,7 @@ function manifestWithGate(text, slug, cmd) {
   return { text: out, why: null };
 }
 
-export { parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS };
+export {
+  parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
+  entryLifecycle,
+};
