@@ -196,7 +196,7 @@ Already using [pre-commit](https://pre-commit.com)? Three lines in the file you 
 ```yaml
 repos:
   - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
-    rev: v0.5.0
+    rev: v0.6.0
     hooks:
       - id: aqk            # runs what the repository declares; blocks below AQK-1
       # - id: aqk-doctor   # read-only: the level and what is missing, blocks nothing
@@ -305,6 +305,24 @@ catalogue may grow to hundreds of entries; a given project still sees about a do
 
 An entry is accepted only if its arbiter goes red on the red sample, stays quiet on the green
 one, and names a real failure it caught. A machine checks this: `bash tool/selfcheck/gates.sh`.
+
+### Four entries that watch the agent, not the code
+
+Ruff, ESLint and gitleaks already find bad code, and AQK calls them where it can rather than
+reinventing them. These four look elsewhere — at the moment the **signal** about bad code is
+switched off, which is what a coding agent does when the task is phrased as "make it pass":
+
+| Entry | What it catches |
+|---|---|
+| `gate-not-weakened` | the fix was a suppression, not a fix: bare `# noqa`, `eslint-disable` with no rule named, `@ts-ignore`, `--no-verify` |
+| `ci-actually-fails` | a pipeline step that renders a verdict but cannot fail — `run: pytest \|\| true`, `continue-on-error: true` |
+| `test-has-assertion` | a test that cannot fail: empty body, `assert True`, a skip with no reason given |
+| `promise-has-gate` | a rule in `AGENTS.md` with no enforcer named — neither a gate nor, honestly, a human |
+
+Each was measured on nineteen third-party repositories (~25 000 files) before it entered the
+catalogue, and two further entries were **cancelled by that measurement**: one because
+[`agents-lint`](https://github.com/giacomo/agents-lint) already does it better, one because
+91 of its 120 findings turned out to be a legitimate pattern.
 
 ## The guides as a single file
 
