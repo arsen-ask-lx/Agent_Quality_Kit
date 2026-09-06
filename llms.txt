@@ -1,0 +1,54 @@
+# AQK — Agent Quality Kit
+
+> A standard and a CLI that check whether a repository is ready to have its code written by AI
+> coding agents. Every rule the project promises to follow becomes a command with an exit code,
+> so a machine holds the promise instead of somebody's attention. Reports a level from AQK-0 to
+> AQK-3, computed by a run — never by a questionnaire and never by a model's opinion.
+
+Vendor-neutral: works with any coding agent (Claude Code, Codex, Cursor, Gemini CLI, GitHub
+Copilot, Windsurf, Aider, OpenCode) and with no AI at all. It calls no vendor API and needs no
+key. Stack-neutral: portable checks are plain `sh`; where the project already has a native tool
+(ruff, eslint, knip, jscpd) the check uses it instead and says so when it falls back.
+
+Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
+
+## Use it
+
+- Check an existing repository: `npx agent-quality-kit doctor` (read-only: writes nothing, sends
+  nothing)
+- Start a new one: `npx agent-quality-kit start`
+- Install one guard from the catalogue: `npx agent-quality-kit add <name>`
+- Check the minimum a project needs before agents can be handed the work:
+  `npx agent-quality-kit doctor --baseline` (14 of 50 points confirmed by a run, ecosystem-neutral;
+  the other 36 are named as a number, not hidden)
+- Fail a pipeline below a level or on a failed gate: `npx agent-quality-kit doctor --run --min 1`
+- Exit codes: 0 pass, 1 below the level or a gate failed
+- As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.2` with `min: 1`
+  (https://github.com/marketplace/actions/agent-quality-kit-aqk)
+
+## What makes it different
+
+- The level is computed by running what the repository declares — not from a self-assessment
+  questionnaire, not from the presence of a config file, not from a language model's judgement.
+- Every guard must ship a red and a green sample, and a machine checks that the guard goes red on
+  the red one and stays quiet on the green one. A check that cannot fail is indistinguishable
+  from a check that works; this is the only place that requirement is enforced.
+- An entry enters the catalogue only when it names a real failure it caught, recorded in the
+  bruise journal.
+
+## Files it reads and writes
+
+- `AGENTS.md` — what the agent reads first (the entry point; `CLAUDE.md` and others work too)
+- `.aqk.yml` — the manifest: entry, rules, gates as commands, samples, ratchets, lessons
+- `.aqkignore` — paths the scanning checks must not read (brought-in code, vendored, generated)
+
+## Documentation
+
+- [README](README.md): what it is, how to install, the catalogue, the badge, CI
+- [SPEC.md](SPEC.md): the standard itself — levels, manifest, how an entry is accepted
+- [Project baseline](kit/docs/ai/project-baseline.md): what a project needs before agents can be
+  handed the work, in plain words, independent of language and tooling
+- [The gate catalogue](kit/gates/README.md): what a gate is and the bar an entry must clear
+- [The bruise journal](incidents/README.md): every defect found, and what was made of it
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to bring a gate
+- [SECURITY.md](SECURITY.md): reporting a vulnerability, and the trust model of the manifest

@@ -696,6 +696,175 @@ else
 fi
 rm -rf "$BDIR"
 
+# --- 41. порог различает «ступень ниже» и «упал гейт» -------------------------
+# ЗАЧЕМ. При упавшем гейте печаталось «Порог AQK-1 НЕ пройден: сейчас AQK-1» — утверждение,
+# противоречащее само себе. Человек шёл чинить манифест, а падал гейт. Это две разные
+# развилки, и сообщение обязано их различать, иначе оно отправляет чинить не то.
+TDIR="$(mktemp -d)"
+( cd "$TDIR" && git init -q . && node "$CLI" init >/dev/null 2>&1 )
+printf 'gates:\n  always-fails: "false"\n' >> "$TDIR/.aqk.yml"
+OUT_GATE="$( cd "$TDIR" && node "$CLI" doctor --run --min 1 2>&1 )"; RC_GATE=$?
+# Ступень ниже порога: пустой манифест без входа и правил.
+EDIR="$(mktemp -d)"; ( cd "$EDIR" && git init -q . && printf 'aqk: 1\n' > .aqk.yml )
+OUT_LVL="$( cd "$EDIR" && node "$CLI" doctor --min 3 2>&1 )"; RC_LVL=$?
+if [ "$RC_GATE" -ne 0 ] && [ "$RC_LVL" -ne 0 ] &&
+   printf '%s' "$OUT_GATE" | grep -q 'always-fails' &&
+   ! printf '%s' "$OUT_GATE" | grep -qE '(НЕ пройден|NOT passed): (сейчас|currently) AQK-1' &&
+   printf '%s' "$OUT_LVL" | grep -qE '(НЕ пройден|NOT passed)'; then
+  ok "порог различает упавший гейт и недобранную ступень"
+else
+  bad "сообщение о пороге не различает две развилки" "гейт: $(printf '%s' "$OUT_GATE" | tail -2 | tr '\n' ' ')"
+fi
+rm -rf "$TDIR" "$EDIR"
+
+# --- 42. duplicate-code: пара упорядочена, а не как отдал обход ---------------
+# ЗАЧЕМ. Ключ пары складывался в порядке, в котором файлы отдал find, а он разный на разных
+# системах (здесь — по хешу имени, не по алфавиту и не по времени создания). Реестр, снятый
+# на одной машине, краснел в конвейере целиком: те же дубли читались как новые. Хуже: храповик
+# объявлял их исправленными и вычёркивал — реестр портился. Инвариант: пара внутри строки
+# всегда лексикографическая, тогда ключ одинаков на любой системе.
+DD="$(mktemp -d)"
+BLOCK='def f():\n    a = 1\n    b = 2\n    c = 3\n    d = 4\n    e = 5\n    g = 6\n    h = 7\n    return a\n'
+printf "$BLOCK" > "$DD/zz.py"; printf "$BLOCK" > "$DD/aa.py"
+LINE="$(bash "$ROOT/kit/gates/duplicate-code/check.sh" "$DD" 2>&1 | sed "s#$DD/##g" | grep 'одинаков' | head -1)"
+FIRST="${LINE%% и *}"; REST="${LINE#* и }"; SECOND="${REST%%:*}"
+if [ -n "$LINE" ] && [ "${FIRST%%:*}" \< "$SECOND" ]; then
+  ok "duplicate-code упорядочивает пару лексикографически"
+else
+  bad "пара идёт в порядке обхода — реестр разъедется между машинами" "$LINE"
+fi
+rm -rf "$DD"
+
+# --- 43. храповик: ключ переживает сдвиг строки в ПЕРВОМ файле пары -----------
+# ЗАЧЕМ. keys() убирал номер строки шаблоном ':<число>:', а у первого файла пары за номером
+# идёт ' и '. Номер оставался в ключе, и сдвиг кода в первом файле читался как новое
+# нарушение — ровно то, от чего храповик защищает.
+RDIR="$(mktemp -d)"
+printf '# реестр\na.tsx: и b.tsx: одинаковый кусок\n' > "$RDIR/reg.txt"
+bash "$ROOT/kit/ratchet/ratchet.sh" "$RDIR/reg.txt" \
+  printf 'a.tsx:171 и b.tsx:188: одинаковый кусок\n' >/dev/null 2>&1; RC_SHIFT=$?
+if [ "$RC_SHIFT" -eq 0 ]; then
+  ok "храповик: номер строки убран у обоих файлов пары"
+else
+  bad "сдвиг строки в первом файле пары читается как новое нарушение" "код $RC_SHIFT"
+fi
+rm -rf "$RDIR"
+
+# --- 44. манифест называет опечатку в имени поля -------------------------------
+# ЗАЧЕМ. Разбор принимает любое имя поля. `gate:` вместо `gates:` молча означало «гейтов не
+# объявлено»: вердикт выходил неверный, а причина не называлась. Человек шёл искать ошибку в
+# проекте, а она была в одной букве манифеста. Тишина неотличима от успеха — тот самый класс,
+# против которого построен стандарт, только внутри самой программы.
+MDIR="$(mktemp -d)"
+( cd "$MDIR" && git init -q . && node "$CLI" init >/dev/null 2>&1 )
+sed -i 's/^gates:/gate:/' "$MDIR/.aqk.yml"
+OUT_TYPO="$( cd "$MDIR" && node "$CLI" doctor 2>&1 )"
+OUT_OK="$( cd "$MDIR" && sed -i 's/^gate:/gates:/' .aqk.yml && node "$CLI" doctor 2>&1 )"
+if printf '%s' "$OUT_TYPO" | grep -qE '(does not know|не знает).*gate' &&
+   ! printf '%s' "$OUT_OK" | grep -qE '(does not know|не знает)'; then
+  ok "манифест называет неизвестное поле и молчит на верном"
+else
+  bad "опечатка в поле манифеста проходит молча" "$(printf '%s' "$OUT_TYPO" | grep -i 'know\|знает' | head -1)"
+fi
+rm -rf "$MDIR"
+
+# --- 45. родной рецепт не читает то, что не читают переносимые -----------------
+# ЗАЧЕМ. own_samples_filter знал про образцы гейтов и .aqkignore, но не про SKIP_NAMES:
+# их применяли только переносимые проверки при обходе, а родному инструменту список не
+# доставался вовсе. На живом проекте (Django + React, 2750 файлов кода) первой находкой
+# duplicate-code оказались методички САМОГО комплекта в .aqk/docs — родной jscpd прошёлся
+# по каталогу, который положил init. Вывод — 5597 строк. Такой гейт выключают целиком,
+# ровно как сказано в шапке _skip.sh про 94% чужих находок.
+NDIR="$(mktemp -d)"
+mkdir -p "$NDIR/.aqk/docs" "$NDIR/node_modules/pkg" "$NDIR/src"
+printf 'нарушение\n' > "$NDIR/.aqk/docs/guide.md"
+printf 'нарушение\n' > "$NDIR/node_modules/pkg/index.js"
+printf 'нарушение\n' > "$NDIR/src/mine.py"
+# «Инструмент» печатает пути и возвращает отказ — как настоящий родной линтер.
+# Пути в цветовых кодах — как их печатает jscpd: имя каталога идёт не после «/» и не с начала
+# строки, а сразу за escape-последовательностью. Фильтр по границе пути их не видел, и на живом
+# проекте вывод сократился с 5597 строк до 5505 — то есть не сократился.
+cat > "$NDIR/fake-tool.sh" <<'EOT'
+printf ' - \033[1m\033[32m.aqk/docs/guide.md:markdown\033[39m\033[22m [8:1 - 20:5]\n'
+printf ' - \033[1m\033[32mnode_modules/pkg/index.js:javascript\033[39m\033[22m [1:1 - 9:2]\n'
+printf ' - \033[1m\033[32msrc/mine.py:python\033[39m\033[22m [1:1 - 9:2]\n'
+exit 1
+EOT
+OUT_N="$(cd "$NDIR" && sh "$ROOT/kit/gates/_native.sh" . sh ./fake-tool.sh 2>&1)"
+if printf '%s' "$OUT_N" | grep -q 'src/mine.py' &&
+   ! printf '%s' "$OUT_N" | grep -q '\.aqk/docs' &&
+   ! printf '%s' "$OUT_N" | grep -q 'node_modules'; then
+  ok "родной рецепт молчит про .aqk и node_modules, но видит свой код"
+else
+  bad "родной инструмент выдаёт то, что переносимые не читают" "$(printf '%s' "$OUT_N" | tr '\n' ' ')"
+fi
+rm -rf "$NDIR"
+
+# --- 46. commit-explains-itself и синтетический merge-коммит -------------------
+# ЗАЧЕМ. При разборе предложения изменений GitHub выкладывает не коммит автора, а синтетический
+# merge-коммит с сообщением «Merge <sha> into <sha>». Гейт читал именно его, не находил разделов
+# отчёта и краснел — на КАЖДОМ предложении изменений в КАЖДОМ проекте, куда его поставили.
+# Поймано настоящим прогоном конвейера на этой же ветке, а не рассуждением.
+CDIR="$(mktemp -d)"
+(
+  cd "$CDIR" && git init -q . && git config user.email a@b.c && git config user.name a
+  printf 'один\n' > f.txt && git add -A
+  git commit -q -m "feat: первый" -m "Сделано: завёл файл" -m "Не уверен: ни в чём"
+  git checkout -q -b feature
+  printf 'два\n' >> f.txt && git add -A
+  git commit -q -m "feat: второй" -m "Сделано: дописал строку" -m "Не уверен: ни в чём"
+  git checkout -q master 2>/dev/null || git checkout -q main
+  # Ровно та форма сообщения, которую делает GitHub для ветки предложения изменений.
+  git merge -q --no-ff feature -m "Merge $(git rev-parse --short feature) into $(git rev-parse --short HEAD)"
+) >/dev/null 2>&1
+OUT_M="$(bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CDIR" 2>&1)"; RC_M=$?
+# Вторая форма — та, что делает кнопка Merge на сайте. Слова другие, случай тот же: сообщение
+# сочинил не автор. Шаблон «Merge … into …» её не ловил, и main покраснел бы после первого же
+# вливания через кнопку.
+CDIR2="$(mktemp -d)"
+(
+  cd "$CDIR2" && git init -q . && git config user.email a@b.c && git config user.name a
+  printf 'один\n' > f.txt && git add -A
+  git commit -q -m "feat: первый" -m "Сделано: завёл файл" -m "Не уверен: ни в чём"
+  git checkout -q -b feature
+  printf 'два\n' >> f.txt && git add -A
+  git commit -q -m "feat: второй" -m "Сделано: дописал строку" -m "Не уверен: ни в чём"
+  git checkout -q master 2>/dev/null || git checkout -q main
+  git merge -q --no-ff feature -m "Merge pull request #15 from owner/feature"
+) >/dev/null 2>&1
+bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CDIR2" >/dev/null 2>&1; RC_PR=$?
+rm -rf "$CDIR2"
+if [ "$RC_M" -eq 0 ] && [ "$RC_PR" -eq 0 ]; then
+  ok "commit-explains-itself смотрит на коммит автора, а не на merge-коммит конвейера"
+else
+  bad "гейт краснеет на слитом предложении изменений" "checkout-форма: $RC_M, кнопка Merge: $RC_PR"
+fi
+rm -rf "$CDIR"
+
+# --- 47. doctor --baseline ставит галочки прогоном, а не по памяти -------------
+# ЗАЧЕМ. Методичка про обязательный минимум — 50 пунктов — была единственным местом, где
+# комплект просил верить на слово, что человек её прочитал и сверился. Ручной проход по живому
+# проекту нашёл настоящее (логирование не задано, задачи конвейера не запускались ни разу),
+# но дисциплина не масштабируется. Проверяем главное: значок ставит признак, а не автор.
+BDIR2="$(mktemp -d)"
+( cd "$BDIR2" && git init -q . && node "$CLI" init >/dev/null 2>&1 )
+OUT_EMPTY="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
+# Кладём общепринятые признаки трёх РАЗНЫХ экосистем: нейтральность к стеку — условие, а не
+# пожелание. Проверка, знающая только про npm, объявила бы половину мира несоответствующей.
+printf 'x\n' > "$BDIR2/Cargo.lock"; printf 'x\n' > "$BDIR2/ruff.toml"; printf 'x\n' > "$BDIR2/Dockerfile"
+OUT_FULL="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
+BEFORE=$(printf '%s' "$OUT_EMPTY" | grep -c '✔' || true)
+AFTER=$(printf '%s' "$OUT_FULL" | grep -c '✔' || true)
+if printf '%s' "$OUT_FULL" | grep -qE 'cargo.lock' &&
+   printf '%s' "$OUT_FULL" | grep -qE 'ruff.toml' &&
+   printf '%s' "$OUT_FULL" | grep -qE 'dockerfile' &&
+   [ "$AFTER" -gt "$BEFORE" ]; then
+  ok "doctor --baseline засчитывает признаки разных экосистем и называет, чем подтверждено"
+else
+  bad "baseline не видит признаков или не называет доказательство" "было ✔ $BEFORE, стало $AFTER"
+fi
+rm -rf "$BDIR2"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

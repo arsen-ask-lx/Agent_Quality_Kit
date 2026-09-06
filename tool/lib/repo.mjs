@@ -49,6 +49,11 @@ async function detectFacts(man) {
   let files = 0;
   let hasDb = false;
   let hasTests = false;
+  // Признак интерфейса: стили или однофайловые компоненты. Нужен записям про внешний вид —
+  // без него запрет литерального цвета показывался бы каждому бэкенду, библиотеке и CLI на
+  // JS, где интерфейса нет вовсе. Записи, показанной не тому, не верят, и каталог теряет
+  // доверие целиком, а не одной строкой.
+  let hasUi = false;
 
   async function walk(dir, depth) {
     if (depth > 4 || files > 4000) return;
@@ -72,6 +77,7 @@ async function detectFacts(man) {
         files++;
         if (/\.(test|spec)\.[a-z]+$/i.test(it.name) || /^test_.*\.py$/i.test(it.name) || /_test\.go$/i.test(it.name)) hasTests = true;
         if (it.name.endsWith(".sql")) hasDb = true;
+        if (/\.(css|scss|sass|less|styl|vue|svelte|astro)$/i.test(it.name)) hasUi = true;
         const dot = it.name.lastIndexOf(".");
         if (dot > 0) {
           const lang = EXT_LANG[it.name.slice(dot)];
@@ -88,6 +94,7 @@ async function detectFacts(man) {
     files,
     has_db: hasDb,
     has_tests: hasTests,
+    has_ui: hasUi,
     has_gates: Object.values(gates).some((c) => String(c || "").trim()),
     gateKeys: Object.keys(gates),
   };

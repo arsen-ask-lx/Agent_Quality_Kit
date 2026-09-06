@@ -11,8 +11,9 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
+import { parseManifest, manifestWithGate, unknownKeys } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
+import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
 import { dirname } from "node:path";
@@ -198,4 +199,78 @@ test("значок ищется в точке входа и в README, без п
   assert.ok(places.includes("README.md"));
   assert.equal(places.filter((p) => p === "README.md").length, 1);
   assert.ok(placesToCheck({}).includes("README.md"), "без entry README всё равно проверяется");
+});
+
+// ЗАЧЕМ. Опечатка в имени поля молча означала «поля нет»: `gate:` вместо `gates:` давало
+// вердикт «гейтов не объявлено», а не «в манифесте опечатка». Тишина неотличима от успеха —
+// тот самый дефект, ради которого весь стандарт существует, только внутри нас самих.
+test("опечатка в поле манифеста называется, а не молчит", () => {
+  assert.deepEqual(unknownKeys(parseManifest("aqk: 1\ngate:\n  smoke: \"bash x.sh\"\n")), ["gate"]);
+  assert.deepEqual(unknownKeys(parseManifest("aqk: 1\nrules: kit/rules\nlessons: incidents\n")), []);
+  // Пустой и отсутствующий манифест — не повод ругаться на поля.
+  assert.deepEqual(unknownKeys(null), []);
+  assert.deepEqual(unknownKeys({}), []);
+});
+
+// ЗАЧЕМ. Разбор резал строку по «#» безусловно, в том числе внутри кавычек. Команда с решёткой
+// — `--format "...,c#,..."`, `grep '#!'`, любой цвет `#fff` — молча обрезалась, и гейт запускал
+// НЕ ТУ команду, которая объявлена. Объявленное и исполняемое разошлись бы беззвучно: ровно
+// тот класс, ради которого стандарт существует. Найдено при правке рецепта duplicate-code.
+test("решётка внутри кавычек не считается комментарием", () => {
+  const m = parseManifest('gates:\n  dup: "npx jscpd --format \"java,c#,php\" ."\n');
+  assert.equal(m.gates.dup, 'npx jscpd --format "java,c#,php" .');
+  // Настоящий комментарий после команды по-прежнему срезается.
+  const c = parseManifest('gates:\n  x: "bash a.sh"  # пояснение\n');
+  assert.equal(c.gates.x, "bash a.sh");
+  // И комментарий на отдельной строке.
+  assert.deepEqual(Object.keys(parseManifest("# только комментарий\naqk: 1\n")), ["aqk"]);
+});
+
+// ЗАЧЕМ. Пункты baseline проверяются НАЛИЧИЕМ признака, и признак обязан быть семейством, а не
+// одним именем: список, знающий только про npm, объявил бы половину мира несоответствующей.
+// Проверяем именно нейтральность — что пункт засчитывается по маркеру любой экосистемы.
+test("baseline: признак засчитывается по любой экосистеме", () => {
+  const by = (files) => Object.fromEntries(assessBaseline({ files }).map((r) => [r.key, r]));
+  for (const lock of ["package-lock.json", "poetry.lock", "go.sum", "Cargo.lock", "Gemfile.lock", "composer.lock", "mix.lock"]) {
+    assert.equal(by([lock]).lockfile.ok, true, lock);
+    assert.deepEqual(by([lock]).lockfile.by, { kind: "file", value: lock.toLowerCase() });
+  }
+  for (const lint of [".eslintrc.json", "ruff.toml", ".golangci.yml", "clippy.toml", ".rubocop.yml", "phpstan.neon", ".swiftlint.yml"]) {
+    assert.equal(by([lint]).linter.ok, true, lint);
+  }
+  // Пустой репозиторий: ни одного признака, и ни одной ложной галочки.
+  assert.equal(assessBaseline({}).every((r) => r.ok === false), true);
+});
+
+test("baseline: гейт, факт и поле манифеста засчитываются наравне с файлом", () => {
+  const one = (arg) => Object.fromEntries(assessBaseline(arg).map((r) => [r.key, r]));
+  assert.equal(one({ gateKeys: ["secrets-not-in-code"] }).secretScan.ok, true);
+  assert.equal(one({ facts: { has_ci: true } }).pipeline.ok, true);
+  assert.equal(one({ manifest: { entry: ["AGENTS.md"] } }).machineReadable.ok, true);
+  assert.equal(one({ manifest: { entry: [] } }).machineReadable.ok, false);
+  assert.equal(one({ depsText: '"@sentry/node": "^7"' }).errorTracker.ok, true);
+  assert.equal(one({ depsText: "sentry-sdk==2.0" }).errorTracker.ok, true);
+});
+
+// Число пунктов в методичке — не выдумка кода: если методичка вырастет, а число останется,
+// отчёт начнёт врать о том, сколько осталось человеку.
+test("baseline: заявленное число пунктов совпадает с методичкой", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const doc = await readFile(fileURLToPath(new URL("../../kit/docs/ai/project-baseline.md", import.meta.url)), "utf8");
+  const nums = [...doc.matchAll(/^(\d+)\. \*\*/gm)].map((m) => Number(m[1]));
+  assert.equal(Math.max(...nums), BASELINE_TOTAL);
+  assert.equal(ITEMS.every((i) => i.n <= BASELINE_TOTAL), true);
+});
+
+// ЗАЧЕМ. Запись про внешний вид, показанная бэкенду или утилите командной строки, — это совет
+// не по адресу; таким записям перестают верить, и вместе с ними всему каталогу. Признак
+// интерфейса отличает проект со стилями от проекта на тех же языках без них.
+test("триггер по интерфейсу отделяет фронтенд от бэкенда на том же языке", () => {
+  const rec = { trigger: { has_ui: true } };
+  const base = { langs: new Set(["typescript"]), files: 100, gateKeys: [] };
+  assert.equal(triggerVerdict(rec, { ...base, has_ui: true }).applies, true);
+  assert.equal(triggerVerdict(rec, { ...base, has_ui: false }).applies, false);
+  // Причина сокрытия называется, а не молчит: иначе «не показано» неотличимо от «нечего показать».
+  assert.equal(typeof triggerVerdict(rec, { ...base, has_ui: false }).why, "string");
 });

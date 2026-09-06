@@ -26,7 +26,30 @@ else
     exit 0
   fi
 
-  MSG=$(cd "$DIR" && git log -1 --format=%B 2>/dev/null)
+  # Сообщение слияния сочиняет не автор, а инструмент. GitHub делает это дважды и по-разному:
+  # при разборе предложения изменений выкладывает синтетический коммит «Merge <sha> into <sha>»,
+  # а кнопка Merge на сайте пишет «Merge pull request #N from …». Первую форму гейт научился
+  # различать вчера по словам — и на второй покраснел бы снова.
+  #
+  # Поэтому смотрим не на слова, а на форму: у слияния два родителя. Если при этом в сообщении
+  # нет разделов отчёта — его писал инструмент, и спрашивать надо второго родителя, последний
+  # коммит автора. Слияние, которое автор описал сам, проходит по HEAD и ничего не теряет.
+  REF=HEAD
+  PARENTS=$(cd "$DIR" && git rev-list --parents -n 1 HEAD 2>/dev/null | wc -w)
+  HEADMSG=$(cd "$DIR" && git log -1 --format=%B 2>/dev/null)
+  if [ "${PARENTS:-0}" -ge 3 ] &&
+     ! printf '%s\n' "$HEADMSG" | grep -q "^Сделано:" &&
+     ! printf '%s\n' "$HEADMSG" | grep -q "^Не уверен:"; then
+    if (cd "$DIR" && git rev-parse -q --verify HEAD^2 >/dev/null 2>&1); then
+      REF=HEAD^2
+    else
+      echo "слияние без отчёта, второго родителя не видно — проверка пропущена"
+      echo "  дай конвейеру два коммита истории: actions/checkout@v4 с fetch-depth: 2"
+      exit 0
+    fi
+  fi
+
+  MSG=$(cd "$DIR" && git log -1 --format=%B "$REF" 2>/dev/null)
 
   # Коммит, который трогает только журнал, отчёта в теле не требует: сама запись и есть отчёт,
   # причём подробнее — и её сторожит `lesson-has-outcome`. Иначе гейт воюет с командой `note`,
@@ -38,7 +61,7 @@ else
   [ -z "$LESSONS" ] && LESSONS="incidents"
   case "$LESSONS" in http*) LESSONS="" ;; esac   # journal по адресу, а не путём — не применимо
   if [ -n "$LESSONS" ]; then
-    FILES=$(cd "$DIR" && git show --pretty=format: --name-only HEAD 2>/dev/null | grep -v '^$')
+    FILES=$(cd "$DIR" && git show --pretty=format: --name-only "$REF" 2>/dev/null | grep -v '^$')
     if [ -n "$FILES" ]; then
       OUTSIDE=$(printf '%s\n' "$FILES" | grep -v "^$LESSONS/" | grep -v "^$LESSONS\$")
       if [ -z "$OUTSIDE" ]; then

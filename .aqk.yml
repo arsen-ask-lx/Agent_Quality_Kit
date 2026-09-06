@@ -15,6 +15,10 @@ gates:
   syntax: "bash tool/selfcheck/syntax.sh"
   smoke: "bash tool/selfcheck/smoke.sh"
   gates: "bash tool/selfcheck/gates.sh"
+  # Пара образцов доказывает одно срабатывание. Эта проверка меняет образец так, что вердикт
+  # меняться не обязан, и требует, чтобы он не изменился, — PROJECT.md §9 п.4. Первый прогон
+  # нашёл четыре гейта, врущих на windows-переносах.
+  mutation: "bash tool/selfcheck/mutation.sh"
   # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
   # репозиторий, а копия завтра разойдётся с оригиналом.
   entry-links-exist: "bash kit/gates/entry-links-exist/check.sh ."

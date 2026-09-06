@@ -11,6 +11,7 @@
     "kit",
     "README.md",
     "README.ru.md",
+    "llms.txt",
     "LICENSE"
   ],
   "engines": {

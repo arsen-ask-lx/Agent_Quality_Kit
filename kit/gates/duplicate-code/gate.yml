@@ -7,7 +7,16 @@ trigger:
 recipes:
   any: bash {gate}/check.sh {dir}
   # jscpd умеет и Python, и TypeScript одним прогоном и считает похожесть, а не совпадение.
-  javascript: npx --yes jscpd@5 --min-lines 8 --threshold 1 {dir}
-  typescript: npx --yes jscpd@5 --min-lines 8 --threshold 1 {dir}
+  #
+  # --format обязателен: без него jscpd считает клонами разметку, JSON и текст. Замер на живом
+  # проекте (Django + React, 2750 файлов кода): 1846 клонов, из них 435 — markdown, json и
+  # text, то есть 23.6% находок не про код вовсе. Переносимая проверка смотрит только в
+  # расширения кода (CODE_EXT в _skip.sh), и родная обязана мерить то же самое: иначе один
+  # гейт означает разное на разных машинах.
+  #
+  # «c#» в списке нет намеренно: разбор манифеста режет строку по «#», и рецепт обрывался бы
+  # на «c». Обёртку _native.sh не пишем — её добавляет сама программа при установке гейта.
+  javascript: npx --yes jscpd@5 --min-lines 8 --threshold 1 --format "javascript,jsx,typescript,tsx,vue,python,go,ruby,java,php,rust,kotlin,swift,scala" {dir}
+  typescript: npx --yes jscpd@5 --min-lines 8 --threshold 1 --format "javascript,jsx,typescript,tsx,vue,python,go,ruby,java,php,rust,kotlin,swift,scala" {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: число моделей захардкожено в четырёх местах четырьмя разными значениями

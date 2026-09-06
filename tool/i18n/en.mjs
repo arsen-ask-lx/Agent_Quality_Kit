@@ -73,8 +73,44 @@ export const en = {
     declaredNotRun: (n) => `${n} gates declared, but never run.`,
     declaredNotRunWhy: (cmd) => ` "declared" and "works" are different claims: ${cmd}`,
 
+    manifestUnknown: (keys) =>
+      `The manifest has fields the standard does not know: ${keys.join(", ")}. Looks like a typo — ` +
+      `such a field is silently read as absent, and the verdict comes out wrong.`,
+    manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
+    thresholdGateFail: (min, now, names) =>
+      `Threshold AQK-${min} passed (currently AQK-${now}), but a gate failed: ${names.join(", ")}.`,
+  },
+
+  baseline: {
+    heading: "The minimum a project needs",
+    intro: (checked, total) =>
+      `a machine confirms ${checked} of ${total} points; the rest are for your eyes, in the guide`,
+    eyes: (n, path) => `${n} points a machine cannot check — they live in ${path}`,
+    caveat: "presence is what gets checked, not whether it works: \"a linter is configured\" and \"a linter catches things\" are different claims",
+    by: (b) =>
+      "proven by: " +
+      ({ gate: `gate ${b.value}`, fact: `repository scan: ${b.value}`,
+         manifest: `field ${b.value} in the manifest`, dep: `dependency ${b.value}`,
+         file: b.value }[b.kind] || b.value),
+    none: "no conventional marker — check by eye, it may be done another way",
+    titles: {
+      oneCommand: "one command brings the whole project up",
+      lockfile: "exact versions pinned in a lockfile",
+      sameEnv: "the environment is the same for everyone and in CI",
+      formatter: "formatting is uniform and applied automatically",
+      linter: "a linter is configured",
+      types: "type checking exists",
+      secretScan: "secret scanning",
+      fileSize: "a file size limit",
+      ownInvariants: "the project's own invariants",
+      tests: "arbiters of correctness: tests exist",
+      pipeline: "a pipeline exists",
+      errorTracker: "errors are collected separately from logs",
+      machineReadable: "the project is machine-readable",
+      rulesInRepo: "rules live in the repository and are versioned",
+    },
   },
 
   trigger: {
@@ -91,6 +127,7 @@ export const en = {
       has_deps: ["no dependency file in sight", "dependencies are declared"],
       has_tests: ["no tests in sight", "tests exist"],
       has_env: ["no environment file", "an environment file exists"],
+      has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
     },
   },
 
