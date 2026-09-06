@@ -23,6 +23,9 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   the other 36 are named as a number, not hidden)
 - Fail a pipeline below a level or on a failed gate: `npx agent-quality-kit doctor --run --min 1`
 - Exit codes: 0 pass, 1 below the level or a gate failed
+- As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
+  `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the
+  package itself; there are no dependencies to pull in.
 - As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.2` with `min: 1`
   (https://github.com/marketplace/actions/agent-quality-kit-aqk)
 

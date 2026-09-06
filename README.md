@@ -189,6 +189,29 @@ replaces. So `aqk badge` prints nothing over a red gate, and `aqk badge --check`
 pipeline on the day the README and the repository part ways. The badge at the top of this file
 is checked that way on every push.
 
+## As a pre-commit hook
+
+Already using [pre-commit](https://pre-commit.com)? Three lines in the file you already have:
+
+```yaml
+repos:
+  - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
+    rev: v0.4.2
+    hooks:
+      - id: aqk            # runs what the repository declares; blocks below AQK-1
+      # - id: aqk-doctor   # read-only: the level and what is missing, blocks nothing
+      # - id: aqk-baseline # the minimum a project needs, confirmed by a run
+```
+
+`pre-commit` installs the package itself — there is nothing else to set up, and the package has
+no dependencies.
+
+**This does not replace pre-commit, it sits on top of it.** pre-commit runs checks; it says
+nothing about *which* checks exist here, whether they work, and what this project has already
+been burned by. Its own documentation is explicit about both gaps: no built-in compliance levels,
+scoring or reporting — and it does not verify that a hook catches what it claims. That is the
+layer AQK adds.
+
 ## In your pipeline
 
 [![on the GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Agent%20Quality%20Kit-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
