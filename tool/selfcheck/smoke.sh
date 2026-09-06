@@ -818,10 +818,26 @@ CDIR="$(mktemp -d)"
   git merge -q --no-ff feature -m "Merge $(git rev-parse --short feature) into $(git rev-parse --short HEAD)"
 ) >/dev/null 2>&1
 OUT_M="$(bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CDIR" 2>&1)"; RC_M=$?
-if [ "$RC_M" -eq 0 ]; then
+# Вторая форма — та, что делает кнопка Merge на сайте. Слова другие, случай тот же: сообщение
+# сочинил не автор. Шаблон «Merge … into …» её не ловил, и main покраснел бы после первого же
+# вливания через кнопку.
+CDIR2="$(mktemp -d)"
+(
+  cd "$CDIR2" && git init -q . && git config user.email a@b.c && git config user.name a
+  printf 'один\n' > f.txt && git add -A
+  git commit -q -m "feat: первый" -m "Сделано: завёл файл" -m "Не уверен: ни в чём"
+  git checkout -q -b feature
+  printf 'два\n' >> f.txt && git add -A
+  git commit -q -m "feat: второй" -m "Сделано: дописал строку" -m "Не уверен: ни в чём"
+  git checkout -q master 2>/dev/null || git checkout -q main
+  git merge -q --no-ff feature -m "Merge pull request #15 from owner/feature"
+) >/dev/null 2>&1
+bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$CDIR2" >/dev/null 2>&1; RC_PR=$?
+rm -rf "$CDIR2"
+if [ "$RC_M" -eq 0 ] && [ "$RC_PR" -eq 0 ]; then
   ok "commit-explains-itself смотрит на коммит автора, а не на merge-коммит конвейера"
 else
-  bad "гейт краснеет на каждом предложении изменений" "$(printf '%s' "$OUT_M" | head -1)"
+  bad "гейт краснеет на слитом предложении изменений" "checkout-форма: $RC_M, кнопка Merge: $RC_PR"
 fi
 rm -rf "$CDIR"
 
