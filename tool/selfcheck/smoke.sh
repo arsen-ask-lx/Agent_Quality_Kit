@@ -580,7 +580,7 @@ REPDIR="$(mktemp -d)"
 (
   cd "$REPDIR" && git init -q . && mkdir -p src &&
   printf 'def f():\n    print("debug")\n' > src/a.py &&
-  node "$CLI" start >/dev/null 2>&1
+  node "$CLI" start > /tmp/aqk-start.log 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
 if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ no-print-in-prod'; then
@@ -592,7 +592,7 @@ else
   G_LS=$( cd "$REPDIR" && ls gates 2>&1 | tr '\n' ' ' )
   G_DECL=$( cd "$REPDIR" && sed -n '/^gates:/,$p' .aqk.yml 2>/dev/null | grep -cE '^[[:space:]]+[A-Za-z0-9_-]+:' )
   G_OUT=$( cd "$REPDIR" && bash gates/no-print-in-prod/check.sh . 2>&1 | head -2 ); G_CODE=$?
-  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL"
+  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 /tmp/aqk-start.log 2>/dev/null | tr '\n' ' ')»"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
   ok "report сохраняет .aqk/report.md"
