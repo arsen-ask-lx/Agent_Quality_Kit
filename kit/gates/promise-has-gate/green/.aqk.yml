@@ -1,0 +1,6 @@
+aqk: 1
+entry:
+  - AGENTS.md
+rules: rules
+gates:
+  secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."

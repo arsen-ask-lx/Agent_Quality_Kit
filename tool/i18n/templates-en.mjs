@@ -11,17 +11,17 @@ const AGENTS_MD = `# AGENTS.md
 
 ## Hard rules
 
-- **A plan before code.** A non-trivial task starts with a plan a human approved in words.
-- **A red test before code.** First a check that fails, then the implementation.
-- **Three attempts maximum.** Not solved in three — stop and ask a human, not a fourth try.
-- **Secrets only in the environment.** Never in code, logs or commits.
-- **Only the files the task is about.** No fixing things "while we are here".
-- **Done = proven.** Name the arbiter: a test, a live run, a check against the source.
+- **A plan before code.** A non-trivial task starts with a plan a human approved in words.  <!-- aqk: human -->
+- **A red test before code.** First a check that fails, then the implementation.  <!-- aqk: human -->
+- **Three attempts maximum.** Not solved in three — stop and ask a human, not a fourth try.  <!-- aqk: human -->
+- **Secrets only in the environment.** Never in code, logs or commits.  <!-- aqk: secrets-not-in-code -->
+- **Only the files the task is about.** No fixing things "while we are here".  <!-- aqk: human -->
+- **Done = proven.** Name the arbiter: a test, a live run, a check against the source.  <!-- aqk: human -->
   "Looks like it works" is not done.
-- **Never swallow an error.** Either handled and logged, or re-raised.
-- **A fork in the road is a question for a human.** Departing from an agreed decision is not
+- **Never swallow an error.** Either handled and logged, or re-raised.  <!-- aqk: swallowed-error -->
+- **A fork in the road is a question for a human.** Departing from an agreed decision is not  <!-- aqk: human -->
   documented with a code comment.
-- **Report on your work with the kit with a command, not with words.** When you are done, run
+- **Report on your work with the kit with a command, not with words.** When you are done, run  <!-- aqk: human -->
   \`aqk report\`. It is assembled from an actual run: a summary from memory always picks the
   convenient parts and stays quiet about a gate standing on the weakest recipe.
 
