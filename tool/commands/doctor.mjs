@@ -4,7 +4,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
-import { readManifest, assessLevel } from "../lib/manifest.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -158,6 +158,15 @@ async function cmdDoctor() {
   }
 
   const man = await readManifest();
+
+  // Опечатка в имени поля означала «поля нет»: вердикт выдавался неверный, а причина молчала.
+  // Называем поле и говорим, какие бывают — иначе человек ищет ошибку в проекте, а она в файле.
+  const unknown = unknownKeys(man);
+  if (unknown.length) {
+    console.log(c.yellow(`\n  ${L.doctor.manifestUnknown(unknown)}`));
+    console.log(c.dim(`  ${L.doctor.manifestKnown(KNOWN_KEYS)}\n`));
+  }
+
   const { reached, steps } = await assessLevel(man);
 
   console.log(c.bold(`\n  ${L.doctor.levelHeading}\n`));

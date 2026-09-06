@@ -11,7 +11,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseManifest, manifestWithGate } from "../lib/manifest.mjs";
+import { parseManifest, manifestWithGate, unknownKeys } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
@@ -198,4 +198,15 @@ test("значок ищется в точке входа и в README, без п
   assert.ok(places.includes("README.md"));
   assert.equal(places.filter((p) => p === "README.md").length, 1);
   assert.ok(placesToCheck({}).includes("README.md"), "без entry README всё равно проверяется");
+});
+
+// ЗАЧЕМ. Опечатка в имени поля молча означала «поля нет»: `gate:` вместо `gates:` давало
+// вердикт «гейтов не объявлено», а не «в манифесте опечатка». Тишина неотличима от успеха —
+// тот самый дефект, ради которого весь стандарт существует, только внутри нас самих.
+test("опечатка в поле манифеста называется, а не молчит", () => {
+  assert.deepEqual(unknownKeys(parseManifest("aqk: 1\ngate:\n  smoke: \"bash x.sh\"\n")), ["gate"]);
+  assert.deepEqual(unknownKeys(parseManifest("aqk: 1\nrules: kit/rules\nlessons: incidents\n")), []);
+  // Пустой и отсутствующий манифест — не повод ругаться на поля.
+  assert.deepEqual(unknownKeys(null), []);
+  assert.deepEqual(unknownKeys({}), []);
 });

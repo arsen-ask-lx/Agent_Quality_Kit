@@ -73,6 +73,10 @@ export const en = {
     declaredNotRun: (n) => `${n} gates declared, but never run.`,
     declaredNotRunWhy: (cmd) => ` "declared" and "works" are different claims: ${cmd}`,
 
+    manifestUnknown: (keys) =>
+      `The manifest has fields the standard does not know: ${keys.join(", ")}. Looks like a typo — ` +
+      `such a field is silently read as absent, and the verdict comes out wrong.`,
+    manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
     thresholdGateFail: (min, now, names) =>

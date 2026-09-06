@@ -55,6 +55,24 @@ function parseManifest(text) {
   return out;
 }
 
+// Поля, которые манифест знает. Список здесь, а не в схеме-файле: зависимостей у программы
+// нет, а схема на восемь ключей, которую надо валидировать библиотекой, стоит дороже, чем
+// защищает.
+//
+// ЗАЧЕМ ЭТО ВООБЩЕ. Разбор принимает любое имя поля. Опечатка `gate:` вместо `gates:` молча
+// означала «гейтов не объявлено»: вердикт выдавался неверный, а причина не называлась. Это
+// ровно тот класс, против которого построен стандарт — тишина неотличима от успеха, — только
+// внутри самой программы.
+// Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
+// лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
+// только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
+const KNOWN_KEYS = ["aqk", "entry", "rules", "gates", "samples", "ratchets", "lessons"];
+
+function unknownKeys(man) {
+  if (!man || typeof man !== "object" || Array.isArray(man)) return [];
+  return Object.keys(man).filter((k) => !KNOWN_KEYS.includes(k));
+}
+
 async function readManifest() {
   const p = join(CWD, MANIFEST);
   if (!(await exists(p))) return null;
@@ -118,4 +136,4 @@ function manifestWithGate(text, slug, cmd) {
   return { text: out, why: null };
 }
 
-export { parseManifest, readManifest, assessLevel, manifestWithGate };
+export { parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS };
