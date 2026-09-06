@@ -6,7 +6,43 @@ import { spawnSync } from "node:child_process";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
+import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
+
+// Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
+// место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
+async function reportBaseline(man, facts) {
+  const { readdir, readFile } = await import("node:fs/promises");
+  let files = [];
+  try {
+    files = (await readdir(CWD, { withFileTypes: true })).map((d) => d.name);
+  } catch { /* пустой список честнее выдуманного: ни один пункт не подтвердится */ }
+
+  // Файлы зависимостей читаются целиком и склеиваются: трекер ошибок объявляют по-разному в
+  // каждой экосистеме, а искать его надо одинаково.
+  let depsText = "";
+  for (const f of DEP_FILES) {
+    if (!files.some((n) => n.toLowerCase() === f)) continue;
+    try { depsText += (await readFile(join(CWD, f), "utf8")).toLowerCase() + "\n"; } catch { /* нечитаемый файл — просто не признак */ }
+  }
+
+  const rows = assessBaseline({ files, gateKeys: facts.gateKeys, facts, manifest: man || {}, depsText });
+  const okCount = rows.filter((r) => r.ok).length;
+
+  console.log(c.bold(`\n  ${L.baseline.heading}\n`));
+  console.log(c.dim(`  ${L.baseline.intro(rows.length, BASELINE_TOTAL)}`));
+  console.log(c.dim(`  ${L.baseline.caveat}\n`));
+  for (const r of rows) {
+    const mark = r.ok ? c.green("✔") : c.yellow("✘");
+    const title = L.baseline.titles[r.key] || r.key;
+    console.log(`  ${mark}  ${String(r.n).padStart(2)}. ${title}`);
+    console.log(c.dim(`        ${r.ok ? L.baseline.by(r.by) : L.baseline.none}`));
+  }
+  console.log(
+    "\n  " + (okCount === rows.length ? c.green(`${okCount}/${rows.length}`) : c.yellow(`${okCount}/${rows.length}`)) +
+      c.dim(`  ·  ${L.baseline.eyes(BASELINE_TOTAL - rows.length, "kit/docs/ai/project-baseline.md")}\n`)
+  );
+}
 
 async function reportCatalog(man, facts) {
   const catalog = await readCatalog();
@@ -199,6 +235,10 @@ async function cmdDoctor() {
   }
 
   const facts = await detectFacts(man);
+  if (process.argv.includes("--baseline")) {
+    await reportBaseline(man, facts);
+    process.exit(0);
+  }
   await reportCatalog(man, facts);
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.

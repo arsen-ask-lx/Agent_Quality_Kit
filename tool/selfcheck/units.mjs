@@ -13,6 +13,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
+import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
 import { dirname } from "node:path";
@@ -223,4 +224,41 @@ test("решётка внутри кавычек не считается ком�
   assert.equal(c.gates.x, "bash a.sh");
   // И комментарий на отдельной строке.
   assert.deepEqual(Object.keys(parseManifest("# только комментарий\naqk: 1\n")), ["aqk"]);
+});
+
+// ЗАЧЕМ. Пункты baseline проверяются НАЛИЧИЕМ признака, и признак обязан быть семейством, а не
+// одним именем: список, знающий только про npm, объявил бы половину мира несоответствующей.
+// Проверяем именно нейтральность — что пункт засчитывается по маркеру любой экосистемы.
+test("baseline: признак засчитывается по любой экосистеме", () => {
+  const by = (files) => Object.fromEntries(assessBaseline({ files }).map((r) => [r.key, r]));
+  for (const lock of ["package-lock.json", "poetry.lock", "go.sum", "Cargo.lock", "Gemfile.lock", "composer.lock", "mix.lock"]) {
+    assert.equal(by([lock]).lockfile.ok, true, lock);
+    assert.deepEqual(by([lock]).lockfile.by, { kind: "file", value: lock.toLowerCase() });
+  }
+  for (const lint of [".eslintrc.json", "ruff.toml", ".golangci.yml", "clippy.toml", ".rubocop.yml", "phpstan.neon", ".swiftlint.yml"]) {
+    assert.equal(by([lint]).linter.ok, true, lint);
+  }
+  // Пустой репозиторий: ни одного признака, и ни одной ложной галочки.
+  assert.equal(assessBaseline({}).every((r) => r.ok === false), true);
+});
+
+test("baseline: гейт, факт и поле манифеста засчитываются наравне с файлом", () => {
+  const one = (arg) => Object.fromEntries(assessBaseline(arg).map((r) => [r.key, r]));
+  assert.equal(one({ gateKeys: ["secrets-not-in-code"] }).secretScan.ok, true);
+  assert.equal(one({ facts: { has_ci: true } }).pipeline.ok, true);
+  assert.equal(one({ manifest: { entry: ["AGENTS.md"] } }).machineReadable.ok, true);
+  assert.equal(one({ manifest: { entry: [] } }).machineReadable.ok, false);
+  assert.equal(one({ depsText: '"@sentry/node": "^7"' }).errorTracker.ok, true);
+  assert.equal(one({ depsText: "sentry-sdk==2.0" }).errorTracker.ok, true);
+});
+
+// Число пунктов в методичке — не выдумка кода: если методичка вырастет, а число останется,
+// отчёт начнёт врать о том, сколько осталось человеку.
+test("baseline: заявленное число пунктов совпадает с методичкой", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const doc = await readFile(fileURLToPath(new URL("../../kit/docs/ai/project-baseline.md", import.meta.url)), "utf8");
+  const nums = [...doc.matchAll(/^(\d+)\. \*\*/gm)].map((m) => Number(m[1]));
+  assert.equal(Math.max(...nums), BASELINE_TOTAL);
+  assert.equal(ITEMS.every((i) => i.n <= BASELINE_TOTAL), true);
 });

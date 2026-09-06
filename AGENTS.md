@@ -35,6 +35,7 @@
 - `SPEC.md` — сам стандарт отдельно от нашей реализации: ступени, манифест, приёмка записи
 - `tool/program.mjs` — точка входа: справка и диспетчер команд
 - `tool/lib/` — общее: `core.mjs` (пути, вывод), `manifest.mjs` (`.aqk.yml` и ступени),
+  `baseline.mjs` (обязательный минимум проекта: какие пункты методички машина умеет подтвердить),
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению), `templates.mjs`
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
   `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
@@ -59,6 +60,7 @@
 - проверить синтаксис всех исходников: `bash tool/selfcheck/syntax.sh`
 - прогнать на чистой папке: `T=$(mktemp -d) && cd "$T" && git init -q . && node <путь>/tool/program.mjs init && node <путь>/tool/program.mjs doctor`
 - уровень этого репозитория: `node tool/program.mjs doctor`
+- обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
 - проверить функции программы: `node --test tool/selfcheck/units.mjs`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`

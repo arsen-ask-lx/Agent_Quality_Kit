@@ -137,6 +137,21 @@ them empty, and they fill in as there becomes something real to put in them.
 **If a claim cannot be checked by a machine, it is not in this standard.** Otherwise the badge
 would mean trust in the author rather than a fact.
 
+### The minimum a project needs
+
+```bash
+aqk doctor --baseline   # ✔/✘ over the points a machine can confirm
+```
+
+The guide [project-baseline.md](kit/docs/ai/project-baseline.md) lists 50 points a project needs
+before the work can be handed to agents. Fourteen of them a machine can confirm from the
+repository — a lockfile of any ecosystem, a linter config of any language, an error tracker in
+the dependencies, a pipeline, tests. It says what proved each one. The remaining 36 are named as
+a number rather than hidden: they are for your eyes.
+
+Presence is what gets checked, not whether it works: "a linter is configured" and "a linter
+catches things" are different claims, and the output says so out loud.
+
 ## Four levels
 
 | Level | Required | What it proves |

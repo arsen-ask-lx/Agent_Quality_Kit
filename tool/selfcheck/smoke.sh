@@ -825,6 +825,30 @@ else
 fi
 rm -rf "$CDIR"
 
+# --- 47. doctor --baseline ставит галочки прогоном, а не по памяти -------------
+# ЗАЧЕМ. Методичка про обязательный минимум — 50 пунктов — была единственным местом, где
+# комплект просил верить на слово, что человек её прочитал и сверился. Ручной проход по живому
+# проекту нашёл настоящее (логирование не задано, задачи конвейера не запускались ни разу),
+# но дисциплина не масштабируется. Проверяем главное: значок ставит признак, а не автор.
+BDIR2="$(mktemp -d)"
+( cd "$BDIR2" && git init -q . && node "$CLI" init >/dev/null 2>&1 )
+OUT_EMPTY="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
+# Кладём общепринятые признаки трёх РАЗНЫХ экосистем: нейтральность к стеку — условие, а не
+# пожелание. Проверка, знающая только про npm, объявила бы половину мира несоответствующей.
+printf 'x\n' > "$BDIR2/Cargo.lock"; printf 'x\n' > "$BDIR2/ruff.toml"; printf 'x\n' > "$BDIR2/Dockerfile"
+OUT_FULL="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
+BEFORE=$(printf '%s' "$OUT_EMPTY" | grep -c '✔' || true)
+AFTER=$(printf '%s' "$OUT_FULL" | grep -c '✔' || true)
+if printf '%s' "$OUT_FULL" | grep -qE 'cargo.lock' &&
+   printf '%s' "$OUT_FULL" | grep -qE 'ruff.toml' &&
+   printf '%s' "$OUT_FULL" | grep -qE 'dockerfile' &&
+   [ "$AFTER" -gt "$BEFORE" ]; then
+  ok "doctor --baseline засчитывает признаки разных экосистем и называет, чем подтверждено"
+else
+  bad "baseline не видит признаков или не называет доказательство" "было ✔ $BEFORE, стало $AFTER"
+fi
+rm -rf "$BDIR2"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

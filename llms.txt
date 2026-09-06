@@ -18,6 +18,9 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   nothing)
 - Start a new one: `npx agent-quality-kit start`
 - Install one guard from the catalogue: `npx agent-quality-kit add <name>`
+- Check the minimum a project needs before agents can be handed the work:
+  `npx agent-quality-kit doctor --baseline` (14 of 50 points confirmed by a run, ecosystem-neutral;
+  the other 36 are named as a number, not hidden)
 - Fail a pipeline below a level or on a failed gate: `npx agent-quality-kit doctor --run --min 1`
 - Exit codes: 0 pass, 1 below the level or a gate failed
 - As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.2` with `min: 1`
