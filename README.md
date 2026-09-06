@@ -1,13 +1,3 @@
-```
- █████╗   ██████╗ ██╗  ██╗
-██╔══██╗ ██╔═══██╗██║ ██╔╝
-███████║ ██║   ██║█████╔╝
-██╔══██║ ██║▄▄ ██║██╔═██╗
-██║  ██║ ╚██████╔╝██║  ██╗
-╚═╝  ╚═╝  ╚══▀▀═╝ ╚═╝  ╚═╝
-   a promise without an exit code is just a sentence
-```
-
 # AQK — Agent Quality Kit
 
 **English** · [Русский](README.ru.md)
@@ -17,35 +7,61 @@
 [![MIT licence](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
 [![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
 
-**A standard for whether a repository is ready to have its code written by agents.** Every
-promise the project makes turns into a command with an exit code — held by a machine, not by
-someone's good intentions.
+**Check whether a repository is ready to have its code written by AI coding agents — and turn
+the rules it promises to follow into commands with exit codes.**
 
+Your `AGENTS.md` says what the project promises. Nothing checks that those promises are true, or
+that the commands it lists even run. AQK is that missing layer: one command reads the repository,
+reports a level from AQK-0 to AQK-3, and names every guard that is missing.
+
+```bash
+npx agent-quality-kit doctor    # code already exists: your level and what to install
+npx agent-quality-kit start     # no code yet: day-zero guards, right away
 ```
-        promise                   command                  fact
-  ┌──────────────────┐     ┌──────────────────┐     ┌──────────────┐
-  │    AGENTS.md     │     │     .aqk.yml     │     │  exit code   │
-  │  "never commit   │ ──▶ │  secrets-not-in- │ ──▶ │   0  or  1   │
-  │     secrets"     │     │  code: bash …    │     │              │
-  └──────────────────┘     └──────────────────┘     └──────────────┘
-    a human reads it        a machine holds it        CI acts on it
-     and may ignore it       and cannot forget        and cannot argue
+
+`doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
+you have decided nothing about yet. Nothing to install: `npx` fetches the package (230 KB).
+
+### Works with any agent, any language
+
+**Any agent.** Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Windsurf, Aider, OpenCode
+— and with no AI at all. AQK reads and writes plain files (`AGENTS.md`, `.aqk.yml`); it calls no
+vendor API, needs no key, and is tied to no model. A promise only one tool can keep is not a
+promise.
+
+**Any language.** The portable checks are plain `sh` and work on any stack — Python, TypeScript,
+Go, Rust, Java, Ruby, PHP, C#, Kotlin, Swift, Scala. Where the project already has a native tool
+(`ruff`, `eslint`, `knip`, `jscpd`), the check uses it instead, because it is more precise — and
+says so out loud when it falls back.
+
+**Requirements:** Node 18+ and an `sh` shell. Present on macOS, Linux and WSL; Git Bash on Windows.
+
+### One movement, and everything follows from it
+
+```mermaid
+flowchart LR
+    A["<b>AGENTS.md</b><br/>“never commit secrets”<br/><br/><i>a human reads it<br/>and may ignore it</i>"]
+    B["<b>.aqk.yml</b><br/>secrets-not-in-code:<br/>bash gates/…/check.sh<br/><br/><i>a machine holds it<br/>and cannot forget</i>"]
+    C["<b>exit code</b><br/>0 or 1<br/><br/><i>CI acts on it<br/>and cannot argue</i>"]
+    A -- "declare" --> B
+    B -- "run" --> C
 ```
+
+A promise the project makes turns into a command with an exit code. From then on a machine holds
+it, not somebody's attention.
 
 What a project needs before that is even possible, in plain words, independent of language and
 tooling: [the dark factory and the minimum that isn't optional](kit/docs/ai/project-baseline.md).
 
-```bash
-npx agent-quality-kit start     # no code yet: day-zero guards, right away
-npx agent-quality-kit doctor    # code already exists: your level and what to install
 ```
-
-`doctor` only reads: it writes no file and sends nothing anywhere. It is safe to point at
-a repository you have not decided anything about yet.
-
-Nothing to install — `npx` fetches the package itself (230 KB). The bleeding edge straight from
-the repository is `npx github:arsen-ask-lx/Agent_Quality_Kit doctor`, but the first run that way
-stays silent for two or three minutes: it clones the whole repository.
+ █████╗   ██████╗ ██╗  ██╗
+██╔══██╗ ██╔═══██╗██║ ██╔╝
+███████║ ██║   ██║█████╔╝
+██╔══██║ ██║▄▄ ██║██╔═██╗
+██║  ██║ ╚██████╔╝██║  ██╗
+╚═╝  ╚═╝  ╚══▀▀═╝ ╚═╝  ╚═╝
+   a promise without an exit code is just a sentence
+```
 
 ## What this looks like
 
@@ -129,6 +145,18 @@ would mean trust in the author rather than a fact.
 | **AQK-1** | rules exist, gates declared as commands | the checks are executable |
 | **AQK-2** | gates have red and green samples, debt under a ratchet | the gate catches defects and stays quiet on correct code |
 | **AQK-3** | a lesson journal with conclusions | the same bruise is not collected twice |
+
+```mermaid
+flowchart LR
+    L0["<b>AQK-0</b><br/>a manifest<br/>and an entry point"]
+    L1["<b>AQK-1</b><br/>rules exist,<br/>gates are commands"]
+    L2["<b>AQK-2</b><br/>red and green samples,<br/>debt under a ratchet"]
+    L3["<b>AQK-3</b><br/>a lesson journal<br/>with conclusions"]
+    L0 --> L1 --> L2 --> L3
+```
+
+A level is not a verdict on the project — it measures how **machine-readable** the practice is.
+A hundred working checks with no manifest is AQK-0, and that is honest: nothing can read them.
 
 ```bash
 aqk doctor --run --min 1   # in CI: fails below AQK-1 OR if any gate failed
