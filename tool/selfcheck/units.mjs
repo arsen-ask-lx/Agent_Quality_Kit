@@ -11,7 +11,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle } from "../lib/manifest.mjs";
+import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
 import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
 import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -417,4 +417,39 @@ test("находка сразу после совета остаётся нах�
   const r = splitAdvice(["  почини: сделай так", "    пояснение", "src/z.py:9: x"]);
   assert.equal(r.findings.length, 1);
   assert.equal(r.findings[0].includes("src/z.py"), true);
+});
+
+
+// --- правило, введённое совещательным ----------------------------------------
+// ЗАЧЕМ. Правило вводят в проект, где старый код ему не соответствует. Храповик отвечает на
+// это одним способом: старое становится долгом. Второй способ — показывать, не роняя, пока
+// команда договаривается. Сегодня его нет вовсе: находка либо роняет сборку, либо не существует.
+//
+// ПОЧЕМУ ОБЪЯВЛЕНИЕМ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это `continue-on-error`,
+// против которого написана наша же запись ci-actually-fails: он понижает всё разом, не виден
+// в дифе и не назван в сводке. Список в манифесте виден, именуется и считается всегда.
+test("совещательные гейты читаются из манифеста списком", () => {
+  const man = parseManifest("aqk: 1\nadvisory:\n  - complexity-limit\n  - duplicate-code\n");
+  const a = advisorySet(man);
+  assert.equal(a.has("complexity-limit"), true);
+  assert.equal(a.has("duplicate-code"), true);
+  assert.equal(a.has("secrets-not-in-code"), false);
+});
+
+test("список в одну строку читается так же", () => {
+  const a = advisorySet(parseManifest("advisory: [complexity-limit, duplicate-code]\n"));
+  assert.equal(a.size, 2);
+});
+
+// Отсутствие блока — это ноль совещательных, а не «все совещательные».
+test("без блока advisory совещательных нет", () => {
+  assert.equal(advisorySet(parseManifest("aqk: 1\n")).size, 0);
+  assert.equal(advisorySet(null).size, 0);
+});
+
+// Поле обязано быть известным манифесту: иначе опечатка «advisery:» молча означала бы
+// «совещательных нет», и правило, которое человек считал введённым, роняло бы сборку.
+test("advisory — известное поле манифеста", () => {
+  assert.equal(KNOWN_KEYS.includes("advisory"), true);
+  assert.deepEqual(unknownKeys({ aqk: 1, advisory: [] }), []);
 });

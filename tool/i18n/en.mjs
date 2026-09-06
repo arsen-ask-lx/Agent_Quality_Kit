@@ -74,6 +74,10 @@ export const en = {
     sinceBadRef: (ref) => `cannot compare against "${ref}": no such ref, or this is not a git repository`,
     notScopable: "output carries no paths — cannot be narrowed by diff, left red",
     outsideDiff: (n) => `findings exist, but outside the diff (${n})`,
+    advisoryMark: "advisory — shown, the run was not failed",
+    advisorySummary: (names) =>
+      `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
+      `either fix them and drop them from advisory, or admit the rule does not exist.`,
     runHeading: "Running the declared gates",
     timeout: "did not finish within 5 minutes",
     exitCode: (code) => `exit ${code}`,

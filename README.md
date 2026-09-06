@@ -260,6 +260,22 @@ Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actu
 long it took. The list of gates in the manifest says nothing about how many of them are alive
 right now; the report does. The file is ephemeral — keep it in your own `.gitignore`.
 
+### Introducing a rule into a live project
+
+Three ways, and each has a price. A big clean-up is put off forever because it is big. The
+ratchet turns existing violations into debt and blocks new ones — right once the rule is agreed.
+And while it is still being argued about, an advisory gate shows findings without failing the run:
+
+```yaml
+advisory:
+  - complexity-limit
+```
+
+Declared in the manifest, not passed as a flag. A flag that says "fail nothing" downgrades every
+check at once, is invisible in the diff, and is never named in the summary — that is
+`continue-on-error`, which this tool marks red elsewhere. The list is printed on **every** run:
+an advisory gate everyone forgot about is a switched-off check.
+
 ## When a bug slips past the guards
 
 ```bash

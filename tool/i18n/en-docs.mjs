@@ -30,6 +30,13 @@ const enDocs = {
       "# shorter.",
     ],
     lessons: "# AQK-3 — where lessons accumulate. A path or an address.",
+    advisory: [
+      "# Advisory gates: they show findings but do not fail the run. The third way to introduce",
+      "# a rule, next to the ratchet and the big clean-up. The list is named on every run:",
+      "# an advisory gate everyone forgot about is a switched-off check.",
+      "# advisory:",
+      "#   - complexity-limit",
+    ],
   },
   levels: [
     {

@@ -38,6 +38,8 @@ const MANIFEST_YML = [
   d.lessons,
   'lessons: ""',
   "",
+  ...d.advisory,
+  "",
 ].join("\n");
 
 export { AGENTS_MD, CLAUDE_MD, MANIFEST_YML, GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE };

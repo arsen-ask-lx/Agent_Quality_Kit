@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
@@ -108,6 +108,7 @@ function sinceRef(argv = process.argv) {
 function runGates(man, opts = {}) {
   const gates = declaredGates(man);
   if (!gates.length) return { failed: 0, ran: 0, results: [] };
+  const advisory = advisorySet(man);
 
   // Сужение по дифу — договор с человеком, и он должен видеть, ЧТО именно сужено. Пустой диф
   // называется вслух: иначе «все гейты зелёные» означало бы «сравнили не с тем» и читалось бы
@@ -178,15 +179,25 @@ function runGates(man, opts = {}) {
       // Находки обрезаются, совет — никогда. Все записи каталога печатают «почини: …» последней
       // строкой, и при обрезке до трёх строк человек не видел именно её: находка без действия
       // закрывает окно, а не дефект.
-      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${secs}s · ${cmd}`)}`);
+      // Совещательный гейт показывает находки и не роняет прогон. Знак другой, чтобы «показано»
+      // и «провалено» не читались одинаково; в сводке ниже он назван поимённо.
+      const isAdvisory = advisory.has(name);
+      if (isAdvisory) failed--;
+      const mark = isAdvisory ? c.yellow("!") : c.red("✘");
+      const verdict = isAdvisory ? c.yellow(L.doctor.advisoryMark) : c.red(L.doctor.exitCode(code));
+      console.log(`  ${mark}  ${name.padEnd(14)} ${verdict} ${c.dim(`· ${secs}s · ${cmd}`)}`);
       for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
       if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
       // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
       for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: false, secs, code });
+      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory });
     }
   }
-  return { failed, ran: gates.length, results };
+  // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та
+  // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
+  const advisoryFailed = results.filter((x) => x.advisory).map((x) => x.name);
+  if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
+  return { failed, ran: gates.length, results, advisoryFailed };
 }
 
 // Короткий отчёт «что из этого реально брали» — не для человека, а для агента в следующей

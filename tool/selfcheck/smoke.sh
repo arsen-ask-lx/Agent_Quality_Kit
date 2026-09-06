@@ -1064,6 +1064,38 @@ else
 fi
 rm -rf "$DDIR"
 
+# --- 56. совещательный гейт показан, но прогон не уронен -----------------------
+# ЗАЧЕМ. Правило вводят в проект, где старый код ему не соответствует. Без третьего пути выбор
+# из двух крайностей: включить и сломать сборку либо не включать вовсе. Проверяем обе стороны:
+# без списка — роняет; со списком — показано и НАЗВАНО, а прогон зелёный. Молчание о
+# совещательном гейте было бы выключенной проверкой, притворяющейся отсутствующей.
+VDIR="$(mktemp -d)"
+(
+  cd "$VDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  node "$CLI" init >/dev/null 2>&1
+  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+)
+( cd "$VDIR" && node "$CLI" doctor --run --min 1 >/dev/null 2>&1 ); V_HARD=$?
+printf '\nadvisory:\n  - no-print-in-prod\n' >> "$VDIR/.aqk.yml"
+V_OUT=$( cd "$VDIR" && node "$CLI" doctor --run --min 1 2>&1 ); V_SOFT=$?
+if [ "$V_HARD" -ne 0 ] && [ "$V_SOFT" -eq 0 ] &&
+   printf '%s' "$V_OUT" | grep -qE 'advisory|совещательн' &&
+   printf '%s' "$V_OUT" | grep -q 'src/a.py'; then
+  ok "совещательный гейт показывает находки, называется и не роняет прогон"
+else
+  bad "совещательный режим работает не так" "обычный код $V_HARD, совещательный $V_SOFT"
+fi
+# Опечатка в имени поля обязана быть названа: «advisery:» молча означало бы «совещательных нет»,
+# и правило, которое человек считал введённым, роняло бы сборку.
+sed -i.bak 's/^advisory:/advisery:/' "$VDIR/.aqk.yml"
+V_TYPO=$( cd "$VDIR" && node "$CLI" doctor 2>&1 )
+if printf '%s' "$V_TYPO" | grep -qi 'advisery'; then
+  ok "опечатка в имени поля манифеста названа"
+else
+  bad "опечатка в advisory проглочена" "$(printf '%s' "$V_TYPO" | tail -2 | head -1)"
+fi
+rm -rf "$VDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
