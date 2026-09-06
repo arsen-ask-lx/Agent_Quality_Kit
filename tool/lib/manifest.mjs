@@ -12,11 +12,24 @@ import { L } from "../i18n/index.mjs";
 // Разбор ограниченного подмножества YAML: ключ, вложенный на один уровень ключ, список.
 // НАМЕРЕННО без библиотеки: манифест обязан быть настолько простым, чтобы его разбирал
 // кусок кода, который читается за минуту. Сложный манифест никто не заполнит.
+// Срезает комментарий по правилу YAML: решётка начинает комментарий только с начала строки
+// или после пробела. Безусловное `replace(/#.*$/)` молча обрезало команду
+// `npx jscpd --format "java,c#,php"` на «c» — гейт запускал не то, что объявлено, и об этом
+// никто не узнавал. Объявленное и исполняемое обязаны совпадать: на этом стоит весь стандарт.
+//
+// Пары кавычек не отслеживаем намеренно: в рецептах кавычки соседние, а не вложенные
+// (`"bash x.sh --format "a,b" ."`), и подсчёт пар решил бы, что «c#» стоит снаружи.
+function stripComment(raw) {
+  const i = raw.search(/(^|\s)#/);
+  if (i < 0) return raw;
+  return raw[i] === "#" ? raw.slice(0, i) : raw.slice(0, i + 1);
+}
+
 function parseManifest(text) {
   const out = {};
   let section = null;
   for (const raw of text.split("\n")) {
-    const line = raw.replace(/#.*$/, "").replace(/\s+$/, "");
+    const line = stripComment(raw).replace(/\s+$/, "");
     if (!line.trim()) continue;
     const indented = /^\s/.test(line);
     const listItem = line.trim().startsWith("- ");

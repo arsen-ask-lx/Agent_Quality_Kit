@@ -210,3 +210,17 @@ test("опечатка в поле манифеста называется, а �
   assert.deepEqual(unknownKeys(null), []);
   assert.deepEqual(unknownKeys({}), []);
 });
+
+// ЗАЧЕМ. Разбор резал строку по «#» безусловно, в том числе внутри кавычек. Команда с решёткой
+// — `--format "...,c#,..."`, `grep '#!'`, любой цвет `#fff` — молча обрезалась, и гейт запускал
+// НЕ ТУ команду, которая объявлена. Объявленное и исполняемое разошлись бы беззвучно: ровно
+// тот класс, ради которого стандарт существует. Найдено при правке рецепта duplicate-code.
+test("решётка внутри кавычек не считается комментарием", () => {
+  const m = parseManifest('gates:\n  dup: "npx jscpd --format \"java,c#,php\" ."\n');
+  assert.equal(m.gates.dup, 'npx jscpd --format "java,c#,php" .');
+  // Настоящий комментарий после команды по-прежнему срезается.
+  const c = parseManifest('gates:\n  x: "bash a.sh"  # пояснение\n');
+  assert.equal(c.gates.x, "bash a.sh");
+  // И комментарий на отдельной строке.
+  assert.deepEqual(Object.keys(parseManifest("# только комментарий\naqk: 1\n")), ["aqk"]);
+});
