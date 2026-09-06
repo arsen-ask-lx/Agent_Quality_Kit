@@ -176,6 +176,8 @@ is checked that way on every push.
 
 ## In your pipeline
 
+[![on the GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Agent%20Quality%20Kit-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
+
 ```yaml
 - uses: arsen-ask-lx/Agent_Quality_Kit@v0.4.1
   with:
