@@ -384,18 +384,22 @@ rm -rf "$GODIR"
 
 # --- 24. просьба про звезду и обратную связь — один раз на машину -----------
 # Печатается один раз на установку (не на проект): второй init на этой же HOME её не повторяет.
+# USERPROFILE задаётся рядом с HOME: `os.homedir()` на Windows читает именно его, и без этого
+# отметка уезжала в настоящий домашний каталог раннера — к этой проверке она там уже лежала от
+# предыдущих прогонов init, и просьба не печаталась. Изоляция, которая не изолирует, хуже её
+# отсутствия: проверка краснела не на дефекте.
 # Отметка живёт вне репозитория — внутри .aqk/ она либо закоммитится в чужой проект, либо
 # потеряется при повторном init --force.
 FAKEHOME="$(mktemp -d)"
 D1="$(mktemp -d)"
-OUT1=$( cd "$D1" && HOME="$FAKEHOME" node "$CLI" init 2>&1 )
+OUT1=$( cd "$D1" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
 if printf '%s' "$OUT1" | grep -qi 'звезд'; then
   ok "первый init на новой машине зовёт поставить звезду"
 else
   bad "первый init не упомянул звезду/обратную связь" "$OUT1"
 fi
 D2="$(mktemp -d)"
-OUT2=$( cd "$D2" && HOME="$FAKEHOME" node "$CLI" init 2>&1 )
+OUT2=$( cd "$D2" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
 if printf '%s' "$OUT2" | grep -qi 'звезд'; then
   bad "init повторил просьбу про звезду на той же машине" "второй проект, та же HOME"
 else
@@ -428,7 +432,9 @@ rm -f /tmp/aqk-broken-doc-links.$$
 # --- 26. doctor печатает версию комплекта ------------------------------------
 # Баг-репорт без версии нечем привязать к коммиту — заметили, заполняя .github/ISSUE_TEMPLATE/,
 # где просили версию из шапки doctor, а шапка её не печатала вовсе.
-PKGVER=$(node -e "console.log(require('$ROOT/package.json').version)")
+# Путь отдаётся оболочкой, а Node на Windows не понимает «/d/a/…» из Git Bash. Читаем из
+# текущего каталога, а не подставляем абсолютный путь в код.
+PKGVER=$( cd "$ROOT" && node -p "require('./package.json').version" )
 DOCVER=$( cd "$ROOT" && node "$CLI" doctor 2>&1 | head -3)
 if printf '%s' "$DOCVER" | grep -qF "$PKGVER"; then
   ok "doctor печатает версию комплекта ($PKGVER)"
@@ -549,7 +555,7 @@ fi
 # «github:владелец/репозиторий»), просьба про звезду поехала на github.com/agent-quality-kit —
 # несуществующую страницу. Единственное место, где мы просим человека о чём-то, вело в никуда.
 FBDIR="$(mktemp -d)"; FBPROJ="$(mktemp -d)"
-FB_OUT=$( cd "$FBPROJ" && git init -q . && HOME="$FBDIR" node "$CLI" init 2>&1 )
+FB_OUT=$( cd "$FBPROJ" && git init -q . && HOME="$FBDIR" USERPROFILE="$FBDIR" node "$CLI" init 2>&1 )
 if printf '%s' "$FB_OUT" | grep -qE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'; then
   ok "просьба про звезду ведёт на репозиторий, а не на github.com/<имя пакета>"
 else

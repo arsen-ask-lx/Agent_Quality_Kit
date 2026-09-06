@@ -15,7 +15,7 @@
 
 import { mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { CWD, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
+import { CWD, TARGET_DIR, SELF, c, exists, docPath } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo.mjs";
 import { runGates, declaredGates } from "./doctor.mjs";
@@ -59,7 +59,7 @@ async function findDoc(name) {
     for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
       const full = join(dir, e.name);
       if (e.isDirectory()) { const hit = await walk(full); if (hit) return hit; }
-      else if (e.name === name) return relative(CWD, full);
+      else if (e.name === name) return docPath(CWD, full);
     }
     return null;
   };
