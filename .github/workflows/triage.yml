@@ -91,9 +91,25 @@ jobs:
             echo "AQKEOF"
           } >> "$GITHUB_OUTPUT"
 
+      # ПОЧЕМУ ПРОПУСК, А НЕ ПАДЕНИЕ. Без секрета подписки шаг падал на каждом пул-реквесте, и
+      # красный круг означал не «с обращением что-то не так», а «у разбора нет ключа». Красное,
+      # которое ничего не значит, учит не смотреть на красное вообще — ровно тот дефект, против
+      # которого весь этот репозиторий. Разбор входящих необязателен; отсутствие ключа — это
+      # «не проверяли», и оно обязано выглядеть как «не проверяли», а не как отказ.
+      # Контекст secrets в `if:` НЕДОСТУПЕН — ни на уровне шага, ни на уровне задачи; проверено
+      # по документации GitHub, а не по памяти. Поэтому наличие ключа превращается в обычный
+      # выход шага. Через отдельный шаг, а не через env: всей задачи: незачем класть секрет в
+      # окружение каждого шага ради одного условия.
+      - name: есть ли ключ подписки
+        id: keys
+        env:
+          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "$T" ]; then echo "claude=yes" >> "$GITHUB_OUTPUT"; else echo "claude=no" >> "$GITHUB_OUTPUT"; fi
+
       - name: спросить Claude Code по подписке, стоит ли смотреть
         id: ask
-        if: steps.gather.outputs.title != ''
+        if: steps.gather.outputs.title != '' && steps.keys.outputs.claude == 'yes'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -119,6 +135,12 @@ jobs:
             --max-turns 10
             --disallowedTools Bash,WebFetch,WebSearch,Write,Edit,MultiEdit,Task
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["да","нет"]},"reason":{"type":"string","description":"одно короткое предложение по-русски"}},"required":["verdict","reason"]}'
+
+      - name: сказать вслух, что разбор не проводился
+        if: steps.gather.outputs.title != '' && steps.keys.outputs.claude == 'no'
+        run: |
+          echo "::notice::разбор пропущен: не задан секрет CLAUDE_CODE_OAUTH_TOKEN."
+          echo "::notice::обращение НЕ рассмотрено — это «не проверяли», а не «всё в порядке»."
 
       - name: сообщить в Telegram
         if: steps.ask.outcome == 'success' && fromJSON(steps.ask.outputs.structured_output || '{}').verdict == 'да'
