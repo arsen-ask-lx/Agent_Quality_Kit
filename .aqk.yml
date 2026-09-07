@@ -27,7 +27,6 @@ gates:
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
   # Храповик снят: программа разделена по назначению и уложилась в собственный предел.
   file-size-limit: "bash kit/gates/file-size-limit/check.sh ."
-  swallowed-error: "bash kit/gates/swallowed-error/check.sh ."
   todo-without-task: "bash kit/gates/todo-without-task/check.sh ."
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
@@ -38,7 +37,10 @@ gates:
   dead-code: "npx --yes knip@6 --directory ."
   # tool/ — исходники программы командной строки: печать там интерфейс, а не забытая отладка.
   # Названо здесь, а не спрятано в проверке: читающий манифест видит, что именно исключено.
-  no-print-in-prod: "AQK_PRINT_OK_DIRS=tool bash kit/gates/no-print-in-prod/check.sh ."
+  # swallowed-error и no-print-in-prod сняты 2026-09-07: их переносимые проверки убраны
+  # по итогам замера, а готовых инструментов (ruff, eslint) в этом репозитории нет и не
+  # будет — зависимостей у комплекта нет по железному правилу. Пункт закрыт не проверкой,
+  # а признанием: у нас на JavaScript печать в терминал и есть интерфейс программы.
   proof-from-journal: "bash kit/ratchet/ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh"
   gate-has-samples: "bash kit/gates/gate-has-samples/check.sh ."
   lesson-has-outcome: "bash kit/gates/lesson-has-outcome/check.sh ."

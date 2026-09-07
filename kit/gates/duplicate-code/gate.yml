@@ -16,7 +16,15 @@ recipes:
   #
   # «c#» в списке нет намеренно: разбор манифеста режет строку по «#», и рецепт обрывался бы
   # на «c». Обёртку _native.sh не пишем — её добавляет сама программа при установке гейта.
+  #
+  # Рецепт стоял только под javascript и typescript, хотя список --format покрывает и Python,
+  # и Go. Питоновский проект получал переносимую самоделку вместо готового инструмента —
+  # найдено ревизией каталога 2026-09-07, замером по пяти стекам.
   javascript: npx --yes jscpd@5 --min-lines 8 --threshold 1 --format "javascript,jsx,typescript,tsx,vue,python,go,ruby,java,php,rust,kotlin,swift,scala" {dir}
   typescript: npx --yes jscpd@5 --min-lines 8 --threshold 1 --format "javascript,jsx,typescript,tsx,vue,python,go,ruby,java,php,rust,kotlin,swift,scala" {dir}
+  # Родной инструмент стека, а не jscpd: питоновскому проекту незачем ставить Node ради одной
+  # проверки. R0801 сравнивает не байты, а разобранный код — переименованная переменная его
+  # не обманет, в отличие от переносимого рецепта.
+  python: pylint --disable=all --enable=R0801 --min-similarity-lines=8 {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: число моделей захардкожено в четырёх местах четырьмя разными значениями

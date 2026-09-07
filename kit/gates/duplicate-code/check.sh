@@ -21,15 +21,30 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | LC_ALL=C sort \
   | xargs -r env LC_ALL=C awk -v WIN="$WIN" '
-      FNR == 1 { n = 0; delete buf }
+      # Строка-объявление ввоза: `import`, `from … import`, `use …;`, путь в кавычках внутри
+      # блока `import (…)` в Go, `require(…)`, а также одинокие скобки и точки с запятой.
+      # ЗАЧЕМ. Восемь одинаковых строк ввоза подряд — форма языка, а не размноженный код: в Go,
+      # Java и Rust список ввоза стоит по одной строке и в соседних файлах одного пакета
+      # совпадает целиком. Замер по cobra: обе находки в doc/ были ровно этим — ни одной
+      # строки логики. Окно, где нет ни одной строки кроме ввоза, дублем не считается.
+      function isimport(s) {
+        return s ~ /^(import|from|use|export|require|package|#include|using)([[:space:](]|$)/ ||
+               s ~ /^[A-Za-z_][A-Za-z0-9_]*[[:space:]]+"[^"]*"$/ ||
+               s ~ /^[_.]?[[:space:]]*"[^"]*"[,;]?$/ ||
+               s ~ /^(const|let|var)[[:space:]].*require\(/ ||
+               s ~ /^[(){}\[\];,]+$/
+      }
+      FNR == 1 { n = 0; delete buf; delete imp }
       {
         line = $0
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
         if (line == "" || line ~ /^([#]|\/\/)/) next     # пустые и комментарии не считаем
         buf[++n] = line
+        imp[n] = isimport(line)
         if (n >= WIN) {
-          key = ""
-          for (i = n - WIN + 1; i <= n; i++) key = key buf[i] "\x1e"
+          key = ""; code = 0
+          for (i = n - WIN + 1; i <= n; i++) { key = key buf[i] "\x1e"; if (!imp[i]) code = 1 }
+          if (!code) next                               # окно целиком из ввоза — не дубль
           if (key in seen && seen[key] != FILENAME ":" (FNR - WIN + 1)) {
             print seen[key] " и " FILENAME ":" (FNR - WIN + 1) ": одинаковые " WIN " строк"
           } else if (!(key in seen)) {

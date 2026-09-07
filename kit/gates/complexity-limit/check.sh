@@ -9,8 +9,15 @@ DIR="${1:-.}"
 . "$(dirname "$0")/../_skip.sh" 2>/dev/null || SKIP_NAMES=".git .aqk node_modules .venv"
 MAX="${AQK_MAX_DEPTH:-5}"
 
+# Тесты исключены намеренно — тем же списком, что и в duplicate-code. Глубокая вложенность в
+# тесте это обход таблицы ожиданий, а не сложная логика: замер по fastapi дал 303 находки, из
+# которых 101 в tests/. Гейт, который краснеет в основном на тестах, выключают целиком.
+TESTS="-name test -prune -o -name tests -prune -o -name spec -prune -o -name __tests__ -prune -o"
+
 # shellcheck disable=SC2046
-find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
+find "$DIR" $(skip_find "$DIR") $TESTS -type f \
+     ! -name 'test_*' ! -name '*_test.*' ! -name '*.test.*' ! -name '*.spec.*' \
+     -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
   | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
   | xargs -r awk -v MAX="$MAX" '
         # Один обход на все файлы: процесс на каждый файл дал 19 секунд на 4000 файлов.
