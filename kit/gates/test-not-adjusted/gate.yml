@@ -1,0 +1,19 @@
+intent: арбитра не правит тот, кто чинит код — утверждение не ослабляют, чтобы прошло
+intent_en: whoever fixes the code does not adjust the arbiter — assertions are not weakened to pass
+
+# Там, где есть тесты. Без них подгонять нечего.
+trigger:
+  has_tests: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+# Программа, без которой запись не работает. По первому слову команды этого не видно: обёртка
+# начинается с `bash`, который есть всегда, и гейт ставился бы, а вставал при первом запуске.
+requires: checkwash
+
+proof: incidents/README.md, 2026-09-07 «арбитра правит тот, кто чинит код» — приём назван
+  практиками в разборе 1154 обсуждений с Reddit и Hacker News (Baltes, Cheong, Treude,
+  arxiv 2603.27249, «test subversion»); замер обвязки по 40 коммитам `httpx` — одна блокировка,
+  настоящая, при 15% на пороге `--fail-on warn` и 2.5% на пороге по умолчанию, который пропускает
+  сам предмет записи

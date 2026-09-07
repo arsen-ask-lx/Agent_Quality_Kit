@@ -208,6 +208,23 @@ npm install -g agnix && agnix --strict .
 **Одна строка в существующей записи — самый дешёвый и самый ценный вклад.** Намерение уже
 доказано отказом, образцы уже лежат, проверять нечего кроме самой команды.
 
+## Приёмы агента, названные практиками: чем закрыт каждый
+
+Список взят из разбора 1154 обсуждений с r/programming, r/learnprogramming, r/ExperiencedDevs
+и Hacker News (Baltes, Cheong, Treude, «An Endless Stream of AI Slop», arxiv 2603.27249,
+январь–сентябрь 2025). Это не подборка мнений, а размеченный корпус.
+
+| Приём | Чем закрыт |
+|---|---|
+| «test subversion»: правка теста, чтобы прошёл сломанный код | [`checkwash`](https://github.com/taipei49314/checkwash) — запись `test-not-adjusted` делегирует ему целиком |
+| «deleting methods instead of fixing them» | он же, детектор `TEST_DISABLED` |
+| «casting to `any` to silence type errors» | `@typescript-eslint/no-explicit-any`. Своей записи нет намеренно: замер по `zod` — 769 вхождений на 501 файл, первый прогон даёт стену |
+| «using `setTimeout` as a band-aid fix» | ничем. Замера нет, риск ложных высок: `setTimeout` законен сплошь и рядом |
+| «hallucinating external services, then mocking» | ничем. Отличить выдуманную службу от настоящей статически нечем |
+| выдуманная зависимость (slopsquatting) | [`slopcheck`](https://github.com/0xToxSec/slopcheck), MIT — но последний коммит апрель 2026, рецепта на него не вешаем |
+| подавление проверки без адреса | наш `gate-not-weakened` плюс `eslint-plugin-eslint-comments`, `flake8-noqa` |
+| шаг конвейера, который не может провалиться | наш `ci-actually-fails`; у `checkwash` есть смежный `CI_WORKFLOW_TOUCHED` |
+
 ## Если готового нет
 
 Тогда свой гейт — и в его `README.md` пишется, **что именно проверено**: какой инструмент
