@@ -38,6 +38,11 @@ const MARKS = [
   ["has_docker", ["Dockerfile", "compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"]],
   ["has_deps", ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "composer.json"]],
   ["has_env", [".env", ".env.example", ".env.sample"]],
+  // Обвес самого агента: настройки, хуки, права. Отдельный признак нужен, потому что записи
+  // про него не касаются проектов, где агента не настраивали вовсе, — а таких большинство.
+  // Файл `.claude/settings.json` есть и у того, кто настроил один только список разрешений;
+  // записи этой группы сами промолчат, если проверять в нём нечего.
+  ["has_agent_config", [".claude/settings.json", ".claude/settings.local.json", ".claude/hooks.json", ".claude/hooks/hooks.json"]],
 ];
 
 async function detectFacts(man) {

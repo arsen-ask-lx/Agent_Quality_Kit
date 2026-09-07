@@ -55,6 +55,7 @@ gates:
   # Центральный вопрос комплекта: у каждого правила в AGENTS.md виден сторож — команда или
   # честно названный человек. На нас самих первый прогон дал 13 правил без сторожа из 13.
   promise-has-gate: "bash kit/gates/promise-has-gate/check.sh ."
+  hook-actually-fires: "bash kit/gates/hook-actually-fires/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.

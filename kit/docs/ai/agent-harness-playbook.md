@@ -193,7 +193,7 @@
 |---|---|---|---|
 | `block-dangerous-commands.sh` | PreToolUse (Bash **и** PowerShell) | exit 2 + причина в stderr на необратимое: force-push, reset --hard, `DROP DATABASE`, `TRUNCATE`, `docker volume rm`, `rm -rf /` | fail-safe: не распарсил JSON → грепай сырой ввод. Штатный сброс дев-БД (`compose down -v`) — НЕ блокировать |
 | `auto-format.sh` | PostToolUse (Write\|Edit) | `ruff format` + `ruff check --fix` на изменённый `.py` | агент физически не оставляет неотформатированный код, контекст не тратится |
-| `stop-gate.sh` | Stop | красный `ruff` по прод-путям → exit 2 + хвост ошибок → агент чинит, а не «сдаёт» | обязателен гард `stop_hook_active` (иначе вечный цикл); проверять только СВОЙ домен, не параллельную работу человека |
+| `stop-gate.sh` | Stop | красный `ruff` по прод-путям → exit 2 + хвост ошибок → агент чинит, а не «сдаёт» | обязателен гард `stop_hook_active`; проверять только СВОЙ домен, не параллельную работу человека. Поле настоящее — Stop и SubagentStop получают его на вход; но вечного цикла не будет и без гарда: «Claude Code overrides the hook and ends the turn after 8 consecutive blocks» (code.claude.com/docs/en/hooks, раздел Stop input, сверено 2026-09-07). Цена ошибки — восемь ходов, а не вечность |
 
 - [ ] ⚠️ **Грабля №1 (Windows): `jq` нет в Git Bash.** Хук с `command -v jq || exit 0` молча
       превращается в no-op — защита «есть», но не работает. Парсить JSON через
