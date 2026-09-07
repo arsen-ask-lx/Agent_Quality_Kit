@@ -1,0 +1,15 @@
+# Исход проверки переспрашивают — и ничего с ним не делают. Ровно то же прощение, что и
+# голый continue-on-error, только длиннее на три строки и убедительнее на вид.
+name: soft
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: линтер
+        id: lint
+        run: ruff check .
+        continue-on-error: true
+      - name: сказать вслух
+        if: steps.lint.outcome == 'failure'
+        run: echo "линтер был красным"

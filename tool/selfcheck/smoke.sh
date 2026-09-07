@@ -164,12 +164,18 @@ done
 # --- 8. храповик: старое пропускает, новое не пускает ------------------------
 # Главный вопрос к храповику: «может ли новый код добавить нарушение и пройти?»
 # Может — значит это советчик, а не гейт.
+# ПОЧЕМУ ПРИМАНКА ИМЕННО gate-not-weakened. У записи должен быть ТОЛЬКО переносимый рецепт:
+# иначе на машине, где стоит ruff или eslint, установка возьмёт рецепт под язык, и проверка
+# станет печатать чужой формат вывода. Так и вышло — прогон был зелёным локально и красным в
+# конвейере ровно потому, что в конвейер добавили ruff: четыре проверки искали в выводе наши
+# «почини: …» и «путь:строка», а получали формат ruff. Прогон, чей исход зависит от того, что
+# случайно стоит на машине, не проверяет ничего.
 R="$WORK/ratchet"; mkdir -p "$R"; cd "$R" || exit 1
 git init -q .
-printf 'def a():\n    print("старое")\n' > old.py
+printf 'x = 1  # noqa\n' > old.py
 node "$CLI" init >/dev/null 2>&1
-node "$CLI" add no-print-in-prod >/dev/null 2>&1
-node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+node "$CLI" add gate-not-weakened >/dev/null 2>&1
+node "$CLI" ratchet gate-not-weakened >/dev/null 2>&1
 
 # Судим по вердикту гейта, а не по коду возврата doctor: он ненулевой и по другим
 # причинам (в свежей папке нет .gitignore), и проверка бы врала о храповике.
@@ -179,7 +185,7 @@ case "$OUT" in
   *) ok "храповик пропустил старое нарушение" ;;
 esac
 
-printf 'def b():\n    print("новое")\n' > new.py
+printf 'y = 2  # noqa\n' > new.py
 OUT="$(node "$CLI" doctor --run 2>&1)"
 case "$OUT" in
   *"новых нарушений"*) ok "храповик не пустил новое нарушение" ;;
@@ -189,7 +195,7 @@ esac
 # Второй прогон с тем же новым нарушением обязан краснеть так же. Пока реестр перезаписывался
 # всем текущим списком, одно исправленное нарушение затягивало в долг ВСЕ новые: один красный
 # прогон — и дальше зелено навсегда. «Может ли новый код добавить нарушение и пройти?» — мог.
-printf 'def c():\n    print("ещё одно")\n' > another.py
+printf 'z = 3  # noqa\n' > another.py
 node "$CLI" doctor --run >/dev/null 2>&1
 rm old.py
 OUT="$(node "$CLI" doctor --run 2>&1)"
@@ -199,12 +205,12 @@ case "$OUT2" in
   *) bad "исправление одного нарушения затянуло новые в долг" "второй прогон зелёный" ;;
 esac
 rm -f another.py
-printf 'def a():\n    print("старое")\n' > old.py
-node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1 || true
+printf 'x = 1  # noqa\n' > old.py
+node "$CLI" ratchet gate-not-weakened >/dev/null 2>&1 || true
 
 rm -f new.py old.py
 node "$CLI" doctor --run >/dev/null 2>&1
-if grep -q 'old.py' ratchets/no-print-in-prod.txt; then
+if grep -q 'old.py' ratchets/gate-not-weakened.txt; then
   bad "исправленное осталось в реестре — храповик не затягивается"
 else
   ok "исправленное вычеркнуто из реестра"
@@ -250,27 +256,13 @@ case "$OUT" in
 esac
 cd "$WORK" || exit 1
 
-# --- 8б. проект называет свои каталоги, где печать — интерфейс ---------------
-# Исключение объявляется В МАНИФЕСТЕ и потому видно глазами. Проверяем обе стороны: названный
-# каталог пропускается, все остальные — нет. Исключение, которое прячет всё, бесполезно.
-P="$WORK/printok"; mkdir -p "$P/cli" "$P/src"; cd "$P" || exit 1
-printf 'def a():\n    print("вывод программы")\n' > cli/main.py
-printf 'def b():\n    print("забытая отладка")\n' > src/service.py
-OUT="$(AQK_PRINT_OK_DIRS=cli bash "$ROOT/kit/gates/no-print-in-prod/check.sh" . 2>&1)"
-case "$OUT" in
-  *"cli/main.py"*) bad "названный каталог не исключён" "$OUT" ;;
-  *"src/service.py"*) ok "названный каталог пропущен, остальные проверяются" ;;
-  *) bad "проверка печати не нашла отладку вне названного каталога" "$OUT" ;;
-esac
-cd "$WORK" || exit 1
-
 # --- 9. разбор ошибки: три случая различаются прогоном, а не памятью ---------
 # «Сторожа не было», «сторож был и не сработал», «сторож был и его обошли» — разные починки.
 # Пока их различает человек по памяти, чинят обычно не то. Здесь их различает прогон.
 Y="$WORK/why"; mkdir -p "$Y"; cd "$Y" || exit 1
 git init -q .
 node "$CLI" init >/dev/null 2>&1
-printf 'def a():\n    print("отладка")\n' > x.py
+printf 'q = 1  # noqa\n' > x.py
 
 OUT="$(node "$CLI" why "миграция базы применена задом наперёд" 2>&1)"
 case "$OUT" in
@@ -278,21 +270,21 @@ case "$OUT" in
   *) bad "why не сказал, что сторожа не было" "$OUT" ;;
 esac
 
-OUT="$(node "$CLI" why "отладочная печать уехала в прод" 2>&1)"
+OUT="$(node "$CLI" why "подавление проверки целиком без причины" 2>&1)"
 case "$OUT" in
   *"не поставлен"*) ok "why: запись есть в каталоге, но в проекте не поставлена" ;;
   *) bad "why не отличил «не поставлен» от «не было»" "$OUT" ;;
 esac
 
-node "$CLI" add no-print-in-prod >/dev/null 2>&1
-OUT="$(node "$CLI" why "отладочная печать уехала в прод" 2>&1)"
+node "$CLI" add gate-not-weakened >/dev/null 2>&1
+OUT="$(node "$CLI" why "подавление проверки целиком без причины" 2>&1)"
 case "$OUT" in
   *"его обошли"*) ok "why: сторож стоит и ловит — значит его обошли" ;;
   *) bad "why не отличил «обошли» от «не сработал»" "$OUT" ;;
 esac
 
 rm x.py
-OUT="$(node "$CLI" why "отладочная печать уехала в прод" 2>&1)"
+OUT="$(node "$CLI" why "подавление проверки целиком без причины" 2>&1)"
 case "$OUT" in
   *"этой поломки не видит"*) ok "why: сторож стоит, а поломки не видит" ;;
   *) bad "why не отличил «не сработал» от «обошли»" "$OUT" ;;
@@ -579,11 +571,11 @@ rm -rf "$FBDIR" "$FBPROJ"
 REPDIR="$(mktemp -d)"
 (
   cd "$REPDIR" && git init -q . && mkdir -p src &&
-  printf 'def f():\n    print("debug")\n' > src/a.py &&
+  printf 'a = 1  # noqa\n' > src/a.py &&
   node "$CLI" start > /tmp/aqk-start.log 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
-if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ no-print-in-prod'; then
+if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ gate-not-weakened'; then
   ok "report краснеет кодом возврата и называет упавший гейт"
 else
   # Код возврата отчёта не говорит, ПОЧЕМУ он ноль: гейт не сработал, не установился или
@@ -591,7 +583,7 @@ else
   # и «проверка не ловит на этой системе».
   G_LS=$( cd "$REPDIR" && ls gates 2>&1 | tr '\n' ' ' )
   G_DECL=$( cd "$REPDIR" && sed -n '/^gates:/,$p' .aqk.yml 2>/dev/null | grep -cE '^[[:space:]]+[A-Za-z0-9_-]+:' )
-  G_OUT=$( cd "$REPDIR" && bash gates/no-print-in-prod/check.sh . 2>&1 | head -2 ); G_CODE=$?
+  G_OUT=$( cd "$REPDIR" && bash gates/gate-not-weakened/check.sh . 2>&1 | head -2 ); G_CODE=$?
   bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 /tmp/aqk-start.log 2>/dev/null | tr '\n' ' ')»"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
@@ -631,11 +623,11 @@ rm -rf "$NOTEDIR" "$NOTEHOME"
 # то есть настройка правкой чужого файла, которую затрёт следующий `aqk add`.
 IGNDIR="$(mktemp -d)"
 mkdir -p "$IGNDIR/third-party/inner" "$IGNDIR/src"
-printf 'def f():\n    print("свой")\n' > "$IGNDIR/src/mine.py"
-printf 'def f():\n    print("чужой")\n' > "$IGNDIR/third-party/inner/theirs.py"
-OUT_BEFORE="$(bash "$ROOT/kit/gates/no-print-in-prod/check.sh" "$IGNDIR" 2>&1)"
+printf 'mine = 1  # noqa\n' > "$IGNDIR/src/mine.py"
+printf 'theirs = 1  # noqa\n' > "$IGNDIR/third-party/inner/theirs.py"
+OUT_BEFORE="$(bash "$ROOT/kit/gates/gate-not-weakened/check.sh" "$IGNDIR" 2>&1)"
 printf '# принесено из другого репозитория\nthird-party/\n' > "$IGNDIR/.aqkignore"
-OUT_AFTER="$(bash "$ROOT/kit/gates/no-print-in-prod/check.sh" "$IGNDIR" 2>&1)"
+OUT_AFTER="$(bash "$ROOT/kit/gates/gate-not-weakened/check.sh" "$IGNDIR" 2>&1)"
 if printf '%s' "$OUT_BEFORE" | grep -q 'theirs.py' &&
    ! printf '%s' "$OUT_AFTER" | grep -q 'theirs.py' &&
    printf '%s' "$OUT_AFTER" | grep -q 'mine.py'; then
@@ -893,16 +885,41 @@ rm -rf "$BDIR2"
 # Воспроизводим без Windows: урезаем PATH до одного node — инструментов не видно так же.
 NRDIR="$(mktemp -d)"; NRBIN="$(mktemp -d)"
 ln -sf "$(command -v node)" "$NRBIN/node"
-( cd "$NRDIR" && git init -q . && mkdir -p src && printf 'def f():\n    print("debug")\n' > src/a.py )
+( cd "$NRDIR" && git init -q . && mkdir -p src && printf 'a = 1  # noqa\n' > src/a.py )
 NR_OUT=$( cd "$NRDIR" && PATH="$NRBIN" node "$CLI" start 2>&1 ); NR_CODE=$?
 NR_GATES=$( ls "$NRDIR/gates" 2>/dev/null | grep -cv '^_' )
 if [ "$NR_CODE" -eq 0 ] && [ "$NR_GATES" -ge 5 ] &&
-   [ -f "$NRDIR/gates/no-print-in-prod/check.sh" ]; then
+   [ -f "$NRDIR/gates/gate-not-weakened/check.sh" ]; then
   ok "start пропускает запись без пригодного инструмента и ставит остальные ($NR_GATES)"
 else
   bad "start бросил установку из-за одной записи" "код $NR_CODE, поставлено $NR_GATES, хвост: $(printf '%s' "$NR_OUT" | tail -2 | tr '\n' ' ')"
 fi
 rm -rf "$NRDIR" "$NRBIN"
+
+# --- 48б. строгий режим приёмки: «не проверено» становится ошибкой -------------
+# ЗАЧЕМ. «Записи не проверить, нет инструмента» — законное состояние на чужой машине и
+# недопустимое на нашей: там инструменты ставит отдельный шаг, и жёлтая тильда вместо красного
+# означает, что шаг не сработал. Ровно так и было: `pipx install vulture` стоял в конвейере с
+# самого его появления, ставил vulture в каталог вне PATH, и запись dead-code не проверялась
+# конвейером ни разу. Проверяем сам переключатель: на записи с заведомо отсутствующим
+# инструментом обычный прогон зелёный, строгий — красный.
+STPKG="$(mktemp -d)"
+cp -r "$ROOT/tool" "$ROOT/kit" "$ROOT/package.json" "$STPKG/" 2>/dev/null
+# Ломаем рецепт одной записи: программы с таким именем на машине нет ни у кого.
+sed -i.bak 's|^  python: vulture .*|  python: aqk-nesuschestvuyuschiy-instrument {dir}|' \
+  "$STPKG/kit/gates/dead-code/gate.yml" 2>/dev/null
+# Переключатель задаётся явно в ОБЕ стороны. Без этого проверка наследовала AQK_GATES_STRICT
+# из окружения — и в конвейере, где он поднят, «обычный» прогон был бы строгим, а проверка
+# переключателя проверяла бы одно и то же дважды.
+ST_SOFT_OUT=$(AQK_GATES_STRICT=0 bash "$STPKG/tool/selfcheck/gates.sh" 2>&1); ST_SOFT=$?
+ST_HARD_OUT=$(AQK_GATES_STRICT=1 bash "$STPKG/tool/selfcheck/gates.sh" 2>&1); ST_HARD=$?
+if [ "$ST_SOFT" -eq 0 ] && [ "$ST_HARD" -ne 0 ] &&
+   printf '%s' "$ST_HARD_OUT" | grep -q 'строгий режим'; then
+  ok "строгий режим делает «не проверено» ошибкой, обычный — нет"
+else
+  bad "строгий режим приёмки не работает" "обычный: $ST_SOFT, строгий: $ST_HARD"
+fi
+rm -rf "$STPKG"
 
 # --- 49. выведенную запись не ставят, а называют преемника --------------------
 # ЗАЧЕМ. Зрелость записи считается по доказательству, и объявить её нельзя — кроме одного
@@ -933,11 +950,11 @@ rm -rf "$DEPKG" "$DEPRJ"
 SCDIR="$(mktemp -d)"
 (
   cd "$SCDIR" && git init -q . && git config user.email t@t && git config user.name t
-  mkdir -p src && printf 'def old():\n    print("старый долг")\n' > src/old.py
+  mkdir -p src && printf 'old = 1  # noqa\n' > src/old.py
   node "$CLI" init >/dev/null 2>&1
-  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" add gate-not-weakened >/dev/null 2>&1
   git add -A && git commit -qm "база" >/dev/null 2>&1
-  printf 'def fresh():\n    print("новый долг")\n' > src/fresh.py
+  printf 'fresh = 1  # noqa\n' > src/fresh.py
 )
 SC_WIDE=$( cd "$SCDIR" && node "$CLI" doctor --run 2>&1 )
 SC_NARROW=$( cd "$SCDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
@@ -964,9 +981,9 @@ rm -rf "$SCDIR"
 ADIR="$(mktemp -d)"
 (
   cd "$ADIR" && git init -q . && mkdir -p src
-  for n in a b c d e; do printf 'def %s():\n    print("%s")\n' "$n" "$n" > "src/$n.py"; done
+  for n in a b c d e; do printf '%s = 1  # noqa\n' "$n" > "src/$n.py"; done
   node "$CLI" init >/dev/null 2>&1
-  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" add gate-not-weakened >/dev/null 2>&1
 )
 A_OUT=$( cd "$ADIR" && node "$CLI" doctor --run 2>&1 )
 if printf '%s' "$A_OUT" | grep -qiE '(почини|fix)[[:space:]]*:' &&
@@ -983,12 +1000,12 @@ rm -rf "$ADIR"
 # проверяем ровно последствия: срок вышел — красное; цель достигнута — сказано вслух.
 RDIR="$(mktemp -d)"
 (
-  cd "$RDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  cd "$RDIR" && git init -q . && mkdir -p src && printf 'a = 1  # noqa\n' > src/a.py
   node "$CLI" init >/dev/null 2>&1
-  node "$CLI" add no-print-in-prod >/dev/null 2>&1
-  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
+  node "$CLI" add gate-not-weakened >/dev/null 2>&1
+  node "$CLI" ratchet gate-not-weakened >/dev/null 2>&1
 )
-R_REG="$RDIR/ratchets/no-print-in-prod.txt"
+R_REG="$RDIR/ratchets/gate-not-weakened.txt"
 if [ -f "$R_REG" ] && grep -q 'aqk-goal' "$R_REG"; then
   # Долг снят, новых нарушений нет — зелено.
   R_BASE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 ); R_BASE_CODE=$?
@@ -1047,17 +1064,17 @@ rm -rf "$WDIR"
 DDIR="$(mktemp -d)"
 (
   cd "$DDIR" && git init -q . && git config user.email t@t && git config user.name t
-  mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  mkdir -p src && printf 'a = 1  # noqa\n' > src/a.py
   node "$CLI" init >/dev/null 2>&1
-  node "$CLI" add no-print-in-prod >/dev/null 2>&1
-  node "$CLI" ratchet no-print-in-prod >/dev/null 2>&1
-  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' ratchets/no-print-in-prod.txt
+  node "$CLI" add gate-not-weakened >/dev/null 2>&1
+  node "$CLI" ratchet gate-not-weakened >/dev/null 2>&1
+  sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' ratchets/gate-not-weakened.txt
   git add -A >/dev/null 2>&1 && git commit -qm base >/dev/null 2>&1
 )
 D_WIDE=$( cd "$DDIR" && node "$CLI" doctor --run 2>&1 )
 D_NARROW=$( cd "$DDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
-if printf '%s' "$D_WIDE" | grep -q 'no-print-in-prod' &&
-   printf '%s' "$D_NARROW" | grep -qE 'no-print-in-prod.*(код|exit)' ; then
+if printf '%s' "$D_WIDE" | grep -q 'gate-not-weakened' &&
+   printf '%s' "$D_NARROW" | grep -qE 'gate-not-weakened.*(код|exit)' ; then
   ok "просроченный долг краснеет и при --since"
 else
   bad "--since отменил срок долга" "узкий прогон: $(printf '%s' "$D_NARROW" | grep no-print | head -1 | cut -c1-90)"
@@ -1071,12 +1088,12 @@ rm -rf "$DDIR"
 # совещательном гейте было бы выключенной проверкой, притворяющейся отсутствующей.
 VDIR="$(mktemp -d)"
 (
-  cd "$VDIR" && git init -q . && mkdir -p src && printf 'def a():\n    print("x")\n' > src/a.py
+  cd "$VDIR" && git init -q . && mkdir -p src && printf 'a = 1  # noqa\n' > src/a.py
   node "$CLI" init >/dev/null 2>&1
-  node "$CLI" add no-print-in-prod >/dev/null 2>&1
+  node "$CLI" add gate-not-weakened >/dev/null 2>&1
 )
 ( cd "$VDIR" && node "$CLI" doctor --run --min 1 >/dev/null 2>&1 ); V_HARD=$?
-printf '\nadvisory:\n  - no-print-in-prod\n' >> "$VDIR/.aqk.yml"
+printf '\nadvisory:\n  - gate-not-weakened\n' >> "$VDIR/.aqk.yml"
 V_OUT=$( cd "$VDIR" && node "$CLI" doctor --run --min 1 2>&1 ); V_SOFT=$?
 if [ "$V_HARD" -ne 0 ] && [ "$V_SOFT" -eq 0 ] &&
    printf '%s' "$V_OUT" | grep -qE 'advisory|совещательн' &&

@@ -18,7 +18,7 @@ const AGENTS_MD = `# AGENTS.md
 - **Only the files the task is about.** No fixing things "while we are here".  <!-- aqk: human -->
 - **Done = proven.** Name the arbiter: a test, a live run, a check against the source.  <!-- aqk: human -->
   "Looks like it works" is not done.
-- **Never swallow an error.** Either handled and logged, or re-raised.  <!-- aqk: swallowed-error -->
+- **Never swallow an error.** Either handled and logged, or re-raised.  <!-- aqk: human -->
 - **A fork in the road is a question for a human.** Departing from an agreed decision is not  <!-- aqk: human -->
   documented with a code comment.
 - **Report on your work with the kit with a command, not with words.** When you are done, run  <!-- aqk: human -->

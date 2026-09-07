@@ -30,7 +30,12 @@ need() {
 }
 
 need package.json  package-lock.json yarn.lock pnpm-lock.yaml npm-shrinkwrap.json
-need pyproject.toml poetry.lock uv.lock pdm.lock
+# requirements.txt считается закреплением для pyproject.toml наравне с файлами блокировки:
+# закрепляют не только poetry и uv. Замер по httpx: инструменты там закреплены до патча
+# прямо в requirements.txt, а гейт требовал ещё и poetry.lock, которого в этом укладе не
+# бывает вовсе. Файл засчитывается только если он сам проходит проверку ниже — иначе
+# «есть requirements.txt» стало бы способом обойти гейт пустым файлом.
+need pyproject.toml poetry.lock uv.lock pdm.lock requirements.txt
 need go.mod        go.sum
 need Cargo.toml    Cargo.lock
 need Gemfile       Gemfile.lock
