@@ -23,6 +23,7 @@ import { cmdDoctor } from "./commands/doctor.mjs";
 import { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy } from "./commands/gates.mjs";
 import { cmdReport } from "./commands/report.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
+import { cmdProve } from "./commands/prove.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -69,6 +70,9 @@ if (IS_MAIN) {
     case "report":
       await cmdReport();
       break;
+    case "prove":
+      await cmdProve();
+      break;
     case "badge":
       await cmdBadge(rest);
       break;
@@ -83,6 +87,7 @@ if (IS_MAIN) {
         [`${SELF} doctor`, h.doctor],
         [`${SELF} doctor --run`, h.doctorRun],
         [`${SELF} doctor --run --since main`, h.doctorSince],
+        [`${SELF} prove`, h.prove],
         [`${SELF} add ${h.name}`, h.add],
         [`${SELF} find "…"`, h.find],
         [`${SELF} why "…"`, h.why],

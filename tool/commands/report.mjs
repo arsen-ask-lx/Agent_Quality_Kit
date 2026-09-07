@@ -17,6 +17,7 @@ import { mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists, docPath } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
+import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo.mjs";
 import { runGates, declaredGates } from "./doctor.mjs";
 import { L } from "../i18n/index.mjs";
@@ -73,7 +74,9 @@ async function cmdReport() {
     process.exit(1);
   }
 
-  const { reached } = await assessLevel(man);
+  // Значок — самое громкое утверждение комплекта, и доказывать его обязательно. Без этого
+  // проект с гейтом «true» получал AQK-3 и зелёную картинку в README: проверено прогоном.
+  const { reached } = await assessLevel(man, await proveGates(man));
   const facts = await detectFacts(man);
   const catalog = await readCatalog();
   const bySlug = Object.fromEntries(catalog.map((r) => [r.slug, r]));

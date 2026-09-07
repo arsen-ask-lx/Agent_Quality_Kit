@@ -146,7 +146,11 @@ async function readManifest() {
 }
 
 // Каждая ступень: что требуется, как проверяется, и что это даёт человеку.
-async function assessLevel(man) {
+// `proof` — результат `proveGates`: { ok } либо null, если доказательства не было. Ступень
+// AQK-2 требует его прямо: до 2026-09-07 она проверяла, что папки образцов и храповиков
+// СУЩЕСТВУЮТ, и проект с тремя гейтами `true` проходил порог AQK-3 с зелёным значком.
+// Проверено прогоном на пустой папке. Наличие папки — не защита; уровень обязан означать факт.
+async function assessLevel(man, proof = null) {
   const has = async (rel) => Boolean(rel) && (await exists(join(CWD, String(rel))));
   const isUrl = (v) => typeof v === "string" && /^https?:\/\//.test(v);
 
@@ -162,10 +166,21 @@ async function assessLevel(man) {
   const conditions = [
     Boolean(man?.aqk) && entriesExist,
     (await has(man?.rules)) && filledGates.length > 0,
-    (await has(man?.samples)) && (await has(man?.ratchets)),
+    (await has(man?.samples)) && (await has(man?.ratchets)) && proof?.ok === true,
     isUrl(man?.lessons) || (await has(man?.lessons)),
   ];
-  const steps = conditions.map((ok, level) => ({ level, ok, ...L.levels[level] }));
+  // Ступени, которым нужно доказательство, помечаются отдельно: «не выполнено» и «не проверяли»
+  // — разные состояния, и печатать их одинаково значит врать ровно тем способом, против
+  // которого весь комплект.
+  const NEEDS_PROOF = 2;
+  const steps = conditions.map((ok, level) => ({
+    level,
+    ok,
+    // Ровно вторая: третья ступень проверяет журнал, и посылать за доказательством там
+    // значит указать не на ту недостачу. Найдено код-ревью 2026-09-07.
+    needsProof: level === NEEDS_PROOF && proof === null,
+    ...L.levels[level],
+  }));
 
   let reached = -1;
   for (const s of steps) {

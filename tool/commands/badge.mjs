@@ -9,6 +9,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, SELF, REPO_URL, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
+import { proveGates } from "../lib/prove.mjs";
 import { runGates, declaredGates } from "./doctor.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -33,7 +34,12 @@ async function cmdBadge(args = []) {
   const man = await readManifest();
   if (!man) die(`\n  ${L.badge.noManifest(`${SELF} init`)}\n`);
 
-  const { reached } = await assessLevel(man);
+  // Значок — самое громкое утверждение комплекта, и доказывать его обязательно. Без этого
+  // проект с гейтом «true» получал AQK-3 и зелёную картинку в README: проверено прогоном.
+  // Сказать вслух, что идёт: доказательство гоняет каждый гейт по двум образцам, и молчащая
+  // пауза читается как зависание. Найдено код-ревью 2026-09-07.
+  console.log(c.dim(`  ${L.prove.running}`));
+  const { reached } = await assessLevel(man, await proveGates(man));
   if (reached < 0) die(`\n  ${L.badge.notReached(`${SELF} doctor`)}\n`);
 
   // Прогон, а не манифест. Значок при красном гейте — это и есть недоказанное утверждение.
