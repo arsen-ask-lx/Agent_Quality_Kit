@@ -47,7 +47,8 @@ async function installGate(slug, man, facts) {
   }
 
   // Команда под стек проекта, с путями внутри репозитория, а не внутри пакета.
-  const picked = String(pickRecipe(rec, facts) || "");
+  const missing = [];
+  const picked = String(pickRecipe(rec, facts, missing) || "");
   let cmd = picked
     .replace(/\{gate\}/g, `${PROJECT_GATES}/${slug}`)
     .replace(/\{dir\}/g, ".");
@@ -57,7 +58,7 @@ async function installGate(slug, man, facts) {
   // ни `ruff`, ни `vulture`, и установка обрывалась на записи `dead-code`, которой нужен
   // настоящий инструмент. Отсутствие сигнала неотличимо от успеха — здесь оно было внутри
   // самой установки.
-  if (!cmd) return { rec, cmd: null, copied, declared: false, why: null, noRecipe: true };
+  if (!cmd) return { rec, cmd: null, copied, declared: false, why: null, noRecipe: true, missing };
 
   // Родной инструмент не знает про наши образцы и выдаёт их как находки — в любом проекте,
   // куда поставили гейты. Заворачиваем его в общий фильтр. Переносимая проверка фильтрует
@@ -94,9 +95,9 @@ async function cmdAdd(args) {
     console.log(c.dim(`  ${L.add.installAnyway}\n`));
   }
 
-  const { cmd, copied, declared, why, noRecipe, retired } = await installGate(slug, man, facts);
+  const { cmd, copied, declared, why, noRecipe, retired, missing } = await installGate(slug, man, facts);
   if (retired !== undefined) die(L.lifecycle.installDeprecated(slug, retired ? `${SELF} add ${retired}` : "—"));
-  if (noRecipe) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack));
+  if (noRecipe) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack, missing));
 
   console.log(c.bold(`\naqk add ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(L.add.copied(copied.length))}`);
