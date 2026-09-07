@@ -317,6 +317,8 @@ export const en = {
 
   init: {
     noDocs: (dir) => `Guides not found: ${dir}\nLooks like the package is not fully installed.`,
+    docsRu:
+      "the guides in .aqk/docs/ are in Russian — a deliberate decision, not a broken install.\n  The rules in .aqk/rules/ are in English; the guides are prose an agent may ignore anyway,\n  and what a machine holds lives in .aqk.yml and the gates. Translation waits for someone who needs it.",
     created: (n) => `created (${n}):`,
     andMore: (n) => `… and ${n} more`,
     kept: (n) => `already there, left untouched (${n}):`,
