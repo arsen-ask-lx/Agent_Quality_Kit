@@ -169,6 +169,8 @@ export const en = {
 
   add: {
     noSuchGate: (slug, cmd) => `No such gate: ${slug}\nThe applicable ones — ${cmd}`,
+    toolMissing: (slug, missing) =>
+      `Entry ${slug} needs ${missing.join(" and ")}, which is not on this machine.\n  fix: install ${missing.join(" and ")} and try again — this entry delegates to a ready-made tool by design and has no check of its own.`,
     noRecipe: (slug, stack, missing) =>
       `Entry ${slug} has no command for ${stack} and no portable one.` +
       (Array.isArray(missing) && missing.length

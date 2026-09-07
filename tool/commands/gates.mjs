@@ -97,7 +97,12 @@ async function cmdAdd(args) {
 
   const { cmd, copied, declared, why, noRecipe, retired, missing } = await installGate(slug, man, facts);
   if (retired !== undefined) die(L.lifecycle.installDeprecated(slug, retired ? `${SELF} add ${retired}` : "—"));
-  if (noRecipe) die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack, missing));
+  // «Рецепта нет» и «рецепт есть, а инструмента нет» — разные причины и разные починки.
+  // Диагноз, противоречащий gate.yml, стоит доверия всему выводу. Найдено код-ревью 2026-09-07.
+  if (noRecipe) {
+    if (missing && missing.length) die(L.add.toolMissing(slug, missing));
+    die(L.add.noRecipe(slug, [...facts.langs].join("/") || L.add.thisStack, missing));
+  }
 
   console.log(c.bold(`\naqk add ${slug}\n`));
   console.log(`  ${c.green("✔")}  ${PROJECT_GATES}/${slug}/  ${c.dim(L.add.copied(copied.length))}`);

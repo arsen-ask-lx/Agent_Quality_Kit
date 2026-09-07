@@ -176,6 +176,8 @@ export const ru = {
 
   add: {
     noSuchGate: (slug, cmd) => `Нет такого гейта: ${slug}\nСписок применимых — ${cmd}`,
+    toolMissing: (slug, missing) =>
+      `Записи ${slug} нужен ${missing.join(" и ")}, а его нет на этой машине.\n  почини: поставь ${missing.join(" и ")} и повтори — запись делегирует готовому инструменту по устройству, своей проверки у неё нет.`,
     noRecipe: (slug, stack, missing) =>
       `У записи ${slug} нет команды ни под ${stack}, ни общей.` +
       (Array.isArray(missing) && missing.length

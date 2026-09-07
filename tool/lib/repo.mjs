@@ -230,6 +230,18 @@ function pickRecipe(rec, facts, missing) {
   // команду с неустановленной программой значит завести гейт, который встаёт с «not found»:
   // отсутствие сигнала неотличимо от успеха.
   const runnable = (c0) => Boolean(whichSync(String(c0).trim().split(/\s+/)[0]));
+
+  // `requires` проверяется ПЕРВЫМ. Раньше он стоял после перебора родных рецептов, и запись с
+  // рабочим родным рецептом и неудовлетворённым требованием ставилась как ни в чём не бывало —
+  // ровно тот отказ, ради которого поле и заведено. Приёмка и мутационная проверка применяют
+  // его безусловно; три реализации расходились. Найдено код-ревью 2026-09-07.
+  const needs = String(rec?.requires || "").trim().split(/[\s,]+/).filter(Boolean);
+  const lacking = needs.filter((p) => !whichSync(p));
+  if (lacking.length) {
+    for (const p of lacking) if (Array.isArray(missing) && !missing.includes(p)) missing.push(p);
+    return null;
+  }
+
   for (const lang of facts.langs) {
     if (!recipes[lang]) continue;
     const prog = String(recipes[lang]).trim().split(/\s+/)[0];
@@ -237,6 +249,7 @@ function pickRecipe(rec, facts, missing) {
     if (Array.isArray(missing) && !missing.includes(prog)) missing.push(prog);
     console.log(c.dim(`  ${c.yellow("!")}  ${L.recipe.skipped(lang, prog)}`));
   }
+
   return recipes.any || null;
 }
 
