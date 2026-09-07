@@ -1,0 +1,6 @@
+README.md
+CLAUDE.md
+CLAUDE.local.md
+.claude/settings.json
+.claude/settings.local.json
+src/app.py

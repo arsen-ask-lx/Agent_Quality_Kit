@@ -213,6 +213,7 @@ samples_for: python
 | `has_deps: true` | есть файл зависимостей |
 | `has_tests: true` | есть каталог тестов или файлы вида `*_test.*` |
 | `has_env: true` | есть файл окружения |
+| `has_agent_entry: true` | агента здесь используют: есть `CLAUDE.md`, `AGENTS.md`, каталог `.claude`, `.cursor/rules` или инструкции copilot |
 | `has_agent_config: true` | есть настройки самого агента: `.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks.json`, `.claude/hooks/hooks.json`. Второй файл лежит в `.gitignore` — признак сработает у человека и не сработает в конвейере |
 | `has_ui: true` | есть стили или однофайловые компоненты (`.css`, `.scss`, `.vue`, `.svelte`, `.astro`) |
 

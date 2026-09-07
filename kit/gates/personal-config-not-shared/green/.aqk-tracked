@@ -1,0 +1,9 @@
+README.md
+CLAUDE.md
+CLAUDE.local.md.example
+templates/CLAUDE.local.md
+docs/settings.local.json.template
+{{cookiecutter.project_name}}/CLAUDE.local.md
+.vscode/settings.local.json
+node_modules/foo/settings.local.json
+src/app.py

@@ -140,6 +140,7 @@ export const en = {
       has_tests: ["no tests in sight", "tests exist"],
       has_env: ["no environment file", "an environment file exists"],
       has_agent_config: ["the agent was never configured here", "agent settings exist"],
+      has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],
       has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
     },
   },
