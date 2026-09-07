@@ -175,7 +175,11 @@ export const ru = {
 
   add: {
     noSuchGate: (slug, cmd) => `Нет такого гейта: ${slug}\nСписок применимых — ${cmd}`,
-    noRecipe: (slug, stack) => `У записи ${slug} нет команды ни под ${stack}, ни общей.`,
+    noRecipe: (slug, stack, missing) =>
+      `У записи ${slug} нет команды ни под ${stack}, ни общей.` +
+      (Array.isArray(missing) && missing.length
+        ? `\n  почини: поставь ${missing.join(" или ")} и повтори — запись делегирует готовому инструменту по устройству, своей проверки у неё нет.`
+        : `\n  почини: добавь рецепт под свой стек в gate.yml этой записи либо возьми другую.`),
     thisStack: "этот стек",
     needName: (cmd, doctor) => `Укажи имя гейта: ${cmd}. Список — ${doctor}`,
     noManifest: (cmd) => `Нет .aqk.yml — сначала ${cmd}`,

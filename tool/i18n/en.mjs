@@ -168,7 +168,11 @@ export const en = {
 
   add: {
     noSuchGate: (slug, cmd) => `No such gate: ${slug}\nThe applicable ones — ${cmd}`,
-    noRecipe: (slug, stack) => `Entry ${slug} has no command for ${stack} and no portable one.`,
+    noRecipe: (slug, stack, missing) =>
+      `Entry ${slug} has no command for ${stack} and no portable one.` +
+      (Array.isArray(missing) && missing.length
+        ? `\n  fix: install ${missing.join(" or ")} and try again — this entry delegates to a ready-made tool by design and has no check of its own.`
+        : `\n  fix: add a recipe for your stack to this entry's gate.yml, or pick another entry.`),
     thisStack: "this stack",
     needName: (cmd, doctor) => `Name the gate: ${cmd}. The list — ${doctor}`,
     noManifest: (cmd) => `No .aqk.yml — run ${cmd} first`,

@@ -214,7 +214,12 @@ function whichSync(prog, env = process.env) {
 // Выбор рецепта под стек проекта. Одна логика на два места: и `doctor`, и `add` показывают
 // команду, но подставляют в неё разные пути — один в каталог пакета, другой в каталог проекта.
 // Пока это были две копии, правка доезжала до одной из них — нашёл собственный гейт дублей.
-function pickRecipe(rec, facts) {
+// `missing` — необязательный массив: сюда складываются имена программ, которых не хватило.
+// Без него отказ установки был тупиком: «нет команды ни под python, ни общей» — диагноз без
+// действия. Правило «находка без действия закрывает окно, а не дефект» мы требуем от записей
+// каталога; к собственной программе оно относится так же. Найдено первым прогоном в чужом
+// репозитории (httpx) 2026-09-07.
+function pickRecipe(rec, facts, missing) {
   const recipes = rec.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
 
   // Родной рецепт лучше переносимого — но только если его есть чем выполнить. Поставить
@@ -223,8 +228,10 @@ function pickRecipe(rec, facts) {
   const runnable = (c0) => Boolean(whichSync(String(c0).trim().split(/\s+/)[0]));
   for (const lang of facts.langs) {
     if (!recipes[lang]) continue;
+    const prog = String(recipes[lang]).trim().split(/\s+/)[0];
     if (runnable(recipes[lang])) return recipes[lang];
-    console.log(c.dim(`  ${c.yellow("!")}  ${L.recipe.skipped(lang, String(recipes[lang]).split(/\s+/)[0])}`));
+    if (Array.isArray(missing) && !missing.includes(prog)) missing.push(prog);
+    console.log(c.dim(`  ${c.yellow("!")}  ${L.recipe.skipped(lang, prog)}`));
   }
   return recipes.any || null;
 }
