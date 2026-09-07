@@ -33,6 +33,19 @@ fi
 
 BAD=""
 for F in $CI; do
+  # Шаги, чей исход ПЕРЕСПРАШИВАЮТ ниже: `continue-on-error` на них стоит не ради прощения
+  # провала, а чтобы дали выполниться шагам после — а вердикт выносится отдельным шагом
+  # `if: steps.<id>.outcome == 'failure'` → `exit 1`. Найдено замером по fastapi
+  # (`.github/workflows/pre-commit.yml`): проверка идёт под маской, потом чинит файлы и пушит
+  # их в ветку, и только в конце роняет сборку. Гейт молчал там по случайности — слово-примета
+  # не совпало; назови они шаг «lint», он покрасил бы законный уклад.
+  #
+  # Засчитывается только когда в файле есть И ссылка на исход, И падение: переспросить исход и
+  # ничего с ним не сделать — то же самое прощение, только длиннее.
+  REDEEMED=""
+  if tr -d '\r' < "$F" | grep -qE '^[[:space:]]*(-[[:space:]]+)?run[[:space:]]*:.*(exit[[:space:]]+1|^[[:space:]]*false[[:space:]]*$)'; then
+    REDEEMED=$(tr -d '\r' < "$F" | sed -n "s/.*steps\.\([A-Za-z0-9_-]*\)\.\(outcome\|conclusion\|result\).*/\1/p" | sort -u)
+  fi
   # Разбор ПО ШАГАМ, а не по строкам. Построчно проверка врала в обе стороны: законный
   # `continue-on-error` на шаге выгрузки отчёта красил соседний шаг с тестами, а слово «test»
   # внутри перечисления типов коммита («feat|fix|test|chore») делало проверкой строку, которая
@@ -40,7 +53,7 @@ for F in $CI; do
   #
   # Шаг начинается элементом списка («- ») или ключом верхнего уровня: так устроен и github,
   # и gitlab, где `allow_failure` живёт на уровне задачи.
-  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" '
+  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" -v redeemed="$REDEEMED" '
     function isComment(l) { return l ~ /^[[:space:]]*#/ }
     function looksLikeCheck(l,   j, nk) {
       if (isComment(l)) return 0
@@ -62,10 +75,17 @@ for F in $CI; do
       return !isComment(l) && l ~ /^[[:space:]]*(continue-on-error|allow_failure|ignore_failure)[[:space:]]*:[[:space:]]*(true|yes)/
     }
     function isBoundary(l) { return l ~ /^[[:space:]]*-[[:space:]]/ || l ~ /^[A-Za-z_.-]+[[:space:]]*:/ }
+    # Исход этого шага переспрашивают ниже — маска на нём законна.
+    function isRedeemed(id,   j, nr) {
+      if (id == "") return 0
+      nr = split(redeemed, R, "\n")
+      for (j = 1; j <= nr; j++) if (R[j] != "" && R[j] == id) return 1
+      return 0
+    }
     function flush(   ) {
-      if (blockStart && blockCheck && blockMask)
+      if (blockStart && blockCheck && blockMask && !isRedeemed(blockId))
         printf "%s:%d: проверка не может провалиться — шаг под %s\n", file, blockCheckLine, blockMaskText
-      blockStart = 0; blockCheck = 0; blockMask = 0
+      blockStart = 0; blockCheck = 0; blockMask = 0; blockId = ""
     }
     {
       # Гашение прямо в команде красится только для ЗАКРЫТОГО списка запускалок: «|| true» на
@@ -79,6 +99,9 @@ for F in $CI; do
       if (!blockStart) blockStart = NR
       if (!blockCheck && looksLikeCheck($0)) { blockCheck = 1; blockCheckLine = NR }
       if (isMask($0)) { blockMask = 1; blockMaskText = $0; sub(/^[[:space:]]+/, "", blockMaskText) }
+      if (!isComment($0) && $0 ~ /^[[:space:]]*(-[[:space:]]+)?id[[:space:]]*:/) {
+        blockId = $0; sub(/^[^:]*:[[:space:]]*/, "", blockId); gsub(/[[:space:]"'"'"']/, "", blockId)
+      }
     }
     END { flush() }' 2>/dev/null)
   [ -z "$RES" ] || BAD="$BAD$RES

@@ -12,3 +12,19 @@ jobs:
       - name: выгрузить отчёт
         run: bash scripts/upload-report.sh
         continue-on-error: true
+
+      # Законный уклад: шаг помечен continue-on-error не для того, чтобы простить провал, а
+      # чтобы дать выполниться шагам после него; вердикт выносится ниже, по его исходу.
+      # Найдено замером по fastapi (.github/workflows/pre-commit.yml): проверка прогоняется
+      # под continue-on-error, потом чинит файлы и пушит их в ветку, а в конце падает, если
+      # проверка была красной. Гейт, красящий такое, требует убрать то, без чего уклад не
+      # работает, — и его выключат целиком.
+      - name: линтер
+        id: lint
+        run: ruff check .
+        continue-on-error: true
+      - name: применить починки и запушить
+        run: bash scripts/push-fixes.sh
+      - name: провалить сборку, если линтер был красным
+        if: steps.lint.outcome == 'failure'
+        run: exit 1
