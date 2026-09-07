@@ -43,6 +43,10 @@ const MARKS = [
   // Файл `.claude/settings.json` есть и у того, кто настроил один только список разрешений;
   // записи этой группы сами промолчат, если проверять в нём нечего.
   ["has_agent_config", [".claude/settings.json", ".claude/settings.local.json", ".claude/hooks.json", ".claude/hooks/hooks.json"]],
+  // Агента здесь вообще используют: есть свод, который он читает при запуске. Признак шире,
+  // чем `has_agent_config`: настройки заводят не все, а свод — почти каждый, кто работает с
+  // агентом. Записи про личные файлы касаются именно вторых.
+  ["has_agent_entry", ["CLAUDE.md", "AGENTS.md", ".claude", ".cursor/rules", ".github/copilot-instructions.md"]],
 ];
 
 async function detectFacts(man) {

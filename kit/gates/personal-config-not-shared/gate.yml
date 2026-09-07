@@ -1,0 +1,16 @@
+intent: личные файлы агента не раздаются всему проекту через git
+intent_en: an agent's personal files are not shared with the whole project through git
+
+# Там, где агента используют: есть свод, который он читает при запуске. Признак шире, чем
+# `has_agent_config`: настройки заводят не все, а свод — почти каждый.
+trigger:
+  has_agent_entry: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md, 2026-09-07 «личное, попавшее в общий репозиторий» — замер по
+  тринадцати чужим репозиториям: шесть настоящих находок в пяти (`shacker/django-todo` раздаёт
+  всем `Read(//Users/shacker/**)` и абсолютные пути со своей машины; `modu-ai/moai-adk`,
+  `garrynewman/Control4.Jailbreak`, `AmyangXYZ/reze-mipo`, `shuigedeng/taotao-cloud-project`),
+  ноль ложных на семи контрольных

@@ -1,0 +1,91 @@
+#!/usr/bin/env sh
+# Личный файл агента, попавший в git: то, что человек писал для себя, становится обязательным
+# для всех и никем не рецензируется.
+#
+# ЗАЧЕМ. Дело не в опрятности. `CLAUDE.local.md` дописывается ПОСЛЕ общего свода — дословно из
+# документации: "Within each directory, `CLAUDE.local.md` is appended after `CLAUDE.md`, so your
+# personal notes are the last thing Claude reads at that level"
+# (code.claude.com/docs/en/memory, сверено 2026-09-07). Значит личные заметки одного человека
+# читаются последними и перекрывают общие правила команды — у всех, молча.
+# `.claude/settings.local.json` — то же самое для прав: разрешения, которые один человек выдал
+# себе, достаются всем, кто склонировал репозиторий.
+#
+# Оба файла по устройству личные, и документация говорит об этом прямо: "For private
+# per-project preferences that shouldn't be checked into version control… Add `CLAUDE.local.md`
+# to your `.gitignore` so it isn't committed" и "Claude Code keeps it out of git when it creates
+# the file; if you create it by hand, add it to `.gitignore` yourself".
+DIR="${1:-.}"
+. "$(dirname "$0")/../_skip.sh" 2>/dev/null || true
+
+# Образцы (gates.sh) читают список отслеживаемых файлов из `.aqk-tracked`: настоящего git внутри
+# каталога комплекта взять неоткуда, а вложенный .git создал бы embedded-репозиторий.
+# В настоящем проекте такого файла не бывает — спрашиваем сам git.
+# Имя с точкой намеренно: файл `TRACKED` в корне проекта — вещь возможная, и он молча
+# подменял бы собой список git. Найдено код-ревью 2026-09-07.
+if [ -f "$DIR/.aqk-tracked" ]; then
+  LIST=$(cat "$DIR/.aqk-tracked")
+else
+  if ! (cd "$DIR" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1); then
+    echo "не git-репозиторий — проверять нечего"
+    exit 0
+  fi
+  # core.quotePath=false ОБЯЗАТЕЛЕН. По умолчанию git заворачивает путь с не-ASCII в кавычки
+  # («"\320\264\320\276\320\272/CLAUDE.local.md"»), и якорь «$» в шаблоне ниже не совпадал:
+  # личный свод в каталоге с русским именем пропускался молча. Тот же класс, что CRLF ниже.
+  # Найдено код-ревью 2026-09-07.
+  LIST=$(cd "$DIR" && git -c core.quotePath=false ls-files 2>/dev/null)
+fi
+# Перевод строки Windows. Без снятия «\r» якорь «$» в шаблоне ниже не совпадал, и красный
+# образец с CRLF становился зелёным. Поймано мутационной проверкой до единого прогона в чужом
+# проекте — ровно то, ради чего она написана.
+LIST=$(printf '%s\n' "$LIST" | tr -d '\r')
+[ -z "$LIST" ] && exit 0
+
+# Репозиторий, который целиком является заготовкой проекта, проверять нечем: все файлы в нём —
+# не чьи-то личные, а рыба для будущего проекта. Признак — файл настроек генератора в корне.
+# Замер: в `Frojd/Wagtail-Pipit` обе находки были такими, и обе ложные.
+# `.copier-answers.yml` в этот список НЕ входит, хотя выглядит родственником: copier кладёт его
+# в СГЕНЕРИРОВАННЫЙ проект, а не в шаблон. Шаблон несёт `copier.yml`. Найдено код-ревью
+# 2026-09-07: обычный рабочий репозиторий, собранный из copier-шаблона, целиком выпадал из
+# проверки — молчаливый отказ по причине, не имеющей отношения к предмету.
+for GEN in cookiecutter.json copier.yml copier.yaml; do
+  if [ -f "$DIR/$GEN" ]; then
+    echo "репозиторий — заготовка проекта ($GEN), личных файлов в нём нет по устройству"
+    exit 0
+  fi
+done
+
+# Заготовки — не личные файлы. Замер по выдаче поиска: из двадцати совпадений по имени
+# `CLAUDE.local.md` больше половины оказались `*.example`, `*.template` и файлами внутри
+# `templates/` — их кладут в репозиторий намеренно, чтобы человек скопировал себе.
+# Подстановки генератора (`{{cookiecutter.project_name}}/…`) — оттуда же.
+# `settings.local.json` считается личным ТОЛЬКО внутри `.claude/`: это единственное место,
+# откуда Claude Code его читает. Без привязки к каталогу под проверку попадали
+# `.vscode/settings.local.json` и `node_modules/…/settings.local.json` — чужие файлы с
+# совпавшим именем. Найдено код-ревью 2026-09-07.
+HITS=$(printf '%s\n' "$LIST" \
+  | grep -E '(^|/)(CLAUDE\.local\.md|\.claude/settings\.local\.json)$' \
+  | grep -vE '(^|/)(templates?|examples?|samples?|dist|fixtures?)/' \
+  | grep -vF '{{' \
+  || true)
+
+# Образцы гейтов — не личные файлы. В красном образце другой записи может лежать настоящий
+# `settings.local.json`, и это её предмет, а не наш. Поймано на собственном репозитории:
+# первой находкой стал зелёный образец `hook-actually-fires`.
+if command -v own_samples_filter >/dev/null 2>&1 || type own_samples_filter >/dev/null 2>&1; then
+  HITS=$(printf '%s\n' "$HITS" | own_samples_filter "$DIR" | grep -v '^$' || true)
+fi
+# Каталог самого комплекта: у нас образцы лежат не в `gates/`, а в `kit/gates/`.
+HITS=$(printf '%s\n' "$HITS" | grep -vE '(^|/)kit/gates/[^/]+/(red|green)(/|$)' | grep -v '^$' || true)
+
+[ -z "$HITS" ] && exit 0
+
+printf '%s\n' "$HITS" | while IFS= read -r F; do
+  case "$F" in
+    *CLAUDE.local.md) echo "$F: личный свод отслеживается git — он дописывается ПОСЛЕ общего и перекрывает его у всех" ;;
+    *)                echo "$F: личные права отслеживаются git — разрешения одного человека достались всем" ;;
+  esac
+done
+echo "  почини: убери файл из индекса — git rm --cached <файл> — и добавь его в .gitignore."
+echo "  личное, попавшее в общий репозиторий, никто не рецензирует: его туда никто и не звал."
+exit 1
