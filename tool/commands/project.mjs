@@ -11,7 +11,7 @@ import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
 import { readManifest } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { installGate } from "./gates.mjs";
-import { L } from "../i18n/index.mjs";
+import { L, LANG } from "../i18n/index.mjs";
 
 async function cmdInit(args) {
   const force = args.includes("--force");
@@ -45,6 +45,13 @@ async function cmdInit(args) {
     console.log(c.green(`  ${L.init.created(created.length)}`));
     for (const f of created.slice(0, 8)) console.log(`    ${f}`);
     if (created.length > 8) console.log(c.dim(`    ${L.init.andMore(created.length - 8)}`));
+  }
+  // Методички остаются на русском — решение владельца, принятое 2026-09-07, а не недоделка.
+  // Сказать об этом обязательно: человек, открывший `.aqk/docs/` и увидевший чужой язык, иначе
+  // решит, что установка сломалась. Правила переведены, методички нет; молчать об этом значит
+  // выдать решение за оплошность.
+  if (LANG === "en" && created.some((f) => f.includes(`${TARGET_DIR}/docs/`) || f.includes(`${TARGET_DIR}\\docs\\`))) {
+    console.log(c.dim(`\n  ${L.init.docsRu}`));
   }
   if (skipped.length) {
     console.log(c.yellow(`\n  ${L.init.kept(skipped.length)}`));

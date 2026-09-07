@@ -116,7 +116,9 @@ jobs:
         run: bash tool/selfcheck/syntax.sh
 
       - name: функции программы
-        run: node --test tool/selfcheck/units.mjs
+        # Оба файла: проверки уровня и доказательства живут отдельно, и на Windows они не
+        # гонялись вовсе — а именно эта платформа спрятала у нас самый тяжёлый дефект.
+        run: node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs
 
       - name: записи каталога краснеют на красном и молчат на зелёном
         run: bash tool/selfcheck/gates.sh

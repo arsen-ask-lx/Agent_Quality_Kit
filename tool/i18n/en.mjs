@@ -16,6 +16,7 @@ export const en = {
     init: "lay the rules and guides into the current project",
     initForce: "overwrite files that already exist",
     start: "no code yet: day-zero guards and the order of work",
+    prove: "prove the gates catch a defect: each against its own red and green sample",
     doctor: "check what is laid out and what is missing",
     doctorRun: "and also run the declared gates",
     doctorSince: "the same, but show only what the diff against a ref introduced",
@@ -44,6 +45,8 @@ export const en = {
     emptyCommands: (n) => `AGENTS.md has ${n} unfilled commands.`,
     emptyCommandsWhy: "An agent cannot execute an empty line.",
 
+    levelUnproven: (cmd) => `not proven: ${cmd}`,
+    gatesDoNotCatch: (n, cmd) => `gates that do not catch a defect: ${n}. Details: ${cmd}`,
     levelHeading: "AQK compliance level",
     levelNone: "none",
     levelNotSet: "Level: the standard is not set up in this repository.",
@@ -317,6 +320,8 @@ export const en = {
 
   init: {
     noDocs: (dir) => `Guides not found: ${dir}\nLooks like the package is not fully installed.`,
+    docsRu:
+      "the guides in .aqk/docs/ are in Russian — a deliberate decision, not a broken install.\n  The rules in .aqk/rules/ are in English; the guides are prose an agent may ignore anyway,\n  and what a machine holds lives in .aqk.yml and the gates. Translation waits for someone who needs it.",
     created: (n) => `created (${n}):`,
     andMore: (n) => `… and ${n} more`,
     kept: (n) => `already there, left untouched (${n}):`,
@@ -409,6 +414,26 @@ export const en = {
   },
 
 
+  prove: {
+    title: "aqk prove — proving the gates",
+    running: "proving the gates against their samples…",
+    proven: (n) => `proven: ${n}`,
+    broken: (n) => `do not catch: ${n}`,
+    unprovable: (n) => `nothing to prove with: ${n}`,
+    okRed: "red on the red sample, silent on the green one",
+    redPassed: "stayed silent on the RED sample — the gate does not catch the defect",
+    greenFailed: "went red on the GREEN sample — the gate complains about working code",
+    empty: "the command is empty — a declaration without a command protects nothing",
+    noSamples: "no samples — nothing to prove with",
+    noTarget: "no place to substitute the sample directory — the command was written by hand",
+    otherRecipe: (lang) => `the samples are written for the "${lang}" recipe, another one is installed — nothing to prove with`,
+    noGates: "no gates declared — nothing to prove",
+    noSamplesDir: "the samples field in .aqk.yml is empty — nowhere to look for samples",
+    nothingProven:
+      "not a single gate is proven. A level above AQK-1 would mean trust in the author, not a fact:\n  a project whose gate is `true` would pass it exactly like a project with real protection.",
+    fix: (cmd) => `fix: install a catalogue entry together with its samples — ${cmd}`,
+    heading: "Proving the gates",
+  },
   badge: {
     noManifest: (cmd) => `No .aqk.yml — there is no level yet. Start with ${cmd}`,
     notReached: (cmd) => `AQK-0 is not reached — there is nothing to put on a badge. What is missing: ${cmd}`,

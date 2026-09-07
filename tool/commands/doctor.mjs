@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet } from "../lib/manifest.mjs";
+import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
@@ -274,12 +275,20 @@ async function cmdDoctor() {
     console.log(c.dim(`  ${L.doctor.manifestKnown(KNOWN_KEYS)}\n`));
   }
 
-  const { reached, steps } = await assessLevel(man);
+  // Доказательство считается только при прогоне: узнать, ловит ли гейт брак, нельзя иначе как
+  // запустив его по образцу. Без прогона ступени со второй помечаются «не доказано» — это
+  // честнее, чем показывать их выполненными по наличию папок.
+  const proof = process.argv.includes("--run") ? await proveGates(man) : null;
+  const { reached, steps } = await assessLevel(man, proof);
 
   console.log(c.bold(`\n  ${L.doctor.levelHeading}\n`));
   for (const s of steps) {
     const mark = s.ok ? c.green("✔") : reached + 1 === s.level ? c.yellow("→") : c.dim("·");
-    console.log(`  ${mark}  AQK-${s.level}  ${s.title}`);
+    const note = !s.ok && s.needsProof ? c.dim(`  · ${L.doctor.levelUnproven(`${SELF} prove`)}`) : "";
+    console.log(`  ${mark}  AQK-${s.level}  ${s.title}${note}`);
+  }
+  if (proof && proof.broken) {
+    console.log(c.red(`\n  ${L.doctor.gatesDoNotCatch(proof.broken, `${SELF} prove`)}`));
   }
 
   const next = steps.find((s) => !s.ok);

@@ -896,6 +896,46 @@ else
 fi
 rm -rf "$NRDIR" "$NRBIN"
 
+# --- 48г. подделка не берёт уровень выше первого -------------------------------
+# ЗАЧЕМ. Ступень AQK-2 называлась «гейты доказаны» и проверяла, что существуют две папки.
+# Проект с гейтами `true` — командой, которая всегда отвечает «ок», — проходил порог AQK-3 и
+# получал зелёный значок в README. Проверено прогоном 2026-09-07: три «гейта», ноль защиты,
+# высший уровень. Это `pytest || true` на уровне всего стандарта.
+FAKEDIR="$(mktemp -d)"
+(
+  cd "$FAKEDIR" && git init -q .
+  mkdir -p gates ratchets incidents && printf '# Журнал\n' > incidents/README.md
+  # Манифест пишется целиком, а не правится python-ом: проверка, которая на машине без python3
+  # молча собирает ДРУГОЙ проект, доказывает не то, что называет. Найдено код-ревью 2026-09-07.
+  {
+    echo 'aqk: "0.6.0"'
+    echo 'entry:'
+    echo '  - AGENTS.md'
+    echo 'rules: .aqk/rules'
+    echo 'gates:'
+    echo '  lint: "true"'
+    echo '  test: "true"'
+    echo '  security: "true"'
+    echo 'samples: gates'
+    echo 'ratchets: ratchets'
+    echo 'lessons: incidents'
+  } > .aqk.yml
+  printf '# Свод\n' > AGENTS.md
+  mkdir -p .aqk/rules && printf '# правила\n' > .aqk/rules/general.md
+)
+FAKE_OUT=$( cd "$FAKEDIR" && node "$CLI" doctor --run --min 3 2>&1 ); FAKE_CODE=$?
+FAKE_PROVE=$( cd "$FAKEDIR" && node "$CLI" prove 2>&1 ); FAKE_PCODE=$?
+# Проверяем ИМЕННО ту ступень, что назначена: без этого `grep 'AQK-1|AQK-3'` совпадал всегда,
+# потому что doctor печатает все четыре строки в любом исходе. Пустая проверка хуже отсутствующей.
+if [ "$FAKE_CODE" -ne 0 ] && [ "$FAKE_PCODE" -ne 0 ] &&
+   printf '%s' "$FAKE_OUT" | grep -qE 'AQK-1\.?$|AQK-1[^0-9]' &&
+   printf '%s' "$FAKE_OUT" | grep -qiE '(НЕ пройден|not passed|not reached)'; then
+  ok "гейт «true» не берёт уровень выше первого"
+else
+  bad "подделка получила уровень" "порог: код $FAKE_CODE, доказательство: код $FAKE_PCODE, хвост: $(printf '%s' "$FAKE_OUT" | tail -2 | tr '\n' ' ')"
+fi
+rm -rf "$FAKEDIR"
+
 # --- 48в. отказ установки называет, что поставить ------------------------------
 # ЗАЧЕМ. Запись, у которой остался только рецепт под язык (`no-print-in-prod`, `swallowed-error`,
 # `dead-code`), на машине без нужного инструмента ставиться не может — и это законно. Но отказ
