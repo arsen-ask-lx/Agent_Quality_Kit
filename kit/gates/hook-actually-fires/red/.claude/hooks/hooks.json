@@ -1,0 +1,4 @@
+{
+  "matcher_ne_stroka": "образец против дефекта, найденного ревью 2026-09-07",
+  "PoToolUse": [ { "matcher": "Bash", "hooks": [ { "type": "command", "command": "x.sh" } ] } ]
+}
