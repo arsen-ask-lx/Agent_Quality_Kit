@@ -1501,6 +1501,28 @@ else
 fi
 rm -rf "$BRWP" "$NOUIP"
 
+# --- 98. заявка covers сверяется, а не принимается на слово -------------------
+# Поле covers завели утром того же дня, и тогда же честно записали: оно снимает запись с долга
+# ПО СЛОВУ человека. К вечеру это перестало быть теорией: запуск на настоящем ruff.toml из живого
+# проекта показал девятнадцать групп правил в extend-select и НЕ пойманный print() — группы T20
+# среди них нет. Заявка «no-print-in-prod держит наш lint» была бы ложной, а запись ушла бы из
+# долга. Поле, снимающее неправду из вывода, само стало бы способом её произвести.
+CVUP="$(mktemp -d)"
+( cd "$CVUP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\ngates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n' > .aqk.yml ) >/dev/null 2>&1
+( cd "$CVUP" && printf 'extend-select = ["I","B","UP","SIM"]\n' > ruff.toml )
+WITHOUT=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+( cd "$CVUP" && printf 'extend-select = ["I","B","UP","SIM","T20"]\n' > ruff.toml )
+WITHT20=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+if printf '%s' "$WITHOUT" | grep -q "заявка не подтверждена" &&
+   printf '%s' "$WITHOUT" | grep -q "T20" &&
+   ! printf '%s' "$WITHT20" | grep -q "заявка не подтверждена"; then
+  ok "covers сверяется с кодами правил: без T20 говорит вслух, с T20 молчит"
+else
+  bad "сверка заявки covers не работает" "без T20: $(printf '%s' "$WITHOUT" | grep -c 'не подтверждена'), с T20: $(printf '%s' "$WITHT20" | grep -c 'не подтверждена')"
+fi
+rm -rf "$CVUP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

@@ -10,7 +10,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor } from "../lib/prove.mjs";
-import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf } from "../lib/manifest.mjs";
+import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
 
 // --- доказательство гейтов ------------------------------------------------------------
@@ -203,4 +203,42 @@ test("сокращённый разбор языка не расходится �
   ]) {
     assert.equal(langFromText(text), String(parseManifest(text).lang || ""), text);
   }
+});
+
+// --- заявка covers сверяется, а не принимается на слово -----------------------
+// Поле `covers:` я завёл этим же утром и сам записал в коммит: «снимает запись с долга по
+// СЛОВУ человека; проверить, что чужой гейт ловит то же самое, машина не может». К вечеру
+// выяснилось, что это не теория. Запуск на настоящем `ruff.toml` из живого проекта: девятнадцать
+// групп правил в `extend-select`, и `print()` не ловится — группы `T20` среди них нет.
+// То есть заявка «no-print-in-prod держит наш lint» была бы ЛОЖНОЙ, а запись ушла бы из долга.
+//
+// Проверяется ровно то, что можно: у записи каталога в рецепте стоят коды правил
+// (`ruff check --select T20`). Если ни команда закрывающего гейта, ни конфиг линтера этих кодов
+// не называют — заявка не подтверждена. Это не «ложь», а «не подтверждено»: правило могло
+// прийти из плагина или пресета, и объявлять такое ошибкой значит краснеть на нормальном укладе.
+test("заявка подтверждена, когда коды правил есть в команде гейта", () => {
+  const man = parseManifest('gates:\n  lint: "ruff check --select T20,BLE ."\ncovers:\n  lint: [no-print-in-prod]\n');
+  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
+  assert.deepEqual(coversUnproven(man, catalog, ""), []);
+});
+
+test("заявка не подтверждена, когда кодов нет нигде", () => {
+  const man = parseManifest('gates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n');
+  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
+  assert.deepEqual(coversUnproven(man, catalog, ""), [{ entry: "no-print-in-prod", gate: "lint", codes: ["T20"] }]);
+});
+
+// Правило может стоять не в команде, а в конфиге линтера — это нормальный уклад, и краснеть
+// на нём нельзя. Настоящий пример: extend-select в ruff.toml.
+test("коды правил в конфиге линтера тоже подтверждают заявку", () => {
+  const man = parseManifest('gates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n');
+  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
+  assert.deepEqual(coversUnproven(man, catalog, 'extend-select = ["I", "T20", "B"]'), []);
+});
+
+// У записи без кодов правил в рецепте сверять нечего — молчим, а не выдумываем вердикт.
+test("запись без кодов правил в рецепте не порождает придирки", () => {
+  const man = parseManifest('gates:\n  lint: "true"\ncovers:\n  lint: [duplicate-code]\n');
+  const catalog = [{ slug: "duplicate-code", recipes: { any: "bash {gate}/check.sh {dir}" } }];
+  assert.deepEqual(coversUnproven(man, catalog, ""), []);
 });

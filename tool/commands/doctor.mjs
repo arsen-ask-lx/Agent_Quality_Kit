@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf } from "../lib/manifest.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -85,6 +85,18 @@ async function reportCatalog(man, facts) {
   // считает запись закрытой, а её не держит никто. Называется поимённо, жёлтым.
   if (unknownGates.length) {
     console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
+  }
+  // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
+  // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
+  // сняла бы запись с долга, не закрыв её ничем.
+  let linterCfg = "";
+  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
+    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
+  }
+  const unproven = coversUnproven(man, catalog, linterCfg);
+  for (const u of unproven) {
+    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
   }
   // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
   // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.

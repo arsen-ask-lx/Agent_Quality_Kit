@@ -93,6 +93,9 @@ export const en = {
     coveredBy: (n) => `held by another arbiter: ${n} — the portable entry is not needed`,
     coveredByGate: (g) => `held by "${g}", declared in the manifest`,
     coversUnknown: (l) => `covers names a gate absent from gates: ${l} — those entries are held by nothing`,
+    coversUnproven: (e, g, codes) =>
+      `claim unverified: "${e}" is declared held by gate "${g}", but neither its command nor the\n  linter config names rules ${codes} — the entry may be held by nothing`,
+    coversUnprovenHow: (cmd) => `settle it: add those rules to the linter, or install the entry — ${cmd}`,
     totalCovered: (n) => `held by another arbiter ${n}`,
     total: "Total:",
     totalHeld: (n) => `held by a machine ${n}`,

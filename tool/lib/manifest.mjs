@@ -142,6 +142,51 @@ function coversOf(man) {
   return { covered, unknownGates };
 }
 
+// ЗАЯВКА `covers` СВЕРЯЕТСЯ, А НЕ ПРИНИМАЕТСЯ НА СЛОВО — насколько это вообще возможно.
+//
+// Поле `covers` заведено 2026-09-08 утром, и тогда же в коммите было записано честное: «снимает
+// запись с долга по СЛОВУ человека; проверить, что чужой гейт ловит то же самое, машина не
+// может». К вечеру выяснилось, что это не теория. Запуск на настоящем `ruff.toml` из живого
+// проекта: девятнадцать групп правил в `extend-select`, а `print()` не ловится — группы `T20`
+// среди них нет. Заявка «no-print-in-prod держит наш lint» была бы ложной, а запись ушла бы из
+// долга. То есть поле, снимающее неправду из вывода, само стало бы способом её произвести.
+//
+// ЧТО СВЕРЯЕТСЯ. У записи каталога в рецепте стоят коды правил: `ruff check --select T20 {dir}`.
+// Если ни команда закрывающего гейта, ни конфиг линтера этих кодов не называют — заявка не
+// подтверждена. Записи без кодов в рецепте (переносимые проверки) не сверяются вовсе: там
+// сверять нечего, и выдумывать вердикт нельзя.
+//
+// ПОЧЕМУ «НЕ ПОДТВЕРЖДЕНО», А НЕ «ЛОЖЬ». Правило могло прийти из плагина, пресета или общего
+// конфига этажом выше. Объявлять такое ошибкой значит краснеть на нормальном укладе — а такой
+// вывод перестают читать целиком, вместе с настоящими находками.
+const RULE_CODES = /--select[= ]([A-Za-z0-9,]+)/;
+
+function coversUnproven(man, catalog = [], linterConfigText = "") {
+  const { covered } = coversOf(man);
+  if (!covered.size) return [];
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const cfg = String(linterConfigText || "");
+  const out = [];
+
+  for (const [entry, gate] of covered) {
+    const rec = catalog.find((r) => r.slug === entry);
+    const recipes = rec?.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+    // Коды берутся из любого рецепта записи: язык проекта здесь не важен, важно, что запись
+    // ВООБЩЕ выражается кодами правил. Если ни один рецепт их не называет — сверять нечего.
+    const codes = new Set();
+    for (const cmd of Object.values(recipes)) {
+      const m = RULE_CODES.exec(String(cmd || ""));
+      if (m) for (const c of m[1].split(",")) if (c.trim()) codes.add(c.trim());
+    }
+    if (!codes.size) continue;
+
+    const haystack = `${String(gates[gate] || "")}\n${cfg}`;
+    const missing = [...codes].filter((c) => !haystack.includes(c));
+    if (missing.length === codes.size) out.push({ entry, gate, codes: [...codes] });
+  }
+  return out;
+}
+
 function unknownKeys(man) {
   if (!man || typeof man !== "object" || Array.isArray(man)) return [];
   return Object.keys(man).filter((k) => !KNOWN_KEYS.includes(k));
@@ -276,5 +321,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, layoutChecks, coversOf,
+  entryLifecycle, advisorySet, layoutChecks, coversOf, coversUnproven,
 };
