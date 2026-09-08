@@ -21,7 +21,7 @@ fi
 # названием и на собственном шаблоне поиска — на том, что дефектом не является.
 # Сами эти слова здесь не пишем: гейт нашёл бы себя. Проверено — находил.
 HITS=$(grep -rnE $(skip_grep "$DIR") $(include_code) \
-  '(#|//|/\*|--|<!--)[^"'"'"']*(^|[^A-Za-z])(TODO|FIXME|HACK|XXX)([^A-Za-z]|$)' "$DIR" 2>/dev/null | own_samples_filter "$DIR")
+  '(#|//|/\*|--|<!--)[^"'"'"']*(^|[^A-Za-z0-9_])(TODO|FIXME|HACK|XXX)([^A-Za-z0-9_]|$)' "$DIR" 2>/dev/null | own_samples_filter "$DIR")
 if [ -n "$HITS" ]; then
   echo "$HITS"
   echo "  почини: заведи задачу в очереди работ, маркер убери."

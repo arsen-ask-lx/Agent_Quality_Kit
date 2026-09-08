@@ -29,7 +29,14 @@
 # явный запрет каждого инструмента с доступом наружу или на запись, а не расчёт на дефолты.
 name: разбор обратной связи
 
-on:
+on: # zizmor: ignore[dangerous-triggers] код автора PR здесь не выполняется, права только на чтение
+  # `pull_request_target` взят осознанно и с оговоркой. Он опасен, когда рабочий поток ВЫКАЧИВАЕТ
+  # ветку автора PR и выполняет её код с секретами основного репозитория. Здесь этого нет:
+  # `actions/checkout` в этом файле не вызывается вовсе, `permissions` ниже — только чтение, а
+  # весь ввод (заголовок и тело обращения) уходит в модель как текст, а не как команда.
+  # Остаточный риск назван вслух: внушение в тексте обращения может повлиять на то, что модель
+  # напишет в телеграм. Прав на запись в GitHub у неё нет, поэтому цена ошибки — одно неверное
+  # сообщение, а не изменение в репозитории.
   issues:
     types: [opened]
   issue_comment:
@@ -127,7 +134,7 @@ jobs:
         id: ask
         continue-on-error: true
         if: steps.gather.outputs.title != '' && steps.keys.outputs.claude == 'yes'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@9c5ddab2e6d17b83ea679153b31f1d5f023cf636 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

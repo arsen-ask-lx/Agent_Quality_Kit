@@ -1292,6 +1292,27 @@ else
 fi
 rm -rf "$BLP"
 
+# --- 88. записи каталога не ломаются от цвета в выводе арбитра ---------------
+# Внутри GitHub Actions чужие инструменты КРАСЯТ вывод: там цвет поддержан, вне конвейера они
+# его выключают сами. Разбор по началу строки тогда промахивается — строка начинается с
+# escape-последовательности. Поймано конвейером 2026-09-08 на записи ci-not-hijackable: локально
+# зелёная, в конвейере «формат сменился». Тот же класс уже записан в scope.mjs.
+CLR_BAD=""
+for CG in kit/gates/*/check.sh; do
+  CS=$(basename "$(dirname "$CG")")
+  # Только записи с готовым арбитром: у них вывод чужой, и красит его не наш код.
+  grep -q "^requires:" "$(dirname "$CG")/gate.yml" 2>/dev/null || continue
+  command -v "$(sed -n 's/^requires:[[:space:]]*//p' "$(dirname "$CG")/gate.yml" | head -1 | awk '{print $1}')" >/dev/null 2>&1 || continue
+  PLAIN=$(bash "$CG" "$(dirname "$CG")/green" >/dev/null 2>&1; echo $?)
+  COLOR=$(GITHUB_ACTIONS=true CI=true bash "$CG" "$(dirname "$CG")/green" >/dev/null 2>&1; echo $?)
+  [ "$PLAIN" = "$COLOR" ] || CLR_BAD="${CLR_BAD:+$CLR_BAD, }$CS ($PLAIN vs $COLOR)"
+done
+if [ -z "$CLR_BAD" ]; then
+  ok "вердикт записи не зависит от того, красит ли арбитр вывод"
+else
+  bad "цвет в выводе арбитра меняет вердикт" "$CLR_BAD"
+fi
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
