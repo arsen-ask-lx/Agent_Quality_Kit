@@ -25,11 +25,12 @@ jobs:
       # Два коммита, а не один: по умолчанию checkout берёт мелкий клон, в котором у коммита
       # не видно родителя и состав изменений не определить. Гейт commit-explains-itself в таком
       # клоне честно пропускает себя — то есть здесь бы не проверял ничего.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
 
@@ -63,6 +64,9 @@ jobs:
           # через npx: обёртка зовёт его один раз за прогон, и версия обязана быть той, чей
           # формат JSON она разбирает.
           npm i -g slopcheck@0.2.0
+          # zizmor — арбитр образцов записи ci-not-hijackable. Он же гоняется по нашим
+          # собственным конвейерам: запись заведена по нашему же отказу на 13 находок.
+          pipx install zizmor==1.30.0
 
       # Запись dead-code объявлена как `npx --yes knip@6` — она скачивает инструмент в момент
       # прогона. Скачивание попадало в пятиминутный предел на один гейт, и конвейер краснел от
@@ -108,11 +112,12 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
 
@@ -144,11 +149,12 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           path: kit
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
 

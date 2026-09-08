@@ -1,0 +1,19 @@
+name: разбор входящих
+
+# pull_request вместо pull_request_target: код автора PR выполняется без доступа к секретам
+# основного репозитория.
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - run: echo "разбор без прав на запись"

@@ -19,21 +19,29 @@ on:
 
 # id-token нужен для OIDC: без него npm не сможет удостоверить происхождение запроса.
 # Больше ничего не даём — выпуску незачем уметь писать в репозиторий.
+# Права всего потока — только чтение. `id-token: write` выдаётся ОДНОМУ заданию ниже: на
+# уровне потока он достался бы и заданию релиза, которому OIDC не нужен вовсе.
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # id-token нужен только здесь: им npm удостоверяет происхождение запроса.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       # Двух коммитов истории требует гейт commit-explains-itself: в мелком клоне не виден
       # родитель, состав коммита не определить, и гейт пропускает себя. Та же причина, что в ci.yml.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
-      - uses: actions/setup-node@v4
+      # Кеш npm здесь не включается: поле `cache:` не задано, а `registry-url` кеша не заводит.
+      # Находка снята точечно и с причиной, а не порогом на весь файл.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # zizmor: ignore[cache-poisoning] кеш не включён
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -71,6 +79,7 @@ jobs:
           # код 1. Этот файл однажды уже разошёлся с ci.yml — там инструментов ставится больше;
           # сюда попадает только то, что нужно ГЕЙТАМ ИЗ МАНИФЕСТА, их и гоняет шаг ниже.
           npm i -g slopcheck@0.2.0
+          pipx install zizmor==1.30.0
 
       - name: заранее скачать инструменты записей
         run: npx --yes knip@6 --version
@@ -97,7 +106,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       # Раздел этой версии из журнала изменений — он и есть заметки к релизу. Держать второй
       # текст «что нового» отдельно от первого значит однажды их рассинхронизировать.
