@@ -23,6 +23,16 @@ a search rather than a guess:
 The rule is cheaper than it looks: a search costs a minute, a wrong guess costs an edit, a
 review, and a bruise.
 
+**"I will ask the owner" is not a substitute for searching.** The temptation is understandable:
+the owner is right there and will answer faster. But most of the time they do not know either —
+that is why they brought in an agent. Two people who both do not know how it is done settle on a
+local workaround, and that is worse than a lone guess: it looks like an agreed decision. Ask the
+human what is not available outside — what they want, what matters more to them. How it is done,
+you ask the world.
+
+**If there is no network, say so out loud.** "Not verified, this is a guess" is a legitimate
+answer. A guess presented as knowledge is not.
+
 ## Forbidden in finished code
 
 - debug printing;
