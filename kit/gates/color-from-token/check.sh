@@ -63,7 +63,11 @@ HITS=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null \
           if (e == 0) { line = substr(line, 1, s - 1); inblock = 1; break }
           line = substr(line, 1, s - 1) substr(rest, e + 2)
         }
-        if (line ~ /#[0-9a-fA-F]{8}([^0-9a-fA-F]|$)|#[0-9a-fA-F]{6}([^0-9a-fA-F]|$)|#[0-9a-fA-F]{3}([^0-9a-fA-F]|$)/)
+        # Хвост — «не буква, не цифра, не дефис», а не просто «не шестнадцатеричный символ».
+        # Якорь ссылки «#defining-entry-points» начинается с «#def», за которым идёт «i»: по
+        # прежнему правилу это был цвет. Замер 2026-09-08 по шести чужим репозиториям: в uv
+        # ложным оказалось именно это, в docs/js/extra.js.
+        if (line ~ /#[0-9a-fA-F]{8}([^0-9a-zA-Z_-]|$)|#[0-9a-fA-F]{6}([^0-9a-zA-Z_-]|$)|#[0-9a-fA-F]{3}([^0-9a-zA-Z_-]|$)/)
           print FILENAME ":" FNR ":" $0
       }
     ' 2>/dev/null \
