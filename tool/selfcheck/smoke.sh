@@ -1175,6 +1175,28 @@ else
 fi
 rm -rf "$VDIR"
 
+# --- 81. версия в README и llms.txt та же, что в package.json ---------------
+# Обе строки — инструкция по установке для постороннего: `rev:` для pre-commit и `@vX.Y.Z` для
+# GitHub Action. Устаревшая ставит человеку не тот комплект и молчит об этом: команда проходит,
+# ставится прошлогодняя версия. AGENTS.md требует, чтобы README и llms.txt не расходились, —
+# и без прибора требование не работало: на 2026-09-08 в README стояло v0.6.0, а в llms.txt
+# v0.4.2, отставание на два выпуска. Проверка сравнивает обе с package.json, а не друг с другом:
+# совпасть друг с другом они могут и будучи одинаково устаревшими.
+VERS_BAD=""
+for VF in README.md llms.txt; do
+  [ -f "$ROOT/$VF" ] || continue
+  # Берём только версии AQK — «v1.2.3» в примерах чужих действий (actions/checkout@v4) не наши.
+  for V in $(grep -oE '(rev:[[:space:]]*|Agent_Quality_Kit@)v[0-9]+\.[0-9]+\.[0-9]+' "$ROOT/$VF" \
+             | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -u); do
+    [ "$V" = "v$PKGVER" ] || VERS_BAD="${VERS_BAD:+$VERS_BAD, }$VF: $V"
+  done
+done
+if [ -z "$VERS_BAD" ]; then
+  ok "версия в README и llms.txt совпадает с package.json (v$PKGVER)"
+else
+  bad "версия в документах разошлась с package.json" "package.json: v$PKGVER; найдено — $VERS_BAD"
+fi
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
