@@ -158,6 +158,7 @@ The whole standard is one `.aqk.yml` file in the repository root:
 aqk: 1
 entry:  [AGENTS.md]        # what the agent reads first
 rules:  .aqk/rules         # where the standards live
+docs:   .aqk/docs          # where the guides live (optional; this is the default)
 gates:                     # what must pass — as commands, not as prose
   lint: "npm run lint"
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."

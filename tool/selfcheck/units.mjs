@@ -469,3 +469,4 @@ test("наборы файлов правил совпадают на обоих 
   assert.deepEqual(en, ru);
   assert.equal(ru.length > 0, true);
 });
+

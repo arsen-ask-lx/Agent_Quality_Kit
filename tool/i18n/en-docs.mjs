@@ -69,7 +69,7 @@ const enDocs = {
       "# and that is honest: filling it with placeholders is pointless, files are checked, not words.",
     ],
     entry: "# AQK-0 — what the agent reads first.",
-    rules: "# AQK-1 — where the standards are and which checks are mandatory.",
+    rules: "# AQK-1 — where the standards are and which checks are mandatory. docs — where the\n# guides are: doctor reads both, so the kit may live anywhere you like.",
     gates: [
       "  # name: a command returning 0 or non-zero. An empty declaration protects nothing and is",
       '  # rejected by the "a declared gate runs" check — hence examples here, not placeholders.',

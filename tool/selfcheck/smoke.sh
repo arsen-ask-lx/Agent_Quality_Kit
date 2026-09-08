@@ -1313,6 +1313,28 @@ else
   bad "цвет в выводе арбитра меняет вердикт" "$CLR_BAD"
 fi
 
+# --- 89. шапка doctor читает манифест, а не литеральные пути ------------------
+# Отзыв второго пользователя 2026-09-08: у проекта `rules: .temper/rules`, правила на месте,
+# СТУПЕНЬ по манифесту берётся — а шапка рисовала кресты за `.aqk/rules` и `.aqk/docs` и
+# советовала сделать сделанное. Вывод расходился с собственным вердиктом программы, напечатанным
+# на десять строк ниже. Модульная проверка сторожит функцию; эта — то, что её кто-то зовёт.
+LYP="$(mktemp -d)"
+( cd "$LYP" && git init -q . && mkdir -p .temper/rules .temper/docs &&
+  printf 'правило\n' > .temper/rules/r.md && printf 'методичка\n' > .temper/docs/d.md &&
+  printf '# вход\n' > CLAUDE.md && printf '.x\n' > .gitignore &&
+  printf 'aqk: 1\nentry:\n  - CLAUDE.md\nrules: .temper/rules\ndocs: .temper/docs\ngates:\n  smoke: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+LY=$( cd "$LYP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+if printf '%s' "$LY" | grep -q "\.temper/rules" &&
+   printf '%s' "$LY" | grep -q "\.temper/docs" &&
+   printf '%s' "$LY" | grep -q "CLAUDE\.md" &&
+   ! printf '%s' "$LY" | grep -q "\.aqk/rules" &&
+   ! printf '%s' "$LY" | grep -q "неизвестное поле"; then
+  ok "шапка doctor берёт правила, методички и вход из манифеста"
+else
+  bad "doctor проверил не то, что объявлено в манифесте" "$(printf '%s' "$LY" | head -8)"
+fi
+rm -rf "$LYP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

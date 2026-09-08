@@ -159,6 +159,7 @@ Issue» — ничего не постится сама, только текст
 aqk: 1
 entry:  [AGENTS.md]        # что агент читает первым
 rules:  .aqk/rules         # где стандарты
+docs:   .aqk/docs          # где методички (необязательно, это и есть умолчание)
 gates:                     # что обязано пройти — командами, не словами
   lint: "npm run lint"
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."

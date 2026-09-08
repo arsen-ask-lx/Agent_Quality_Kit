@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet } from "../lib/manifest.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -241,13 +241,10 @@ async function cmdDoctor() {
   // а копия завтра разошлась бы с ними. Без этого различия `doctor` краснел на собственном
   // репозитории и требовал разложить комплект в комплект.
   const inKit = resolve(CWD) === resolve(PKG_ROOT);
-  const checks = [
-    inKit ? ["kit/docs", L.doctor.docsKit] : [".aqk/docs", L.doctor.docs],
-    inKit ? ["kit/rules", L.doctor.rulesKit] : [".aqk/rules", L.doctor.rules],
-    ["AGENTS.md", L.doctor.agents],
-    [".gitignore", L.doctor.gitignore],
-    [".git", L.doctor.git],
-  ];
+  const man = await readManifest();
+  // Что именно проверять — решает манифест: где у ЭТОГО проекта правила, методички и точка
+  // входа. Литеральный список стоял здесь до 2026-09-08 и печатал кресты за сделанное.
+  const checks = layoutChecks(man, inKit);
 
   let missing = 0;
   for (const [path, what] of checks) {
@@ -256,8 +253,10 @@ async function cmdDoctor() {
     console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
   }
 
-  // Команды в AGENTS.md заполнены или остались пустыми заготовками?
-  const agents = join(CWD, "AGENTS.md");
+  // Команды в точке входа заполнены или остались пустыми заготовками? Файл берётся тот же,
+  // что проверен выше, — иначе проект на `CLAUDE.md` этой проверки не получал вовсе.
+  const entryFile = (Array.isArray(man?.entry) ? man.entry : []).find((e) => typeof e === "string" && e.trim())?.trim() || "AGENTS.md";
+  const agents = join(CWD, entryFile);
   if (await exists(agents)) {
     const text = await readFile(agents, "utf8");
     const emptyCommands = (text.match(/^- [^:]+: ``$/gm) || []).length;
@@ -268,8 +267,6 @@ async function cmdDoctor() {
       );
     }
   }
-
-  const man = await readManifest();
 
   // Опечатка в имени поля означала «поля нет»: вердикт выдавался неверный, а причина молчала.
   // Называем поле и говорим, какие бывают — иначе человек ищет ошибку в проекте, а она в файле.

@@ -28,6 +28,7 @@ const MANIFEST_YML = [
   "",
   d.rules,
   "rules: .aqk/rules",
+  "docs: .aqk/docs",
   "gates:",
   ...d.gates,
   "",
