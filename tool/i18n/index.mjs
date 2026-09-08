@@ -11,23 +11,56 @@
 // хуже и расходятся молча. Каталоги лежат отдельно, и модульная проверка сверяет, что в них
 // одни и те же ключи: «поддерживаем два языка» — утверждение, которое обязана держать машина.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ru } from "./ru.mjs";
 import { en } from "./en.mjs";
 
 // Порядок: явная переменная окружения → системная локаль → английский. Английский последним
 // потому, что незнакомый язык интерфейса — это препятствие, а незнакомый английский в 2026-м
 // препятствие меньшее, чем незнакомая кириллица.
-function pickLang(env = process.env) {
+// Порядок: переменная окружения → ПОЛЕ МАНИФЕСТА → системная локаль → английский.
+//
+// Поле манифеста добавлено 2026-09-08 по просьбе первого чужого пользователя: «язык берётся из
+// LC_ALL/LANG, а на Windows их просто нет: русский проект получает английский вывод. AQK_LANG=ru
+// чинит, но у следующего человека будет своё». Он прав: язык репозитория — свойство репозитория,
+// а локаль — свойство машины, на которой его сегодня открыли.
+//
+// Переменная окружения оставлена ВЫШЕ манифеста намеренно: человек, набравший AQK_LANG=en
+// руками, хочет английский именно сейчас, и спорить с ним манифестом значит отнять у него
+// последнее средство. Манифест выше локали — он про проект, локаль про машину.
+function pickLang(env = process.env, man = null) {
   const forced = String(env.AQK_LANG || "").toLowerCase();
   if (forced.startsWith("ru")) return "ru";
   if (forced.startsWith("en")) return "en";
+  const declared = String(man?.lang || "").toLowerCase();
+  if (declared.startsWith("ru")) return "ru";
+  if (declared.startsWith("en")) return "en";
   const locale = String(env.LC_ALL || env.LC_MESSAGES || env.LANG || "").toLowerCase();
   if (locale.startsWith("ru")) return "ru";
   return "en";
 }
 
+// Язык читается СИНХРОННО и одним полем: каталог строк нужен раньше, чем что-либо успеет
+// прочитать манифест целиком, а полный разбор отсюда звать нельзя — manifest.mjs сам берёт
+// строки здесь, и вышло бы кольцо. Чтобы этот сокращённый разбор не разошёлся с настоящим,
+// модульная проверка сверяет их ответы на одном и том же тексте.
+function langFromText(text) {
+  const m = String(text).match(/^lang:[ \t]*["']?([A-Za-z][A-Za-z-]*)/m);
+  return m ? m[1] : "";
+}
+
+function manifestLang(cwd = process.cwd()) {
+  try {
+    return { lang: langFromText(readFileSync(join(cwd, ".aqk.yml"), "utf8")) };
+  } catch {
+    // Манифеста нет или он нечитаем — не повод падать: язык просто выберется дальше по порядку.
+    return null;
+  }
+}
+
 const CATALOGS = { ru, en };
-const LANG = pickLang();
+const LANG = pickLang(process.env, manifestLang());
 const L = CATALOGS[LANG];
 
-export { L, LANG, pickLang, CATALOGS };
+export { L, LANG, pickLang, langFromText, CATALOGS };

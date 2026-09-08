@@ -64,7 +64,8 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 ## Files it reads and writes
 
 - `AGENTS.md` — what the agent reads first (the entry point; `CLAUDE.md` and others work too)
-- `.aqk.yml` — the manifest: entry, rules, gates as commands, samples, ratchets, lessons
+- `.aqk.yml` — the manifest: entry, rules, docs, lang, gates as commands, covers (what a
+  declared gate already holds, so it is not reported as debt), samples, ratchets, lessons
 - `.aqkignore` — paths the scanning checks must not read (brought-in code, vendored, generated)
 
 ## Documentation

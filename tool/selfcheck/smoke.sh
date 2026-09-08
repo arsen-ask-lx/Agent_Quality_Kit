@@ -1437,6 +1437,47 @@ else
 fi
 rm -rf "$GENP"
 
+# --- 95. covers: запись закрыта другим арбитром, но только объявленным ---------
+# Просьба первого чужого пользователя, названная им первой: у него complexity-limit,
+# no-print-in-prod и swallowed-error держит biome, а doctor каждый прогон печатал «применимо,
+# но не поставлено: 5» — неправду. Неправда в СОБСТВЕННОМ выводе дороже всех прочих: весь
+# стандарт стоит на том, что вывод не врёт. Но поле не признание на слово: гейт, который
+# «закрывает», обязан быть объявлен в gates:, иначе covers становится способом объявить защиту,
+# которой нет. Проверяются оба конца сразу.
+COVP="$(mktemp -d)"
+( cd "$COVP" && git init -q . && mkdir -p src rules &&
+  printf 'const x=1;\n' > src/a.ts && printf '# вход\n' > AGENTS.md &&
+  printf 'правило\n' > rules/r.md && printf '.x\n' > .gitignore &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  lint: "true"\ncovers:\n  lint: [no-print-in-prod, swallowed-error]\n  biome: [duplicate-code]\n' > .aqk.yml ) >/dev/null 2>&1
+COV=$( cd "$COVP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+if printf '%s' "$COV" | grep -q "закрыто другим арбитром 2" &&
+   printf '%s' "$COV" | grep -q "covers называет гейт, которого нет" &&
+   printf '%s' "$COV" | grep -q "biome" &&
+   ! printf '%s' "$COV" | grep -q "неизвестное поле"; then
+  ok "covers снимает запись с долга — и только когда закрывающий гейт объявлен"
+else
+  bad "covers посчитан неверно" "$(printf '%s' "$COV" | grep -E 'Итого|covers' | head -3)"
+fi
+rm -rf "$COVP"
+
+# --- 96. язык вывода — настройка проекта, а не машины -------------------------
+# Просьба первого чужого пользователя: «язык берётся из LC_ALL/LANG, а на Windows их просто нет:
+# русский проект получает английский вывод». Проверяются оба конца порядка сразу: манифест
+# сильнее локали, но переменная окружения сильнее манифеста — иначе у человека, набравшего
+# AQK_LANG=en руками, не остаётся способа получить английский.
+LNGP="$(mktemp -d)"
+( cd "$LNGP" && git init -q . && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nlang: ru\nentry: [AGENTS.md]\n' > .aqk.yml ) >/dev/null 2>&1
+BY_MAN=$( cd "$LNGP" && env -u AQK_LANG LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 node "$CLI" context 2>&1 | head -1 )
+BY_ENV=$( cd "$LNGP" && AQK_LANG=en node "$CLI" context 2>&1 | head -1 )
+if printf '%s' "$BY_MAN" | grep -q "состояние этого репозитория" &&
+   printf '%s' "$BY_ENV" | grep -q "the state of this repository"; then
+  ok "язык берётся из манифеста поверх локали, а переменная окружения — поверх манифеста"
+else
+  bad "порядок выбора языка нарушен" "по манифесту: $BY_MAN | по окружению: $BY_ENV"
+fi
+rm -rf "$LNGP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

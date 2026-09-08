@@ -167,9 +167,12 @@ aqk: 1
 entry:  [AGENTS.md]        # что агент читает первым
 rules:  .aqk/rules         # где стандарты
 docs:   .aqk/docs          # где методички (необязательно, это и есть умолчание)
+lang:   ru                 # язык вывода для ЭТОГО репозитория, поверх локали машины
 gates:                     # что обязано пройти — командами, не словами
   lint: "npm run lint"
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
+covers:                    # что уже держит объявленный гейт — в долг не пишется
+  lint: [no-print-in-prod, swallowed-error]
 samples:  gates            # красный и зелёный образец каждой записи
 ratchets: ratchets         # реестры долга: список может только укорачиваться
 lessons:  incidents        # где копятся уроки
