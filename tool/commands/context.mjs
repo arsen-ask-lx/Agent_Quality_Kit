@@ -23,7 +23,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { CWD, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
+import { CWD, TARGET_DIR, SELF, c, exists, commandRows } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -62,6 +62,27 @@ function contextBlock(state, T = L.context) {
 
   const rat = (state.ratchets || []).slice(0, MAX_RATCHETS);
   if (rat.length) out.push(T.ratchets(rat.map((r) => `${r.name} (${r.count})`).join(", ")));
+
+  // ПОЛНЫЙ БЛОК — решение владельца от 2026-09-08, принятое ПОСЛЕ возражения и вопреки ему.
+  // Возражение было такое: вход, растущий в длину, роняет качество у всех проверенных моделей,
+  // и свод, влитый целиком, даёт правило, которое в контексте есть и не выполняется. Ответ
+  // владельца: агент читает файлы плохо, это видно на живых примерах, и лишние токены — плата
+  // за то, чтобы он не ошибался. Решение записано здесь, а не спрятано в истории команд,
+  // потому что через месяц «почему тут вливается всё» будет непонятно никому.
+  //
+  // Умолчание осталось коротким: платит тот, кто выбрал платить.
+  if (state.full) {
+    out.push("", T.mapTitle);
+    // Ширина колонки считается, а не подбирается: имена команд разной длины в двух языках,
+    // и вручную выставленный отступ разъезжается на первом же переводе. Та же причина, что
+    // в справке program.mjs, — и это ещё один довод держать список общим.
+    const w = Math.max(...state.full.rows.map((r) => r.cmd.length));
+    for (const r of state.full.rows) out.push(`  ${r.cmd.padEnd(w)}  ${r.text}`);
+    if (state.full.text) {
+      out.push("", T.rulesTitle(state.full.entry), "");
+      out.push(state.full.text.trimEnd());
+    }
+  }
 
   // Ссылка на свод даётся, только если файл ЕСТЬ. Назвать агенту несуществующий файл хуже,
   // чем промолчать: он пойдёт его читать и получит пустоту вместо правил. Замерено на шести
@@ -144,10 +165,10 @@ function withHook(settings, cmd) {
   return next;
 }
 
-async function installHook() {
+async function installHook(full = false) {
   const T = L.context;
   const path = join(CWD, ...HOOK_FILE);
-  const cmd = `${portableSelf()} context`;
+  const cmd = `${portableSelf()} context${full ? " --full" : ""}`;
 
   let settings = {};
   let existed = false;
@@ -176,7 +197,8 @@ async function installHook() {
 }
 
 async function cmdContext(args = []) {
-  if (args.includes("--install")) return installHook();
+  const full = args.includes("--full");
+  if (args.includes("--install")) return installHook(full);
 
   const man = await readManifest();
   const entry = (Array.isArray(man?.entry) ? man.entry : []).find((e) => typeof e === "string" && e.trim())?.trim()
@@ -218,7 +240,21 @@ async function cmdContext(args = []) {
     }
   }
 
-  console.log(contextBlock({ entry, entryExists: rules !== null, level, rules, run, ratchets }).join("\n"));
+  // Свод читается ЦЕЛИКОМ и дословно: пересказ был бы третьим списком рядом с двумя.
+  let fullPart = null;
+  if (full) {
+    const rows = commandRows(L).map((r) => ({
+      cmd: `${portableSelf()} ${r.name}${r.args ? ` ${r.args}` : ""}`,
+      text: r.text,
+    }));
+    let text = "";
+    if (rules !== null) { try { text = await readFile(join(CWD, entry), "utf8"); } catch { text = ""; } }
+    fullPart = { entry, rows, text };
+  }
+
+  console.log(contextBlock({
+    entry, entryExists: rules !== null, level, rules, run, ratchets, full: fullPart,
+  }).join("\n"));
 }
 
 export { cmdContext, contextBlock, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf };

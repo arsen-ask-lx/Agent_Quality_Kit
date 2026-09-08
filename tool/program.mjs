@@ -16,7 +16,7 @@
 
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { c, SELF } from "./lib/core.mjs";
+import { c, SELF, commandRows } from "./lib/core.mjs";
 import { L } from "./i18n/index.mjs";
 import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
@@ -93,36 +93,16 @@ if (IS_MAIN) {
     default: {
       // Ширина колонки считается, а не подбирается пробелами: строки в двух языках разной
       // длины, и вручную выровненная справка на втором языке разъезжается.
-      const h = L.help;
-      const rows = [
-        [`${SELF} init`, h.init],
-        [`${SELF} init --force`, h.initForce],
-        [`${SELF} start`, h.start],
-        [`${SELF} doctor`, h.doctor],
-        [`${SELF} doctor --run`, h.doctorRun],
-        [`${SELF} doctor --run --since main`, h.doctorSince],
-        [`${SELF} prove`, h.prove],
-        [`${SELF} add ${h.name}`, h.add],
-        [`${SELF} find "…"`, h.find],
-        [`${SELF} why "…"`, h.why],
-        [`${SELF} ratchet ${h.name}`, h.ratchet],
-        [`${SELF} new ${h.name}`, h.new],
-        [`${SELF} note "…"`, h.note],
-        [`${SELF} blob`, h.blob],
-        [`${SELF} report`, h.report],
-        [`${SELF} learn`, h.learn],
-        [`${SELF} context`, h.context],
-        [`${SELF} badge`, h.badge],
-      ];
+      const rows = commandRows(L).map((r) => [`${SELF} ${r.name}${r.args ? " " + r.args : ""}`, r.text]);
       const width = Math.max(...rows.map(([cmdText]) => cmdText.length));
       const lines = rows.map(([cmdText, text]) => `  ${c.bold(cmdText.padEnd(width))}   ${text}`);
       console.log(`
-  ${c.bold("aqk")} — ${h.tagline}
+  ${c.bold("aqk")} — ${L.help.tagline}
 
 ${lines.join("\n")}
 
-  ${c.dim(h.noInstall)}
-  ${c.dim(h.language)}
+  ${c.dim(L.help.noInstall)}
+  ${c.dim(L.help.language)}
   `);
       process.exit(cmd ? 1 : 0);
     }

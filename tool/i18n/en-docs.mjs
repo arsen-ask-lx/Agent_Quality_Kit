@@ -28,6 +28,8 @@ const enDocs = {
     skipped: (n) => `Not run: ${n} — the tool is absent on this machine, their state is unknown.`,
     ratchets: (list) => `Ratchets: ${list}. The list may only get shorter, never longer.`,
     where: (entry) => `The rulebook: ${entry}. What proves a diff: \`aqk report --since main\`.`,
+    mapTitle: "WHAT THIS TOOL CAN DO. The full list of commands — not a retelling, the same list\nthe help is built from:",
+    rulesTitle: (e) => `THE RULEBOOK OF THIS PROJECT (${e}) — verbatim, in full. This is not an invitation\nto read it: it is already here.`,
     hookAlready: (p) => `the hook is already in ${p} — changing nothing.`,
     hookAdded: (p) => `SessionStart hook appended to ${p}:`,
     hookCreated: (p) => `created ${p} with a SessionStart hook:`,

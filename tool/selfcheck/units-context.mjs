@@ -11,6 +11,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { contextBlock, countArbiters, parseLastRun, withHook, hasOurHook, portableSelf } from "../commands/context.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
+import { commandRows } from "../lib/core.mjs";
+import { readFile } from "node:fs/promises";
 
 const T = CATALOGS.ru.context;
 const base = {
@@ -151,4 +153,34 @@ test("чужие настройки переживают установку ху
   assert.deepEqual(after.permissions, before.permissions);
   assert.equal(after.hooks.Stop.length, 1);
   assert.equal(after.hooks.SessionStart.length, 1);
+});
+
+// --- карта команд ------------------------------------------------------------
+// Владелец: «агент плохо читает инструкцию — нужно влить карту и сам свод». Карта имеет смысл
+// ровно до тех пор, пока она не отстала от программы. Второй список, живущий рядом с первым,
+// через месяц врёт — это записано у нас в README про храповики и верно здесь буквально так же.
+// Поэтому карта и справка собираются ИЗ ОДНОГО списка, а эта проверка сторожит, что список
+// не отстал от диспетчера: команда, добавленная в switch и забытая в списке, роняет её.
+test("карта команд не отстаёт от диспетчера", async () => {
+  const src = await readFile(new URL("../program.mjs", import.meta.url), "utf8");
+  const dispatched = [...src.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1]);
+  assert.ok(dispatched.length >= 10, `в диспетчере найдено ${dispatched.length} команд — разбор сломался`);
+  const listed = new Set(commandRows(CATALOGS.ru).map((r) => r.name));
+  const missing = dispatched.filter((n) => !listed.has(n));
+  assert.deepEqual(missing, [], `в карте нет: ${missing.join(", ")}`);
+});
+
+// Полный блок — то, за что владелец согласился платить токенами: свод правил дословно, а не
+// ссылка на него. Если он не дословный, плата внесена, а товар не получен.
+test("полный блок несёт свод правил дословно", () => {
+  const rules = "- Правило одно. <!-- aqk: человек -->\n- Правило два.";
+  const t = contextBlock({ ...base, entryExists: true, full: { entry: "AGENTS.md", rows: [{ cmd: "aqk context", text: "состояние" }], text: rules } }, T).join("\n");
+  assert.ok(t.includes(rules), "текст свода обязан войти целиком");
+  assert.match(t, /aqk context/);
+});
+
+test("без --full свод не вливается — только ссылка на него", () => {
+  const t = text({ entryExists: true });
+  assert.doesNotMatch(t, /Правило одно/);
+  assert.match(t, /AGENTS\.md/);
 });
