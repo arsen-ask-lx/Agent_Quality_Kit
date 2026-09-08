@@ -23,6 +23,18 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   the other 36 are named as a number, not hidden)
 - Fail a pipeline below a level or on a failed gate: `npx agent-quality-kit doctor --run --min 1`
 - Show only what a diff introduced, so a legacy repo is usable from day one: `doctor --run --since main`
+- Prove the gates actually catch defects: `npx agent-quality-kit prove` — every *provable* gate is
+  run against its own red and green sample and must go red on the first and stay quiet on the
+  second. A gate with no samples, with samples written for another recipe, or whose command takes
+  no directory is reported as unprovable and named; the verdict is "nothing proven is broken, and
+  at least one gate is proven". Level AQK-2 and the badge depend on this, not on the presence of
+  files
+- See what proves a diff, file by file: `npx agent-quality-kit report --since main` — each changed
+  code file is named by a check, walked past in silence, or touched by nothing at all, plus a
+  fingerprint over the base, the commands and the file contents
+- See what you told the agent and never wrote down: `npx agent-quality-kit learn` — reads Claude Code
+  transcripts for this project on this machine and prints rule candidates missing from the entry
+  point. Current project only, terminal only, writes nothing, always exits 0
 - Exit codes: 0 pass, 1 below the level or a gate failed
 - As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
   `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the

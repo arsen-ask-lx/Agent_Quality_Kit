@@ -47,6 +47,10 @@ export const en = {
   },
 
   doctor: {
+    baselineClash: (f) =>
+      `"--baseline" is an inspection, not a run: it always exits 0, so together with "${f}" it\n` +
+      "  gives you a pipeline that cannot go red.\n" +
+      "  fix: split it in two — \"doctor --baseline\" and \"doctor --run --min 1\".",
     docsKit: "guides — the originals live here, not a copy",
     docs: "guides",
     rulesKit: "standards — the originals live here, not a copy",

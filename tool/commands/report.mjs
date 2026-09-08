@@ -21,7 +21,7 @@ import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo.mjs";
 import { changedCode, coverage, evidenceHash, readForHash } from "../lib/evidence.mjs";
-import { runGates, declaredGates } from "./doctor.mjs";
+import { runGates, declaredGates, sinceRef } from "./doctor.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Каким рецептом стоит гейт: родным инструментом или переносимой проверкой. Именно это
@@ -67,16 +67,6 @@ async function findDoc(name) {
     return null;
   };
   return walk(root);
-}
-
-// Своя копия разбора, а не импорт из doctor: там она не экспортирована, а тащить её наружу
-// ради одного флага значит расширять чужой договор. Правило то же: флаг без значения — ошибка,
-// молча взять умолчание нельзя.
-function sinceRefOf(argv) {
-  const i = argv.indexOf("--since");
-  if (i === -1) return null;
-  const v = argv[i + 1];
-  return v && !v.startsWith("-") ? v : null;
 }
 
 async function cmdReport() {
@@ -190,7 +180,7 @@ async function cmdReport() {
   // --- чем доказан этот диф -------------------------------------------------
   // Раздел появляется только с `--since`: без базы сравнения говорить о покрытии нечего, а
   // молчаливо взять умолчание нельзя — «сравнили не с тем» неотличимо от «всё покрыто».
-  const since = sinceRefOf(process.argv);
+  const since = sinceRef();
   if (since) {
     const changed = changedCode(since, CWD);
     say("");
