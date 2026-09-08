@@ -47,6 +47,10 @@ const MARKS = [
   // чем `has_agent_config`: настройки заводят не все, а свод — почти каждый, кто работает с
   // агентом. Записи про личные файлы касаются именно вторых.
   ["has_agent_entry", ["CLAUDE.md", "AGENTS.md", ".claude", ".cursor/rules", ".github/copilot-instructions.md"]],
+  // Агенту подключены внешние инструменты через MCP. Отдельный признак, а не часть
+  // `has_agent_config`: настройки заводят почти все, а MCP-серверы — те, кто дал агенту
+  // браузер, базу или трекер. Записи про мёртвый сервер касаются только вторых.
+  ["has_mcp", [".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json", ".claude/mcp.json"]],
 ];
 
 async function detectFacts(man) {

@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "browser": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@1.9.0"]
+    },
+    "search": {
+      "command": "uvx",
+      "args": ["some-search-mcp==0.4.1"]
+    },
+    "local": {
+      "command": "node",
+      "args": ["scripts/mcp-server.mjs"]
+    },
+    "own-code": {
+      "command": "npx",
+      "args": ["tsx", "rag/src/index.ts"]
+    }
+  }
+}

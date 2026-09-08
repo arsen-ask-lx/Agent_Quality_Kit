@@ -1,0 +1,18 @@
+intent: объявленный MCP-сервер существует и закреплён по версии — иначе агент молча работает без него
+intent_en: a declared MCP server exists and is version-pinned — otherwise the agent silently works without it
+
+# Только там, где агенту подключали внешние инструменты. В проекте без `.mcp.json` проверять
+# нечего, а запись, показанная не тому, стоит доверия всему каталогу.
+trigger:
+  has_mcp: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+samples_for: any
+
+proof: incidents/README.md, 2026-09-08 «конфиг был написан верно, а сервер мёртв» — в проект
+  записали настройку `chrome-devtools-mcp`, выглядела безупречно; сервер падал с «Target closed»,
+  потому что puppeteer подхватывал Windows-овый Chrome из `/mnt/c/`. Узнали только запуском
+  руками и чтением журнала: агенту мёртвый сервер не виден вовсе — у него просто нет этих
+  инструментов, и он молча работает без них
