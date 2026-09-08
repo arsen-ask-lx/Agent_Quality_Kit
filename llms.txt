@@ -37,8 +37,10 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   enforces, what the ratchets hold. Where it does not know, it says so: a run that never happened
   is reported as unknown, never as clean. `context --install` writes a `SessionStart` hook into
   `.claude/settings.json` (Claude Code only; the rest of the kit stays vendor-neutral). Measured:
-  the block is ~147 tokens against ~3348 for the rulebook, and carries what a file cannot —
-  what changed today
+  the block is ~375 tokens, and carries what a file cannot — what changed today. `context --full`
+  adds the command map and the rulebook verbatim (~7000 tokens): a deliberate trade, chosen by
+  the owner after the objection about long inputs, on the grounds that an agent reads files
+  poorly and the tokens are the price of it not guessing
 - See what you told the agent and never wrote down: `npx agent-quality-kit learn` — reads Claude Code
   transcripts for this project on this machine and prints rule candidates missing from the entry
   point. Current project only, terminal only, writes nothing, always exits 0

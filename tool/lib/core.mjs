@@ -57,6 +57,35 @@ function selfCmd() {
 
 const SELF = selfCmd();
 
+// КАРТА КОМАНД — ОДИН список на справку в терминале и на карту, уходящую в контекст агента.
+// Два списка рядом через месяц врут по-разному, и непонятно, какой настоящий: это записано
+// у нас в CLAUDE.md про своды правил и верно здесь буквально так же. Модульная проверка
+// сторожит, что список не отстал от диспетчера в program.mjs.
+function commandRows(L) {
+  const h = L.help;
+  return [
+    { name: "init", args: "", text: h.init },
+    { name: "init", args: "--force", text: h.initForce },
+    { name: "start", args: "", text: h.start },
+    { name: "doctor", args: "", text: h.doctor },
+    { name: "doctor", args: "--run", text: h.doctorRun },
+    { name: "doctor", args: "--run --since main", text: h.doctorSince },
+    { name: "prove", args: "", text: h.prove },
+    { name: "add", args: h.name, text: h.add },
+    { name: "find", args: '"…"', text: h.find },
+    { name: "why", args: '"…"', text: h.why },
+    { name: "ratchet", args: h.name, text: h.ratchet },
+    { name: "new", args: h.name, text: h.new },
+    { name: "note", args: '"…"', text: h.note },
+    { name: "blob", args: "", text: h.blob },
+    { name: "report", args: "", text: h.report },
+    { name: "learn", args: "", text: h.learn },
+    { name: "context", args: "", text: h.context },
+    { name: "context", args: "--full --install", text: h.contextInstall },
+    { name: "badge", args: "", text: h.badge },
+  ];
+}
+
 function die(msg) {
   console.error(c.red(msg));
   process.exit(1);
@@ -114,5 +143,5 @@ export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK,
+  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows,
 };

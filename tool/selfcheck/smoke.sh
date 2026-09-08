@@ -1373,6 +1373,36 @@ else
 fi
 rm -rf "$CTXP"
 
+# --- 92. полный блок: карта и свод дословно ----------------------------------
+# Решение владельца 2026-09-08, принятое ПОСЛЕ возражения про длину входа: агент читает файлы
+# плохо, и лишние токены — плата за то, чтобы он не ошибался. Раз плата внесена, товар обязан
+# быть доставлен: свод дословно, а не пересказ, и карта команд, а не половина карты.
+FULP="$(mktemp -d)"
+( cd "$FULP" && git init -q . &&
+  printf '# Свод\n\n- Правило-маячок-для-проверки. <!-- aqk: человек -->\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry:\n  - AGENTS.md\n' > .aqk.yml ) >/dev/null 2>&1
+FUL=$( cd "$FULP" && AQK_LANG=ru node "$CLI" context --full 2>&1 )
+SHORT=$( cd "$FULP" && AQK_LANG=ru node "$CLI" context 2>&1 )
+if printf '%s' "$FUL" | grep -q "Правило-маячок-для-проверки" &&
+   printf '%s' "$FUL" | grep -q "doctor --run --since main" &&
+   printf '%s' "$FUL" | grep -q "ЧТО УМЕЕТ ЭТОТ ИНСТРУМЕНТ" &&
+   ! printf '%s' "$SHORT" | grep -q "Правило-маячок-для-проверки"; then
+  ok "context --full несёт карту и свод дословно, обычный — нет"
+else
+  bad "полный блок не донёс свод или карту" "$(printf '%s' "$FUL" | head -4)"
+fi
+
+# --- 93. хук с --full ставится именно с флагом -------------------------------
+( cd "$FULP" && AQK_LANG=ru node "$CLI" context --full --install ) >/dev/null 2>&1
+FLAG=$(node_in "$FULP" -e 'const s=require("./.claude/settings.json");
+  console.log(JSON.stringify(s.hooks?.SessionStart||[]).includes("--full"))' 2>&1)
+if [ "$FLAG" = "true" ]; then
+  ok "хук, поставленный с --full, зовёт полный блок, а не короткий"
+else
+  bad "хук потерял --full — вливался бы короткий блок" "разбор: $FLAG"
+fi
+rm -rf "$FULP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
