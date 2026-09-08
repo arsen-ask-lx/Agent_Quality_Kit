@@ -1,0 +1,20 @@
+intent: имя пакета, названное в документации, существует в реестре
+intent_en: a package name mentioned in the documentation exists in the registry
+
+# Там, где агента используют: предмет проверки — текст, который агент читает и по которому
+# выполняет установку. В проекте без такого текста ставить запись незачем.
+trigger:
+  has_agent_entry: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+# Программа, без которой запись не работает. По первому слову команды этого не видно: обёртка
+# начинается с `bash`, который есть всегда. Версия названа: обёртка разбирает JSON slopcheck,
+# и смена формата обязана быть видимой, а не тихой.
+requires: slopcheck
+
+proof: incidents/README.md, 2026-09-08 «пакет-призрак из чужого README оказался
+  зарегистрирован» — `react-codeshift`, канонический пример slopsquatting из README самого
+  slopcheck, на 2026-09-08 существует в npm (создан 2026-01-14, maintainer debugducky);
+  доля выдуманных имён в сгенерированном коде — USENIX Security 2025, arxiv 2406.10279
