@@ -11,12 +11,12 @@
       "Bash(gh repo view:*)",
       "Bash(gh api:*)",
       "Bash(node tool/program.mjs:*)",
-      "Bash(npx github:arsen-ask-lx/Agent_Quality_Kit:*)"
-    ],
-    "ask": [
+      "Bash(npx github:arsen-ask-lx/Agent_Quality_Kit:*)",
       "Bash(git checkout:*)",
       "Bash(git switch:*)",
-      "Bash(git merge:*)",
+      "Bash(git merge:*)"
+    ],
+    "ask": [
       "Bash(git rebase:*)",
       "Bash(git rm:*)",
       "Bash(gh repo rename:*)",
