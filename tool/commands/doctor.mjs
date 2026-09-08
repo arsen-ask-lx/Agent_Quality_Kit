@@ -7,7 +7,7 @@ import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
+import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -85,6 +85,17 @@ async function reportCatalog(man, facts) {
   // считает запись закрытой, а её не держит никто. Называется поимённо, жёлтым.
   if (unknownGates.length) {
     console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
+  }
+  // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
+  // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
+  let mcpText = "";
+  for (const f of [".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json", ".claude/mcp.json"]) {
+    try { mcpText += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
+  }
+  const browser = browserServerAdvice(facts, mcpText);
+  if (browser) {
+    console.log(c.dim(`\n  ${L.doctor.noBrowserServer}`));
+    console.log(c.dim(`  ${L.doctor.noBrowserServerHow(browser.servers.join("  ·  "))}`));
   }
   if (skip.length) {
     console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));

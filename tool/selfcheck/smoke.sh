@@ -1478,6 +1478,29 @@ else
 fi
 rm -rf "$LNGP"
 
+# --- 97. совет про браузер у агента — только тому, кому он нужен --------------
+# Решение владельца 2026-09-08: инструмент, дающий агенту браузер, надо рекомендовать. Но совет,
+# показанный не тому, стоит доверия всем остальным советам — та же норма, что у записей каталога.
+# Проверяются все три конца: интерфейс есть и сервера нет → совет; интерфейса нет → тишина;
+# сервер уже стоит → тишина.
+BRWP="$(mktemp -d)"
+( cd "$BRWP" && git init -q . && mkdir -p src && printf 'body{color:#fff}\n' > src/a.css &&
+  printf 'export const A=1\n' > src/a.tsx && printf '# вход\n' > AGENTS.md ) >/dev/null 2>&1
+WITH_UI=$( cd "$BRWP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+( cd "$BRWP" && printf '{"mcpServers":{"b":{"command":"npx","args":["-y","chrome-devtools-mcp@1.9.0"]}}}\n' > .mcp.json )
+WITH_SRV=$( cd "$BRWP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+NOUIP="$(mktemp -d)"
+( cd "$NOUIP" && git init -q . && printf 'print(1)\n' > a.py && printf '# вход\n' > AGENTS.md ) >/dev/null 2>&1
+NO_UI=$( cd "$NOUIP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+if printf '%s' "$WITH_UI" | grep -q "нет браузера" &&
+   ! printf '%s' "$WITH_SRV" | grep -q "нет браузера" &&
+   ! printf '%s' "$NO_UI" | grep -q "нет браузера"; then
+  ok "совет про браузер даётся проекту с интерфейсом и молчит, когда сервер уже есть"
+else
+  bad "совет про браузер показан не тому" "с ui: $(printf '%s' "$WITH_UI" | grep -c 'нет браузера'), с сервером: $(printf '%s' "$WITH_SRV" | grep -c 'нет браузера'), без ui: $(printf '%s' "$NO_UI" | grep -c 'нет браузера')"
+fi
+rm -rf "$BRWP" "$NOUIP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

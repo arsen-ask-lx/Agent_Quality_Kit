@@ -12,7 +12,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
-import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync, browserServerAdvice } from "../lib/repo.mjs";
 import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
@@ -471,3 +471,27 @@ test("наборы файлов правил совпадают на обоих 
 });
 
 
+
+// --- совет про браузерный MCP-сервер ------------------------------------------
+// Решение владельца 2026-09-08: инструмент, дающий агенту браузер, надо РЕКОМЕНДОВАТЬ.
+// Возражение про нейтральность к вендору здесь не работает: MCP — межвендорный протокол,
+// и сервер одинаково нужен Cursor, Codex и Claude Code.
+//
+// Но совет показывается не всем. Проекту без интерфейса браузер не нужен, а совет, показанный
+// не тому, стоит доверия всем остальным советам — та же норма, что у записей каталога.
+test("совет про браузер даётся проекту с интерфейсом, у которого сервера нет", () => {
+  assert.ok(browserServerAdvice({ has_ui: true }, ""));
+});
+
+test("проекту без интерфейса совет не даётся", () => {
+  assert.equal(browserServerAdvice({ has_ui: false }, ""), null);
+});
+
+// Уже поставил — молчим. Совет, повторяемый тому, кто его выполнил, читается как шум,
+// и следующий совет он пролистает вместе с этим.
+test("сервер уже объявлен — совета нет", () => {
+  const cfg = '{"mcpServers":{"browser":{"command":"npx","args":["-y","chrome-devtools-mcp@1.9.0"]}}}';
+  assert.equal(browserServerAdvice({ has_ui: true }, cfg), null);
+  const pw = '{"mcpServers":{"b":{"command":"npx","args":["@playwright/mcp@0.0.80"]}}}';
+  assert.equal(browserServerAdvice({ has_ui: true }, pw), null);
+});
