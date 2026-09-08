@@ -48,7 +48,7 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
   `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the
   package itself; there are no dependencies to pull in.
-- As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.7.0` with `min: 1`
+- As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.8.0` with `min: 1`
   (https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ## What makes it different

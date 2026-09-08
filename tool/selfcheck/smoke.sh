@@ -1190,7 +1190,11 @@ rm -rf "$VDIR"
 # v0.4.2, отставание на два выпуска. Проверка сравнивает обе с package.json, а не друг с другом:
 # совпасть друг с другом они могут и будучи одинаково устаревшими.
 VERS_BAD=""
-for VF in README.md llms.txt; do
+# README.ru.md попал сюда 2026-09-08, при выпуске 0.8.0: в нём стояли v0.6.0 и v0.5.0 —
+# отставание на два и на три выпуска. Проверка его не смотрела, и русский читатель ставил
+# прошлогодний комплект молча. Ровно та же дыра, ради которой проверку и заводили, — просто
+# в файле, который забыли перечислить.
+for VF in README.md README.ru.md llms.txt; do
   [ -f "$ROOT/$VF" ] || continue
   # Берём только версии AQK — «v1.2.3» в примерах чужих действий (actions/checkout@v4) не наши.
   for V in $(grep -oE '(rev:[[:space:]]*|Agent_Quality_Kit@)v[0-9]+\.[0-9]+\.[0-9]+' "$ROOT/$VF" \
@@ -1199,7 +1203,7 @@ for VF in README.md llms.txt; do
   done
 done
 if [ -z "$VERS_BAD" ]; then
-  ok "версия в README и llms.txt совпадает с package.json (v$PKGVER)"
+  ok "версия в обоих README и llms.txt совпадает с package.json (v$PKGVER)"
 else
   bad "версия в документах разошлась с package.json" "package.json: v$PKGVER; найдено — $VERS_BAD"
 fi
