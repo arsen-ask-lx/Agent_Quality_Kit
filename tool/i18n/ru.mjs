@@ -31,6 +31,10 @@ export const ru = {
     red: (l) => `     КРАСНЫЕ: ${l}`,
     advise: (slug, why) => `     ↑ поставить: ${slug} — ${why}`,
     adviseOff: (cmd, env) => `       не нужно: ${cmd}, либо ${env}`,
+    update: (l, c, how) => `новая версия ${l}, у вас ${c} — обновить: ${how}`,
+    updateHow: "npx agent-quality-kit@latest, либо npm i -g agent-quality-kit",
+    updateHookHow: "pre-commit autoupdate",
+    updateOff: (env) => `       не нужно: ${env}`,
   },
   help: {
     tagline: "оснастка для разработки с агентами",

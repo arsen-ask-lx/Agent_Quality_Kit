@@ -22,6 +22,12 @@ npx agent-quality-kit start     # no code yet: day-zero guards, right away
 `doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
 you have decided nothing about yet. Nothing to install: `npx` fetches the package (230 KB).
 
+The one exception, named here because it is the only one: with `--brief` (how the hooks run it)
+`doctor` asks the npm registry for its own latest version — **at most once a day, never in CI**,
+with a 3-second timeout, silent on any failure, and never affecting the exit code. Turn it off
+with `AQK_UPDATE=0`. There is no auto-update: a tool that silently replaces itself while
+standing on the commit gate is exactly the door this kit teaches you to close.
+
 ### Works with any agent, any language
 
 **Any agent.** Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Windsurf, Aider, OpenCode

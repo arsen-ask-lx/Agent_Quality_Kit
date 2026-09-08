@@ -44,4 +44,45 @@ function pickAdvice(todo = []) {
   return todo.length ? todo[0] : null;
 }
 
-export { briefLine, adviceDue, pickAdvice, ADVICE_EVERY_MS };
+// УВЕДОМЛЕНИЕ ОБ ОБНОВЛЕНИИ — и почему НЕ автообновление.
+//
+// Выпуски идут часто, а у половины способов установки версия закреплена и сама не двигается:
+// `rev:` у pre-commit, тег у GitHub Action. Человек ставит комплект, получает версию с уже
+// исправленной ошибкой и не узнаёт об этом никогда. У `npx` без версии проблемы нет — он берёт
+// свежее при каждом запуске.
+//
+// АВТООБНОВЛЕНИЯ НЕТ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОДЕЛКА. В тот же день выпущена запись каталога,
+// краснеющая на `@latest`: «версия не закреплена — завтра приедет другая». Инструмент, который
+// молча подменяет себя, стоя на воротах коммита, делал бы ровно то, что мы запрещаем другим.
+// Первый же внешний читатель это заметит, и будет прав.
+//
+// СРАВНЕНИЕ ПО ЧИСЛАМ. Строкой «0.10.0» меньше «0.9.0», и уведомление пропало бы ровно на
+// десятом выпуске — тихо и надолго. Такие поломки не замечают месяцами.
+function cmpVer(a, b) {
+  const pa = String(a).split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+// Совет зависит от способа установки: у pre-commit это `autoupdate`, а не npm. Совет мимо
+// способа человек не выполнит — и перестанет читать следующие.
+function updateNotice(current, latest, env = process.env, L) {
+  if (!current || !latest || cmpVer(latest, current) <= 0) return null;
+  const how = env.PRE_COMMIT ? L.brief.updateHookHow : L.brief.updateHow;
+  return `${L.brief.update(latest, current, how)}\n${L.brief.updateOff("AQK_UPDATE=0")}`;
+}
+
+// В конвейере не спрашиваем вовсе: там версия закреплена сознательно, читать уведомление
+// некому, а лишний исходящий запрос из инструмента, который иначе не делает ни одного, —
+// плохой размен. Отказ человека уважается тем же способом.
+function updateWanted(env = process.env) {
+  if (String(env.AQK_UPDATE || "") === "0") return false;
+  if (env.CI || env.GITHUB_ACTIONS || env.GITLAB_CI) return false;
+  return true;
+}
+
+export { briefLine, adviceDue, pickAdvice, updateNotice, updateWanted, cmpVer, ADVICE_EVERY_MS };

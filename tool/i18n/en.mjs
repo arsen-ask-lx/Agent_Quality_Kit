@@ -30,6 +30,10 @@ export const en = {
     red: (l) => `     RED: ${l}`,
     advise: (slug, why) => `     ↑ install: ${slug} — ${why}`,
     adviseOff: (cmd, env) => `       not needed: ${cmd}, or ${env}`,
+    update: (l, c, how) => `version ${l} is out, you have ${c} — update: ${how}`,
+    updateHow: "npx agent-quality-kit@latest, or npm i -g agent-quality-kit",
+    updateHookHow: "pre-commit autoupdate",
+    updateOff: (env) => `       not needed: ${env}`,
   },
   help: {
     tagline: "tooling for building software with agents",

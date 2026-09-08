@@ -1573,6 +1573,32 @@ else
   bad "повторитель {n} в проверке: под mawk она молчит" "$AWKBAD"
 fi
 
+# --- 101. проверка версии: раз в сутки, не в конвейере, молча при отказе ------
+# До этой строки комплект не делал ни одного исходящего запроса. Раз делает — обязан делать
+# ровно то, что о нём написано: спрашивать реестр не чаще раза в сутки и НЕ спрашивать в
+# конвейере. Само наличие новой версии здесь не проверяется — она зависит от реестра, а
+# проверка, зависящая от чужого сервера, краснеет по чужой воле. Сравнение версий проверено
+# модульно; здесь — то, что вокруг него.
+UPDP="$(mktemp -d)"
+( cd "$UPDP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf '.x\n' > .gitignore && mkdir -p rules .aqk/docs && printf 'п\n' > rules/r.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  ok: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+( cd "$UPDP" && env -u CI -u GITHUB_ACTIONS AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+ASKED=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+rm -f "$UPDP/.aqk/update-checked"
+( cd "$UPDP" && CI=true AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+IN_CI=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+rm -f "$UPDP/.aqk/update-checked"
+( cd "$UPDP" && env -u CI AQK_UPDATE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+OFF=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+# «нет сети» — тоже допустимый исход первого случая: молчание при отказе и есть требование.
+if [ "$IN_CI" = "нет" ] && [ "$OFF" = "нет" ]; then
+  ok "версия спрашивается вне конвейера ($ASKED), не спрашивается в конвейере и при AQK_UPDATE=0"
+else
+  bad "проверка версии спрашивает там, где не должна" "вне CI: $ASKED, в CI: $IN_CI, выключено: $OFF"
+fi
+rm -rf "$UPDP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

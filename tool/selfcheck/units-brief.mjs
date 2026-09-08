@@ -8,7 +8,7 @@
 //   node --test tool/selfcheck/units-brief.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { briefLine, adviceDue, pickAdvice } from "../lib/brief.mjs";
+import { briefLine, adviceDue, pickAdvice, updateNotice, updateWanted } from "../lib/brief.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
 
 const T = CATALOGS.ru;
@@ -57,4 +57,41 @@ test("советуется одна запись, самая первая из �
 
 test("советовать нечего — совета нет, а не пустая строка", () => {
   assert.equal(pickAdvice([]), null);
+});
+
+// --- уведомление об обновлении -----------------------------------------------
+// Владелец: «выпускаем часто, никто не будет обновлять — скачают старую версию, а мы там уже
+// ошибки исправили». Верно: у pre-commit версия закреплена в rev:, у GitHub Action в теге,
+// и сами они не двигаются. У `npx` без версии проблемы нет — он всегда берёт свежее.
+//
+// АВТООБНОВЛЕНИЯ НЕТ НАМЕРЕННО. В этот же день выпущена запись, краснеющая на `@latest`:
+// «версия не закреплена, завтра приедет другая». Инструмент, который сам себя подменяет, стоя
+// на воротах коммита, делал бы ровно то, что мы запрещаем другим.
+test("новая версия называется, старая не тревожит", () => {
+  assert.ok(updateNotice("0.8.0", "0.9.0", {}, T));
+  assert.equal(updateNotice("0.9.0", "0.9.0", {}, T), null);
+  assert.equal(updateNotice("0.9.0", "0.8.0", {}, T), null, "откат назад — не обновление");
+});
+
+// Сравнение по числам, а не по строкам: «0.10.0» строкой меньше «0.9.0», и уведомление
+// пропало бы ровно на десятом выпуске — тихо и надолго.
+test("версии сравниваются числами, а не как текст", () => {
+  assert.ok(updateNotice("0.9.0", "0.10.0", {}, T));
+  assert.equal(updateNotice("0.10.0", "0.9.0", {}, T), null);
+  assert.ok(updateNotice("1.2.9", "1.10.0", {}, T));
+});
+
+// Способ обновления зависит от того, как поставлено: у pre-commit это autoupdate, а не npm.
+// Совет «сделай npm i -g» человеку, у которого хук, — это совет мимо, и он его не выполнит.
+test("совет об обновлении соответствует способу установки", () => {
+  assert.match(updateNotice("0.8.0", "0.9.0", { PRE_COMMIT: "1" }, T), /autoupdate/);
+  assert.doesNotMatch(updateNotice("0.8.0", "0.9.0", {}, T), /autoupdate/);
+});
+
+// В конвейере уведомление — шум и лишний запрос: там версия закреплена сознательно, и человека,
+// который бы его прочитал, у экрана нет.
+test("в конвейере и при отказе проверять не спрашиваем вовсе", () => {
+  assert.equal(updateWanted({ CI: "true" }), false);
+  assert.equal(updateWanted({ AQK_UPDATE: "0" }), false);
+  assert.equal(updateWanted({}), true);
 });
