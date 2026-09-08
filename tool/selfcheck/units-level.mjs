@@ -10,7 +10,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor } from "../lib/prove.mjs";
-import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS } from "../lib/manifest.mjs";
+import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf } from "../lib/manifest.mjs";
+import { pickLang, langFromText } from "../i18n/index.mjs";
 
 // --- доказательство гейтов ------------------------------------------------------------
 // ЗАЧЕМ. Ступень AQK-2 называлась «гейты доказаны» и проверяла существование двух папок.
@@ -119,4 +120,87 @@ test("внутри комплекта проверяются его собств
 test("docs — известное поле манифеста", () => {
   assert.ok(KNOWN_KEYS.includes("docs"));
   assert.deepEqual(unknownKeys({ docs: ".aqk/docs" }), []);
+});
+
+// --- covers: запись закрыта другим арбитром -----------------------------------
+// Просьба первого чужого пользователя, 2026-09-08, названная им первой: «нельзя сказать, что
+// эта запись у нас закрыта другим гейтом. complexity-limit, no-print-in-prod, swallowed-error
+// держит biome — одним арбитром, точнее переносимого. doctor каждый прогон печатает
+// „применимо, но не поставлено: 5“ — неправду».
+//
+// Неправда в НАШЕМ выводе — самая дорогая из возможных: весь стандарт стоит на том, что вывод
+// не врёт. Поэтому поле есть, но оно не признание на слово: гейт, который «закрывает», обязан
+// быть объявлен в gates:. Иначе covers: становится способом объявить защиту, которой нет, —
+// то самое, против чего написан комплект.
+test("вложенный список в квадратных скобках разбирается как список", () => {
+  const man = parseManifest("covers:\n  lint: [no-print-in-prod, swallowed-error]\n");
+  assert.deepEqual(man.covers.lint, ["no-print-in-prod", "swallowed-error"]);
+});
+
+test("covers отдаёт связь «запись → чем закрыта»", () => {
+  const man = parseManifest("gates:\n  lint: \"biome ci .\"\ncovers:\n  lint: [no-print-in-prod, swallowed-error]\n");
+  const { covered } = coversOf(man);
+  assert.equal(covered.get("no-print-in-prod"), "lint");
+  assert.equal(covered.get("swallowed-error"), "lint");
+});
+
+// Гейт, которого нет в gates:, не закрывает ничего. Промолчать здесь значит выдать
+// несуществующего арбитра за существующего — ровно тот отказ, ради которого всё написано.
+test("закрывать может только объявленный гейт", () => {
+  const man = parseManifest("gates:\n  lint: \"biome ci .\"\ncovers:\n  biome: [complexity-limit]\n");
+  const { covered, unknownGates } = coversOf(man);
+  assert.equal(covered.size, 0, "необъявленный гейт не закрывает ничего");
+  assert.deepEqual(unknownGates, ["biome"]);
+});
+
+test("пустой covers ничего не ломает", () => {
+  const { covered, unknownGates } = coversOf(parseManifest("aqk: 1\n"));
+  assert.equal(covered.size, 0);
+  assert.deepEqual(unknownGates, []);
+});
+
+test("covers — известное поле манифеста", () => {
+  assert.ok(KNOWN_KEYS.includes("covers"));
+  assert.deepEqual(unknownKeys({ covers: {} }), []);
+});
+
+// --- язык вывода: настройка ПРОЕКТА, а не машины ------------------------------
+// Просьба первого чужого пользователя: «язык берётся из LC_ALL/LANG, а на Windows их просто
+// нет: русский проект получает английский вывод. AQK_LANG=ru чинит, но у следующего человека
+// будет своё. Место этому в .aqk.yml». Он прав: язык репозитория — свойство репозитория,
+// а локаль — свойство машины, на которой его сегодня открыли.
+//
+// Порядок намеренный: переменная окружения ВЫШЕ манифеста. Человек, набравший AQK_LANG=en
+// руками, хочет английский именно сейчас — и спорить с ним манифестом значит отнять последнее
+// средство. Манифест выше локали: он про проект, локаль про машину.
+test("манифест задаёт язык, когда переменной окружения нет", () => {
+  assert.equal(pickLang({ LANG: "en_US.UTF-8" }, { lang: "ru" }), "ru");
+});
+
+test("переменная окружения сильнее манифеста", () => {
+  assert.equal(pickLang({ AQK_LANG: "en" }, { lang: "ru" }), "en");
+});
+
+test("без манифеста всё как раньше — локаль, потом английский", () => {
+  assert.equal(pickLang({ LANG: "ru_RU.UTF-8" }, null), "ru");
+  assert.equal(pickLang({}, null), "en");
+});
+
+test("мусор в поле lang не молчит, а просто не действует", () => {
+  assert.equal(pickLang({}, { lang: "клингонский" }), "en");
+});
+
+// Сокращённый разбор языка в i18n/index.mjs существует потому, что каталог строк нужен раньше,
+// чем кто-либо успеет прочитать манифест целиком. Два разбора одного файла — то же, что два
+// свода правил: через месяц они расходятся, и непонятно, какой настоящий. Сверяем ответы.
+test("сокращённый разбор языка не расходится с настоящим", () => {
+  for (const text of [
+    'aqk: 1\nlang: ru\ngates:\n  lint: "true"\n',
+    "aqk: 1\nlang: 'en'\n",
+    'aqk: 1\nlang: "ru"   # комментарий\n',
+    "aqk: 1\ngates:\n  lang: ru\n",     // вложенный ключ — не язык проекта
+    "aqk: 1\n",
+  ]) {
+    assert.equal(langFromText(text), String(parseManifest(text).lang || ""), text);
+  }
 });

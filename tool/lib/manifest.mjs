@@ -25,6 +25,14 @@ function stripComment(raw) {
   return raw[i] === "#" ? raw.slice(0, i) : raw.slice(0, i + 1);
 }
 
+// Список в одну строку: `[AGENTS.md, docs/START.md]`. Вынесен отдельно, потому что нужен на
+// двух уровнях, а два одинаковых куска разбора расходятся ровно так же, как два свода правил.
+function inlineList(v) {
+  const s = String(v).trim();
+  if (!s.startsWith("[") || !s.endsWith("]")) return null;
+  return s.slice(1, -1).split(",").map((x) => x.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+}
+
 function parseManifest(text) {
   const out = {};
   let section = null;
@@ -48,21 +56,19 @@ function parseManifest(text) {
 
     if (indented && section) {
       if (typeof out[section] !== "object" || Array.isArray(out[section])) out[section] = {};
-      out[section][key] = clean;
+      // Список в одну строку разбирается и на вложенном уровне: `covers:` ниже `  lint: [a, b]`.
+      // Раньше вложенное значение всегда оставалось строкой, и `[a, b]` превращалось в текст
+      // «[a, b]» — молча, как это умеет только разбор без схемы. Наверху такой список уже
+      // разбирался; расхождение между уровнями и есть источник тихой неправды.
+      out[section][key] = inlineList(clean) || clean;
       continue;
     }
     section = key;
     // Список в одну строку: entry: [AGENTS.md, docs/START.md]. Люди пишут именно так —
     // и раньше манифест молча читался как пустой, а проект получал вердикт «нет AQK-0».
     // Неверный вердикт хуже отсутствия вердикта: ему верят.
-    if (clean.startsWith("[") && clean.endsWith("]")) {
-      out[key] = clean
-        .slice(1, -1)
-        .split(",")
-        .map((v) => v.trim().replace(/^["']|["']$/g, ""))
-        .filter(Boolean);
-      continue;
-    }
+    const list = inlineList(clean);
+    if (list) { out[key] = list; continue; }
     out[key] = clean === "" ? {} : clean;
   }
   return out;
@@ -79,7 +85,7 @@ function parseManifest(text) {
 // Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
 // лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
 // только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
-const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "gates", "samples", "ratchets", "lessons", "advisory"];
+const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "lang", "gates", "covers", "samples", "ratchets", "lessons", "advisory"];
 
 // ГДЕ У ПРОЕКТА ЛЕЖИТ РАЗЛОЖЕННЫЙ КОМПЛЕКТ. Список для шапки `doctor`. До 2026-09-08 он был
 // литеральным: `.aqk/rules`, `.aqk/docs`, `AGENTS.md` — независимо от того, что написано в
@@ -106,6 +112,34 @@ function layoutChecks(man, inKit) {
     [".gitignore", L.doctor.gitignore],
     [".git", L.doctor.git],
   ];
+}
+
+// ЗАПИСЬ ЗАКРЫТА ДРУГИМ АРБИТРОМ. `covers: { lint: [no-print-in-prod, swallowed-error] }`
+// читается как «гейт lint держит эти записи каталога». Просьба первого чужого пользователя,
+// названная им первой: без этого `doctor` каждый прогон печатал «применимо, но не поставлено»
+// про то, что у него закрыто biome. Неправда в собственном выводе дороже всех остальных: весь
+// стандарт стоит на том, что вывод не врёт.
+//
+// НО ЭТО НЕ ПРИЗНАНИЕ НА СЛОВО. Закрывать может только гейт, ОБЪЯВЛЕННЫЙ в `gates:` непустой
+// командой. Иначе поле превращается в способ объявить защиту, которой нет, — ровно тот отказ,
+// против которого написан комплект. Необъявленные называются поимённо, а не отбрасываются молча.
+function coversOf(man) {
+  const covered = new Map();
+  const unknownGates = [];
+  const raw = man?.covers;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { covered, unknownGates };
+
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const declared = new Set(Object.entries(gates).filter(([, cmd]) => String(cmd || "").trim()).map(([k]) => k));
+
+  for (const [gate, value] of Object.entries(raw)) {
+    const entries = Array.isArray(value)
+      ? value
+      : String(value || "").split(",").map((x) => x.trim()).filter(Boolean);
+    if (!declared.has(gate)) { if (entries.length) unknownGates.push(gate); continue; }
+    for (const e of entries) if (!covered.has(e)) covered.set(e, gate);
+  }
+  return { covered, unknownGates };
 }
 
 function unknownKeys(man) {
@@ -242,5 +276,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, layoutChecks,
+  entryLifecycle, advisorySet, layoutChecks, coversOf,
 };

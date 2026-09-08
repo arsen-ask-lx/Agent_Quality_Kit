@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks } from "../lib/manifest.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, recipeFor } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -50,11 +50,16 @@ async function reportCatalog(man, facts) {
   const catalog = await readCatalog();
   if (!catalog.length) return;
 
-  const held = [], todo = [], skip = [];
+  // Четвёртая корзина, а не третья: «закрыто другим арбитром» — это НЕ «не поставлено».
+  // Пока их считали вместе, вывод каждый прогон называл долгом то, что уже держит biome или
+  // ruff. Просьба первого чужого пользователя; она же — наша собственная норма про вывод.
+  const { covered, unknownGates } = coversOf(man);
+  const held = [], todo = [], skip = [], byOther = [];
   for (const rec of catalog) {
     const v = triggerVerdict(rec, facts);
     if (!v.applies) skip.push([rec, v.why]);
     else if (facts.gateKeys.includes(rec.slug)) held.push(rec);
+    else if (covered.has(rec.slug)) byOther.push([rec, covered.get(rec.slug)]);
     else todo.push(rec);
   }
 
@@ -72,12 +77,22 @@ async function reportCatalog(man, facts) {
     console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
     console.log(c.dim(`      ${L.doctor.install(`${SELF} add ${rec.slug}`)}`));
   }
+  if (byOther.length) {
+    console.log(c.dim(`\n  ${L.doctor.coveredBy(byOther.length)}`));
+    for (const [rec, gate] of byOther) console.log(c.dim(`  ~  ${rec.slug.padEnd(22)} ${L.doctor.coveredByGate(gate)}`));
+  }
+  // Гейт, которого нет в gates:, не закрывает ничего — и молчать об этом нельзя: человек
+  // считает запись закрытой, а её не держит никто. Называется поимённо, жёлтым.
+  if (unknownGates.length) {
+    console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
+  }
   if (skip.length) {
     console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
     for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
   }
   console.log(
     `\n  ${c.bold(L.doctor.total)} ${L.doctor.totalHeld(held.length)}, ${L.doctor.totalTodo(c.yellow(todo.length))}, ` +
+      (byOther.length ? `${L.doctor.totalCovered(byOther.length)}, ` : "") +
       c.dim(L.doctor.totalSkip(skip.length)) + "\n"
   );
 }

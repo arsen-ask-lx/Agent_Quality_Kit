@@ -166,9 +166,12 @@ aqk: 1
 entry:  [AGENTS.md]        # what the agent reads first
 rules:  .aqk/rules         # where the standards live
 docs:   .aqk/docs          # where the guides live (optional; this is the default)
+lang:   en                 # output language for THIS repo, over the machine locale
 gates:                     # what must pass — as commands, not as prose
   lint: "npm run lint"
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
+covers:                    # what a declared gate already holds — not counted as debt
+  lint: [no-print-in-prod, swallowed-error]
 samples:  gates            # a red and a green sample for every entry
 ratchets: ratchets         # debt registries: the list may only get shorter
 lessons:  incidents        # where lessons accumulate
