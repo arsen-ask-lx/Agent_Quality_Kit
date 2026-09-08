@@ -86,6 +86,10 @@ aqk report --since main  ...plus what proves this diff, file by file
 aqk badge               write the level badge into the README
 aqk badge --check       fail if the badge disagrees with a run
 
+aqk context             the repository state in one block, for an agent's context:
+                        level, what is red now, rules nobody enforces, ratchets
+aqk context --install   put a SessionStart hook into .claude/settings.json
+
 aqk learn               rule candidates from local transcripts:
                         said out loud, never written down
 aqk note "..."          write a bruise into the journal

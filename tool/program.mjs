@@ -25,6 +25,7 @@ import { cmdReport } from "./commands/report.mjs";
 import { cmdLearn } from "./commands/learn.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
+import { cmdContext } from "./commands/context.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -80,6 +81,12 @@ if (IS_MAIN) {
     case "prove":
       await cmdProve();
       break;
+    // Печатает состояние репозитория для КОНТЕКСТА агента, а не для человека. Зовётся хуком
+    // SessionStart, поэтому ничего не запускает и всегда выходит с нулём: хук, роняющий запуск
+    // агента из-за неготового проекта, отключат в тот же день, и не станет ни хука, ни блока.
+    case "context":
+      await cmdContext(rest);
+      break;
     case "badge":
       await cmdBadge(rest);
       break;
@@ -104,6 +111,7 @@ if (IS_MAIN) {
         [`${SELF} blob`, h.blob],
         [`${SELF} report`, h.report],
         [`${SELF} learn`, h.learn],
+        [`${SELF} context`, h.context],
         [`${SELF} badge`, h.badge],
       ];
       const width = Math.max(...rows.map(([cmdText]) => cmdText.length));

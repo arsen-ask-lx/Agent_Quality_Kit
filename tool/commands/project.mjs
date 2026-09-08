@@ -76,6 +76,7 @@ ${c.bold(L.init.nextTitle)}
   4. ${L.init.n4a} ${c.bold(L.init.n4b)}${L.init.n4c}
      ${L.init.n4d}
 
+${c.dim(L.init.hookHint(`${SELF} context --install`))}
 ${c.dim(L.init.burned(`${SELF} note "…"`))}
 `);
   await maybeAskFeedback();

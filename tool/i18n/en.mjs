@@ -40,6 +40,7 @@ export const en = {
     note: "record a lesson in the shared bruise journal",
     blob: "assemble the guides into a single GOD_AI.md",
     learn: "rule candidates from local transcripts: said out loud, never written down",
+    context: "the project state in one block — for an agent's context, not for reading",
     report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
     noInstall: "Without installing:  npx agent-quality-kit init",
@@ -358,6 +359,7 @@ export const en = {
     n4c: ". A gate guards an artefact that exists:",
     n4d: "a check for code that is not written yet is a dead rule.",
     burned: (cmd) => `Got burned by something — write it down: ${cmd}`,
+    hookHint: (cmd) => `Claude Code: ${cmd} — the project state will reach the agent's context\n  by itself, before its first action. Other agents have no hook, and that is not an omission.`,
   },
 
   feedback: {

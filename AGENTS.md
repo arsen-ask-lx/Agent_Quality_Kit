@@ -73,6 +73,8 @@
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
   `learn.mjs` (кандидаты в правила из локальной переписки: что сказано вслух и не записано;
   читает только напечатанное человеком, ничего не пишет на диск),
+  `context.mjs` (`context` — состояние репозитория одним блоком ДЛЯ КОНТЕКСТА агента;
+  `--install` кладёт хук `SessionStart` в `.claude/settings.json`),
   `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
   собранная прогоном), `badge.mjs` (`badge`, `badge --check` — значок уровня)
 - `tool/i18n/` — язык вывода: `ru.mjs`, `en.mjs` (то, что программа ГОВОРИТ в терминал),
@@ -108,7 +110,7 @@
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
-- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs`
+- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-context.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
@@ -116,6 +118,11 @@
 - зрелость записей каталога: `AQK_LANG=ru node tool/selfcheck/lifecycle.mjs`
 - только то, что внёс диф: `node tool/program.mjs doctor --run --since main`
 - отчёт по репозиторию: `node tool/program.mjs report`
+- состояние репозитория для контекста агента: `node tool/program.mjs context` — уровень,
+  красные гейты, правила без арбитра, храповики. Ничего не запускает: читает манифест и
+  `.aqk/last-run.md`, потому что хук обязан укладываться в секунду. Где не знает — говорит
+  «неизвестно», а не молчит: тишину машина прочитает как «чисто»
+- поставить хук Claude Code: `node tool/program.mjs context --install`
 - что сказано вслух и не записано: `node tool/program.mjs learn` — читает логи Claude Code этого
   проекта на этой машине, печатает КАНДИДАТОВ в правила. Только в терминал, ничего на диск
 - чем доказан диф: `node tool/program.mjs report --since main` — три состояния у каждого файла:

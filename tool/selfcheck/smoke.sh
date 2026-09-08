@@ -1335,6 +1335,37 @@ else
 fi
 rm -rf "$LYP"
 
+# --- 90. блок состояния: тишина не выдаётся за «чисто» -----------------------
+# Читатель этого блока — машина. Человек, увидев пустое место, переспросит; агент примет его
+# за утверждение и пойдёт писать код по несуществующему разрешению. Поэтому главное здесь одно:
+# без прогона блок обязан сказать «неизвестно» СЛОВОМ.
+CTXP="$(mktemp -d)"
+( cd "$CTXP" && git init -q . ) >/dev/null 2>&1
+CTX=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context 2>&1 ); CTX_C=$?
+if [ "$CTX_C" -eq 0 ] &&
+   printf '%s' "$CTX" | grep -q "НЕИЗВЕСТНО" &&
+   printf '%s' "$CTX" | grep -q "не вычислен" &&
+   ! printf '%s' "$CTX" | grep -q "AGENTS.md"; then
+  ok "context без прогона говорит «неизвестно» и не называет несуществующий свод"
+else
+  bad "context выдал незнание за чистоту" "код $CTX_C: $(printf '%s' "$CTX" | head -5)"
+fi
+
+# --- 91. хук ставится в общий файл и не затирает чужие настройки --------------
+mkdir -p "$CTXP/.claude"
+printf '{ "permissions": { "deny": ["Read(./.env)"] } }\n' > "$CTXP/.claude/settings.json"
+( cd "$CTXP" && AQK_LANG=ru node "$CLI" context --install ) >/dev/null 2>&1
+AGAIN=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context --install 2>&1 )
+HOOKS=$(node -e 'const s=require("'"$CTXP"'/.claude/settings.json");
+  console.log([s.hooks?.SessionStart?.length, s.permissions?.deny?.length,
+    JSON.stringify(s.hooks?.SessionStart||[]).includes("/home/")].join(" "))' 2>&1)
+if [ "$HOOKS" = "1 1 false" ] && printf '%s' "$AGAIN" | grep -q "уже стоит"; then
+  ok "хук ставится один раз, переносимой командой, чужие настройки целы"
+else
+  bad "установка хука испортила настройки или задвоилась" "разбор: $HOOKS"
+fi
+rm -rf "$CTXP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
