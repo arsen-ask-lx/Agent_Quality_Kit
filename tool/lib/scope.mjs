@@ -33,6 +33,15 @@ const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*[a-zA-Z]", "g");
 // принималась бы за находку и отбрасывалась.
 const CANDIDATE = /[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z][A-Za-z0-9]{0,9}/g;
 
+// Все пути, названные в тексте. Тот же разбор, что при сужении: цвет снимается, вид пути
+// нормализуется. Вынесено отдельно, потому что покрытие спрашивает у вывода обратное:
+// не «попадает ли находка в диф», а «назвал ли гейт этот файл».
+function pathsIn(text) {
+  const out = new Set();
+  for (const m of String(text).replace(ANSI, "").matchAll(CANDIDATE)) out.add(normPath(m[0]));
+  return out;
+}
+
 function inScope(candidate, files) {
   const c = normPath(candidate);
   if (files.has(c)) return true;
@@ -128,4 +137,4 @@ function changedFiles(ref, cwd) {
   );
 }
 
-export { scopeOutput, splitAdvice, changedFiles };
+export { scopeOutput, splitAdvice, changedFiles, pathsIn, normPath };

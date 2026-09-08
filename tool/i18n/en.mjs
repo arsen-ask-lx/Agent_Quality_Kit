@@ -27,7 +27,7 @@ export const en = {
     new: "scaffold your own gate for the catalogue",
     note: "record a lesson in the shared bruise journal",
     blob: "assemble the guides into a single GOD_AI.md",
-    report: "the mandatory report form: what is in place, what is not, what was not read",
+    report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
     noInstall: "Without installing:  npx agent-quality-kit init",
     language: "Output language: AQK_LANG=ru (or en), otherwise your system locale",
@@ -447,6 +447,21 @@ export const en = {
   },
 
   report2: {
+    evidenceNamed: (who) => `named by: ${who}`,
+    evidenceSilent: (n) => `${n} check${n === 1 ? "" : "s"} walked past it and said nothing`,
+    evidenceTitle: "What proves this diff",
+    evidenceUncovered: "no check named this file",
+    evidenceBase: "base of comparison",
+    evidenceHash: "evidence fingerprint",
+    evidenceBadRef: (r) => `ref "${r}" could not be resolved — coverage not computed`,
+    evidenceNoFiles: (r) => `no code files in the diff against "${r}" — nothing to prove`,
+    evidenceWarn:
+      "◻️ means a check walked the directory and said nothing. \"Scanned and clean\" and " +
+      "\"never looked\" are indistinguishable from the output, and neither may be passed off " +
+      "as the other. " +
+      "The fingerprint covers the base, the set of commands and the contents of the files. " +
+      "Change any of them and this report is stale, so \"ran it, then edited three more files\" " +
+      "stops being indistinguishable from \"ran it\". Mechanism taken from donecheck (MIT).",
     title: "AQK report",
     noManifest: (cmd) => `No .aqk.yml — nothing to report on. Start with ${cmd}`,
     level: "Level",
