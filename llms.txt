@@ -48,6 +48,10 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
   `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the
   package itself; there are no dependencies to pull in.
+- Without Node at all (a Python, Go or Rust project where nobody installed it):
+  `docker run --rm -v "$PWD:/work" ghcr.io/arsen-ask-lx/aqk doctor`. Debian-based on purpose:
+  the gates are `sh`, `grep`, `awk`, `find` — under alpine's busybox they behave differently,
+  and an image where the gates behave differently is worse than no image
 - As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.8.0` with `min: 1`
   (https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
