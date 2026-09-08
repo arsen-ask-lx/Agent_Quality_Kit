@@ -79,7 +79,34 @@ function parseManifest(text) {
 // Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
 // лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
 // только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
-const KNOWN_KEYS = ["aqk", "entry", "rules", "gates", "samples", "ratchets", "lessons", "advisory"];
+const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "gates", "samples", "ratchets", "lessons", "advisory"];
+
+// ГДЕ У ПРОЕКТА ЛЕЖИТ РАЗЛОЖЕННЫЙ КОМПЛЕКТ. Список для шапки `doctor`. До 2026-09-08 он был
+// литеральным: `.aqk/rules`, `.aqk/docs`, `AGENTS.md` — независимо от того, что написано в
+// манифесте. Второй пользователь прислал разбор: у него `rules: .temper/rules`, правила на
+// месте, гейт entry-links-exist их видит, СТУПЕНЬ считается по манифесту и берётся — а шапка
+// рисует два креста и советует сделать сделанное. Вывод расходился с собственным вердиктом
+// программы; это хуже, чем просто неверный вывод, потому что оба напечатаны рядом.
+// Поля `docs:` не существовало вовсе: методички было некуда перенести, и крест за них снять
+// было нельзя ничем. Умолчания остаются для тех, кто полей не завёл, — это большинство.
+function layoutChecks(man, inKit) {
+  const field = (name, dflt) => {
+    const v = man && typeof man === "object" && !Array.isArray(man) ? man[name] : null;
+    return typeof v === "string" && v.trim() ? v.trim() : dflt;
+  };
+  // Точка входа — тоже поле манифеста, и по той же причине: проект на `CLAUDE.md` получал крест
+  // за `AGENTS.md`, которого у него намеренно нет. Класс дефекта один, чинится он один раз.
+  const entries = (Array.isArray(man?.entry) ? man.entry : [])
+    .filter((e) => typeof e === "string" && e.trim())
+    .map((e) => e.trim());
+  return [
+    [field("docs", inKit ? "kit/docs" : ".aqk/docs"), inKit ? L.doctor.docsKit : L.doctor.docs],
+    [field("rules", inKit ? "kit/rules" : ".aqk/rules"), inKit ? L.doctor.rulesKit : L.doctor.rules],
+    ...(entries.length ? entries : ["AGENTS.md"]).map((e) => [e, L.doctor.agents]),
+    [".gitignore", L.doctor.gitignore],
+    [".git", L.doctor.git],
+  ];
+}
 
 function unknownKeys(man) {
   if (!man || typeof man !== "object" || Array.isArray(man)) return [];
@@ -215,5 +242,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet,
+  entryLifecycle, advisorySet, layoutChecks,
 };
