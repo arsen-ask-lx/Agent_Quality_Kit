@@ -1235,14 +1235,20 @@ rm -rf "$EVDIR"
 # --- 84. learn читает только напечатанное человеком --------------------------
 # Поле promptSource отделяет реплику от результата инструмента. Без него первая версия отбора
 # выдавала вставленные пути и ссылки вместо правил — «agent quality kit» 44 раза.
-LRN="$(mktemp -d)"; LRNP="$(mktemp -d)"
-SLUG=$(printf '%s' "$LRNP" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]\+/-/g')
-mkdir -p "$LRN/projects/$SLUG"
+# Каталог логов кладём ВНУТРЬ проекта и передаём относительным путём. Абсолютный сюда не
+# годится: Git Bash на Windows отдаёт «/tmp/…», а Node в том же окружении читает это как
+# «C:\tmp\…» — переменная указывает в никуда, и проверка падает не по делу.
+LRNP="$(mktemp -d)"; LRN=".cfg"
+# Имя каталога логов спрашиваем у самой программы, а не считаем здесь. На Windows оболочка
+# отдаёт «/tmp/…», а Node видит «C:\Users\…» — две разные строки, и тест падал не по делу.
+# Правило перевода пути в имя сторожит модульная проверка logSlug, здесь проверяется конвейер.
+SLUG=$( cd "$LRNP" && node -e "const {pathToFileURL}=require('node:url');import(pathToFileURL(process.argv[1]).href).then(m=>console.log(m.logSlug(process.cwd())))" "$ROOT/tool/commands/learn.mjs" )
+mkdir -p "$LRNP/$LRN/projects/$SLUG"
 {
   printf '{"type":"user","promptSource":"typed","timestamp":"2026-09-08T10:00:00Z","message":{"role":"user","content":"никогда не коммить прямо в основную ветку"}}\n'
   printf '{"type":"user","promptSource":"typed","timestamp":"2026-09-08T10:01:00Z","message":{"role":"user","content":"ок го дальше"}}\n'
   printf '{"type":"user","timestamp":"2026-09-08T10:02:00Z","message":{"role":"user","content":[{"type":"tool_result","content":"нельзя обязательно всегда"}]}}\n'
-} > "$LRN/projects/$SLUG/s1.jsonl"
+} > "$LRNP/$LRN/projects/$SLUG/s1.jsonl"
 printf '# правила\n- Ничего особенного.\n' > "$LRNP/AGENTS.md"
 printf 'aqk: "1"\nentry: [AGENTS.md]\n' > "$LRNP/.aqk.yml"
 LRN_OUT=$( cd "$LRNP" && CLAUDE_CONFIG_DIR="$LRN" AQK_LANG=ru node "$CLI" learn 2>&1 )
@@ -1267,7 +1273,7 @@ if [ ! -d "$LRNP/.aqk" ] || [ -z "$(ls -A "$LRNP/.aqk" 2>/dev/null)" ]; then
 else
   bad "learn создал файлы" "$(ls -A "$LRNP/.aqk" | tr '\n' ' ')"
 fi
-rm -rf "$LRN" "$LRNP"
+rm -rf "$LRNP"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'
