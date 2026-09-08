@@ -1275,6 +1275,23 @@ else
 fi
 rm -rf "$LRNP"
 
+# --- 87. --baseline не совмещается с --run и --min ---------------------------
+# `--baseline` выходит с нулём всегда: это осмотр, а не прогон. Совмещённый с порогом он давал
+# конвейер, который НЕ МОЖЕТ покраснеть — порог назван, гейты не запущены, код нулевой. Найдено
+# ревью 2026-09-08. Отказ должен быть громким: молчаливое зелёное здесь дороже сломанной команды.
+BLP="$(mktemp -d)"
+( cd "$BLP" && git init -q . && printf 'aqk: "1"\nentry: [AGENTS.md]\n' > .aqk.yml && printf '# правила\n' > AGENTS.md ) >/dev/null 2>&1
+BL_OK=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline 2>&1 ); BL_OK_C=$?
+BL_BAD=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline --min 1 2>&1 ); BL_BAD_C=$?
+BL_RUN=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline --run 2>&1 ); BL_RUN_C=$?
+if [ "$BL_OK_C" -eq 0 ] && [ "$BL_BAD_C" -ne 0 ] && [ "$BL_RUN_C" -ne 0 ] &&
+   printf '%s' "$BL_BAD" | grep -q "не может покраснеть"; then
+  ok "--baseline с --min и --run отказывает вслух, сам по себе работает"
+else
+  bad "--baseline не отказал на пороге" "коды: сам $BL_OK_C, с --min $BL_BAD_C, с --run $BL_RUN_C"
+fi
+rm -rf "$BLP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

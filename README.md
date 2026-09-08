@@ -63,6 +63,41 @@ tooling: [the dark factory and the minimum that isn't optional](kit/docs/ai/proj
    a promise without an exit code is just a sentence
 ```
 
+## Every command
+
+```
+aqk doctor              what this repository is at, and what is missing
+aqk doctor --run        run every gate the manifest declares
+aqk doctor --run --since main    only what the diff introduced
+aqk doctor --run --min 1         fail a pipeline below a level
+aqk doctor --baseline   the minimum a project needs, confirmed by a run
+
+aqk init                lay the kit into an existing repository
+aqk start               start a new project from the kit
+aqk add <name>          install one guard from the catalogue
+aqk new <name>          scaffold a guard of your own
+aqk find <text>         find a guard by intent
+aqk why <name>          what failure this guard was written for
+
+aqk prove               run every declared gate against its own samples:
+                        red on the red one, quiet on the green one
+aqk report              the report form, assembled by a run
+aqk report --since main  ...plus what proves this diff, file by file
+aqk badge               write the level badge into the README
+aqk badge --check       fail if the badge disagrees with a run
+
+aqk learn               rule candidates from local transcripts:
+                        said out loud, never written down
+aqk note "..."          write a bruise into the journal
+aqk ratchet <name>      a debt registry for a declared gate: may only get shorter
+aqk blob                every guide as a single file
+```
+
+Exit codes: `0` pass, `1` below the level or a gate failed. Two exceptions, both deliberate:
+`learn` never fails a build — it reads transcripts and prints to the terminal only, writing
+nothing. And `--baseline` is an inspection, not a run: it always exits `0`, so combining it with
+`--run` or `--min` is refused outright rather than handing you a pipeline that cannot go red.
+
 ## What this looks like
 
 Someone else's project, three files, nothing configured:

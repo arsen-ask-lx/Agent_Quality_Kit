@@ -320,6 +320,12 @@ async function cmdDoctor() {
 
   const facts = await detectFacts(man);
   if (process.argv.includes("--baseline")) {
+    // `--baseline` — осмотр, а не прогон: он выходит с нулём всегда. Совмещённый с `--run` или
+    // `--min` он давал конвейер, который НЕ МОЖЕТ покраснеть: порог назван, гейты не запущены,
+    // код нулевой. Человек, собравший такую строку, считает, что порог держится. Отказываемся
+    // вслух — молчаливое зелёное здесь дороже сломанной команды. Найдено ревью 2026-09-08.
+    const clash = ["--run", "--min"].filter((f) => process.argv.includes(f));
+    if (clash.length) die(L.doctor.baselineClash(clash.join(", ")));
     await reportBaseline(man, facts);
     process.exit(0);
   }
@@ -363,4 +369,4 @@ async function cmdDoctor() {
 
 // Наружу — только команда. Остальное здесь же и используется: экспорт, который никто не
 // импортирует, читается как «это часть договора» и мешает менять внутренности.
-export { cmdDoctor, runGates, declaredGates };
+export { cmdDoctor, runGates, declaredGates, sinceRef };
