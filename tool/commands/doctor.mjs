@@ -10,6 +10,7 @@ import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
+import { briefLine, adviceDue, pickAdvice } from "../lib/brief.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -118,6 +119,9 @@ async function reportCatalog(man, facts) {
       (byOther.length ? `${L.doctor.totalCovered(byOther.length)}, ` : "") +
       c.dim(L.doctor.totalSkip(skip.length)) + "\n"
   );
+  // Числа отдаются наружу, а не пересчитываются второй раз: два счёта одного и того же
+  // расходятся ровно так же, как два списка команд.
+  return { held: held.length, todo: todo.length, todoRecs: todo };
 }
 
 // «Гейт объявлен» и «гейт работает» — разные утверждения. Первое читается из манифеста,
@@ -265,7 +269,21 @@ async function writeRunReport({ version, reached, results }) {
   await writeFile(dst, lines.join("\n") + "\n", "utf8");
 }
 
+// КРАТКИЙ РЕЖИМ для хука. Вывод целиком БУФЕРИЗУЕТСЯ, а печатается одна строка присутствия —
+// и, при провале, весь буфер, чтобы человеку было что чинить. Перехват console.log выглядит
+// грубо, и это осознанный размен: альтернатива — протащить флаг через четыреста строк печати,
+// где каждая строка стала бы условной. Перехват локален, снимается в том же вызове и объяснён
+// здесь; условие в каждой строке объяснить было бы негде.
+function beginBrief() {
+  const lines = [];
+  const real = console.log;
+  console.log = (...a) => lines.push(a.join(" "));
+  return { lines, restore: () => { console.log = real; } };
+}
+
 async function cmdDoctor() {
+  const brief = process.argv.includes("--brief");
+  const buf = brief ? beginBrief() : null;
   // Версия в шапке — единственное, что привязывает баг-репорт к коммиту, если ставили не из
   // релиза: без неё "у меня не работает" ничем не отличается от любой другой версии за год.
   let version = "";
@@ -364,7 +382,7 @@ async function cmdDoctor() {
     await reportBaseline(man, facts);
     process.exit(0);
   }
-  await reportCatalog(man, facts);
+  const cat = (await reportCatalog(man, facts)) || { held: 0, todo: 0, todoRecs: [] };
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.
   const wantRun = process.argv.includes("--run");
@@ -397,9 +415,38 @@ async function cmdDoctor() {
     else if (!levelOk) line = c.red(`  ${L.doctor.thresholdFail(min, now)}\n`);
     else line = c.red(`  ${L.doctor.thresholdGateFail(min, now, failedNames)}\n`);
     console.log(line);
+    await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: failedNames ? String(failedNames).split(", ").filter(Boolean) : [] }, cat.todoRecs, pass);
     process.exit(pass ? 0 : 1);
   }
-  process.exit(missing || reached < 0 || gateFailed ? 1 : 0);
+  const ok = !(missing || reached < 0 || gateFailed);
+  await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: [] }, cat.todoRecs, ok);
+  process.exit(ok ? 0 : 1);
+}
+
+// Печать краткого итога. Совет — не чаще раза в сутки и с явным способом отказаться: то, что
+// видишь тридцатый раз, перестаёт читаться и пролистывается вместе с настоящими находками рядом.
+// Отметка времени лежит в .aqk/, который в .gitignore: это состояние машины, а не проекта.
+async function finishBrief(buf, state, todoRecs, ok) {
+  if (!buf) return;
+  buf.restore();
+  console.log(briefLine(state, L));
+
+  // При провале печатаем ВЕСЬ буфер: человеку нужно чинить, а одной строкой не починишь.
+  if (!ok) { console.log(buf.lines.join("\n")); return; }
+
+  if (process.env.AQK_ADVICE === "0" || !state.todo) return;
+  const stampFile = join(CWD, TARGET_DIR, "advice-shown");
+  let last = null;
+  try { last = (await readFile(stampFile, "utf8")).trim(); } catch { /* не показывали ещё */ }
+  if (!adviceDue(last)) return;
+  const advice = pickAdvice(todoRecs);
+  if (!advice) return;
+  console.log(c.dim(L.brief.advise(advice.slug, advice.intent || "")));
+  console.log(c.dim(L.brief.adviseOff(`${SELF} why ${advice.slug}`, "AQK_ADVICE=0")));
+  try {
+    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+    await writeFile(stampFile, new Date().toISOString(), "utf8");
+  } catch { /* не смогли записать отметку — совет повторится, это не беда */ }
 }
 
 // Наружу — только команда. Остальное здесь же и используется: экспорт, который никто не

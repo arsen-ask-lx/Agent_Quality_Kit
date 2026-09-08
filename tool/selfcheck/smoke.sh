@@ -1523,6 +1523,33 @@ else
 fi
 rm -rf "$CVUP"
 
+# --- 99. краткий режим: присутствие видно, совет не надоедает -----------------
+# Хук pre-commit молчит на успехе — это его умолчание. Комплект, который всё держит, для
+# человека неотличим от невставленного: «скачал и че дальше» — дословная жалоба владельца.
+# Это ровно тот порок, против которого написан комплект, только у нас самих.
+# Проверяются три вещи сразу: строка есть всегда; совет приходит один раз, а не на каждый
+# прогон; переменная его выключает.
+BRFP="$(mktemp -d)"
+( cd "$BRFP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf '.x\n' > .gitignore && mkdir -p rules .aqk/docs && printf 'п\n' > rules/r.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  ok: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+B1=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 ); B1C=$?
+B2=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
+rm -f "$BRFP/.aqk/advice-shown"
+B3=$( cd "$BRFP" && AQK_ADVICE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
+if [ "$B1C" -eq 0 ] &&
+   printf '%s' "$B1" | grep -q "^AQK  держит" &&
+   printf '%s' "$B1" | grep -q "поставить:" &&
+   printf '%s' "$B2" | grep -q "^AQK  держит" &&
+   ! printf '%s' "$B2" | grep -q "поставить:" &&
+   ! printf '%s' "$B3" | grep -q "поставить:" &&
+   [ "$(printf '%s\n' "$B2" | wc -l)" -le 2 ]; then
+  ok "краткий режим: строка есть всегда, совет один раз в сутки и выключается"
+else
+  bad "краткий режим ведёт себя не так" "первый: $(printf '%s' "$B1" | head -1) · второй строк: $(printf '%s\n' "$B2" | wc -l)"
+fi
+rm -rf "$BRFP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

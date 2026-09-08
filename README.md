@@ -88,6 +88,7 @@ aqk badge --check       fail if the badge disagrees with a run
 
 aqk context             the repository state in one block, for an agent's context:
                         level, what is red now, rules nobody enforces, ratchets
+aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
 aqk context --full      the same plus the command map and the rulebook verbatim (~7000
                         tokens against ~375: the price of an agent that does not guess)
 aqk context --install   put a SessionStart hook into .claude/settings.json

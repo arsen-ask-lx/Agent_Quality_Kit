@@ -12,7 +12,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
-import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync, browserServerAdvice } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync, browserServerAdvice, MARKS } from "../lib/repo.mjs";
 import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
@@ -494,4 +494,22 @@ test("сервер уже объявлен — совета нет", () => {
   assert.equal(browserServerAdvice({ has_ui: true }, cfg), null);
   const pw = '{"mcpServers":{"b":{"command":"npx","args":["@playwright/mcp@0.0.80"]}}}';
   assert.equal(browserServerAdvice({ has_ui: true }, pw), null);
+});
+
+// Признак репозитория без объяснения — это запись каталога, ВЫКЛЮЧЕННАЯ НАВСЕГДА. Триггер
+// с неизвестным ключом даёт «условие программа не умеет считать», и запись не показывается
+// никому и никогда. Поймано на себе 2026-09-08: завёл has_mcp в списке признаков, объяснение
+// не завёл, и новая запись стала неприменимой в любом репозитории. Видно это было только в
+// выводе doctor на чужой папке — ни один прогон не краснел.
+test("у каждого признака репозитория есть объяснение на обоих языках", () => {
+  const names = MARKS.map(([n]) => n);
+  for (const lang of ["ru", "en"]) {
+    const flags = CATALOGS[lang].trigger.flags;
+    const missing = names.filter((n) => !flags[n]);
+    assert.deepEqual(missing, [], `${lang}: нет объяснения для ${missing.join(", ")}`);
+    // Обратной проверки нет намеренно, и это не лень. Часть признаков считается не по наличию
+    // файла, а обходом содержимого (has_db, has_tests, has_ui), и в этом списке их нет.
+    // Риск несимметричен: объяснение без признака — мёртвая строка, признак без объяснения —
+    // запись каталога, выключенная навсегда и молча. Сторожим ту сторону, которая ломает.
+  }
 });

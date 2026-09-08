@@ -22,6 +22,15 @@ export const en = {
   },
   ...enDocs,
   templates,
+  brief: {
+    name: "AQK",
+    held: (n) => `holds ${n}`,
+    todo: (n) => `not installed ${n}`,
+    levelUnknown: "level unknown",
+    red: (l) => `     RED: ${l}`,
+    advise: (slug, why) => `     ↑ install: ${slug} — ${why}`,
+    adviseOff: (cmd, env) => `       not needed: ${cmd}, or ${env}`,
+  },
   help: {
     tagline: "tooling for building software with agents",
     name: "<name>",
@@ -174,6 +183,7 @@ export const en = {
       has_agent_config: ["the agent was never configured here", "agent settings exist"],
       has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],
       has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
+      has_mcp: ["no MCP tools are wired up for the agent here", "MCP servers are declared"],
     },
   },
 

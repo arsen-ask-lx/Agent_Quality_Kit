@@ -355,6 +355,6 @@ async function matchCatalog(query) {
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
   whichSync,
-  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice,
+  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
   stems, overlap, matchCatalog,
 };
