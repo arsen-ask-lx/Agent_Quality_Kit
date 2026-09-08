@@ -30,7 +30,7 @@ TESTS="-name test -prune -o -name tests -prune -o -name spec -prune -o -name __t
 find "$DIR" $(skip_find "$DIR") $TESTS -type f \
      ! -name 'test_*' ! -name '*_test.*' ! -name '*.test.*' ! -name '*.spec.*' \
      -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
-  | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
+  | drop_generated \
   | xargs -r awk -v MAX="$MAX" '
         # Один обход на все файлы: процесс на каждый файл дал 19 секунд на 4000 файлов.
         # Разметка вложена по природе: пять уровней тегов — это не сложная логика, а обычная
@@ -40,12 +40,11 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
         FNR == 1 { flush(); worst = 0; wl = 0; wf = FILENAME }
         /^[[:space:]]*$/ { next }
         {
-          # ширина отступа: табуляция считается за четыре пробела
-          line = $0; n = 0
-          while (match(line, /^[ \t]/)) {
-            n += (substr(line, 1, 1) == "\t") ? 4 : 1
-            line = substr(line, 2)
-          }
+          # ширина отступа: табуляция считается за четыре пробела. Отступ берётся ОДНИМ
+          # match, а не посимвольным циклом с substr: цикл выделял новую строку на каждый
+          # символ отступа и стоил больше, чем весь остальной разбор. Замер 2026-09-08 на uv.
+          match($0, /^[ \t]*/); ind = substr($0, 1, RLENGTH)
+          n = gsub(/\t/, "", ind) * 4 + length(ind)
           depth = int(n / 4)
           if (depth > worst) { worst = depth; wl = FNR }
         }

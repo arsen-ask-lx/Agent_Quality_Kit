@@ -30,7 +30,7 @@ TESTS="-name test -prune -o -name tests -prune -o -name spec -prune -o -name __t
 find "$DIR" $(skip_find "$DIR") $TESTS -type f \
      ! -name 'test_*' ! -name '*_test.*' ! -name '*.test.*' ! -name '*.spec.*' \
      -print 2>/dev/null | only_code | own_samples_filter "$DIR" \
-  | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
+  | drop_generated \
   | LC_ALL=C sort \
   | xargs -r env LC_ALL=C awk -v WIN="$WIN" '
       # Строка-объявление ввоза: `import`, `from … import`, `use …;`, путь в кавычках внутри
@@ -54,6 +54,10 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
         buf[++n] = line
         imp[n] = isimport(line)
         if (n >= WIN) {
+          # Ключ и признак «есть ли код» собираются ОДНИМ проходом по окну. Разнести их на
+          # два цикла выглядело ускорением — окно из одного ввоза отбрасывалось бы до сборки
+          # ключа. Замерено 2026-09-08 на uv: стало 2791 мс против 1770. Второй обход окна
+          # дороже, чем сборка ключа, которую он экономит; правка откачена по замеру.
           key = ""; code = 0
           for (i = n - WIN + 1; i <= n; i++) { key = key buf[i] "\x1e"; if (!imp[i]) code = 1 }
           if (!code) next                               # окно целиком из ввоза — не дубль

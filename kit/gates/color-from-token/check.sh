@@ -40,7 +40,7 @@ EXT_RE="$(printf '%s' "$COLOR_EXT" | tr ' ' '|')"
 HITS=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null \
   | grep -E "\.($EXT_RE)$" \
   | grep -viE "(^|/)[^/]*($SOURCE_RE)[^/]*\.($EXT_RE)$" \
-  | while IFS= read -r F; do is_generated "$F" || printf '%s\n' "$F"; done \
+  | drop_generated \
   | LC_ALL=C sort \
   | xargs -r awk '
       # Блочные комментарии вырезаются ПО СОСТОЯНИЮ, а не построчно. Однострочный фильтр
