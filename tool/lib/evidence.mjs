@@ -121,4 +121,4 @@ function readForHash(files, cwd) {
   });
 }
 
-export { changedCode, coverage, evidenceHash, readForHash, CODE_EXT };
+export { changedCode, coverage, evidenceHash, readForHash };

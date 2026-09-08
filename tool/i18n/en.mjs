@@ -446,56 +446,6 @@ export const en = {
     checkOk: (level, where) => `Badge matches the run: AQK-${level} — ${where}`,
   },
 
-  report2: {
-    evidenceNamed: (who) => `named by: ${who}`,
-    evidenceSilent: (n) => `${n} check${n === 1 ? "" : "s"} walked past it and said nothing`,
-    evidenceTitle: "What proves this diff",
-    evidenceUncovered: "no check named this file",
-    evidenceBase: "base of comparison",
-    evidenceHash: "evidence fingerprint",
-    evidenceBadRef: (r) => `ref "${r}" could not be resolved — coverage not computed`,
-    evidenceNoFiles: (r) => `no code files in the diff against "${r}" — nothing to prove`,
-    evidenceWarn:
-      "◻️ means a check walked the directory and said nothing. \"Scanned and clean\" and " +
-      "\"never looked\" are indistinguishable from the output, and neither may be passed off " +
-      "as the other. " +
-      "The fingerprint covers the base, the set of commands and the contents of the files. " +
-      "Change any of them and this report is stale, so \"ran it, then edited three more files\" " +
-      "stops being indistinguishable from \"ran it\". Mechanism taken from donecheck (MIT).",
-    title: "AQK report",
-    noManifest: (cmd) => `No .aqk.yml — nothing to report on. Start with ${cmd}`,
-    level: "Level",
-    holdsTitle: "What a machine holds (from a run, not from the manifest)",
-    nothingRuns: "⬜ no gate is declared",
-    native: (prog) => `native recipe: ${prog}`,
-    portable: "portable check",
-    weakerTitle: "Weaker than it could be",
-    weaker: (progs) => `${progs} is available on this system, but the gate uses the portable check — it catches less`,
-    missingTitle: "What is missing",
-    nothingMissing: "✅ every applicable entry is installed",
-    needsTool: (prog) => `needs ${prog} — not on this system`,
-    notInstalled: "applicable, but not installed",
-    hiddenTitle: "Not applicable to this repository",
-    readTitle: "What the kit told you to read",
-    readWarn:
-      "The mark only means the file is on disk. Whether it was read, the machine does not know " +
-      "and does not pretend to: that is answered by whoever is reporting.",
-    ignoreTitle: "What .aqkignore hides",
-    ignoreNone: "no .aqkignore file — nothing is hidden",
-    ignoreWarn:
-      "Hiding things silently is the same class as a silent gate: the gates do not look at these " +
-      "paths at all. A line here means there is no protection there, and will not be.",
-    whyTitle: "Why this matters — briefly",
-    whyNothing: "nothing to add: everything applicable is in place",
-    saved: (path) => `Saved: ${path}`,
-    docs: {
-      baseline: "the minimum a project needs, independent of language",
-      readyMade: "the map of off-the-shelf rules: look for a ready one before writing your own",
-      rulesGeneral: "general working rules",
-      rulesTesting: "rules about tests",
-      rulesSecurity: "rules about security",
-    },
-  },
 
 
 };

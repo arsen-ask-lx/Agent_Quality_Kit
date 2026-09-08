@@ -89,7 +89,8 @@
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
 - `incidents/README.md` — журнал шишек, общий на все проекты
 - `tool/selfcheck/` — проверки самого комплекта: `syntax.sh` (все исходники разбираются),
-  `units.mjs` и `units-level.mjs` (функции; второй — про уровень и доказательство), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
+  `units.mjs`, `units-level.mjs` (уровень и доказательство гейтов) и `units-evidence.mjs`
+  (привязка доказательства к дифу), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
   `conditional.sh` (доказательства), `mutation.sh` (вердикт переживает изменения образца,
   которые не должны его менять), `lifecycle.mjs` (зрелость записей каталога таблицей; правило
   живёт в `entryLifecycle`, здесь только печать)
@@ -105,7 +106,7 @@
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
-- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs`
+- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
