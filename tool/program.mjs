@@ -22,6 +22,7 @@ import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
 import { cmdAdd, cmdNew, cmdRatchet, cmdFind, cmdWhy } from "./commands/gates.mjs";
 import { cmdReport } from "./commands/report.mjs";
+import { cmdLearn } from "./commands/learn.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
 
@@ -67,6 +68,12 @@ if (IS_MAIN) {
     case "blob":
       await cmdBlob();
       break;
+    // Читает локальную переписку — поэтому только в терминал и всегда с кодом 0. Подробности
+    // и замер, на котором стоит отбор, — в шапке tool/commands/learn.mjs.
+    case "learn":
+      await cmdLearn();
+      break;
+
     case "report":
       await cmdReport();
       break;
@@ -96,6 +103,7 @@ if (IS_MAIN) {
         [`${SELF} note "…"`, h.note],
         [`${SELF} blob`, h.blob],
         [`${SELF} report`, h.report],
+        [`${SELF} learn`, h.learn],
         [`${SELF} badge`, h.badge],
       ];
       const width = Math.max(...rows.map(([cmdText]) => cmdText.length));

@@ -1232,6 +1232,43 @@ else
 fi
 rm -rf "$EVDIR"
 
+# --- 84. learn читает только напечатанное человеком --------------------------
+# Поле promptSource отделяет реплику от результата инструмента. Без него первая версия отбора
+# выдавала вставленные пути и ссылки вместо правил — «agent quality kit» 44 раза.
+LRN="$(mktemp -d)"; LRNP="$(mktemp -d)"
+SLUG=$(printf '%s' "$LRNP" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]\+/-/g')
+mkdir -p "$LRN/projects/$SLUG"
+{
+  printf '{"type":"user","promptSource":"typed","timestamp":"2026-09-08T10:00:00Z","message":{"role":"user","content":"никогда не коммить прямо в основную ветку"}}\n'
+  printf '{"type":"user","promptSource":"typed","timestamp":"2026-09-08T10:01:00Z","message":{"role":"user","content":"ок го дальше"}}\n'
+  printf '{"type":"user","timestamp":"2026-09-08T10:02:00Z","message":{"role":"user","content":[{"type":"tool_result","content":"нельзя обязательно всегда"}]}}\n'
+} > "$LRN/projects/$SLUG/s1.jsonl"
+printf '# правила\n- Ничего особенного.\n' > "$LRNP/AGENTS.md"
+printf 'aqk: "1"\nentry: [AGENTS.md]\n' > "$LRNP/.aqk.yml"
+LRN_OUT=$( cd "$LRNP" && CLAUDE_CONFIG_DIR="$LRN" AQK_LANG=ru node "$CLI" learn 2>&1 )
+if printf '%s' "$LRN_OUT" | grep -q "основную ветку" &&
+   ! printf '%s' "$LRN_OUT" | grep -q "го дальше" &&
+   printf '%s' "$LRN_OUT" | grep -q "напечатано человеком: 2"; then
+  ok "learn берёт напечатанное человеком и не берёт вывод инструментов"
+else
+  bad "learn отобрал не то" "$(printf '%s' "$LRN_OUT" | tr '\n' ' ' | cut -c1-150)"
+fi
+# Правило, уже стоящее в точке входа, показывать незачем: команда не пересказывает свод.
+printf '# правила\n- Никогда не коммить прямо в основную ветку.\n' > "$LRNP/AGENTS.md"
+LRN_W=$( cd "$LRNP" && CLAUDE_CONFIG_DIR="$LRN" AQK_LANG=ru node "$CLI" learn 2>&1 )
+if printf '%s' "$LRN_W" | grep -q "уже стоит в точке входа"; then
+  ok "learn молчит о правиле, которое уже записано"
+else
+  bad "learn повторил записанное правило" "$(printf '%s' "$LRN_W" | tr '\n' ' ' | cut -c1-150)"
+fi
+# Читает переписку — значит на диск не пишет ничего. Проверяем буквально.
+if [ ! -d "$LRNP/.aqk" ] || [ -z "$(ls -A "$LRNP/.aqk" 2>/dev/null)" ]; then
+  ok "learn ничего не записал на диск"
+else
+  bad "learn создал файлы" "$(ls -A "$LRNP/.aqk" | tr '\n' ' ')"
+fi
+rm -rf "$LRN" "$LRNP"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
