@@ -179,7 +179,7 @@ ruff check --select TRY400 --statistics .     # сколько находок У
 | [`agnix`](https://github.com/agent-sh/agnix) | 455 правил: структура `CLAUDE.md`/`AGENTS.md`/`SKILL.md`, синтаксис конфигов MCP и хуков, соглашения об именах, **мёртвые ссылки на файлы**. Есть автопочинка и LSP | 404 ⭐, Rust, активен на 2026-09-06. `npm i -g agnix`, `brew`, `pip`, `cargo` |
 | [`agents-lint`](https://github.com/giacomo/agents-lint) | мёртвые npm-скрипты, упомянутые в `AGENTS.md`, устаревшие рамки, деревья каталогов в контексте | 13 ⭐, TypeScript, последний коммит март 2026 — снято 2026-09-06 |
 | [`claudelint`](https://github.com/pdugan20/claudelint) | 116 правил: схема `.claude/settings.json`, синтаксис правил доступа, имена переменных окружения, ссылки на несуществующие файлы, разбор навыков, плагинов, MCP и LSP. Ловит `"allow": ["*"]` | TypeScript, MIT, коммит 2026-09-08. `npx claude-code-lint`. **Код возврата 0 даже на находке**, если её строгость — `warn`: блокирует только `--strict`. Проверено прогоном 0.8.0 |
-| [`slopcheck`](https://github.com/mattschaller/slopcheck) | имена npm-пакетов из команд установки в `.md`, `.mdc`, `.yml`, `.json`, `.cursorrules` сверяет с реестром: пакет, которого не существует, — приманка для захвата имени | MIT, ноль зависимостей, TypeScript. `npx slopcheck .`, код возврата 1 на находке — проверено прогоном 0.2.0. Без сети выходит с нулём: «не проверено» у него неотличимо от «чисто» |
+| [`slopcheck`](https://github.com/mattschaller/slopcheck) — **не путать с `0xToxSec/slopcheck`, это разные проекты** | имена npm-пакетов из команд установки в `.md`, `.mdc`, `.yml`, `.yaml`, `.json`, `.cursorrules` сверяет с реестром: пакет, которого не существует, — приманка для захвата имени | MIT, ноль зависимостей, TypeScript, пуш 2026-09-06. `npx slopcheck .`, код возврата 1 на находке — проверено прогоном 0.2.0 от 2026-09-08. Без сети выходит с нулём: «не проверено» у него неотличимо от «чисто» |
 
 ```bash
 npm install -g agnix && agnix --strict .
@@ -222,7 +222,7 @@ npm install -g agnix && agnix --strict .
 | «casting to `any` to silence type errors» | `@typescript-eslint/no-explicit-any`. Своей записи нет намеренно: замер по `zod` — 769 вхождений на 501 файл, первый прогон даёт стену |
 | «using `setTimeout` as a band-aid fix» | ничем. Замера нет, риск ложных высок: `setTimeout` законен сплошь и рядом |
 | «hallucinating external services, then mocking» | ничем. Отличить выдуманную службу от настоящей статически нечем |
-| выдуманная зависимость (slopsquatting) | [`slopcheck`](https://github.com/0xToxSec/slopcheck), MIT — но последний коммит апрель 2026, рецепта на него не вешаем |
+| выдуманная зависимость (slopsquatting) | [`slopcheck`](https://github.com/mattschaller/slopcheck) — тот, что лежит в npm под этим именем; на нём стоит запись `no-phantom-package`. **Проектов с именем `slopcheck` два**: [`0xToxSec/slopcheck`](https://github.com/0xToxSec/slopcheck) тоже MIT, но последний пуш апрель 2026 и в npm его нет. Проверено 2026-09-08 |
 | подавление проверки без адреса | наш `gate-not-weakened` плюс `eslint-plugin-eslint-comments`, `flake8-noqa` |
 | шаг конвейера, который не может провалиться | наш `ci-actually-fails`; у `checkwash` есть смежный `CI_WORKFLOW_TOUCHED` |
 
