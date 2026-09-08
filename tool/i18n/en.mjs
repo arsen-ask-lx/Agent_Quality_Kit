@@ -87,6 +87,9 @@ export const en = {
     hasThings: "has",
     install: (cmd) => `install: ${cmd}`,
     notApplicable: (n) => `Not applicable to this repository (${n}):`,
+    noBrowserServer:
+      "this project has a UI, and the agent has no browser: it cannot look at its own change\n  and judges the work by what compiled. Those are different claims.",
+    noBrowserServerHow: (l) => `add an MCP server — works with any agent: ${l}`,
     coveredBy: (n) => `held by another arbiter: ${n} — the portable entry is not needed`,
     coveredByGate: (g) => `held by "${g}", declared in the manifest`,
     coversUnknown: (l) => `covers names a gate absent from gates: ${l} — those entries are held by nothing`,

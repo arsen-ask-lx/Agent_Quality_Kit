@@ -257,6 +257,32 @@ function pickRecipe(rec, facts, missing) {
   return recipes.any || null;
 }
 
+// БРАУЗЕР У АГЕНТА. Проект с интерфейсом, у которого агенту нечем посмотреть на собственное
+// изменение, — это §16 методички: «прогон на живой системе перед сдачей, как пользователь, через
+// настоящий вход». Без браузера агент судит о своей работе по тому, что компилируется, а это
+// разные утверждения; мок-тесты сюда же.
+//
+// СОВЕТ, А НЕ ЗАПИСЬ КАТАЛОГА, и разница принципиальная. Запись каталога — машинная проверка с
+// вердиктом; здесь вердикта нет: отсутствие браузерного сервера не дефект, а незанятая
+// возможность. Красить это в красное значит требовать поставить инструмент — мы так не делаем
+// ни с чем другим.
+//
+// НАЗЫВАЮТСЯ ДВА, а не один. `chrome-devtools-mcp` от Google — трассировка производительности,
+// Lighthouse, сеть, консоль; `@playwright/mcp` от Microsoft — прогон сценариев в трёх движках.
+// Назвать один значит выдать выбор за факт: они решают разные задачи, и выбирает человек.
+// Проверено по реестру npm 2026-09-08: 1.9.0 и 0.0.80, оба живые, оба от первых лиц.
+//
+// НЕ ВСЕМ. Проекту без интерфейса браузер не нужен, а совет, показанный не тому, стоит доверия
+// всем остальным советам — та же норма, что у записей каталога.
+const BROWSER_SERVERS = ["chrome-devtools-mcp", "@playwright/mcp", "playwright-mcp", "puppeteer-mcp", "puppeteer"];
+
+function browserServerAdvice(facts, mcpText = "") {
+  if (!facts?.has_ui) return null;
+  const text = String(mcpText || "");
+  if (BROWSER_SERVERS.some((n) => text.includes(n))) return null;
+  return { servers: ["chrome-devtools-mcp", "@playwright/mcp"] };
+}
+
 function recipeFor(rec, facts) {
   const cmd = pickRecipe(rec, facts);
   if (!cmd) return L.recipe.none;
@@ -329,6 +355,6 @@ async function matchCatalog(query) {
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
   whichSync,
-  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor,
+  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice,
   stems, overlap, matchCatalog,
 };
