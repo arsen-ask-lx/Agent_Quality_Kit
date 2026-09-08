@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "browser": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "memory": {
+      "command": "/opt/tools/memory-mcp-v0.10.8/bin/memory",
+      "args": []
+    },
+    "search": {
+      "command": "npx",
+      "args": ["-y", "some-search-mcp"]
+    }
+  }
+}
