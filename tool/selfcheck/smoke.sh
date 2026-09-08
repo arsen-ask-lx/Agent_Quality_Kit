@@ -25,6 +25,13 @@ FAIL=0
 ok()   { printf '  \033[32m✔\033[0m  %s\n' "$1"; PASS=$((PASS + 1)); }
 bad()  { printf '  \033[31m✘\033[0m  %s\n' "$1"; printf '      %s\n' "${2:-}"; FAIL=$((FAIL + 1)); }
 
+# Node на Windows видит мир глазами Windows, а Git Bash — глазами POSIX: путь вида
+# /tmp/tmp.XXXX, отданный в `node -e`, там не существует, и проверка падает не на том, что
+# проверяет. Поймано дважды на windows-прогоне — сперва на `learn`, потом на установке хука.
+# Поэтому node запускается ИЗ каталога и получает относительный путь: помощник, а не памятка,
+# потому что памятку третий раз забудут ровно так же, как забыли второй.
+node_in() { D="$1"; shift; ( cd "$D" && node "$@" ); }
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -1334,6 +1341,37 @@ else
   bad "doctor проверил не то, что объявлено в манифесте" "$(printf '%s' "$LY" | head -8)"
 fi
 rm -rf "$LYP"
+
+# --- 90. блок состояния: тишина не выдаётся за «чисто» -----------------------
+# Читатель этого блока — машина. Человек, увидев пустое место, переспросит; агент примет его
+# за утверждение и пойдёт писать код по несуществующему разрешению. Поэтому главное здесь одно:
+# без прогона блок обязан сказать «неизвестно» СЛОВОМ.
+CTXP="$(mktemp -d)"
+( cd "$CTXP" && git init -q . ) >/dev/null 2>&1
+CTX=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context 2>&1 ); CTX_C=$?
+if [ "$CTX_C" -eq 0 ] &&
+   printf '%s' "$CTX" | grep -q "НЕИЗВЕСТНО" &&
+   printf '%s' "$CTX" | grep -q "не вычислен" &&
+   ! printf '%s' "$CTX" | grep -q "AGENTS.md"; then
+  ok "context без прогона говорит «неизвестно» и не называет несуществующий свод"
+else
+  bad "context выдал незнание за чистоту" "код $CTX_C: $(printf '%s' "$CTX" | head -5)"
+fi
+
+# --- 91. хук ставится в общий файл и не затирает чужие настройки --------------
+mkdir -p "$CTXP/.claude"
+printf '{ "permissions": { "deny": ["Read(./.env)"] } }\n' > "$CTXP/.claude/settings.json"
+( cd "$CTXP" && AQK_LANG=ru node "$CLI" context --install ) >/dev/null 2>&1
+AGAIN=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context --install 2>&1 )
+HOOKS=$(node_in "$CTXP" -e 'const s=require("./.claude/settings.json");
+  console.log([s.hooks?.SessionStart?.length, s.permissions?.deny?.length,
+    /[/\\]program\.mjs/.test(JSON.stringify(s.hooks?.SessionStart||[]))].join(" "))' 2>&1)
+if [ "$HOOKS" = "1 1 false" ] && printf '%s' "$AGAIN" | grep -q "уже стоит"; then
+  ok "хук ставится один раз, переносимой командой, чужие настройки целы"
+else
+  bad "установка хука испортила настройки или задвоилась" "разбор: $HOOKS"
+fi
+rm -rf "$CTXP"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'

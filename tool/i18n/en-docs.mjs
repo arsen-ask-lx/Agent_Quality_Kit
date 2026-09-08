@@ -7,6 +7,34 @@
 // the second for one second in a terminal.
 
 const enDocs = {
+  // THE STATE BLOCK — the one text of ours whose reader is a machine, not a person.
+  // It goes into the agent's context via a SessionStart hook, so it is written as claims of
+  // fact: no politeness, no preamble, every line either a fact or an honest "unknown".
+  context: {
+    title: "AQK — the state of this repository right now. Only what a machine computed; where it\ndoes not know, it says \"unknown\" — which is not the same as \"fine\".",
+    level: (r, top, missing) =>
+      `Level: AQK-${r} of ${top}.` + (missing ? ` AQK-${r + 1} is missing: ${missing}.` : ""),
+    levelUnknown: "Level: not computed — there is no .aqk.yml here. The standard is not set up.",
+    rules: (total, machine, human) =>
+      `Rules in the entry point: ${total}. Held by a machine ${machine}, by a human ${human}.`,
+    rulesNobody: "A rule held by a human is held by nobody: no machine checks it.",
+    runNone:
+      "No run has been made — which checks are red is UNKNOWN. This is not \"clean\": `aqk doctor --run`.",
+    runStale: (when) =>
+      `The last run ${when} is OLDER than the last commit — it describes different code.`,
+    runClean: (when) => `Last run ${when} — nothing red.`,
+    runRed: (when, names) => `Last run ${when} — RED: ${names}.`,
+    andMore: (n) => `and ${n} more`,
+    skipped: (n) => `Not run: ${n} — the tool is absent on this machine, their state is unknown.`,
+    ratchets: (list) => `Ratchets: ${list}. The list may only get shorter, never longer.`,
+    where: (entry) => `The rulebook: ${entry}. What proves a diff: \`aqk report --since main\`.`,
+    hookAlready: (p) => `the hook is already in ${p} — changing nothing.`,
+    hookAdded: (p) => `SessionStart hook appended to ${p}:`,
+    hookCreated: (p) => `created ${p} with a SessionStart hook:`,
+    hookBadJson: (p) => `${p} does not parse as JSON — leaving it alone. Fix it and retry.`,
+    hookWhat:
+      "the project state now reaches the agent's context before its first action, not at its discretion.",
+  },
   // Форма отчёта переехала сюда из терминального каталога 2026-09-08: это текст, который
   // программа ПИШЕТ в .aqk/report.md, а не говорит в терминал. Повод — тот же гейт
   // file-size-limit, что развёл эти файлы в первый раз: терминальный каталог снова перерос

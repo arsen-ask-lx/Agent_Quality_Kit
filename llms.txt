@@ -32,6 +32,13 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - See what proves a diff, file by file: `npx agent-quality-kit report --since main` — each changed
   code file is named by a check, walked past in silence, or touched by nothing at all, plus a
   fingerprint over the base, the commands and the file contents
+- Put the repository state into the agent's context instead of hoping it reads the files:
+  `npx agent-quality-kit context` — level, what is red right now, how many rules no machine
+  enforces, what the ratchets hold. Where it does not know, it says so: a run that never happened
+  is reported as unknown, never as clean. `context --install` writes a `SessionStart` hook into
+  `.claude/settings.json` (Claude Code only; the rest of the kit stays vendor-neutral). Measured:
+  the block is ~147 tokens against ~3348 for the rulebook, and carries what a file cannot —
+  what changed today
 - See what you told the agent and never wrote down: `npx agent-quality-kit learn` — reads Claude Code
   transcripts for this project on this machine and prints rule candidates missing from the entry
   point. Current project only, terminal only, writes nothing, always exits 0
