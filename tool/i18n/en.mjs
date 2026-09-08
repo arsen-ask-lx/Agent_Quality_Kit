@@ -8,6 +8,18 @@ import { enDocs } from "./en-docs.mjs";
 import { templates } from "./templates-en.mjs";
 
 export const en = {
+  learn: {
+    title: "Said out loud, never written down",
+    noLogs: (p) => `no logs for this project: ${p}\n  The command reads Claude Code transcripts on this machine. Empty means nobody worked here.`,
+    counted: (s, typed, said, fresh) =>
+      `sessions: ${s} · typed by a human: ${typed} · looks like an instruction: ${said} · not in the entry point: ${fresh}`,
+    nothing: "everything that looks like a rule is already in the entry point",
+    andMore: (n) => `… and ${n} more`,
+    warn:
+      "These are CANDIDATES, not findings: measured on 1619 messages, the markers returned 79, and " +
+      "about half of those are real rules. The human decides. Nothing was written to disk — the " +
+      "command reads transcripts and prints to the terminal only.",
+  },
   ...enDocs,
   templates,
   help: {
@@ -27,6 +39,7 @@ export const en = {
     new: "scaffold your own gate for the catalogue",
     note: "record a lesson in the shared bruise journal",
     blob: "assemble the guides into a single GOD_AI.md",
+    learn: "rule candidates from local transcripts: said out loud, never written down",
     report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
     noInstall: "Without installing:  npx agent-quality-kit init",

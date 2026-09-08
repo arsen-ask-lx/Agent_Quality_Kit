@@ -71,6 +71,8 @@
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению),
   `scope.mjs` (разбор вывода гейта: сужение до дифа, отделение совета от находок), `templates.mjs`
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
+  `learn.mjs` (кандидаты в правила из локальной переписки: что сказано вслух и не записано;
+  читает только напечатанное человеком, ничего не пишет на диск),
   `gates.mjs` (`add`, `new`, `ratchet`, `find`, `why`), `report.mjs` (`report` — форма отчёта,
   собранная прогоном), `badge.mjs` (`badge`, `badge --check` — значок уровня)
 - `tool/i18n/` — язык вывода: `ru.mjs`, `en.mjs` (то, что программа ГОВОРИТ в терминал),
@@ -106,7 +108,7 @@
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
-- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs`
+- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
@@ -114,6 +116,8 @@
 - зрелость записей каталога: `AQK_LANG=ru node tool/selfcheck/lifecycle.mjs`
 - только то, что внёс диф: `node tool/program.mjs doctor --run --since main`
 - отчёт по репозиторию: `node tool/program.mjs report`
+- что сказано вслух и не записано: `node tool/program.mjs learn` — читает логи Claude Code этого
+  проекта на этой машине, печатает КАНДИДАТОВ в правила. Только в терминал, ничего на диск
 - чем доказан диф: `node tool/program.mjs report --since main` — три состояния у каждого файла:
   назван проверкой, обойдён молча, не тронут никем. Второе и третье не сливаются: «просмотрен и
   чист» и «никто не смотрел» по выводу неразличимы, и выдавать одно за другое нельзя
