@@ -30,7 +30,10 @@ GitHub 2026-09-07. Шесть настоящих находок в четырё�
 вчера) проверяет схему `settings.json`, синтаксис прав и ловит `"allow": ["*"]` — это мы не
 дублируем, ставьте его рядом. В его исходниках есть и правило `hooks-invalid-event`, но живой
 прогон версии 0.8.0 на файле с `"PoToolUse"` даёт «No problems found»: категория `hooks` на
-`.claude/settings.json` не срабатывает. [`cclint`](https://github.com/carlrannaberg/cclint)
+`.claude/settings.json` не срабатывает. Причина найдена в их исходнике 2026-09-08 — правила
+категории `Hooks` запускает только `HooksValidator` (`src/validators/hooks.ts`), а он ищет файлы
+по единственному образцу `hooks/hooks.json` (`src/utils/filesystem/patterns.ts:45`). Сообщено:
+[issue #217](https://github.com/pdugan20/claudelint/issues/217). [`cclint`](https://github.com/carlrannaberg/cclint)
 последний раз трогали в сентябре 2025 и лицензии у него нет. `AgentLint` знает 12 событий из 33.
 
 **Почему список, а не «похоже на опечатку».** Первая версия краснела только на близких промахах —

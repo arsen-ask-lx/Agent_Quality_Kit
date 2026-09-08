@@ -57,6 +57,9 @@ gates:
   promise-has-gate: "bash kit/gates/promise-has-gate/check.sh ."
   hook-actually-fires: "bash kit/gates/hook-actually-fires/check.sh ."
   personal-config-not-shared: "bash kit/gates/personal-config-not-shared/check.sh ."
+  # Единственная запись, которой нужен интернет: имена пакетов сверяются с реестром npm.
+  # Без сети она выходит с кодом 2 и говорит «проверка не состоялась» — тишиной не прикидывается.
+  no-phantom-package: "bash kit/gates/no-phantom-package/check.sh ."
 
 
 # AQK-2 — чем доказано, что гейты работают, и где реестры долга.
