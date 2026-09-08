@@ -66,6 +66,8 @@
   `baseline.mjs` (обязательный минимум проекта: какие пункты методички машина умеет подтвердить),
   `prove.mjs` (доказательство гейтов: краснеет ли гейт на своём красном образце и молчит ли на
   зелёном — от этого зависит ступень AQK-2),
+  `evidence.mjs` (привязка доказательства к дифу: какой изменённый файл хоть одна проверка
+  назвала, какой обошла молча, какой не тронул никто; отпечаток по базе, командам и содержимому),
   `repo.mjs` (осмотр репозитория, триггеры, рецепты, сверка по намерению),
   `scope.mjs` (разбор вывода гейта: сужение до дифа, отделение совета от находок), `templates.mjs`
 - `tool/commands/` — команды: `project.mjs` (`init`, `start`, `note`, `blob`), `doctor.mjs`,
@@ -87,7 +89,8 @@
 - `kit/gates/` — гейты: один гейт = одна папка с командой и образцами. Норма — `kit/gates/README.md`
 - `incidents/README.md` — журнал шишек, общий на все проекты
 - `tool/selfcheck/` — проверки самого комплекта: `syntax.sh` (все исходники разбираются),
-  `units.mjs` и `units-level.mjs` (функции; второй — про уровень и доказательство), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
+  `units.mjs`, `units-level.mjs` (уровень и доказательство гейтов) и `units-evidence.mjs`
+  (привязка доказательства к дифу), `smoke.sh` (прогон на чистой папке), `gates.sh` (записи каталога),
   `conditional.sh` (доказательства), `mutation.sh` (вердикт переживает изменения образца,
   которые не должны его менять), `lifecycle.mjs` (зрелость записей каталога таблицей; правило
   живёт в `entryLifecycle`, здесь только печать)
@@ -103,7 +106,7 @@
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
-- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs`
+- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
@@ -111,6 +114,9 @@
 - зрелость записей каталога: `AQK_LANG=ru node tool/selfcheck/lifecycle.mjs`
 - только то, что внёс диф: `node tool/program.mjs doctor --run --since main`
 - отчёт по репозиторию: `node tool/program.mjs report`
+- чем доказан диф: `node tool/program.mjs report --since main` — три состояния у каждого файла:
+  назван проверкой, обойдён молча, не тронут никем. Второе и третье не сливаются: «просмотрен и
+  чист» и «никто не смотрел» по выводу неразличимы, и выдавать одно за другое нельзя
 - значок уровня в README: `node tool/program.mjs badge` — сверить: `badge --check`
 - порог для конвейера: `node tool/program.mjs doctor --run --min 1` — `--min` без `--run` не
   проваливается по вине упавших гейтов вообще: тишина неотличима от успеха, тот самый принцип,

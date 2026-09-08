@@ -45,6 +45,7 @@
     "entry": [
       "tool/selfcheck/units.mjs",
       "tool/selfcheck/units-level.mjs",
+      "tool/selfcheck/units-evidence.mjs",
       "tool/selfcheck/lifecycle.mjs"
     ],
     "project": [

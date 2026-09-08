@@ -27,7 +27,7 @@ export const en = {
     new: "scaffold your own gate for the catalogue",
     note: "record a lesson in the shared bruise journal",
     blob: "assemble the guides into a single GOD_AI.md",
-    report: "the mandatory report form: what is in place, what is not, what was not read",
+    report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
     noInstall: "Without installing:  npx agent-quality-kit init",
     language: "Output language: AQK_LANG=ru (or en), otherwise your system locale",
@@ -446,41 +446,6 @@ export const en = {
     checkOk: (level, where) => `Badge matches the run: AQK-${level} — ${where}`,
   },
 
-  report2: {
-    title: "AQK report",
-    noManifest: (cmd) => `No .aqk.yml — nothing to report on. Start with ${cmd}`,
-    level: "Level",
-    holdsTitle: "What a machine holds (from a run, not from the manifest)",
-    nothingRuns: "⬜ no gate is declared",
-    native: (prog) => `native recipe: ${prog}`,
-    portable: "portable check",
-    weakerTitle: "Weaker than it could be",
-    weaker: (progs) => `${progs} is available on this system, but the gate uses the portable check — it catches less`,
-    missingTitle: "What is missing",
-    nothingMissing: "✅ every applicable entry is installed",
-    needsTool: (prog) => `needs ${prog} — not on this system`,
-    notInstalled: "applicable, but not installed",
-    hiddenTitle: "Not applicable to this repository",
-    readTitle: "What the kit told you to read",
-    readWarn:
-      "The mark only means the file is on disk. Whether it was read, the machine does not know " +
-      "and does not pretend to: that is answered by whoever is reporting.",
-    ignoreTitle: "What .aqkignore hides",
-    ignoreNone: "no .aqkignore file — nothing is hidden",
-    ignoreWarn:
-      "Hiding things silently is the same class as a silent gate: the gates do not look at these " +
-      "paths at all. A line here means there is no protection there, and will not be.",
-    whyTitle: "Why this matters — briefly",
-    whyNothing: "nothing to add: everything applicable is in place",
-    saved: (path) => `Saved: ${path}`,
-    docs: {
-      baseline: "the minimum a project needs, independent of language",
-      readyMade: "the map of off-the-shelf rules: look for a ready one before writing your own",
-      rulesGeneral: "general working rules",
-      rulesTesting: "rules about tests",
-      rulesSecurity: "rules about security",
-    },
-  },
 
 
 };

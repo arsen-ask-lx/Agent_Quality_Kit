@@ -126,11 +126,15 @@ function runGates(man, opts = {}) {
     const t0 = Date.now();
     const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
     const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
+    // Вывод гейта запоминается целиком (с потолком, чтобы болтливый инструмент не съел память):
+    // по нему считается покрытие дифа — какой файл вообще был назван хоть одной проверкой.
+    // Без этого «готово = доказано» остаётся правилом, за которым следит только человек.
+    const outAll = `${r.stdout || ""}${r.stderr || ""}`.slice(0, 200000);
 
     if (r.error && r.error.code === "ETIMEDOUT") {
       console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.timeout)}`);
       failed++;
-      results.push({ name, cmd, ok: false, secs, note: L.doctor.timeout });
+      results.push({ name, cmd, ok: false, secs, note: L.doctor.timeout, out: outAll });
       continue;
     }
     const code = r.status;
@@ -142,7 +146,7 @@ function runGates(man, opts = {}) {
       // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
       const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
       for (const line of okAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: true, secs });
+      results.push({ name, cmd, ok: true, secs, out: outAll });
     } else {
       const raw = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
       // Совет отделяется ДО сужения. Иначе он сам попадает под фильтр по путям: сообщение
@@ -163,14 +167,14 @@ function runGates(man, opts = {}) {
           // выдать провал за тишину; остаётся красным, и причина названа.
           console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${L.doctor.notScopable}`)}`);
           failed++;
-          results.push({ name, cmd, ok: false, secs, code, note: L.doctor.notScopable });
+          results.push({ name, cmd, ok: false, secs, code, note: L.doctor.notScopable, out: outAll });
           continue;
         }
         if (s.findings === 0) {
           // Долг есть, но не в том, что внёс диф. Зелёный — но с числом спрятанного: молчаливое
           // «всё хорошо» здесь было бы неправдой.
           console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
-          results.push({ name, cmd, ok: true, secs, scopedAway: out.length });
+          results.push({ name, cmd, ok: true, secs, scopedAway: out.length, out: outAll });
           continue;
         }
         out = s.kept;
@@ -191,7 +195,7 @@ function runGates(man, opts = {}) {
       if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
       // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
       for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory });
+      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll });
     }
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та

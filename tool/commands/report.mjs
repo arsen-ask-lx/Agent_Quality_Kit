@@ -15,10 +15,12 @@
 
 import { mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { statSync } from "node:fs";
 import { CWD, TARGET_DIR, SELF, c, exists, docPath } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo.mjs";
+import { changedCode, coverage, evidenceHash, readForHash } from "../lib/evidence.mjs";
 import { runGates, declaredGates } from "./doctor.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -65,6 +67,16 @@ async function findDoc(name) {
     return null;
   };
   return walk(root);
+}
+
+// Своя копия разбора, а не импорт из doctor: там она не экспортирована, а тащить её наружу
+// ради одного флага значит расширять чужой договор. Правило то же: флаг без значения — ошибка,
+// молча взять умолчание нельзя.
+function sinceRefOf(argv) {
+  const i = argv.indexOf("--since");
+  if (i === -1) return null;
+  const v = argv[i + 1];
+  return v && !v.startsWith("-") ? v : null;
 }
 
 async function cmdReport() {
@@ -173,6 +185,36 @@ async function cmdReport() {
   if (ignored.length) {
     say("");
     say(`> ${L.report2.ignoreWarn}`);
+  }
+
+  // --- чем доказан этот диф -------------------------------------------------
+  // Раздел появляется только с `--since`: без базы сравнения говорить о покрытии нечего, а
+  // молчаливо взять умолчание нельзя — «сравнили не с тем» неотличимо от «всё покрыто».
+  const since = sinceRefOf(process.argv);
+  if (since) {
+    const changed = changedCode(since, CWD);
+    say("");
+    say(`## ${L.report2.evidenceTitle}`);
+    say("");
+    if (changed === null) {
+      say(`- ⚠️ ${L.report2.evidenceBadRef(since)}`);
+    } else if (!changed.length) {
+      say(`- ${L.report2.evidenceNoFiles(since)}`);
+    } else {
+      // Каталог ли это — спрашиваем у диска: цель гейта «tool» и файл «tool.js» иначе
+      // неразличимы, и второй попал бы в «просмотрен» ни за что.
+      const isDir = (rel) => { try { return statSync(join(CWD, rel)).isDirectory(); } catch { return false; } };
+      const cov = coverage(changed, run.results, isDir);
+      const hash = evidenceHash(since, run.results, readForHash(changed, CWD));
+      for (const [f, by] of cov.covered) say(`- ✅ ${f} — ${L.report2.evidenceNamed(by.join(", "))}`);
+      for (const [f, by] of cov.silent) say(`- ◻️ ${f} — ${L.report2.evidenceSilent(by.length)}`);
+      for (const f of cov.uncovered) say(`- ❌ ${f} — ${L.report2.evidenceUncovered}`);
+      say("");
+      say(`- ${L.report2.evidenceBase}: \`${since}\``);
+      say(`- ${L.report2.evidenceHash}: \`${hash}\``);
+      say("");
+      say(`> ${L.report2.evidenceWarn}`);
+    }
   }
 
   say("");

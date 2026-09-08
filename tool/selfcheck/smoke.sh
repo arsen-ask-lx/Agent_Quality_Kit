@@ -1197,6 +1197,41 @@ else
   bad "версия в документах разошлась с package.json" "package.json: v$PKGVER; найдено — $VERS_BAD"
 fi
 
+# --- 82. report --since называет, чем доказан диф ---------------------------
+# Три состояния у файла, и разница между вторым и третьим — весь смысл раздела: «проверка
+# обошла и промолчала» не то же самое, что «никто не смотрел». Двух состояний хватило ровно до
+# первого прогона — `tool/commands/doctor.mjs` попал в «никем не проверен», хотя его обходят
+# пять проверок; они молчали, потому что нашли чисто.
+EVDIR="$(mktemp -d)"
+(
+  cd "$EVDIR" || exit 1
+  git init -q . && git config user.email a@b.c && git config user.name t
+  mkdir -p src gates/noisy
+  printf 'x = 1\n' > src/kept.py
+  # Гейт, который печатает путь: по нему файл становится «назван».
+  printf '#!/usr/bin/env sh\necho "src/kept.py:1: нашёл"\nexit 0\n' > gates/noisy/check.sh
+  printf 'aqk: "1"\nentry: [AGENTS.md]\ngates:\n  noisy: "sh gates/noisy/check.sh ."\n' > .aqk.yml
+  printf '# правила\n' > AGENTS.md
+  git add -A >/dev/null 2>&1 && git commit -qm base >/dev/null 2>&1
+  printf 'y = 2\n' > src/quiet.py
+  git add -A >/dev/null 2>&1 && git commit -qm second >/dev/null 2>&1
+) >/dev/null 2>&1
+EV_OUT=$( cd "$EVDIR" && AQK_LANG=ru node "$CLI" report --since HEAD~1 2>&1 )
+EV_FILE="$EVDIR/.aqk/report.md"
+if [ -f "$EV_FILE" ] && grep -q "src/quiet.py" "$EV_FILE" && grep -q "Чем доказан" "$EV_FILE"; then
+  ok "report --since называет, чем доказан диф"
+else
+  bad "report --since не отчитался о покрытии" "$(printf '%s' "$EV_OUT" | tail -2 | head -1)"
+fi
+# Ссылка, которой нет, обязана быть названа: «сравнили не с тем» не должно читаться как «чисто».
+EV_BAD=$( cd "$EVDIR" && AQK_LANG=ru node "$CLI" report --since no-such-ref 2>&1 )
+if printf '%s' "$EV_BAD" | grep -q "no-such-ref"; then
+  ok "report --since называет неразобранную ссылку"
+else
+  bad "report --since проглотил неверную ссылку" "$(printf '%s' "$EV_BAD" | tail -2 | head -1)"
+fi
+rm -rf "$EVDIR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
