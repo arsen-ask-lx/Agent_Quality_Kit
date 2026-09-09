@@ -7,6 +7,30 @@
 // the second for one second in a terminal.
 
 const enDocs = {
+  // Блок vitals переехал сюда 2026-09-09 по той же причине, что и brief: терминальный
+  // каталог снова перерос 500 строк, и поймал это наш же file-size-limit.
+  vitals: {
+    title: "Is what the kit runs on actually wired up",
+    names: {
+      tools: "gate tools",
+      manifest: "manifest parsed",
+      preCommit: "pre-commit hook",
+      sessionHook: "state to the agent",
+      version: "version",
+    vitals: "is what the kit runs on wired up: tools, hooks, freshness",
+    },
+    toolsOk: (n) => `all ${n} present`,
+    toolsMissing: (l) => `NOT FOUND: ${l} — those gates will not happen`,
+    manifestOk: "parsed in full",
+    manifestBad: (n) => `${n} lines were not parsed and HAVE NO EFFECT — details in doctor`,
+    unknownHook: "could not look — unknown, not \"no\"",
+    preCommitOk: "wired in .git/hooks",
+    preCommitNo: "not in .git/hooks: a config entry is an intent, not a guard",
+    sessionOk: "the SessionStart hook hands the state to the agent",
+    sessionNo: (cmd) => `the agent gets no state: ${cmd}`,
+    versionOk: (v) => `${v}, current`,
+    versionOld: (l, cur) => `${l} is out, you have ${cur}`,
+  },
   // Блок краткого вывода переехал сюда 2026-09-09: терминальный каталог снова перерос
   // 500 строк, и поймал это наш же file-size-limit. Шов по смыслу условен — это всё-таки
   // терминал, — но предел настоящий, а делить пополам хуже, чем делить по соседству.

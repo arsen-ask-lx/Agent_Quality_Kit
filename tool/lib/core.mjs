@@ -83,6 +83,7 @@ function commandRows(L) {
     { name: "context", args: "", text: h.context },
     { name: "context", args: "--full --install", text: h.contextInstall },
     { name: "badge", args: "", text: h.badge },
+    { name: "vitals", args: "", text: h.vitals },
     { name: "version", args: "", text: h.version },
   ];
 }

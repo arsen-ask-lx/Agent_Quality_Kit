@@ -27,6 +27,7 @@ import { cmdLearn } from "./commands/learn.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
 import { cmdContext } from "./commands/context.mjs";
+import { cmdVitals } from "./commands/vitals.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -101,6 +102,13 @@ if (IS_MAIN) {
       if (v) console.log(c.dim(`   версия ${v}\n`));
       break;
     }
+
+    // Смотрит не на репозиторий, а на саму обвязку: стоят ли инструменты гейтов, прописан ли
+    // хук в .git/hooks, получает ли агент состояние. Без неё это выясняется красным гейтом
+    // посреди коммита — в момент, когда человек занят другим и просто выключит проверку.
+    case "vitals":
+      await cmdVitals();
+      break;
 
     case "context":
       await cmdContext(rest);
