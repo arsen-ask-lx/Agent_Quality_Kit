@@ -17,6 +17,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { c, SELF, commandRows } from "./lib/core.mjs";
+import { banner } from "./lib/banner.mjs";
 import { L } from "./i18n/index.mjs";
 import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
@@ -84,6 +85,23 @@ if (IS_MAIN) {
     // Печатает состояние репозитория для КОНТЕКСТА агента, а не для человека. Зовётся хуком
     // SessionStart, поэтому ничего не запускает и всегда выходит с нулём: хук, роняющий запуск
     // агента из-за неготового проекта, отключат в тот же день, и не станет ни хука, ни блока.
+    // Заставка по --version: одно из двух мест, где человек встречается с комплектом впервые.
+    case "--version":
+    case "-v":
+    case "version": {
+      const { readFile } = await import("node:fs/promises");
+      const { join, dirname } = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+      let v = "";
+      try {
+        const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+        v = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version || "";
+      } catch { /* пакет без package.json — версия просто не покажется */ }
+      console.log(`\n${banner()}\n`);
+      if (v) console.log(c.dim(`   версия ${v}\n`));
+      break;
+    }
+
     case "context":
       await cmdContext(rest);
       break;

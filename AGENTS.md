@@ -110,7 +110,7 @@
 - уровень этого репозитория: `node tool/program.mjs doctor`
 - обязательный минимум проекта прогоном: `node tool/program.mjs doctor --baseline`
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
-- проверить функции программы: `node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-context.mjs`
+- проверить функции программы: `node --test tool/selfcheck/units*.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`

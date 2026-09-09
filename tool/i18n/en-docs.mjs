@@ -7,6 +7,22 @@
 // the second for one second in a terminal.
 
 const enDocs = {
+  // Блок краткого вывода переехал сюда 2026-09-09: терминальный каталог снова перерос
+  // 500 строк, и поймал это наш же file-size-limit. Шов по смыслу условен — это всё-таки
+  // терминал, — но предел настоящий, а делить пополам хуже, чем делить по соседству.
+  brief: {
+    name: "AQK",
+    held: (n) => `holds ${n}`,
+    todo: (n) => `not installed ${n}`,
+    levelUnknown: "level unknown",
+    red: (l) => `     RED: ${l}`,
+    advise: (slug, why) => `     ↑ install: ${slug} — ${why}`,
+    adviseOff: (cmd, env) => `       not needed: ${cmd}, or ${env}`,
+    update: (l, c, how) => `version ${l} is out, you have ${c} — update: ${how}`,
+    updateHow: "npx agent-quality-kit@latest, or npm i -g agent-quality-kit",
+    updateHookHow: "pre-commit autoupdate",
+    updateOff: (env) => `       not needed: ${env}`,
+  },
   // THE STATE BLOCK — the one text of ours whose reader is a machine, not a person.
   // It goes into the agent's context via a SessionStart hook, so it is written as claims of
   // fact: no politeness, no preamble, every line either a fact or an honest "unknown".

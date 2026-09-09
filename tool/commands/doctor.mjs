@@ -10,7 +10,7 @@ import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
-import { briefLine, adviceDue, pickAdvice, updateNotice, updateWanted } from "../lib/brief.mjs";
+import { beginBrief, finishBrief } from "../lib/brief.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -269,18 +269,6 @@ async function writeRunReport({ version, reached, results }) {
   await writeFile(dst, lines.join("\n") + "\n", "utf8");
 }
 
-// КРАТКИЙ РЕЖИМ для хука. Вывод целиком БУФЕРИЗУЕТСЯ, а печатается одна строка присутствия —
-// и, при провале, весь буфер, чтобы человеку было что чинить. Перехват console.log выглядит
-// грубо, и это осознанный размен: альтернатива — протащить флаг через четыреста строк печати,
-// где каждая строка стала бы условной. Перехват локален, снимается в том же вызове и объяснён
-// здесь; условие в каждой строке объяснить было бы негде.
-function beginBrief() {
-  const lines = [];
-  const real = console.log;
-  console.log = (...a) => lines.push(a.join(" "));
-  return { lines, restore: () => { console.log = real; } };
-}
-
 async function cmdDoctor() {
   const brief = process.argv.includes("--brief");
   const buf = brief ? beginBrief() : null;
@@ -421,83 +409,6 @@ async function cmdDoctor() {
   const ok = !(missing || reached < 0 || gateFailed);
   await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: [] }, cat.todoRecs, ok);
   process.exit(ok ? 0 : 1);
-}
-
-// Печать краткого итога. Совет — не чаще раза в сутки и с явным способом отказаться: то, что
-// видишь тридцатый раз, перестаёт читаться и пролистывается вместе с настоящими находками рядом.
-// Отметка времени лежит в .aqk/, который в .gitignore: это состояние машины, а не проекта.
-async function finishBrief(buf, state, todoRecs, ok) {
-  if (!buf) return;
-  buf.restore();
-  console.log(briefLine(state, L));
-
-  // Уведомление об обновлении — ДО разбора вердикта: оно от него не зависит. Сначала было
-  // после, и у любого проекта, где чего-то не хватает, версия не спрашивалась никогда —
-  // то есть у всех, кому комплект и нужен. Поймано первым же живым запуском.
-  await maybeUpdateNotice();
-
-  // При провале печатаем ВЕСЬ буфер: человеку нужно чинить, а одной строкой не починишь.
-  if (!ok) { console.log(buf.lines.join("\n")); return; }
-
-  if (process.env.AQK_ADVICE === "0" || !state.todo) return;
-  const stampFile = join(CWD, TARGET_DIR, "advice-shown");
-  let last = null;
-  try { last = (await readFile(stampFile, "utf8")).trim(); } catch { /* не показывали ещё */ }
-  if (!adviceDue(last)) return;
-  const advice = pickAdvice(todoRecs);
-  if (!advice) return;
-  console.log(c.dim(L.brief.advise(advice.slug, advice.intent || "")));
-  console.log(c.dim(L.brief.adviseOff(`${SELF} why ${advice.slug}`, "AQK_ADVICE=0")));
-  try {
-    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-    await writeFile(stampFile, new Date().toISOString(), "utf8");
-  } catch { /* не смогли записать отметку — совет повторится, это не беда */ }
-}
-
-// Спрашивает реестр npm о своей версии. РАЗ В СУТКИ, НЕ В КОНВЕЙЕРЕ, С ТАЙМАУТОМ, И МОЛЧА
-// ПРИ ЛЮБОЙ ОШИБКЕ. До этой строки комплект не делал ни одного исходящего запроса — так
-// написано в README и SECURITY.md, и там же теперь написано про этот. Сделать тихо то, за что
-// мы ругаем других, нельзя: весь смысл в том, что заявленное совпадает с происходящим.
-//
-// Код возврата не меняется никогда: уведомление, роняющее коммит, выключат в тот же день —
-// и вместе с ним всё остальное, что печатает эта строка.
-async function maybeUpdateNotice() {
-  if (!updateWanted()) return;
-  const stamp = join(CWD, TARGET_DIR, "update-checked");
-  let last = null;
-  try { last = (await readFile(stamp, "utf8")).trim(); } catch { /* ещё не спрашивали */ }
-  if (!adviceDue(last)) return;
-
-  let current = "";
-  try { current = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8")).version || ""; } catch { return; }
-
-  // ОТМЕТКА СТАВИТСЯ ДО ЗАПРОСА, а не после удачного ответа. Сперва было наоборот, и замер
-  // показал цену: человек без сети платил бы ожиданием на КАЖДОМ коммите, а не раз в сутки.
-  // Из двух ошибок выбрана дешёвая: пропущенное за день уведомление против ежедневного стопора.
-  try {
-    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-    await writeFile(stamp, new Date().toISOString(), "utf8");
-  } catch { /* не смогли записать — спросим ещё раз, это не беда */ }
-
-  let latest = "";
-  try {
-    // Три секунды, а не полторы. Замерено 2026-09-08: тёплый запрос к реестру — 533 мс,
-    // а первый, с разрешением имени и рукопожатием, в полторы секунды не уложился. Слишком
-    // тугой срок означал бы, что уведомление не приходит никогда и никто не знает почему.
-    const r = await fetch("https://registry.npmjs.org/agent-quality-kit/latest", {
-      signal: AbortSignal.timeout(3000),
-      headers: { accept: "application/vnd.npm.install-v1+json" },
-    });
-    if (!r.ok) return;
-    latest = String((await r.json()).version || "");
-  } catch {
-    // Сети нет, реестр молчит, таймаут — всё это НЕ повод сказать хоть слово. Инструмент,
-    // который жалуется на отсутствие интернета посреди коммита, выключают.
-    return;
-  }
-
-  const notice = updateNotice(current, latest, process.env, L);
-  if (notice) console.log(c.dim(notice));
 }
 
 // Наружу — только команда. Остальное здесь же и используется: экспорт, который никто не
