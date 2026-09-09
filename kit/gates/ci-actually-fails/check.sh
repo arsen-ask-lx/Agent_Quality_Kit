@@ -14,7 +14,15 @@ CI=$(find "$DIR/.github/workflows" "$DIR/.gitlab-ci.yml" "$DIR/.circleci" "$DIR/
 # Что считается ПРОВЕРКОЙ. Список намеренно закрытый: маскировка бывает законной — необязательная
 # выгрузка отчёта, публикация артефакта, уведомление. Красить всякий `continue-on-error` значит
 # получить гейт, который выключат первым. Красим только гашение того, что выносит вердикт.
-RUNNERS='aqk|doctor --run|pytest|tox|nox|unittest|jest|vitest|mocha|jasmine|karma|playwright|cypress|eslint|tsc|ruff|flake8|pylint|mypy|pyright|bandit|semgrep|gitleaks|trivy|rubocop|golangci-lint|golint|govet|go vet|go test|staticcheck|shellcheck|hadolint|actionlint|codespell|reviewdog|cargo test|cargo clippy|mvn|gradle|phpstan|psalm|npm test|npm run (test|lint|check|typecheck)|yarn (test|lint)|pnpm (test|lint)|make (test|lint|check)'
+# ПОЧЕМУ ЗДЕСЬ ЕСТЬ ИНСТРУМЕНТЫ ПРО API И ПОЧЕМУ НЕ ВСЕ ИХ ИМЕНА ЦЕЛИКОМ.
+# Замер 2026-09-09: три шага — фаззер спецификации, детектор ломающих изменений и сверка с
+# ожиданиями потребителей, — все три под `continue-on-error: true`, и эта проверка сказала
+# «чисто», код 0. Список знал `pytest` и `eslint` и не знал ни одного инструмента про API,
+# то есть самый дорогой класс проверок проходил как строка в логе.
+# Имена сокращены до подкоманды там, где слово обиходное: `vacuum` без `lint` совпадает с
+# обслуживанием базы (`psql -c 'VACUUM ANALYZE'`), а шаг обслуживания имеет полное право быть
+# прощающим. Ложный красный дороже пропуска: гейт, который врёт, выключают целиком.
+RUNNERS='aqk|doctor --run|pytest|tox|nox|unittest|jest|vitest|mocha|jasmine|karma|playwright|cypress|eslint|tsc|ruff|flake8|pylint|mypy|pyright|bandit|semgrep|gitleaks|trivy|rubocop|golangci-lint|golint|govet|go vet|go test|staticcheck|shellcheck|hadolint|actionlint|codespell|reviewdog|cargo test|cargo clippy|mvn|gradle|phpstan|psalm|npm test|npm run (test|lint|check|typecheck)|yarn (test|lint)|pnpm (test|lint)|make (test|lint|check)|schemathesis|dredd|oasdiff|spectral lint|redocly (lint|bundle)|vacuum (lint|report|html-report)|pact-broker|pact-verifier|can-i-deploy|portman|newman run|manage.py spectacular'
 
 # Закрытый список не поспевает: замер по чужим репозиториям нашёл шаг «Run reviewdog
 # (github-pr-check)» под `continue-on-error: true`, и ни одно имя из списка в нём не звучало.

@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info: { title: Заказы, version: 1.0.0 }
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Пользователь
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, email]
+                properties:
+                  id: { type: integer }
+                  email: { type: string }

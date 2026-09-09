@@ -1874,6 +1874,99 @@ else
 fi
 rm -rf "$CADP" "$CADP2"
 
+# --- 113. проверки контракта API считаются проверками ---------------------------
+# ЗАМЕР, ИЗ КОТОРОГО ВЗЯЛАСЬ ЭТА СТРОКА (2026-09-09). Три шага, каждый выносит вердикт о
+# контракте API, каждый обезврежен `continue-on-error: true`, — и наш `ci-actually-fails`
+# сказал «чисто», код возврата 0. Причина: список опознаваемых проверок знал `pytest` и
+# `eslint` и не знал ни одного инструмента про API. Шаг с фаззером спецификации проходил
+# как строка в логе.
+#
+# Ловушка, из-за которой этот замер чуть не оказался ложно-зелёным: если назвать шаг
+# «Spec lint», гейт краснеет — но не потому, что узнал инструмент, а потому что в названии
+# есть слово «lint». Поэтому в образце ниже НЕТ слов-подсказок: проверяется опознание
+# инструмента, а не удача в наименовании.
+APIC="$(mktemp -d)"
+mkdir -p "$APIC/.github/workflows"
+cat > "$APIC/.github/workflows/api.yml" <<'YML'
+name: api
+on: [push]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: соответствие сервера схеме
+        continue-on-error: true
+        run: schemathesis run openapi.yaml --url http://localhost:8000
+      - name: ломающие изменения
+        continue-on-error: true
+        run: oasdiff breaking base.yaml openapi.yaml
+      - name: ожидания потребителей
+        continue-on-error: true
+        run: pact-broker can-i-deploy --pacticipant web --version "$SHA"
+YML
+if bash "$ROOT/kit/gates/ci-actually-fails/check.sh" "$APIC" >/dev/null 2>&1; then
+  bad "обезвреженные проверки контракта API прошли как чистые" \
+      "schemathesis, oasdiff и pact под continue-on-error — гейт не заметил"
+else
+  ok "шаг с проверкой контракта API под continue-on-error краснеет"
+fi
+rm -rf "$APIC"
+
+# --- 114. сужённый арбитр контракта краснеет ------------------------------------
+# ПОЧЕМУ ОТДЕЛЬНОЙ ПРОВЕРКОЙ, А НЕ ОБРАЗЦОМ. У записи две красные ветки, а `red/` пробуется
+# целиком: первая ветка («держать некому») красит папку, и вторая осталась бы непроверенной —
+# ровно то молчание, неотличимое от успеха, против которого весь комплект.
+#
+# ЗАМЕР (2026-09-09), из-за которого ветка есть. Стенд: сервер врёт в каждом поле ответа,
+# пятисоток нет. `schemathesis` с умолчаниями — код 1 и три нарушения схемы; он же с
+# `-c not_a_server_error` — код 0 и «18 из 18 прошли». Сужение до одной проверки это не
+# настройка, а отключение: у schemathesis по умолчанию включены ВСЕ проверки.
+NARR="$(mktemp -d)"
+mkdir -p "$NARR/.github/workflows"
+printf 'openapi: 3.0.3\ninfo: { title: t, version: 1.0.0 }\npaths: {}\n' > "$NARR/openapi.yaml"
+NARRG="$ROOT/kit/gates/api-contract-has-arbiter/check.sh"
+say_narrow() {
+  cat > "$NARR/.github/workflows/ci.yml" <<YML
+name: ci
+on: [push]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - run: schemathesis run openapi.yaml --url http://localhost:8000 $1
+YML
+}
+say_narrow "-c not_a_server_error"
+SHORT=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
+say_narrow "--checks not_a_server_error"
+LONG=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
+say_narrow ""
+FULL=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
+# Вторая форма арбитра, который не может провалиться, и она коварнее первой: вывод громкий и
+# красный на вид. Замер 2026-09-09: `oasdiff breaking` на паре спецификаций, где из ответа убрано
+# обязательное поле, печатает «1 changes: 1 error» и выходит с НУЛЁМ; с `--fail-on ERR` — код 1.
+cat > "$NARR/.github/workflows/ci.yml" <<'YML'
+name: ci
+on: [push]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - run: schemathesis run openapi.yaml --url http://localhost:8000
+      - run: oasdiff breaking base.yaml openapi.yaml
+YML
+LOUD=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
+sed -i 's|oasdiff breaking base.yaml openapi.yaml|oasdiff breaking base.yaml openapi.yaml --fail-on ERR|' "$NARR/.github/workflows/ci.yml"
+LOUDOK=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
+if [ "$SHORT" = "1" ] && [ "$LONG" = "1" ] && [ "$FULL" = "0" ] &&
+   [ "$LOUD" = "1" ] && [ "$LOUDOK" = "0" ]; then
+  ok "арбитр, который не может провалиться, краснеет в обеих формах — а полный молчит"
+else
+  bad "арбитр, не способный провалиться, не опознан" \
+      "-c: $SHORT, --checks: $LONG, полный: $FULL, oasdiff без --fail-on: $LOUD, с ним: $LOUDOK"
+fi
+rm -rf "$NARR"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

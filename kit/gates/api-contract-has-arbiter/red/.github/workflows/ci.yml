@@ -1,0 +1,11 @@
+# Договор лежит, конвейер есть — и ни одна команда договора не касается. Спецификация здесь
+# документация, а не контракт: сервер уходит от неё молча.
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pytest
+      - run: ruff check .
