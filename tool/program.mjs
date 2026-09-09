@@ -17,6 +17,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { c, SELF, commandRows } from "./lib/core.mjs";
+import { banner } from "./lib/banner.mjs";
 import { L } from "./i18n/index.mjs";
 import { cmdInit, cmdNote, cmdBlob, cmdStart } from "./commands/project.mjs";
 import { cmdDoctor } from "./commands/doctor.mjs";
@@ -26,6 +27,7 @@ import { cmdLearn } from "./commands/learn.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
 import { cmdContext } from "./commands/context.mjs";
+import { cmdVitals } from "./commands/vitals.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -84,6 +86,30 @@ if (IS_MAIN) {
     // Печатает состояние репозитория для КОНТЕКСТА агента, а не для человека. Зовётся хуком
     // SessionStart, поэтому ничего не запускает и всегда выходит с нулём: хук, роняющий запуск
     // агента из-за неготового проекта, отключат в тот же день, и не станет ни хука, ни блока.
+    // Заставка по --version: одно из двух мест, где человек встречается с комплектом впервые.
+    case "--version":
+    case "-v":
+    case "version": {
+      const { readFile } = await import("node:fs/promises");
+      const { join, dirname } = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+      let v = "";
+      try {
+        const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+        v = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version || "";
+      } catch { /* пакет без package.json — версия просто не покажется */ }
+      console.log(`\n${banner()}\n`);
+      if (v) console.log(c.dim(`   версия ${v}\n`));
+      break;
+    }
+
+    // Смотрит не на репозиторий, а на саму обвязку: стоят ли инструменты гейтов, прописан ли
+    // хук в .git/hooks, получает ли агент состояние. Без неё это выясняется красным гейтом
+    // посреди коммита — в момент, когда человек занят другим и просто выключит проверку.
+    case "vitals":
+      await cmdVitals();
+      break;
+
     case "context":
       await cmdContext(rest);
       break;

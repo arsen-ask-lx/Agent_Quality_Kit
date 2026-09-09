@@ -163,7 +163,9 @@ test("чужие настройки переживают установку ху
 // не отстал от диспетчера: команда, добавленная в switch и забытая в списке, роняет её.
 test("карта команд не отстаёт от диспетчера", async () => {
   const src = await readFile(new URL("../program.mjs", import.meta.url), "utf8");
-  const dispatched = [...src.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1]);
+  // Флаговые формы (`--version`, `-v`) в карту не входят: карта перечисляет КОМАНДЫ, а флаг —
+  // второе имя той же команды. Требовать их здесь значило бы дублировать строку справки.
+  const dispatched = [...src.matchAll(/^\s{4}case "([a-z][a-z-]*)":/gm)].map((m) => m[1]);
   assert.ok(dispatched.length >= 10, `в диспетчере найдено ${dispatched.length} команд — разбор сломался`);
   const listed = new Set(commandRows(CATALOGS.ru).map((r) => r.name));
   const missing = dispatched.filter((n) => !listed.has(n));

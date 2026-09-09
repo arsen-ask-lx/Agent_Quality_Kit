@@ -25,8 +25,9 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - Show only what a diff introduced, so a legacy repo is usable from day one: `doctor --run --since main`
 - Prove the gates actually catch defects: `npx agent-quality-kit prove` — every *provable* gate is
   run against its own red and green sample and must go red on the first and stay quiet on the
-  second. A gate with no samples, with samples written for another recipe, or whose command takes
-  no directory is reported as unprovable and named; the verdict is "nothing proven is broken, and
+  second. A gate with no samples, with samples written for another recipe, whose command takes
+  no directory, or whose `requires:` program is not installed is reported as unprovable and
+  named — never as broken; the verdict is "nothing proven is broken, and
   at least one gate is proven". Level AQK-2 and the badge depend on this, not on the presence of
   files
 - See what proves a diff, file by file: `npx agent-quality-kit report --since main` — each changed
@@ -41,6 +42,11 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   adds the command map and the rulebook verbatim (~7000 tokens): a deliberate trade, chosen by
   the owner after the objection about long inputs, on the grounds that an agent reads files
   poorly and the tokens are the price of it not guessing
+- Check that the kit's own wiring is actually connected: `npx agent-quality-kit vitals` — are the
+  tools the declared gates need installed, is the hook present in `.git/hooks` (a line in the
+  config is an intention, not a guard), does the agent receive the state, is the version current.
+  Four states, not two: connected · BROKEN · not connected and that is a choice · could not look.
+  Only BROKEN affects the exit code
 - See what you told the agent and never wrote down: `npx agent-quality-kit learn` — reads Claude Code
   transcripts for this project on this machine and prints rule candidates missing from the entry
   point. Current project only, terminal only, writes nothing, always exits 0
@@ -48,6 +54,14 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - As a pre-commit hook: `repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit` with
   `id: aqk` (blocking), `aqk-doctor` (read-only) or `aqk-baseline`. pre-commit installs the
   package itself; there are no dependencies to pull in.
+- Without Node at all (a Python, Go or Rust project where nobody installed it):
+  `docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/arsen-ask-lx/aqk doctor`.
+  Published from v0.9.0 onward, by the same run that publishes the package; before that tag,
+  build it from the repository: `docker build -t aqk . && docker run --rm -u "$(id -u):$(id -g)"
+  -v "$PWD:/work" aqk doctor`. Keep the `--user` flag: without it the container runs as root and
+  the files `init` writes are owned by root, so you cannot edit your own manifest. Debian-based
+  on purpose: the gates are `sh`, `grep`, `awk`, `find` — under alpine's busybox they behave
+  differently, and an image where the gates behave differently is worse than no image
 - As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.8.0` with `min: 1`
   (https://github.com/marketplace/actions/agent-quality-kit-aqk)
 

@@ -17,6 +17,7 @@ function line(r) {
       r.why === "no-samples" ? P.noSamples
       : r.why === "other-recipe" ? P.otherRecipe(r.forRecipe.lang)
       : r.why === "no-target" ? P.noTarget
+      : r.why === "needs-program" ? P.needsProgram(r.missing.join(", "))
       : P.empty;
     return `  ${c.dim("~")}  ${c.dim(pad)} ${c.dim(why)}`;
   }

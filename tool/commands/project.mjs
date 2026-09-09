@@ -8,6 +8,7 @@ import {
   CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
   copyDir, writeIfAbsent, FEEDBACK_MARK, docPath } from "../lib/core.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
+import { banner } from "../lib/banner.mjs";
 import { readManifest } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { installGate } from "./gates.mjs";
@@ -40,7 +41,9 @@ async function cmdInit(args) {
   const claude = join(CWD, "CLAUDE.md");
   track(await writeIfAbsent(claude, CLAUDE_MD, { force }), claude);
 
-  console.log(c.bold("\naqk init\n"));
+  // Заставка в начале init — первая встреча человека с комплектом. Второй раз он увидит её
+  // только если сам спросит `--version`: то, что видишь тридцатый раз, перестаёт читаться.
+  console.log(`\n${banner()}\n`);
   if (created.length) {
     console.log(c.green(`  ${L.init.created(created.length)}`));
     for (const f of created.slice(0, 8)) console.log(`    ${f}`);

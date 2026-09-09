@@ -11,6 +11,11 @@ entry:
 
 # AQK-1 — где стандарты и какие проверки обязательны.
 rules: kit/rules
+# Методички лежат в источнике истины, а не в перенесённой копии: `init` кладёт их проекту как
+# `.aqk/docs`, здесь же они и есть оригинал. Поле объявлено потому, что раскладка у нас не
+# умолчательная, — а умолчание, совпадающее с нашим значением, не проверяется нашим
+# репозиторием никогда (журнал, 2026-09-08).
+docs: kit/docs
 gates:
   syntax: "bash tool/selfcheck/syntax.sh"
   smoke: "bash tool/selfcheck/smoke.sh"
@@ -31,7 +36,7 @@ gates:
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
   duplicate-code: "bash kit/gates/duplicate-code/check.sh ."
-  units: "node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-context.mjs"
+  units: "node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-context.mjs tool/selfcheck/units-brief.mjs tool/selfcheck/units-banner.mjs tool/selfcheck/units-repo.mjs tool/selfcheck/units-vitals.mjs"
   # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip@6 --directory ."

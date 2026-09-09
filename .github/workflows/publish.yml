@@ -94,6 +94,60 @@ jobs:
       - name: публикация
         run: npm publish --provenance --access public
 
+  # Образ в реестр — тем же прогоном и из того же тега, что и пакет. Пока его публиковали бы
+  # руками, документация обещала бы `docker run ghcr.io/...`, которого нет: на 2026-09-09 команда
+  # стояла в llms.txt и в журнале изменений, а образа в реестре не было вовсе. Обещание без
+  # прогона, который его держит, — ровно то, против чего написан весь комплект.
+  #
+  # Сторонних действий здесь нет намеренно: docker и так стоит на образе прогона, а каждое чужое
+  # действие в выпуске — лишняя дверь в цепочке поставок. Та же причина, по которой у самого CLI
+  # нет зависимостей.
+  image:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      # Значения идут через окружение, а не подстановкой в строку команды: подставленный прямо
+      # в `run` ввод — это исполнение чужого текста оболочкой. То же правило, что в action.yml.
+      - name: имя образа и метки
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          V="${REF_NAME#v}"
+          IMG="ghcr.io/$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')/aqk"
+          echo "IMG=$IMG" >> "$GITHUB_ENV"
+          echo "VER=$V"   >> "$GITHUB_ENV"
+
+      - name: вход в реестр
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      - name: сборка
+        run: docker build -t "$IMG:$VER" -t "$IMG:latest" .
+
+      # Образ обязан РАБОТАТЬ, а не собираться. Проверяется тот самый путь, который документация
+      # предлагает человеку: чистый репозиторий, `init`, затем `doctor`. И отдельно — что файлы
+      # достались вызывающему, а не root: без ключа --user человек не отредактирует свой же
+      # манифест (проверено 2026-09-09, см. комментарий в Dockerfile).
+      - name: образ делает то, что обещано
+        run: |
+          T=$(mktemp -d) && git init -q "$T"
+          docker run --rm -u "$(id -u):$(id -g)" -v "$T:/work" "$IMG:$VER" init
+          docker run --rm -u "$(id -u):$(id -g)" -v "$T:/work" "$IMG:$VER" doctor --min 0
+          test -O "$T/.aqk.yml" || { echo "файлы образа достались не вызывающему"; exit 1; }
+
+      - name: публикация образа
+        run: docker push --all-tags "$IMG"
+
   # Отдельным заданием, а не шагом выше, ради прав: создать релиз нельзя без contents: write,
   # а давать право записи тому же заданию, которое публикует пакет, незачем. Здесь право есть,
   # но нет ни OIDC, ни доступа к реестру.

@@ -74,6 +74,33 @@ function parseManifest(text) {
   return out;
 }
 
+// СТРОКА, КОТОРУЮ РАЗБОР НЕ ПОНЯЛ, НЕ ИСЧЕЗАЕТ МОЛЧА.
+//
+// Найдено 2026-09-09 случайно: подсаживали падающий гейт с именем «плохой», чтобы посмотреть на
+// вывод, — и прогон вышел с НУЛЁМ. Гейт не упал: его не существовало. Имена разбираются только
+// латиницей, а строка, не подошедшая под это, выбрасывалась без единого слова.
+//
+// Это наш класс в чистом виде: человек объявил проверку, видит её в файле, а её нет. Хуже
+// опечатки в имени поля — ту мы называем с 2026-09-06, а эту не называли вовсе.
+//
+// ЧИНИТСЯ ГОЛОСОМ, А НЕ АЛФАВИТОМ. Расширить набор букв — залатать один случай; строк, которые
+// разбор не понимает, бывает больше (табуляция вместо пробелов, двоеточие в значении без
+// кавычек). Называется любая: разбор ограниченного подмножества YAML честен ровно до тех пор,
+// пока говорит, чего не взял.
+function unparsedLines(text) {
+  const out = [];
+  let n = 0;
+  for (const raw of String(text).split("\n")) {
+    n += 1;
+    const line = stripComment(raw).replace(/\s+$/, "");
+    if (!line.trim()) continue;
+    if (line.trim().startsWith("- ")) continue;
+    if (/^\s*[A-Za-z0-9_-]+:\s*(.*)$/.test(line)) continue;
+    out.push({ line: n, text: raw.trim() });
+  }
+  return out;
+}
+
 // Поля, которые манифест знает. Список здесь, а не в схеме-файле: зависимостей у программы
 // нет, а схема на восемь ключей, которую надо валидировать библиотекой, стоит дороже, чем
 // защищает.
@@ -142,6 +169,51 @@ function coversOf(man) {
   return { covered, unknownGates };
 }
 
+// ЗАЯВКА `covers` СВЕРЯЕТСЯ, А НЕ ПРИНИМАЕТСЯ НА СЛОВО — насколько это вообще возможно.
+//
+// Поле `covers` заведено 2026-09-08 утром, и тогда же в коммите было записано честное: «снимает
+// запись с долга по СЛОВУ человека; проверить, что чужой гейт ловит то же самое, машина не
+// может». К вечеру выяснилось, что это не теория. Запуск на настоящем `ruff.toml` из живого
+// проекта: девятнадцать групп правил в `extend-select`, а `print()` не ловится — группы `T20`
+// среди них нет. Заявка «no-print-in-prod держит наш lint» была бы ложной, а запись ушла бы из
+// долга. То есть поле, снимающее неправду из вывода, само стало бы способом её произвести.
+//
+// ЧТО СВЕРЯЕТСЯ. У записи каталога в рецепте стоят коды правил: `ruff check --select T20 {dir}`.
+// Если ни команда закрывающего гейта, ни конфиг линтера этих кодов не называют — заявка не
+// подтверждена. Записи без кодов в рецепте (переносимые проверки) не сверяются вовсе: там
+// сверять нечего, и выдумывать вердикт нельзя.
+//
+// ПОЧЕМУ «НЕ ПОДТВЕРЖДЕНО», А НЕ «ЛОЖЬ». Правило могло прийти из плагина, пресета или общего
+// конфига этажом выше. Объявлять такое ошибкой значит краснеть на нормальном укладе — а такой
+// вывод перестают читать целиком, вместе с настоящими находками.
+const RULE_CODES = /--select[= ]([A-Za-z0-9,]+)/;
+
+function coversUnproven(man, catalog = [], linterConfigText = "") {
+  const { covered } = coversOf(man);
+  if (!covered.size) return [];
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const cfg = String(linterConfigText || "");
+  const out = [];
+
+  for (const [entry, gate] of covered) {
+    const rec = catalog.find((r) => r.slug === entry);
+    const recipes = rec?.recipes && typeof rec.recipes === "object" ? rec.recipes : {};
+    // Коды берутся из любого рецепта записи: язык проекта здесь не важен, важно, что запись
+    // ВООБЩЕ выражается кодами правил. Если ни один рецепт их не называет — сверять нечего.
+    const codes = new Set();
+    for (const cmd of Object.values(recipes)) {
+      const m = RULE_CODES.exec(String(cmd || ""));
+      if (m) for (const c of m[1].split(",")) if (c.trim()) codes.add(c.trim());
+    }
+    if (!codes.size) continue;
+
+    const haystack = `${String(gates[gate] || "")}\n${cfg}`;
+    const missing = [...codes].filter((c) => !haystack.includes(c));
+    if (missing.length === codes.size) out.push({ entry, gate, codes: [...codes] });
+  }
+  return out;
+}
+
 function unknownKeys(man) {
   if (!man || typeof man !== "object" || Array.isArray(man)) return [];
   return Object.keys(man).filter((k) => !KNOWN_KEYS.includes(k));
@@ -180,16 +252,41 @@ function entryLifecycle(rec) {
   return { state, why, supersededBy: supersededBy || null, problem };
 }
 
-// СОВЕЩАТЕЛЬНЫЕ ГЕЙТЫ. Правило вводят в проект, где старый код ему не соответствует. Храповик
-// отвечает на это одним способом: старое становится долгом, новое блокируется. Второй способ —
-// показывать, не роняя, пока команда договаривается о правиле. Без него у человека остаётся
-// выбор из двух крайностей: включить и сломать сборку либо не включать вовсе.
+// Программа, без которой запись каталога не работает вовсе: поле `requires` в её `gate.yml`.
+// Возвращает список НЕДОСТАЮЩИХ программ или null.
 //
+// ЗАЧЕМ ОБЩИМ. Переносимый рецепт бывает обёрткой вокруг готового инструмента: первое слово
+// команды тогда `bash`, и по нему не видно, чего не хватает. Этот вопрос задают трое —
+// приёмка каталога, доказательство гейтов и осмотр обвязки, — и каждый отвечал на него
+// по-своему или не отвечал вовсе. 2026-09-09: `prove` объявлял такой гейт сломанным, а
+// `vitals` печатал «все инструменты на месте» ровно там, где прогон краснел.
+// `has` передаётся вызывающим, а не берётся отсюда: manifest.mjs не должен знать про осмотр
+// репозитория — импорт в обратную сторону завёл бы цикл. Заодно функция проверяема модульно.
+async function gateRequires(samplesDir, name, has) {
+  if (!samplesDir) return null;
+  const yml = join(CWD, samplesDir, name, "gate.yml");
+  if (!(await exists(yml))) return null;
+  try {
+    const rec = parseManifest(await readFile(yml, "utf8"));
+    const raw = typeof rec?.requires === "string" ? rec.requires.trim() : "";
+    if (!raw) return null;
+    const missing = raw.split(",").map((x) => x.trim()).filter(Boolean).filter((x) => !has(x));
+    return missing.length ? missing : null;
+  } catch {
+    return null;
+  }
+}
+
 // ПОЧЕМУ СПИСКОМ В МАНИФЕСТЕ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это тот самый
 // `continue-on-error`, против которого написана наша запись ci-actually-fails: он понижает всё
 // разом, не виден в дифе и не назван в сводке. Список виден в манифесте, называется поимённо и
 // печатается КАЖДЫЙ прогон: совещательный гейт, о котором забыли, — это выключенная проверка,
 // и молчать о нём нельзя.
+// СОВЕЩАТЕЛЬНЫЕ ГЕЙТЫ. Правило вводят в проект, где старый код ему не соответствует. Храповик
+// отвечает на это одним способом: старое становится долгом, новое блокируется. Второй способ —
+// показывать, не роняя, пока команда договаривается о правиле. Без него у человека остаётся
+// выбор из двух крайностей: включить и сломать сборку либо не включать вовсе.
+//
 function advisorySet(man) {
   const v = man?.advisory;
   if (Array.isArray(v)) return new Set(v.map((x) => String(x).trim()).filter(Boolean));
@@ -276,5 +373,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, layoutChecks, coversOf,
+  entryLifecycle, advisorySet, gateRequires, layoutChecks, coversOf, coversUnproven, unparsedLines,
 };

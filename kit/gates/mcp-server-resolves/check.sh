@@ -81,7 +81,7 @@ for F in "$DIR/.mcp.json" "$DIR/.cursor/mcp.json" "$DIR/.vscode/mcp.json" "$DIR/
             # версия этой проверки съела настоящую находку `npx @meridian/docs-mcp`. Поймано
             # тем же замером по двадцати чужим настройкам: находок стало восемь вместо девяти,
             # и пропажу было видно только построчным сравнением до и после.
-            if (t ~ /\.(ts|js|mjs|cjs|py|rb|sh)$/ || t ~ /^\.{0,2}\//) { local_entry = 1; break }
+            if (t ~ /\.(ts|js|mjs|cjs|py|rb|sh)$/ || t ~ /^\//  || t ~ /^\.\// || t ~ /^\.\.\//) { local_entry = 1; break }
           }
           if (local_entry) continue
 

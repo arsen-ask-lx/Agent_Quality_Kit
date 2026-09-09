@@ -1501,6 +1501,259 @@ else
 fi
 rm -rf "$BRWP" "$NOUIP"
 
+# --- 98. заявка covers сверяется, а не принимается на слово -------------------
+# Поле covers завели утром того же дня, и тогда же честно записали: оно снимает запись с долга
+# ПО СЛОВУ человека. К вечеру это перестало быть теорией: запуск на настоящем ruff.toml из живого
+# проекта показал девятнадцать групп правил в extend-select и НЕ пойманный print() — группы T20
+# среди них нет. Заявка «no-print-in-prod держит наш lint» была бы ложной, а запись ушла бы из
+# долга. Поле, снимающее неправду из вывода, само стало бы способом её произвести.
+CVUP="$(mktemp -d)"
+( cd "$CVUP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\ngates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n' > .aqk.yml ) >/dev/null 2>&1
+( cd "$CVUP" && printf 'extend-select = ["I","B","UP","SIM"]\n' > ruff.toml )
+WITHOUT=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+( cd "$CVUP" && printf 'extend-select = ["I","B","UP","SIM","T20"]\n' > ruff.toml )
+WITHT20=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
+if printf '%s' "$WITHOUT" | grep -q "заявка не подтверждена" &&
+   printf '%s' "$WITHOUT" | grep -q "T20" &&
+   ! printf '%s' "$WITHT20" | grep -q "заявка не подтверждена"; then
+  ok "covers сверяется с кодами правил: без T20 говорит вслух, с T20 молчит"
+else
+  bad "сверка заявки covers не работает" "без T20: $(printf '%s' "$WITHOUT" | grep -c 'не подтверждена'), с T20: $(printf '%s' "$WITHT20" | grep -c 'не подтверждена')"
+fi
+rm -rf "$CVUP"
+
+# --- 99. краткий режим: присутствие видно, совет не надоедает -----------------
+# Хук pre-commit молчит на успехе — это его умолчание. Комплект, который всё держит, для
+# человека неотличим от невставленного: «скачал и че дальше» — дословная жалоба владельца.
+# Это ровно тот порок, против которого написан комплект, только у нас самих.
+# Проверяются три вещи сразу: строка есть всегда; совет приходит один раз, а не на каждый
+# прогон; переменная его выключает.
+BRFP="$(mktemp -d)"
+( cd "$BRFP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf '.x\n' > .gitignore && mkdir -p rules .aqk/docs && printf 'п\n' > rules/r.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  ok: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+B1=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 ); B1C=$?
+B2=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
+rm -f "$BRFP/.aqk/advice-shown"
+B3=$( cd "$BRFP" && AQK_ADVICE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
+if [ "$B1C" -eq 0 ] &&
+   printf '%s' "$B1" | grep -qE "^(❖ )?AQK  держит" &&
+   printf '%s' "$B1" | grep -q "поставить:" &&
+   printf '%s' "$B2" | grep -qE "^(❖ )?AQK  держит" &&
+   ! printf '%s' "$B2" | grep -q "поставить:" &&
+   ! printf '%s' "$B3" | grep -q "поставить:" &&
+   [ "$(printf '%s\n' "$B2" | wc -l)" -le 2 ]; then
+  ok "краткий режим: строка есть всегда, совет один раз в сутки и выключается"
+else
+  bad "краткий режим ведёт себя не так" "первый: $(printf '%s' "$B1" | head -1) · второй строк: $(printf '%s\n' "$B2" | wc -l)"
+fi
+rm -rf "$BRFP"
+
+# --- 100. в awk-программах гейтов нет повторителей {n} ------------------------
+# mawk — умолчание Debian и Ubuntu — не понимает повторители в регулярках. Условие с {4} не
+# совпадает НИКОГДА, и гейт молча выходит с нулём на собственном красном образце: ровно тот
+# отказ, против которого написан комплект. Поймано сборкой docker-образа 2026-09-08 — на хосте
+# gawk, и ни один прогон не краснел. Проверка статическая: гоняться под mawk мы не можем,
+# а прочитать исходники — можем.
+AWKBAD=""
+for G in "$ROOT"/kit/gates/*/check.sh "$ROOT"/kit/gates/_skip.sh; do
+  [ -f "$G" ] || continue
+  # Только строки внутри awk-программ; комментарии оболочки (#) не считаем.
+  # Только регулярки AWK: `t ~ /…/` и образец-действие `/…/ {`. Шаблоны для grep, лежащие в
+  # переменных оболочки, сюда не попадают намеренно — GNU grep и busybox grep повторители
+  # понимают оба, и краснеть на них значит краснеть на нормальном укладе.
+  HIT=$(sed 's/^[[:space:]]*#.*$//' "$G" | grep -nE '(~[[:space:]]*/|^[[:space:]]*/)' \
+        | grep -E '\{[0-9]+(,[0-9]*)?\}' | head -2)
+  [ -n "$HIT" ] && AWKBAD="${AWKBAD:+$AWKBAD; }$(basename "$(dirname "$G")"): $(printf '%s' "$HIT" | head -1 | cut -c1-60)"
+done
+if [ -z "$AWKBAD" ]; then
+  ok "в проверках каталога нет повторителей {n} — они не работают под mawk"
+else
+  bad "повторитель {n} в проверке: под mawk она молчит" "$AWKBAD"
+fi
+
+# --- 101. проверка версии: раз в сутки, не в конвейере, молча при отказе ------
+# До этой строки комплект не делал ни одного исходящего запроса. Раз делает — обязан делать
+# ровно то, что о нём написано: спрашивать реестр не чаще раза в сутки и НЕ спрашивать в
+# конвейере. Само наличие новой версии здесь не проверяется — она зависит от реестра, а
+# проверка, зависящая от чужого сервера, краснеет по чужой воле. Сравнение версий проверено
+# модульно; здесь — то, что вокруг него.
+UPDP="$(mktemp -d)"
+( cd "$UPDP" && git init -q . && printf 'x=1\n' > a.py && printf '# вход\n' > AGENTS.md &&
+  printf '.x\n' > .gitignore && mkdir -p rules .aqk/docs && printf 'п\n' > rules/r.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  ok: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+( cd "$UPDP" && env -u CI -u GITHUB_ACTIONS AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+ASKED=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+rm -f "$UPDP/.aqk/update-checked"
+( cd "$UPDP" && CI=true AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+IN_CI=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+rm -f "$UPDP/.aqk/update-checked"
+( cd "$UPDP" && env -u CI AQK_UPDATE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief ) >/dev/null 2>&1
+OFF=$([ -f "$UPDP/.aqk/update-checked" ] && echo да || echo нет)
+# «нет сети» — тоже допустимый исход первого случая: молчание при отказе и есть требование.
+if [ "$IN_CI" = "нет" ] && [ "$OFF" = "нет" ]; then
+  ok "версия спрашивается вне конвейера ($ASKED), не спрашивается в конвейере и при AQK_UPDATE=0"
+else
+  bad "проверка версии спрашивает там, где не должна" "вне CI: $ASKED, в CI: $IN_CI, выключено: $OFF"
+fi
+rm -rf "$UPDP"
+
+# --- 102. строка манифеста, которую разбор не понял, называется вслух ---------
+# Найдено случайно 2026-09-09: подсадили падающий гейт с именем «плохой», чтобы посмотреть на
+# вывод, — прогон вышел с НУЛЁМ. Гейт не упал: его не существовало. Разбор берёт имена только
+# латиницей, а строку, не подошедшую под это, выбрасывал без единого слова. Человек видит
+# проверку в файле, а её нет — наш класс в чистом виде, и хуже опечатки в имени поля: ту мы
+# называем с 2026-09-06, а эту не называли вовсе.
+UNPP="$(mktemp -d)"
+( cd "$UNPP" && git init -q . && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n  плохой: "false"\n' > .aqk.yml ) >/dev/null 2>&1
+UNP=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
+( cd "$UNPP" && printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n  bad: "false"\n' > .aqk.yml )
+OKM=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
+if printf '%s' "$UNP" | grep -q "НЕ ДЕЙСТВУЕТ" &&
+   printf '%s' "$UNP" | grep -q "строка 6" &&
+   ! printf '%s' "$OKM" | grep -q "НЕ ДЕЙСТВУЕТ"; then
+  ok "непонятая строка манифеста называется с номером, понятая — молчит"
+else
+  bad "потерянная строка манифеста не названа" "$(printf '%s' "$UNP" | grep -c 'НЕ ДЕЙСТВУЕТ') на кириллице, $(printf '%s' "$OKM" | grep -c 'НЕ ДЕЙСТВУЕТ') на латинице"
+fi
+rm -rf "$UNPP"
+
+# --- 103. vitals: отказ роняет, выбор и незнание — нет ------------------------
+# `doctor` смотрит на репозиторий, `prove` — на гейты, `context` — на состояние. На саму
+# обвязку не смотрел никто: стоят ли инструменты объявленных гейтов, прописан ли хук в
+# .git/hooks НА САМОМ ДЕЛЕ. Раньше это выяснялось красным гейтом посреди коммита.
+# Первая версия ставила крест хуку, которого нет, — и на нашем же репозитории вышло два креста
+# за сознательное решение (pre-commit локально не ставим, гоняем в CI). Команда, которая кричит
+# «сломано» про выбор, перестаёт читаться вместе с настоящими отказами. Проверяются оба конца.
+VITP="$(mktemp -d)"
+( cd "$VITP" && git init -q . && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n' > .aqk.yml ) >/dev/null 2>&1
+VOK=$( cd "$VITP" && AQK_LANG=ru node "$CLI" vitals 2>&1 ); VOK_C=$?
+( cd "$VITP" && printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  lint: "инструментакоторогонет ."\n' > .aqk.yml )
+VBAD=$( cd "$VITP" && AQK_LANG=ru node "$CLI" vitals 2>&1 ); VBAD_C=$?
+if [ "$VOK_C" -eq 0 ] && [ "$VBAD_C" -eq 1 ] &&
+   printf '%s' "$VBAD" | grep -q "НЕ НАЙДЕНЫ" &&
+   printf '%s' "$VOK" | grep -q "хук pre-commit"; then
+  ok "vitals: пропавший инструмент роняет прогон, отсутствие хука — нет"
+else
+  bad "vitals путает отказ с выбором" "исправный код $VOK_C, сломанный код $VBAD_C"
+fi
+rm -rf "$VITP"
+
+# --- 106. совещательный гейт назван всегда и не роняет прогон никогда ---------
+# Два отказа, найденные 2026-09-09 сверкой документации с кодом. ПЕРВЫЙ: зелёный совещательный
+# печатался обычной галочкой — гейт, который уронить сборку НЕ МОЖЕТ, по выводу неотличим от
+# того, который может, и список `advisory:` был виден только в день, когда он покраснел. Ровно
+# та тишина, против которой написан стандарт, только про сам прибор. ВТОРОЙ: при `--since` гейт,
+# чей вывод не содержит путей, шёл через ветку «сузить нечем» с безусловным failed++ — то есть
+# совещательный ронял прогон. Проверено сравнением с кодом до починки: было 1, стало 0.
+# Команда гейта — ФАЙЛ, а не строка с `;`. На windows `spawnSync(shell: true)` запускает
+# cmd.exe, а не sh: там `echo x; exit 1` печатается целиком и выходит с НУЛЁМ. Первая версия
+# этой проверки так и провалилась в конвейере на windows — фикстура, а не код. Заодно урок про
+# сам тест: утверждение «зелёный помечен» искало подстроку «совещательный», которая есть и в
+# пометке КРАСНОГО совещательного, — то есть проходило бы и при полном отсутствии починки.
+# Теперь ищется текст, который бывает только на зелёной строке.
+ADVP="$(mktemp -d)"
+(
+  cd "$ADVP" && git init -q . && git config user.email a@b && git config user.name a
+  printf '# вход\n' > AGENTS.md && mkdir -p r && printf 'x\n' > r/a.md
+  printf '#!/bin/sh\necho "вердикт без путей"\nexit 1\n' > noscope.sh
+  printf '#!/bin/sh\nexit 0\n' > quiet.sh
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash quiet.sh"\nadvisory:\n  - adv\n' > .aqk.yml
+  git add -A && git commit -qm "Сделано: основа. Не уверен: ничего"
+) >/dev/null 2>&1
+ADVBASE=$( cd "$ADVP" && git rev-parse --abbrev-ref HEAD )
+( cd "$ADVP" && git checkout -qb feat && printf 'y\n' > r/b.md && git add -A &&
+  git commit -qm "Сделано: файл. Не уверен: ничего" ) >/dev/null 2>&1
+ADVGREEN=$( cd "$ADVP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 2>&1 )
+( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash noscope.sh"\nadvisory:\n  - adv\n' > .aqk.yml )
+( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); ADV_C=$?
+( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash noscope.sh"\n' > .aqk.yml )
+( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); BLOCK_C=$?
+if printf '%s' "$ADVGREEN" | grep -q "уронить прогон не может" && [ "$ADV_C" -eq 0 ] && [ "$BLOCK_C" -eq 1 ]; then
+  ok "совещательный назван и на зелёном, и не роняет прогон даже когда сузить нечем"
+else
+  bad "совещательный гейт неотличим или роняет прогон" "зелёный помечен: $(printf '%s' "$ADVGREEN" | grep -c 'уронить прогон не может'), код совещательного $ADV_C, код блокирующего $BLOCK_C"
+fi
+rm -rf "$ADVP"
+
+# --- 107. prove пропускает запись без её программы, а не обвиняет её ----------
+# ТО ЖЕ, ЧТО НАШЁЛ ВТОРОЙ ПОЛЬЗОВАТЕЛЬ, ТОЛЬКО ДРУГОЙ ДВЕРЬЮ. Переносимый рецепт бывает обёрткой
+# вокруг готового инструмента: первое слово команды тогда `bash`, и по нему не видно, чего не
+# хватает. Без программы обёртка краснеет на ОБОИХ образцах, и prove объявлял исправный гейт
+# сломанным — «краснеет на исправном коде». От prove зависят ступень AQK-2 и значок, то есть
+# отсутствие чужой программы отбирало у проекта уровень. Обвинение вместо диагноза.
+# Приёмка (gates.sh) и мутационная проверка поле `requires` читают давно; prove — не читал.
+# Проверено 2026-09-09 на своём же репозитории: не стояли slopcheck и zizmor, prove дал два
+# обвинения и код 1. Проверяются ОБА конца: без поля — обвинение и код 1, с полем — пропуск и 0.
+PRVP="$(mktemp -d)"
+(
+  cd "$PRVP" && git init -q . && printf '# вход\n' > AGENTS.md && mkdir -p r s/wrap/red s/wrap/green
+  printf 'x\n' > s/wrap/red/a.txt && printf 'x\n' > s/wrap/green/a.txt
+  # Обёртка вокруг программы, которой на машине нет: краснеет на обоих образцах.
+  printf '#!/bin/sh\nпрограммыкоторойнет "$1" || exit 2\n' > wrap.sh
+  # Настоящая проверка: prove требует, чтобы хоть один гейт был ДОКАЗАН, иначе проект,
+  # у которого всё недоказуемо, получал бы уровень ни за что. Команда обязана кончаться
+  # каталогом — иначе подставлять образец некуда, и гейт сам станет недоказуемым.
+  printf '#!/bin/sh\ngrep -rq НЕЛЬЗЯ "$1" && exit 1\nexit 0\n' > real.sh
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\nsamples: s\ngates:\n  wrap: "sh wrap.sh ."\n  real: "sh real.sh ."\n' > .aqk.yml
+) >/dev/null 2>&1
+# Второй гейт обязан быть доказуемым: prove требует хотя бы одного доказанного.
+( cd "$PRVP" && mkdir -p s/real/red s/real/green &&
+  printf 'НЕЛЬЗЯ\n' > s/real/red/a.txt && printf 'можно\n' > s/real/green/a.txt )
+PRV_NOREQ=$( cd "$PRVP" && AQK_LANG=ru node "$CLI" prove 2>&1 ); PRV_NOREQ_C=$?
+( cd "$PRVP" && printf 'intent: обёртка\nrequires: программыкоторойнет\nrecipes:\n  any: "sh wrap.sh {dir}"\n' > s/wrap/gate.yml )
+PRV_REQ=$( cd "$PRVP" && AQK_LANG=ru node "$CLI" prove 2>&1 ); PRV_REQ_C=$?
+# Тот же вопрос задаёт `vitals`, и до 2026-09-09 он отвечал на него иначе: печатал «все
+# инструменты на месте», потому что смотрел только на ПЕРВОЕ СЛОВО команды — `sh`, который есть
+# всегда. Две команды об одном репозитории говорили разное; читатель верил той, что зеленее.
+PRV_VIT=$( cd "$PRVP" && AQK_LANG=ru node "$CLI" vitals 2>&1 )
+if [ "$PRV_NOREQ_C" -ne 0 ] && [ "$PRV_REQ_C" -eq 0 ] &&
+   printf '%s' "$PRV_REQ" | grep -q "НЕ ПРОВЕРЕНА здесь" &&
+   printf '%s' "$PRV_VIT" | grep -q "программыкоторойнет"; then
+  ok "prove и vitals одинаково видят программу из requires: пропуск, а не обвинение"
+else
+  bad "prove путает «нечем проверить» со «сломан», либо vitals её не видит" \
+      "без поля код $PRV_NOREQ_C, с полем код $PRV_REQ_C, vitals назвал: $(printf '%s' "$PRV_VIT" | grep -c 'программыкоторойнет')"
+fi
+rm -rf "$PRVP"
+
+# --- 104. опись в AGENTS.md покрывает все исходники ---------------------------
+# AGENTS.md — первое, что читает агент, и раздел «Где что лежит» для него карта. Карта,
+# отставшая от дерева, хуже её отсутствия: агент уверен, что видел всё. Проверено 2026-09-09 —
+# в описи не было восьми файлов из четырнадцати добавленных за неделю (`brief.mjs`, `banner.mjs`
+# и шесть `units-*.mjs`), и заметить это можно было только сверкой руками. Тот же класс, что
+# «гейт объявлен и не существует»: расхождение молчит.
+MISSING=""
+for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/*; do
+  B=$(basename "$F")
+  grep -qF "$B" "$ROOT/AGENTS.md" || MISSING="$MISSING $B"
+done
+if [ -z "$MISSING" ]; then
+  ok "опись «Где что лежит» называет каждый исходник"
+else
+  bad "AGENTS.md не называет файлы" "$MISSING"
+fi
+
+# --- 105. два README не расходятся структурно --------------------------------
+# AGENTS.md требует, чтобы README и его перевод не расходились, и до сегодня требование не
+# работало: на 2026-09-09 в английском было 23 раздела, в русском 22 — «Первый прогон на
+# настоящем проекте» отсутствовал целиком, а «Как ввести правило» стояло в другом разделе.
+# Читатель одного языка получал инструкцию, которой у читателя другого не было. Сверяется
+# ПОСЛЕДОВАТЕЛЬНОСТЬ уровней, а не тексты: заголовки на разных языках сравнивать нельзя.
+# Строки внутри ``` не считаются: в примере .aqkignore есть строка, начинающаяся с #.
+levels() {
+  awk '/^```/ { inf = !inf; next } !inf && /^#/ { sub(/[^#].*/, ""); print }' "$1"
+}
+if [ "$(levels "$ROOT/README.md")" = "$(levels "$ROOT/README.ru.md")" ]; then
+  ok "README.md и README.ru.md несут одни и те же разделы ($(levels "$ROOT/README.md" | wc -l | tr -d ' '))"
+else
+  bad "README и перевод разошлись структурно" \
+      "англ. $(levels "$ROOT/README.md" | wc -l | tr -d ' '), рус. $(levels "$ROOT/README.ru.md" | wc -l | tr -d ' ')"
+fi
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
@@ -1509,5 +1762,5 @@ else
   printf '  \033[31mпровалено: %s из %s\033[0m\n\n' "$FAIL" "$((PASS + FAIL))"
 fi
 
-printf '  \033[2mне покрыто: содержание документов, установка с GitHub через npx\033[0m\n\n'
+printf '  \033[2mне покрыто: СОДЕРЖАНИЕ документов (сверяется опись и структура, не текст),\n  установка с GitHub через npx\033[0m\n\n'
 exit "$FAIL"

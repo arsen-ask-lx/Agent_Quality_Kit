@@ -4,12 +4,13 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
-import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf } from "../lib/manifest.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
+import { beginBrief, finishBrief } from "../lib/brief.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -86,6 +87,18 @@ async function reportCatalog(man, facts) {
   if (unknownGates.length) {
     console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
   }
+  // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
+  // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
+  // сняла бы запись с долга, не закрыв её ничем.
+  let linterCfg = "";
+  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
+    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
+  }
+  const unproven = coversUnproven(man, catalog, linterCfg);
+  for (const u of unproven) {
+    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+  }
   // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
   // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
   let mcpText = "";
@@ -106,6 +119,9 @@ async function reportCatalog(man, facts) {
       (byOther.length ? `${L.doctor.totalCovered(byOther.length)}, ` : "") +
       c.dim(L.doctor.totalSkip(skip.length)) + "\n"
   );
+  // Числа отдаются наружу, а не пересчитываются второй раз: два счёта одного и того же
+  // расходятся ровно так же, как два списка команд.
+  return { held: held.length, todo: todo.length, todoRecs: todo };
 }
 
 // «Гейт объявлен» и «гейт работает» — разные утверждения. Первое читается из манифеста,
@@ -165,14 +181,20 @@ function runGates(man, opts = {}) {
     }
     const code = r.status;
     if (code === 0) {
-      console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+      // Совещательный называется и когда он зелёный. Иначе гейт, который уронить прогон НЕ
+      // МОЖЕТ, по выводу неотличим от того, который может, — и список `advisory:` в манифесте
+      // виден только в тот день, когда он покраснел. Измерено 2026-09-09: зелёный
+      // совещательный печатался обычной галочкой, а README обещал, что список назван каждый
+      // прогон. Тот же класс, что молчащий гейт, только про сам прибор.
+      const quiet = advisory.has(name) ? ` ${c.yellow(L.doctor.advisoryQuiet)}` : "";
+      console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${quiet} ${c.dim(`${secs}s · ${cmd}`)}`);
       // Зелёный гейт иногда всё-таки говорит человеку что-то важное: храповик, дошедший до цели,
       // просит убрать обёртку. Вывод успешного гейта не показывался вовсе, и это сообщение
       // уходило в никуда — тот же класс, что обрезанный совет у красного, только тише.
       // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
       const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
       for (const line of okAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: true, secs, out: outAll });
+      results.push({ name, cmd, ok: true, secs, advisory: advisory.has(name), out: outAll });
     } else {
       const raw = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
       // Совет отделяется ДО сужения. Иначе он сам попадает под фильтр по путям: сообщение
@@ -191,16 +213,23 @@ function runGates(man, opts = {}) {
         if (!s.scopable || out.length === 0) {
           // Гейт печатает вердикт без путей — сузить нечем. Признать его успешным значило бы
           // выдать провал за тишину; остаётся красным, и причина названа.
-          console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${L.doctor.notScopable}`)}`);
-          failed++;
-          results.push({ name, cmd, ok: false, secs, code, note: L.doctor.notScopable, out: outAll });
+          // Совещательный не роняет прогон НИКОГДА — в том числе здесь. Раньше failed++ стоял
+          // безусловно, и гейт, объявленный совещательным, валил сборку с `--since` только
+          // потому, что в его выводе нет путей. Измерено 2026-09-09.
+          const nsAdv = advisory.has(name);
+          const nsMark = nsAdv ? c.yellow("!") : c.red("✘");
+          const nsVerdict = nsAdv ? c.yellow(L.doctor.advisoryMark) : c.red(L.doctor.exitCode(code));
+          console.log(`  ${nsMark}  ${name.padEnd(14)} ${nsVerdict} ${c.dim(`· ${L.doctor.notScopable}`)}`);
+          if (!nsAdv) failed++;
+          results.push({ name, cmd, ok: false, secs, code, advisory: nsAdv, note: L.doctor.notScopable, out: outAll });
           continue;
         }
         if (s.findings === 0) {
           // Долг есть, но не в том, что внёс диф. Зелёный — но с числом спрятанного: молчаливое
           // «всё хорошо» здесь было бы неправдой.
-          console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
-          results.push({ name, cmd, ok: true, secs, scopedAway: out.length, out: outAll });
+          const sQuiet = advisory.has(name) ? ` ${c.yellow(L.doctor.advisoryQuiet)}` : "";
+          console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${sQuiet} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
+          results.push({ name, cmd, ok: true, secs, advisory: advisory.has(name), scopedAway: out.length, out: outAll });
           continue;
         }
         out = s.kept;
@@ -226,7 +255,7 @@ function runGates(man, opts = {}) {
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та
   // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
-  const advisoryFailed = results.filter((x) => x.advisory).map((x) => x.name);
+  const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
   return { failed, ran: gates.length, results, advisoryFailed };
 }
@@ -254,6 +283,8 @@ async function writeRunReport({ version, reached, results }) {
 }
 
 async function cmdDoctor() {
+  const brief = process.argv.includes("--brief");
+  const buf = brief ? beginBrief() : null;
   // Версия в шапке — единственное, что привязывает баг-репорт к коммиту, если ставили не из
   // релиза: без неё "у меня не работает" ничем не отличается от любой другой версии за год.
   let version = "";
@@ -296,6 +327,15 @@ async function cmdDoctor() {
 
   // Опечатка в имени поля означала «поля нет»: вердикт выдавался неверный, а причина молчала.
   // Называем поле и говорим, какие бывают — иначе человек ищет ошибку в проекте, а она в файле.
+  // Строка, которую разбор не понял, называется ПЕРВОЙ и жёлтым: человек видит проверку в
+  // файле, а её не существует. До 2026-09-09 такая строка исчезала без слова — найдено
+  // случайно, гейтом с кириллическим именем, который «прошёл», не запустившись.
+  try {
+    const bad = unparsedLines(await readFile(join(CWD, MANIFEST), "utf8"));
+    for (const b of bad) console.log(c.yellow(`\n  ${L.doctor.manifestUnparsed(b.line, b.text)}`));
+    if (bad.length) console.log(c.dim(`  ${L.doctor.manifestUnparsedWhy}`));
+  } catch { /* манифеста нет — про строки в нём говорить нечего */ }
+
   const unknown = unknownKeys(man);
   if (unknown.length) {
     console.log(c.yellow(`\n  ${L.doctor.manifestUnknown(unknown)}`));
@@ -352,7 +392,7 @@ async function cmdDoctor() {
     await reportBaseline(man, facts);
     process.exit(0);
   }
-  await reportCatalog(man, facts);
+  const cat = (await reportCatalog(man, facts)) || { held: 0, todo: 0, todoRecs: [] };
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.
   const wantRun = process.argv.includes("--run");
@@ -385,9 +425,12 @@ async function cmdDoctor() {
     else if (!levelOk) line = c.red(`  ${L.doctor.thresholdFail(min, now)}\n`);
     else line = c.red(`  ${L.doctor.thresholdGateFail(min, now, failedNames)}\n`);
     console.log(line);
+    await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: failedNames ? String(failedNames).split(", ").filter(Boolean) : [] }, cat.todoRecs, pass);
     process.exit(pass ? 0 : 1);
   }
-  process.exit(missing || reached < 0 || gateFailed ? 1 : 0);
+  const ok = !(missing || reached < 0 || gateFailed);
+  await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: [] }, cat.todoRecs, ok);
+  process.exit(ok ? 0 : 1);
 }
 
 // Наружу — только команда. Остальное здесь же и используется: экспорт, который никто не

@@ -44,6 +44,7 @@ export const en = {
     contextInstall: "the same in full — the map and the rulebook — installed as a hook",
     report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
+    version: "the banner and the version number — same as --version and -v",
     noInstall: "Without installing:  npx agent-quality-kit init",
     language: "Output language: AQK_LANG=ru (or en), otherwise your system locale",
   },
@@ -93,6 +94,9 @@ export const en = {
     coveredBy: (n) => `held by another arbiter: ${n} — the portable entry is not needed`,
     coveredByGate: (g) => `held by "${g}", declared in the manifest`,
     coversUnknown: (l) => `covers names a gate absent from gates: ${l} — those entries are held by nothing`,
+    coversUnproven: (e, g, codes) =>
+      `claim unverified: "${e}" is declared held by gate "${g}", but neither its command nor the\n  linter config names rules ${codes} — the entry may be held by nothing`,
+    coversUnprovenHow: (cmd) => `settle it: add those rules to the linter, or install the entry — ${cmd}`,
     totalCovered: (n) => `held by another arbiter ${n}`,
     total: "Total:",
     totalHeld: (n) => `held by a machine ${n}`,
@@ -103,6 +107,7 @@ export const en = {
     sinceBadRef: (ref) => `cannot compare against "${ref}": no such ref, or this is not a git repository`,
     notScopable: "output carries no paths — cannot be narrowed by diff, left red",
     outsideDiff: (n) => `findings exist, but outside the diff (${n})`,
+    advisoryQuiet: "(advisory — cannot fail the run)",
     advisoryMark: "advisory — shown, the run was not failed",
     advisorySummary: (names) =>
       `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
@@ -117,6 +122,9 @@ export const en = {
     manifestUnknown: (keys) =>
       `The manifest has fields the standard does not know: ${keys.join(", ")}. Looks like a typo — ` +
       `such a field is silently read as absent, and the verdict comes out wrong.`,
+    manifestUnparsed: (n, t) => `manifest line ${n} was not parsed and HAS NO EFFECT: ${t}`,
+    manifestUnparsedWhy:
+      "field and gate names use latin letters, digits, dash and underscore. What is declared here\n  does not run at all — while looking as if it does.",
     manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
@@ -171,6 +179,7 @@ export const en = {
       has_agent_config: ["the agent was never configured here", "agent settings exist"],
       has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],
       has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
+      has_mcp: ["no MCP tools are wired up for the agent here", "MCP servers are declared"],
     },
   },
 
@@ -455,6 +464,7 @@ export const en = {
     noTarget: "no place to substitute the sample directory — the command was written by hand",
     otherRecipe: (lang) => `the samples are written for the "${lang}" recipe, another one is installed — nothing to prove with`,
     noGates: "no gates declared — nothing to prove",
+    needsProgram: (progs) => `NOT CHECKED here — needs "${progs}"`,
     noSamplesDir: "the samples field in .aqk.yml is empty — nowhere to look for samples",
     nothingProven:
       "not a single gate is proven. A level above AQK-1 would mean trust in the author, not a fact:\n  a project whose gate is `true` would pass it exactly like a project with real protection.",
