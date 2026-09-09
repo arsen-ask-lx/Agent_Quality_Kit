@@ -7,7 +7,7 @@
 // незачем, а сто коммитов за день перепроверить надо.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { probeDue, probeState, PROBE_EVERY } from "../lib/cadence.mjs";
+import { probeDue, probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
 
 test("порог по умолчанию — сто коммитов, и он назван числом, а не спрятан", () => {
   assert.equal(PROBE_EVERY, 100);
@@ -42,4 +42,28 @@ test("состояние пробы: не делалась, устарела, с
   assert.deepEqual(probeState({ at: 10 }, 40, 100), { state: "fresh", behind: 30 });
   assert.deepEqual(probeState({ at: 10 }, 210, 100), { state: "stale", behind: 200 });
   assert.deepEqual(probeState({ at: 10 }, null, 100), { state: "unknown", behind: null });
+});
+
+// Порог — свойство ПРОЕКТА, а не наше: сто коммитов на репозитории с десятком коммитов в час
+// это трижды в день, а на редком проекте столько не наберётся никогда.
+test("порог берётся из манифеста, умолчание остаётся при пустом поле", () => {
+  assert.equal(probeEvery({ probe: "250" }), 250);
+  assert.equal(probeEvery({ probe: 250 }), 250);
+  assert.equal(probeEvery({}), PROBE_EVERY);
+  assert.equal(probeEvery(null), PROBE_EVERY);
+  assert.equal(probeEvery({ probe: "" }), PROBE_EVERY);
+});
+
+// Ноль — это «не делать», а не «делать всегда»: выключатель в манифесте нужен тому, кто не
+// может передать переменную окружения, — например конвейеру чужой площадки.
+test("ноль выключает пробу", () => {
+  assert.equal(probeEvery({ probe: 0 }), 0);
+  assert.equal(probeDue(null, 5, 0), true);
+});
+
+// Неразобранное значение обязано быть НАЗВАНО, а не подменено умолчанием: иначе в манифесте
+// написано одно, а происходит другое — ровно та тихая неправда, против которой весь комплект.
+test("непонятое значение порога — null, а не тихое умолчание", () => {
+  assert.equal(probeEvery({ probe: "часто" }), null);
+  assert.equal(probeEvery({ probe: -5 }), null);
 });

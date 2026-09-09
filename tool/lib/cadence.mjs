@@ -39,4 +39,19 @@ function probeState(last, now, every = PROBE_EVERY) {
   return { state: behind >= every ? "stale" : "fresh", behind };
 }
 
-export { probeDue, probeState, PROBE_EVERY };
+// Порог из манифеста: `probe: 250` — раз в двести пятьдесят коммитов, `probe: 0` — не делать
+// вовсе. Число выбирается проектом, а не нами: сто коммитов на репозитории с десятком коммитов
+// в час — это трижды в день, а на редком проекте они не наберутся никогда.
+//
+// Неразобранное значение НЕ молчит: строка `probe: часто` означала бы «человек настроил», а
+// работал бы умолчательный порог — расхождение между написанным и происходящим, то самое,
+// против чего весь комплект. Возвращается null, и вызывающий говорит об этом вслух.
+function probeEvery(man) {
+  const raw = man?.probe;
+  if (raw === undefined || raw === null || String(raw).trim() === "") return PROBE_EVERY;
+  const n = Number(String(raw).trim());
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
+export { probeDue, probeState, probeEvery, PROBE_EVERY };

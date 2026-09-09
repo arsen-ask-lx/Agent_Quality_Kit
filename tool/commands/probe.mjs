@@ -29,7 +29,7 @@ import { commandFor } from "../lib/prove.mjs";
 import { fixHotspots, probeVerdict } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
-import { probeState, PROBE_EVERY } from "../lib/cadence.mjs";
+import { probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Тот же набор расширений, что у привязки доказательства к дифу. Список один на программу:
@@ -203,9 +203,17 @@ async function cmdProbe(args, { auto = false } = {}) {
   await writeMark(commitCount(), blind, hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`));
 }
 
-// Состояние пробы для тех, кто только ПОКАЗЫВАЕТ его: краткий режим и блок для агента.
+// Состояние пробы для тех, кто только ПОКАЗЫВАЕТ его: прогон и блок для агента.
+//
+// Порог берётся из манифеста (`probe: 250`), умолчание — PROBE_EVERY. Непонятое значение не
+// подменяется умолчанием молча: в манифесте было бы написано одно, а происходило бы другое.
+// Возвращается пометка `badEvery`, и вызывающий говорит о ней вслух.
 async function probeStatus() {
-  return probeState(await readMark(), commitCount(), PROBE_EVERY);
+  const man = await readManifest();
+  const every = probeEvery(man);
+  if (every === null) return { state: "unknown", behind: null, badEvery: String(man?.probe) };
+  if (every === 0) return { state: "off", behind: null };
+  return probeState(await readMark(), commitCount(), every);
 }
 
 export { cmdProbe, probeStatus, scanningGates, isCode };
