@@ -23,7 +23,15 @@ PASS=0
 FAIL=0
 
 ok()   { printf '  \033[32m✔\033[0m  %s\n' "$1"; PASS=$((PASS + 1)); }
-bad()  { printf '  \033[31m✘\033[0m  %s\n' "$1"; printf '      %s\n' "${2:-}"; FAIL=$((FAIL + 1)); }
+# Упавшие называются ПОИМЁННО И С ПРИЧИНОЙ в итоге, а не только по ходу. Прогон запускают гейтом, а вывод
+# упавшего гейта обрезается — и причина, напечатанная в середине двухсот строк, до глаз не
+# доезжает. Час поисков в конвейере 2026-09-09 стоил ровно этого: список красных был, а увидеть
+# его было нельзя. Имени мало: следующий круг конвейера показал имя и не показал причину —
+# она печатается сразу под находкой, то есть в середине, которую обрезка и съедает.
+FAILED_NAMES=""
+bad()  { printf '  \033[31m✘\033[0m  %s\n' "$1"; printf '      %s\n' "${2:-}"; FAIL=$((FAIL + 1));
+         FAILED_NAMES="${FAILED_NAMES:+$FAILED_NAMES
+  }$1 — ${2:-без пояснения}"; }
 
 # Node на Windows видит мир глазами Windows, а Git Bash — глазами POSIX: путь вида
 # /tmp/tmp.XXXX, отданный в `node -e`, там не существует, и проверка падает не на том, что
@@ -34,6 +42,26 @@ node_in() { D="$1"; shift; ( cd "$D" && node "$@" ); }
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+
+# ГЕРМЕТИЧНОСТЬ. Три строки, каждая закрывает свой класс отказов, найденный сплошным чтением
+# и замерами 2026-09-09. Прогон обязан давать один и тот же ответ на любой машине и в любой
+# день — иначе «116 зелёных» означает не «работает», а «сегодня совпало».
+#
+# 1. TMPDIR внутрь $WORK. В файле 65 вызовов `mktemp -d` и ОДИН trap — на $WORK. Прерванный
+#    прогон оставлял 64 каталога, а два из них несут по копии всего дерева (`cp -r tool kit`,
+#    ≈4000 файлов). Одна строка вместо правки шестидесяти пяти: mktemp читает TMPDIR, и вся
+#    временная работа попадает под уже существующую уборку.
+# 2. HOME в песочницу. Комплект пишет `~/.config/aqk/feedback-shown` — просьбу про звезду
+#    показывают один раз НА МАШИНУ. Из 65 фикстур свой HOME задавали 8. Значит на машине
+#    разработчика (отметка лежит с сентября) `init` молчит, а на свежем раннере — говорит:
+#    один и тот же прогон получает РАЗНЫЙ ввод. Плюс прогон гадил в настоящий домашний каталог.
+# 3. AQK_UPDATE=0. `doctor --brief` ходит в реестр npm по сети с таймаутом 3 с — и только вне
+#    конвейера (`updateWanted` выключается при CI). То есть локально тесты сетевые, а в
+#    конвейере нет. Сеть в тестах — отдельный класс флейков во всех разборах; здесь она ещё и
+#    делает две среды разными по построению.
+export TMPDIR="$WORK/tmp"; mkdir -p "$TMPDIR"
+export HOME="$WORK/home"; export USERPROFILE="$HOME"; mkdir -p "$HOME"
+export AQK_UPDATE=0
 
 printf '\n\033[1mtool/selfcheck/smoke.sh\033[0m\n\n'
 
@@ -345,10 +373,24 @@ if [ -f "$BLOBDIR/GOD_AI.md" ]; then
     bad "blob собрал не все методички" "в kit/docs $EXPECT_MD, в склейке $GOT_MD"
   fi
   # Ссылки на соседние файлы внутри склейки ведут в никуда: соседей рядом больше нет.
-  if grep -qE '\]\((?!https?:)[^)]*\.md\)' "$BLOBDIR/GOD_AI.md" 2>/dev/null; then
+  #
+  # ДВА ПРОХОДА, А НЕ ОПЕРЕЖАЮЩАЯ ПРОВЕРКА. Здесь стояло `grep -qE '...(?!https?:)...'`, и это
+  # была ЛОЖЬ: `(?!` — синтаксис PCRE, в POSIX ERE его нет. GNU grep печатает предупреждение и
+  # не находит ничего, ugrep падает с ошибкой разбора — в обоих случаях `if` уходит в `else`, и
+  # проверка печатала зелёное НА ЛЮБЫХ ДАННЫХ. Ровно тот грех, ради поимки которого написан весь
+  # комплект, внутри прибора, который его ищет. Найдено сплошным чтением 2026-09-09.
+  #
+  # Поэтому же ниже проверяется САМА ПРОВЕРКА: подделываем склейку с относительной ссылкой и
+  # требуем, чтобы её нашли. Без этого следующая такая опечатка снова проедет зелёной.
+  rel_links() { grep -oE '\]\([^)]+\.md[^)]*\)' "$1" 2>/dev/null | grep -vE '^\]\(https?:' | grep -q .; }
+  printf '%s' "$(cat "$BLOBDIR/GOD_AI.md")" > "$BLOBDIR/doctored.md"
+  printf '\nсм. [соседний файл](other.md)\n' >> "$BLOBDIR/doctored.md"
+  if rel_links "$BLOBDIR/GOD_AI.md"; then
     bad "в склейке остались ссылки на соседние файлы" "внутри одного файла они ведут в никуда"
+  elif ! rel_links "$BLOBDIR/doctored.md"; then
+    bad "проверка ссылок не может покраснеть" "подделанная склейка с относительной ссылкой прошла"
   else
-    ok "ссылки на соседние файлы в склейке сняты"
+    ok "ссылки на соседние файлы сняты, и проверка это умеет заметить"
   fi
 else
   bad "blob не создал GOD_AI.md" "$BLOBDIR"
@@ -579,7 +621,7 @@ REPDIR="$(mktemp -d)"
 (
   cd "$REPDIR" && git init -q . && mkdir -p src &&
   printf 'a = 1  # noqa\n' > src/a.py &&
-  node "$CLI" start > /tmp/aqk-start.log 2>&1
+  node "$CLI" start > "$WORK/start.log" 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
 if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ gate-not-weakened'; then
@@ -591,7 +633,7 @@ else
   G_LS=$( cd "$REPDIR" && ls gates 2>&1 | tr '\n' ' ' )
   G_DECL=$( cd "$REPDIR" && sed -n '/^gates:/,$p' .aqk.yml 2>/dev/null | grep -cE '^[[:space:]]+[A-Za-z0-9_-]+:' )
   G_OUT=$( cd "$REPDIR" && bash gates/gate-not-weakened/check.sh . 2>&1 | head -2 ); G_CODE=$?
-  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 /tmp/aqk-start.log 2>/dev/null | tr '\n' ' ')»"
+  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 "$WORK/start.log" 2>/dev/null | tr '\n' ' ')»"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
   ok "report сохраняет .aqk/report.md"
@@ -1731,7 +1773,7 @@ rm -rf "$PRVP"
 # и шесть `units-*.mjs`), и заметить это можно было только сверкой руками. Тот же класс, что
 # «гейт объявлен и не существует»: расхождение молчит.
 MISSING=""
-for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/*; do
+for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/* "$ROOT"/tool/selfcheck/*/*; do
   B=$(basename "$F")
   grep -qF "$B" "$ROOT/AGENTS.md" || MISSING="$MISSING $B"
 done
@@ -1874,98 +1916,43 @@ else
 fi
 rm -rf "$CADP" "$CADP2"
 
-# --- 113. проверки контракта API считаются проверками ---------------------------
-# ЗАМЕР, ИЗ КОТОРОГО ВЗЯЛАСЬ ЭТА СТРОКА (2026-09-09). Три шага, каждый выносит вердикт о
-# контракте API, каждый обезврежен `continue-on-error: true`, — и наш `ci-actually-fails`
-# сказал «чисто», код возврата 0. Причина: список опознаваемых проверок знал `pytest` и
-# `eslint` и не знал ни одного инструмента про API. Шаг с фаззером спецификации проходил
-# как строка в логе.
+# --- переехавшие проверки: встроенный раннер --------------------------------
+# ПОЧЕМУ ЗДЕСЬ МОСТ, А НЕ ВТОРАЯ КОМАНДА. Проверки переезжают на `node --test` по одной, и всё
+# это время у прогона обязана оставаться ОДНА точка входа и ОДИН счётчик: два числа в двух
+# местах через месяц разойдутся, и никто не заметит, что половина не запускается.
 #
-# Ловушка, из-за которой этот замер чуть не оказался ложно-зелёным: если назвать шаг
-# «Spec lint», гейт краснеет — но не потому, что узнал инструмент, а потому что в названии
-# есть слово «lint». Поэтому в образце ниже НЕТ слов-подсказок: проверяется опознание
-# инструмента, а не удача в наименовании.
-APIC="$(mktemp -d)"
-mkdir -p "$APIC/.github/workflows"
-cat > "$APIC/.github/workflows/api.yml" <<'YML'
-name: api
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - name: соответствие сервера схеме
-        continue-on-error: true
-        run: schemathesis run openapi.yaml --url http://localhost:8000
-      - name: ломающие изменения
-        continue-on-error: true
-        run: oasdiff breaking base.yaml openapi.yaml
-      - name: ожидания потребителей
-        continue-on-error: true
-        run: pact-broker can-i-deploy --pacticipant web --version "$SHA"
-YML
-if bash "$ROOT/kit/gates/ci-actually-fails/check.sh" "$APIC" >/dev/null 2>&1; then
-  bad "обезвреженные проверки контракта API прошли как чистые" \
-      "schemathesis, oasdiff и pact под continue-on-error — гейт не заметил"
-else
-  ok "шаг с проверкой контракта API под continue-on-error краснеет"
+# ЗАЧЕМ ПЕРЕЕЗД. У встроенного раннера есть то, чего нет у этого файла и не появится: свой
+# каталог и уборка на каждую проверку, таймаут на каждую, точечный перезапуск одной по имени
+# (`--test-name-pattern`). Диагностика отказа падает с сорока секунд до одной. Проверено на
+# Node 20.20.2 — той версии, что стоит в конвейере.
+NODE_SMOKE="$ROOT/tool/selfcheck/smoke"
+if [ -d "$NODE_SMOKE" ]; then
+  NS_OUT=$(cd "$ROOT" && node --test --test-reporter=tap "$NODE_SMOKE"/*.test.mjs 2>&1)
+  # Разбираем только верхний уровень TAP: вложенные строки идут с отступом.
+  while IFS= read -r NS_LINE; do
+    case "$NS_LINE" in
+      "ok "*)     ok "${NS_LINE#*- }" ;;
+      "not ok "*)
+        # ОБЪЯСНЕНИЕ ОБЯЗАНО ДОЕХАТЬ. Первая редакция моста печатала только «не прошло» и совет
+        # запустить вручную — то есть отправляла гадать ровно там, где ответ уже был получен.
+        # Стоило это трёх кругов конвейера: проверка падала только на раннере, а сообщение
+        # утверждения оставалось в выводе, который мост выбрасывал. TAP кладёт его в блок после
+        # строки `not ok`, полем `error:`.
+        # TAP кладёт многострочное сообщение блочным скаляром: строка `error: |-`, а сам текст
+        # идёт следующими строками с отступом. Первая редакция брала только строку `error:` и
+        # печатала «|-» — то есть снова ничего.
+        NS_WHY=$(printf '%s\n' "$NS_OUT" | awk '
+          /^[[:space:]]+error:/ { inerr = 1; sub(/^[[:space:]]*error:[[:space:]]*/, ""); if ($0 != "|-" && $0 != "") print; next }
+          inerr && /^[[:space:]]+(code|stack|failureType|type|duration_ms):/ { inerr = 0 }
+          inerr && /^[[:space:]]*\.\.\.[[:space:]]*$/ { inerr = 0 }
+          inerr { sub(/^[[:space:]]+/, ""); print }
+        ' | head -6 | tr '\n' ' ')
+        bad "${NS_LINE#*- }" "${NS_WHY:-подробности: node --test $NODE_SMOKE/*.test.mjs}" ;;
+    esac
+  done <<EOF
+$(printf '%s\n' "$NS_OUT" | grep -E '^(ok|not ok) ')
+EOF
 fi
-rm -rf "$APIC"
-
-# --- 114. сужённый арбитр контракта краснеет ------------------------------------
-# ПОЧЕМУ ОТДЕЛЬНОЙ ПРОВЕРКОЙ, А НЕ ОБРАЗЦОМ. У записи две красные ветки, а `red/` пробуется
-# целиком: первая ветка («держать некому») красит папку, и вторая осталась бы непроверенной —
-# ровно то молчание, неотличимое от успеха, против которого весь комплект.
-#
-# ЗАМЕР (2026-09-09), из-за которого ветка есть. Стенд: сервер врёт в каждом поле ответа,
-# пятисоток нет. `schemathesis` с умолчаниями — код 1 и три нарушения схемы; он же с
-# `-c not_a_server_error` — код 0 и «18 из 18 прошли». Сужение до одной проверки это не
-# настройка, а отключение: у schemathesis по умолчанию включены ВСЕ проверки.
-NARR="$(mktemp -d)"
-mkdir -p "$NARR/.github/workflows"
-printf 'openapi: 3.0.3\ninfo: { title: t, version: 1.0.0 }\npaths: {}\n' > "$NARR/openapi.yaml"
-NARRG="$ROOT/kit/gates/api-contract-has-arbiter/check.sh"
-say_narrow() {
-  cat > "$NARR/.github/workflows/ci.yml" <<YML
-name: ci
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - run: schemathesis run openapi.yaml --url http://localhost:8000 $1
-YML
-}
-say_narrow "-c not_a_server_error"
-SHORT=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-say_narrow "--checks not_a_server_error"
-LONG=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-say_narrow ""
-FULL=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-# Вторая форма арбитра, который не может провалиться, и она коварнее первой: вывод громкий и
-# красный на вид. Замер 2026-09-09: `oasdiff breaking` на паре спецификаций, где из ответа убрано
-# обязательное поле, печатает «1 changes: 1 error» и выходит с НУЛЁМ; с `--fail-on ERR` — код 1.
-cat > "$NARR/.github/workflows/ci.yml" <<'YML'
-name: ci
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - run: schemathesis run openapi.yaml --url http://localhost:8000
-      - run: oasdiff breaking base.yaml openapi.yaml
-YML
-LOUD=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-sed -i 's|oasdiff breaking base.yaml openapi.yaml|oasdiff breaking base.yaml openapi.yaml --fail-on ERR|' "$NARR/.github/workflows/ci.yml"
-LOUDOK=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-if [ "$SHORT" = "1" ] && [ "$LONG" = "1" ] && [ "$FULL" = "0" ] &&
-   [ "$LOUD" = "1" ] && [ "$LOUDOK" = "0" ]; then
-  ok "арбитр, который не может провалиться, краснеет в обеих формах — а полный молчит"
-else
-  bad "арбитр, не способный провалиться, не опознан" \
-      "-c: $SHORT, --checks: $LONG, полный: $FULL, oasdiff без --fail-on: $LOUD, с ним: $LOUDOK"
-fi
-rm -rf "$NARR"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'
@@ -1976,4 +1963,9 @@ else
 fi
 
 printf '  \033[2mне покрыто: СОДЕРЖАНИЕ документов (сверяется опись и структура, не текст),\n  установка с GitHub через npx\033[0m\n\n'
+
+# ИМЕНА УПАВШИХ — САМОЙ ПОСЛЕДНЕЙ СТРОКОЙ, и это не косметика. Прогон запускают гейтом, а вывод
+# упавшего гейта обрезается: видно голову и хвост. Значит единственное место, где список
+# гарантированно доедет до глаз, — конец. Проверено прогоном с нарочно сломанной проверкой.
+[ "$FAIL" -eq 0 ] || printf '  \033[31mупало: %s\033[0m\n\n' "$FAILED_NAMES"
 exit "$FAIL"

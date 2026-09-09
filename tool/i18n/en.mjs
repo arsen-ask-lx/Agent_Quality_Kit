@@ -129,6 +129,11 @@ export const en = {
     manifestUnparsedWhy:
       "field and gate names use latin letters, digits, dash and underscore. What is declared here\n  does not run at all — while looking as if it does.",
     manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
+    runVerdictOk: "Everything declared is green.",
+    runVerdictFail: (why) => `The run is red: ${why}.`,
+    whyMissing: "files from the header are missing",
+    whyLevel: "the level was not reached",
+    whyGates: (n, names) => `${n} red gate(s)${names ? ` (${names})` : ""}`,
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
     thresholdGateFail: (min, now, names) =>

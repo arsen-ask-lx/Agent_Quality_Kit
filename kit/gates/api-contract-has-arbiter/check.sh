@@ -25,11 +25,14 @@ fi
 # --- есть ли договор ----------------------------------------------------------
 # По имени файла, а не по расположению: спецификацию кладут в корень, в `docs/`, рядом с
 # приложением. Расширение обязательно разбираемое — `openapi.md` это рассказ о договоре.
+# `-print` в конце ОБЯЗАТЕЛЕН. Без него действие по умолчанию применяется ко всему выражению,
+# и ветка `-prune -o` печатает сами обойдённые каталоги: в списке спецификаций оказывались
+# `./.git` и `./.aqk`. Найдено аудитом фич 2026-09-09, образцами не ловилось.
 SPECS=$(find "$DIR" $(skip_find) -type f \
   \( -iname 'openapi*.yaml' -o -iname 'openapi*.yml' -o -iname 'openapi*.json' \
   -o -iname 'swagger*.yaml' -o -iname 'swagger*.yml' -o -iname 'swagger*.json' \
   -o -iname 'asyncapi*.yaml' -o -iname 'asyncapi*.yml' -o -iname 'asyncapi*.json' \) \
-  2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
+  -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
 [ -z "$SPECS" ] && { echo "спецификации API здесь нет — эта проверка не про тебя"; exit 0; }
 
 # --- кто её держит ------------------------------------------------------------
@@ -48,8 +51,20 @@ FOUND=$(grep -rnE "$HOLDERS" $(skip_grep) \
   --include=justfile --include=Taskfile.yml --include=*.gradle --include=Jenkinsfile \
   "$DIR" 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
 
-SELFDIR="$(basename "$(dirname "$0")")"
-FOUND=$(printf '%s\n' "$FOUND" | grep -vE "(^|/)$SELFDIR/(check\.sh|README\.md|gate\.yml)" | grep -v '^$')
+# ОПРЕДЕЛЕНИЕ ЗАПИСИ КАТАЛОГА — НЕ НАХОДКА, и это касается не только своей записи. Соседняя
+# запись `ci-actually-fails` держит в своём `check.sh` строку со списком запускалок, где
+# перечислены все инструменты про API разом. Проверка находила её и решала, что спецификацию
+# кто-то держит: договор не держал никто, а гейт был ЗЕЛЁНЫМ.
+#
+# Найдено аудитом фич 2026-09-09 — прогоном на настоящем проекте, а не образцами: красный и
+# зелёный образцы лежат по одному, а в проекте записи стоят рядом. Признак определения взят
+# самый надёжный: в той же папке лежит `gate.yml`.
+FOUND=$(printf '%s\n' "$FOUND" | while IFS= read -r L; do
+  F="${L%%:*}"
+  [ -n "$F" ] || continue
+  [ -f "$(dirname "$F")/gate.yml" ] && continue
+  printf '%s\n' "$L"
+done | grep -v '^$')
 
 if [ -z "$FOUND" ]; then
   printf '%s\n' "$SPECS" | sed 's/$/: спецификацию не держит ни одна команда/'

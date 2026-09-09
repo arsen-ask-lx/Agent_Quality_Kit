@@ -44,6 +44,7 @@
   "knip": {
     "entry": [
       "tool/selfcheck/units*.mjs",
+      "tool/selfcheck/smoke/*.test.mjs",
       "tool/selfcheck/lifecycle.mjs"
     ],
     "project": [

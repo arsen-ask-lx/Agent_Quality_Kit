@@ -29,6 +29,7 @@ const enDocs = {
     sessionOk: "the SessionStart hook hands the state to the agent",
     sessionNo: (cmd) => `the agent gets no state: ${cmd}`,
     versionOk: (v) => `${v}, current`,
+    versionUnknown: (v) => `${v}, could not reach the registry — freshness unknown`,
     versionOld: (l, cur) => `${l} is out, you have ${cur}`,
   },
   // Блок краткого вывода переехал сюда 2026-09-09: терминальный каталог снова перерос

@@ -55,13 +55,21 @@ function vitalsRows(f) {
     },
   ];
   // Устаревшая версия — не отказ: человек мог закрепить её сознательно, и ронять за это нельзя.
+  //
+  // СОСТОЯНИЙ ТРИ, А НЕ ДВА. Реестр может ответить ошибкой — не упасть, а вернуть не-200; тогда
+  // `latest` пустой, и прежняя ветка печатала «свежая». Посмотреть не смогли, а сказали «всё
+  // хорошо»: тот самый грех, против которого написан весь комплект, у него самого. Найдено
+  // аудитом фич 2026-09-09.
   if (f.version) {
+    const latest = String(f.version.latest || "");
     rows.push({
       key: "version",
       ok: null,
-      detail: f.version.latest && f.version.latest !== f.version.current
-        ? t.versionOld(f.version.latest, f.version.current)
-        : t.versionOk(f.version.current),
+      detail: !latest
+        ? t.versionUnknown(f.version.current)
+        : latest !== f.version.current
+          ? t.versionOld(latest, f.version.current)
+          : t.versionOk(f.version.current),
     });
   }
   return rows;
