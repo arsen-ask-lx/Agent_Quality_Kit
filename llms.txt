@@ -47,6 +47,13 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   config is an intention, not a guard), does the agent receive the state, is the version current.
   Four states, not two: connected · BROKEN · not connected and that is a choice · could not look.
   Only BROKEN affects the exit code
+- See what your declared checks CANNOT see: `npx agent-quality-kit probe` — takes the files your
+  own fix history calls hot, plants a proven red sample from the catalogue into a copy of each,
+  and runs YOUR declared gates against it. Coverage is not declared, it is proven by planting.
+  Three states that never merge: caught · nothing catches it · nothing to check with. Measured on
+  the kit itself: a real file, a swallowed error and a debug print planted, 21 declared gates,
+  none went red. The working tree is untouched and the exit code is always 0 — a look, not a
+  threshold
 - See what you told the agent and never wrote down: `npx agent-quality-kit learn` — reads Claude Code
   transcripts for this project on this machine and prints rule candidates missing from the entry
   point. Current project only, terminal only, writes nothing, always exits 0
