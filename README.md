@@ -442,10 +442,10 @@ catalogue may grow to hundreds of entries; a given project still sees about a do
 An entry is accepted only if its arbiter goes red on the red sample, stays quiet on the green
 one, and names a real failure it caught. A machine checks this: `bash tool/selfcheck/gates.sh`.
 
-### Four entries that watch the agent, not the code
+### Five entries that watch the agent, not the code
 
 Ruff, ESLint and gitleaks already find bad code, and AQK calls them where it can rather than
-reinventing them. These four look elsewhere — at the moment the **signal** about bad code is
+reinventing them. These five look elsewhere — at the moment the **signal** about bad code is
 switched off, which is what a coding agent does when the task is phrased as "make it pass":
 
 | Entry | What it catches |
@@ -454,8 +454,15 @@ switched off, which is what a coding agent does when the task is phrased as "mak
 | `ci-actually-fails` | a pipeline step that renders a verdict but cannot fail — `run: pytest \|\| true`, `continue-on-error: true` |
 | `test-has-assertion` | a test that cannot fail: empty body, `assert True`, a skip with no reason given |
 | `promise-has-gate` | a rule in `AGENTS.md` with no enforcer named — neither a gate nor, honestly, a human |
+| `protection-not-removed` | **the instrument itself was switched off**: a gate vanished from the manifest. The declared set may only grow; removing one is allowed, but must be named |
 
-Each was measured on nineteen third-party repositories (~25 000 files) before it entered the
+The fifth was added later, and from a bruise of our own. The first four catch the agent switching
+off a **signal**. The master switch — the manifest itself — was guarded by nothing: a measurement
+on 2026-09-09 showed that deleting one line from `.aqk.yml` turns the run green while a real
+secret sits in the code, and neither `doctor`, `report --since`, `vitals` nor the state block the
+agent reads noticed anything.
+
+The first four were measured on nineteen third-party repositories (~25 000 files) before entering the
 catalogue, and two further entries were **cancelled by that measurement**: one because
 [`agents-lint`](https://github.com/giacomo/agents-lint) already does it better, one because
 91 of its 120 findings turned out to be a legitimate pattern.
