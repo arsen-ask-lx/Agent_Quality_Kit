@@ -184,6 +184,7 @@ covers:                    # what a declared gate already holds — not counted 
   lint: [no-print-in-prod, swallowed-error]
 samples:  gates            # a red and a green sample for every entry
 ratchets: ratchets         # debt registries: the list may only get shorter
+probe: 100                 # run the probe itself every N commits; 0 turns it off
 lessons:  incidents        # where lessons accumulate
 ```
 
@@ -307,7 +308,8 @@ gate did not run, or the catalogue has no sample for that extension). The workin
 touched and the exit code is always 0 — this is a look, not a threshold.
 
 **The command does not need to be remembered — that is half the design.** Once every hundred
-commits `doctor --run` runs the probe **itself**, unprompted. A command you have to remember is
+commits — or whatever `probe:` in the manifest says, `0` turning it off — `doctor --run` runs the
+probe **itself**, unprompted. A command you have to remember is
 the same class as a file you can fail to read: the agent will not recall it, and the human will
 never learn it exists. The unit is commits, not days: a repository nobody touched for a month
 needs no re-probe, a hundred commits in a day does. Turn it off with `AQK_PROBE=0`.

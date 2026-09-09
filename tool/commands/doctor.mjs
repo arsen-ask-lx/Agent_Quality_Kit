@@ -419,7 +419,9 @@ async function cmdDoctor() {
     if (!brief && process.env.AQK_PROBE !== "0") {
       try {
         const st = await probeStatus();
-        if (st.state === "never" || st.state === "stale") {
+        if (st.badEvery !== undefined) {
+          console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`));
+        } else if (st.state === "never" || st.state === "stale") {
           // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
           // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
           // Мелочь, но того же класса, что и всё остальное здесь: вывод, который не врёт.

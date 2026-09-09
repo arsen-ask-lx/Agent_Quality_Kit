@@ -251,6 +251,8 @@ export const enGates = {
 
 
   probe: {
+    shallow: "shallow clone (git clone --depth) — there is no history here, and that is NOT \"no fixes\". Full clone: git fetch --unshallow",
+    badEvery: (v) => `the manifest says probe: "${v}", which is not a commit count. The probe does NOT run: silently using the default would mean doing something other than what is written.`,
     autoFirst: "no coverage probe has ever run here — running it myself. Turn off: AQK_PROBE=0",
     auto: (n) => `${n} commits since the last probe — running it myself. Turn off: AQK_PROBE=0`,
     title: "aqk probe — what the declared checks cannot see",
