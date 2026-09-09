@@ -247,8 +247,19 @@ function runGates(man, opts = {}) {
       const mark = isAdvisory ? c.yellow("!") : c.red("✘");
       const verdict = isAdvisory ? c.yellow(L.doctor.advisoryMark) : c.red(L.doctor.exitCode(code));
       console.log(`  ${mark}  ${name.padEnd(14)} ${verdict} ${c.dim(`· ${secs}s · ${cmd}`)}`);
-      for (const line of out.slice(0, 3)) console.log(c.dim(`        ${line.slice(0, 100)}`));
-      if (out.length > 3) console.log(c.dim(`        ${L.doctor.moreLines(out.length - 3)}`));
+      // ГОЛОВА И ХВОСТ, А НЕ ТОЛЬКО ГОЛОВА. Гейт, который сам является прогоном (наш `smoke`),
+      // печатает сотни строк, и вердикт у него в конце — при обрезке до первых трёх человек
+      // видел «программа разбирается» и ни слова о том, что упало. Час поисков в конвейере
+      // 2026-09-09 стоил ровно этого. Голова нужна тоже: у сканирующих записей находки идут
+      // с первой строки.
+      const HEAD = 3, TAIL = 2;
+      for (const line of out.slice(0, HEAD)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      if (out.length > HEAD + TAIL) {
+        console.log(c.dim(`        ${L.doctor.moreLines(out.length - HEAD - TAIL)}`));
+        for (const line of out.slice(-TAIL)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      } else {
+        for (const line of out.slice(HEAD)) console.log(c.dim(`        ${line.slice(0, 100)}`));
+      }
       // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
       for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll });
