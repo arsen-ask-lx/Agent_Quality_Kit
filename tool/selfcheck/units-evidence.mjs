@@ -81,3 +81,37 @@ test("покрытие: файл вне всех целей остаётся н�
   assert.deepEqual(cov.silent.get("tool/a.js"), ["size"]);
   assert.deepEqual(cov.uncovered, [".github/workflows/ci.yml"]);
 });
+
+// --- НАЗВАН ПРОВЕРКОЙ — ЭТО ТОЛЬКО ВЫВОД ------------------------------------------------
+// ЗАЧЕМ. Пути брались из КОМАНДЫ и вывода разом: `pathsIn(cmd + "\n" + out)`. Гейт, не
+// напечатавший ни слова, делал «названным» любой файл, упомянутый в строке запуска. Опыт
+// 2026-09-09: молчащая проверка `sh checks/quiet.sh .` дала
+//   названо проверкой: [ 'checks/quiet.sh' ]
+// Так «доказывалась» у нас каждая правка `kit/gates/*/check.sh` и `tool/selfcheck/*.sh` —
+// то есть самих проверок, где правда важнее всего.
+//
+// Но и выбросить команду нельзя: она отвечает на ДРУГОЙ вопрос — куда гейт был направлен.
+// Файл, названный в команде и не упомянутый в выводе, — это «обойдён молча», а не «никто не
+// смотрел»: разница между «просмотрен и чист» и «не просмотрен» и есть предмет этого модуля.
+test("молчащий гейт не «называет» файл из своей команды, но и не теряет его", async () => {
+  const { coverage } = await import("../lib/evidence.mjs");
+  const results = [{ name: "тихий", cmd: "sh checks/quiet.sh .", out: "" }];
+  const r = coverage(["checks/quiet.sh"], results, () => false);
+  assert.deepEqual([...r.covered.keys()], [], "путь из команды выдан за находку проверки");
+  assert.deepEqual([...r.silent.keys()], ["checks/quiet.sh"], "файл, куда гейт направлен, потерян");
+});
+
+test("гейт, направленный на конкретный файл, накрывает именно его", async () => {
+  const { coverage } = await import("../lib/evidence.mjs");
+  const results = [{ name: "линт", cmd: "eslint src/a.js", out: "" }];
+  const r = coverage(["src/a.js", "src/b.js"], results, () => false);
+  assert.deepEqual([...r.silent.keys()], ["src/a.js"]);
+  assert.deepEqual(r.uncovered, ["src/b.js"]);
+});
+
+test("напечатанный путь по-прежнему означает «названо»", async () => {
+  const { coverage } = await import("../lib/evidence.mjs");
+  const results = [{ name: "линт", cmd: "eslint .", out: "src/a.js:3: находка" }];
+  const r = coverage(["src/a.js"], results, () => false);
+  assert.deepEqual([...r.covered.keys()], ["src/a.js"]);
+});

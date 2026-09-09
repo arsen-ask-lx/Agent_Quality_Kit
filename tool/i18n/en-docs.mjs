@@ -68,6 +68,8 @@ const enDocs = {
     andMore: (n) => `and ${n} more`,
     skipped: (n) => `Not run: ${n} — the tool is absent on this machine, their state is unknown.`,
     probeNever: "No coverage probe has run — what is covered by nothing here is UNKNOWN. That is not \"covered\": `aqk probe`.",
+    probeOff: "The coverage probe is switched off in the manifest (`probe: 0`) — nobody counts what is covered by nothing here.",
+    probeUnknown: "The coverage probe could not run — what is covered by nothing here is UNKNOWN. That is not \"covered\".",
     probeBlind: (n, behind) =>
       `Covered by nothing: ${n} defect classes in the places people most often come back to fix` +
       (behind ? ` (the probe is ${behind} commits behind)` : "") + ". Details: `aqk probe`.",

@@ -75,10 +75,23 @@ function targetsOf(cmd, isDir) {
 // не проверен», хотя его обходят пять проверок — они просто промолчали, потому что нашли
 // чисто. Замеряно 2026-09-08.
 function coverage(files, results, isDir = () => false) {
+  // НАЗВАН — ЭТО ТОЛЬКО ВЫВОД. Пути брались из команды И вывода разом, и гейт, не напечатавший
+  // ни слова, делал «названным» любой файл, упомянутый в строке запуска. Опыт 2026-09-09:
+  // молчащая проверка `sh checks/quiet.sh .` давала «названо проверкой: checks/quiet.sh».
+  // Так «доказывалась» каждая правка `kit/gates/*/check.sh` и `tool/selfcheck/*.sh` — то есть
+  // самих проверок, где правда важнее всего.
+  //
+  // Но и выбросить команду нельзя: она отвечает на ДРУГОЙ вопрос — куда гейт был направлен.
+  // Каталог из команды даёт «обойдено молча» через `targets`; отдельный файл раньше не давал
+  // ничего, потому что `targetsOf` берёт только каталоги, — и такой файл падал в «никто не
+  // смотрел». Поэтому имена из команды хранятся отдельно и сравниваются ТОЧНО.
   const seen = results.map((r) => ({
     name: r.name,
-    paths: pathsIn(`${r.cmd || ""}\n${r.out || ""}`),
+    paths: pathsIn(r.out || ""),
     targets: targetsOf(r.cmd, isDir),
+    named: new Set(
+      String(r.cmd || "").split(/\s+/).filter((t) => t && !t.startsWith("-")).map(normPath)
+    ),
   }));
   const covered = new Map();
   const silent = new Map();
@@ -88,7 +101,7 @@ function coverage(files, results, isDir = () => false) {
     const by = seen.filter((n) => n.paths.has(f)).map((n) => n.name);
     if (by.length) { covered.set(raw, by); continue; }
     const aimed = seen
-      .filter((n) => n.targets.some((t) => t === "" || f === t || f.startsWith(`${t}/`)))
+      .filter((n) => n.named.has(f) || n.targets.some((t) => t === "" || f === t || f.startsWith(`${t}/`)))
       .map((n) => n.name);
     if (aimed.length) silent.set(raw, aimed);
     else uncovered.push(raw);
