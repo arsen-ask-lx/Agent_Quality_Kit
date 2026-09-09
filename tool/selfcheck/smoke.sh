@@ -1930,7 +1930,22 @@ if [ -d "$NODE_SMOKE" ]; then
   while IFS= read -r NS_LINE; do
     case "$NS_LINE" in
       "ok "*)     ok "${NS_LINE#*- }" ;;
-      "not ok "*) bad "${NS_LINE#*- }" "подробности: node --test --test-name-pattern=… $NODE_SMOKE/*.test.mjs" ;;
+      "not ok "*)
+        # ОБЪЯСНЕНИЕ ОБЯЗАНО ДОЕХАТЬ. Первая редакция моста печатала только «не прошло» и совет
+        # запустить вручную — то есть отправляла гадать ровно там, где ответ уже был получен.
+        # Стоило это трёх кругов конвейера: проверка падала только на раннере, а сообщение
+        # утверждения оставалось в выводе, который мост выбрасывал. TAP кладёт его в блок после
+        # строки `not ok`, полем `error:`.
+        # TAP кладёт многострочное сообщение блочным скаляром: строка `error: |-`, а сам текст
+        # идёт следующими строками с отступом. Первая редакция брала только строку `error:` и
+        # печатала «|-» — то есть снова ничего.
+        NS_WHY=$(printf '%s\n' "$NS_OUT" | awk '
+          /^[[:space:]]+error:/ { inerr = 1; sub(/^[[:space:]]*error:[[:space:]]*/, ""); if ($0 != "|-" && $0 != "") print; next }
+          inerr && /^[[:space:]]+(code|stack|failureType|type|duration_ms):/ { inerr = 0 }
+          inerr && /^[[:space:]]*\.\.\.[[:space:]]*$/ { inerr = 0 }
+          inerr { sub(/^[[:space:]]+/, ""); print }
+        ' | head -6 | tr '\n' ' ')
+        bad "${NS_LINE#*- }" "${NS_WHY:-подробности: node --test $NODE_SMOKE/*.test.mjs}" ;;
     esac
   done <<EOF
 $(printf '%s\n' "$NS_OUT" | grep -E '^(ok|not ok) ')
