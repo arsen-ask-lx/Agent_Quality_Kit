@@ -231,6 +231,43 @@ A hundred working checks with no manifest is AQK-0, and that is honest: nothing 
 aqk doctor --run --min 1   # in CI: fails below AQK-1 OR if any gate failed
 ```
 
+### How a gate is proven — what `prove` actually does
+
+Level AQK-2 and the badge rest on one command, so here it is in full: the first outside user
+tripped over it three times, and all three times this page was to blame.
+
+```bash
+aqk prove
+```
+
+For every gate in `gates:` its samples are taken — `<samples>/<name>/red` and `/green` — and the
+gate is run against each. **The directory is substituted for the LAST word of the command:**
+catalogue recipes are written as `… {dir}`, and on install `{dir}` becomes `.`. Wrappers are
+stripped first: `ratchet.sh` (otherwise the debt registry is rewritten with findings from the
+sample) and `_native.sh` (otherwise the filter hides exactly what the sample must show).
+
+Each entry gets one of three verdicts:
+
+| Verdict | What it means |
+|---|---|
+| **proven** | exit ≠ 0 on `red/` and exit 0 on `green/` |
+| **does not catch** | stayed quiet on the red one, or went red on the green one |
+| **nothing to prove with** | four different reasons, and each is named out loud |
+
+The four reasons: no samples · samples written for another recipe (`samples_for`) while a
+different one is installed · the command does not end in a directory, so it was written by hand
+and there is nowhere to substitute · **the program named in `requires:` is not on the machine.**
+
+That last reason was added 2026-09-09 and deserves a word. A portable recipe is sometimes a
+wrapper around a ready-made tool: the first word of the command is then `bash`, and nothing in it
+shows what is missing. Without the program the wrapper goes red on **both** samples — and `prove`
+declared a working gate broken, taking a level away from a project because somebody else's tool
+was not installed. An accusation instead of a diagnosis; the same class as the Windows paths.
+
+The level is granted when **no provable gate is broken AND at least one is proven**. The second
+condition is not optional: a project where everything is unprovable has proven nothing — that is
+exactly what the forgery with three `true` gates looks like.
+
 ## The badge
 
 ```bash
@@ -283,6 +320,27 @@ the same thing in a single line:
 - run: npx agent-quality-kit doctor --run --min 1
 ```
 
+## Without Node at all
+
+A Python, Go or Rust project where nobody installed Node and nobody will:
+
+```bash
+docker build -t aqk .                                   # from this repository
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" aqk doctor
+```
+
+From v0.9.0 the image is pushed to the registry by the same run that publishes the package, so
+there is nothing to build: `ghcr.io/arsen-ask-lx/aqk`. Before that tag the registry holds no
+image, and this says so plainly: a command that points at nothing is worse than no command.
+
+**The `--user` flag is not decoration.** Without it the container runs as root and the files
+`init` writes end up owned by root — you cannot edit your own manifest. Measured 2026-09-09:
+`.aqk.yml` and `AGENTS.md` came out `root:root`.
+
+Debian-slim on purpose, not alpine: the gates are `sh`, `grep`, `awk`, `find`, and in alpine
+those are busybox, whose `awk` differs. An image where the gates behave differently from the
+machine the person is on is worse than no image: it hands out a green that means nothing.
+
 ## Installing a gate
 
 ```bash
@@ -327,8 +385,17 @@ advisory:
 
 Declared in the manifest, not passed as a flag. A flag that says "fail nothing" downgrades every
 check at once, is invisible in the diff, and is never named in the summary — that is
-`continue-on-error`, which this tool marks red elsewhere. The list is printed on **every** run:
-an advisory gate everyone forgot about is a switched-off check.
+`continue-on-error`, which this tool marks red elsewhere.
+
+**An advisory gate is marked on EVERY run, including when it is green:**
+
+```
+✔  complexity-limit  (advisory — cannot fail the run)  0.4s · …
+```
+
+Otherwise a gate that cannot fail the build looks exactly like one that can, and you learn what
+is in `advisory:` only on the day it goes red. Red ones are additionally named by name in the
+summary: an advisory gate everyone forgot about is a switched-off check.
 
 ## When a bug slips past the guards
 
@@ -423,8 +490,13 @@ scenarios, the success criterion, and what is left.
 
 Version 1, one author. The kit holds **AQK-3** on itself: everything declared is executed by CI
 on every push, two debt registries under a ratchet — `node tool/program.mjs doctor --run --min 1`.
-As long as one person uses it, AQK is a nice acronym in a README. It starts being real when a
-third, foreign project appears.
+
+**The first outside user arrived on 2026-09-08** — ran the kit on their own project (28 gates,
+AQK-1) and sent back a review. That review found two defects ninety-odd checks of our own had
+missed: both live only on Windows, or only on somebody else's directory layout (bruise journal,
+entry of 2026-09-08). That is exactly what an outsider is for — but it is one review, not settled
+use. Until somebody comes back to the tool a second time, the standard is unproven on foreign
+projects.
 
 **A standard cannot be shipped first.** A specification ahead of practice is the thirty-first
 abandoned repository with a manifest and zero users. The order is the other way round:
@@ -434,7 +506,7 @@ abandoned repository with a manifest and zero users. The order is the other way 
 | 1 | live by this on our own projects | ⬜ measured: three of our own projects have no manifest |
 | 2 | `doctor` computes the level | ✅ done |
 | 3 | what settled is written up as a short spec | ✅ [`SPEC.md`](SPEC.md) |
-| 4 | a third project — **someone else's** | ❌ the first honest signal, still missing |
+| 4 | a third project — **someone else's** | 🟡 one outside run and review, 2026-09-08; no repeat use yet |
 | 5 | badge, site, talking to people | ❌ only after step four |
 
 ## The work queue
@@ -442,7 +514,7 @@ abandoned repository with a manifest and zero users. The order is the other way 
 Lives in one place — [`PROJECT.md` §9](PROJECT.md). It is not repeated here: two lists drift
 apart within a month, and then nobody knows which is real.
 
-What is missing: a second user; per-command coverage of the commands that write to disk (they are
-exercised by a clean-folder run, but not individually); a third — foreign — project.
+What is missing: a user who came back a second time; per-command coverage of the commands that
+write to disk (they are exercised by a clean-folder run, but not individually).
 
 MIT.
