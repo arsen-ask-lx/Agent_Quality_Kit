@@ -6,14 +6,22 @@
 // Обратная сторона нашего же принципа: молчание неотличимо не только от успеха, но и от отказа.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { project, aqk } from "./_fixture.mjs";
 
 test("прогон называет свой вердикт словами в обоих исходах", (t) => {
   const p = project(t, { "src/a.py": "def s():\n    return 1\n" });
   aqk(p, "init");
-  aqk(p, "add", "todo-without-task");
+  // Гейт объявляется ПРЯМО, а не через `add`, и это не лень. `add` выбирает рецепт по тому,
+  // что установлено на машине: где есть ruff, у `todo-without-task` берётся родной
+  // `ruff check --select FIX,TD`, где нет — переносимый. Значит один и тот же проект получает
+  // РАЗНУЮ объявленную команду на разных машинах, и проверка про ВЕРДИКТ начинала зависеть от
+  // чужого инструмента. Поймано конвейером: локально зелено, на раннере красно.
+  // Здесь проверяется строка вердикта, а не поведение записи каталога, — гейту довольно быть
+  // заведомо тихим.
+  const man = join(p.dir, ".aqk.yml");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m, 'gates:\n  тихий: "true"'), "utf8");
 
   // .gitignore нет — прогон красный, и обязан сказать, из-за чего именно.
   const red = aqk(p, "doctor", "--run");
