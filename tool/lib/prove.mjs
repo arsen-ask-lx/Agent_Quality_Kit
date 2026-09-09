@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { CWD, exists } from "./core.mjs";
 import { parseManifest, gateRequires } from "./manifest.mjs";
 import { whichSync } from "./repo.mjs";
+import { classify, findingCodes } from "./execution.mjs";
 
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
@@ -102,12 +103,14 @@ async function samplesForRecipe(samplesDir, name) {
   }
 }
 
-function run(cmd, timeoutMs) {
+// Запуск возвращает РАЗОБРАННЫЙ исход, а не сырой код. Прежде здесь стояло
+// `code = r.status === null ? 124 : r.status`, и комментарий рядом честно называл 124
+// «не знаем» — а вызывающий тут же считал его находкой. Опыт 2026-09-09: проверка, виснущая
+// на красном образце, получала вердикт «доказана».
+function run(cmd, timeoutMs, prog) {
   const r = spawnSync(cmd, { shell: true, encoding: "utf8", cwd: CWD, timeout: timeoutMs });
   const out = `${r.stdout || ""}${r.stderr || ""}`.trim();
-  // Убитый по таймауту процесс возвращает null — это не «ноль», а «не знаем».
-  const code = r.status === null ? 124 : r.status;
-  return { code, out };
+  return { ...classify(r, findingCodes(prog)), out };
 }
 
 // Возвращает { proven, broken, unprovable, results } — числами и списком, чтобы вызывающий
@@ -159,24 +162,48 @@ async function proveGates(man, { timeoutMs = 300000 } = {}) {
       continue;
     }
 
-    const red = run(commandFor(cmd, s.red), timeoutMs);
-    const green = run(commandFor(cmd, s.green), timeoutMs);
-    if (red.code === 0) {
+    // Программа, чьи коды разбираем: первое слово команды БЕЗ обёрток. У обёрнутой записи
+    // это ruff/vulture, а не bash, — иначе адаптер брался бы для оболочки.
+    const prog = effective[0];
+    const red = run(commandFor(cmd, s.red), timeoutMs, prog);
+    const green = run(commandFor(cmd, s.green), timeoutMs, prog);
+
+    // СБОЙ АРБИТРА — НЕ ВЕРДИКТ О ЗАПИСИ, ни в ту сторону, ни в другую. Раньше сбой на красном
+    // читался как «поймал», а сбой на зелёном — как «ругается на исправный код»: инструмент
+    // ломался, а обвиняли запись каталога. Оба случая теперь «доказать не смогли», и причина
+    // названа.
+    if (red.state === "infra_error" || green.state === "infra_error") {
+      const side = red.state === "infra_error" ? "red" : "green";
+      const bad = side === "red" ? red : green;
+      results.push({ name, state: "unprovable", why: "infra", side, reason: bad.reason, red, green });
+    } else if (red.state === "clean") {
       results.push({ name, state: "broken", why: "red-passed", red, green });
-    } else if (green.code !== 0) {
+    } else if (green.state === "finding") {
       results.push({ name, state: "broken", why: "green-failed", red, green });
     } else {
       results.push({ name, state: "proven", red, green });
     }
   }
 
+  return { ...verdict(results), results };
+}
+
+// ВЕРДИКТ ОТДЕЛЁН ОТ ПРОГОНА — чтобы правило можно было проверить без запуска процессов.
+//
+// Прежнее правило было `broken === 0 && proven > 0`, и оно позволяло ОДНОМУ доказанному гейту
+// компенсировать сколько угодно недоказанных: проект с пятью объявленными проверками, из
+// которых четыре не смогли отработать, получал AQK-2 за счёт пятой.
+//
+// Различие тонкое и обязательное. «Нечем доказывать» бывает ЗАКОННЫМ: нет образцов, нет
+// программы на этой машине, стоит рецепт под другой язык — ступень за это не отнимают, иначе
+// уровень стал бы зависеть от того, что установлено. А «запускали и не смогло отработать» —
+// сбой, и он ступень отнимает: иначе таймаут арбитра снова становится способом получить зелёное.
+function verdict(results) {
   const proven = results.filter((r) => r.state === "proven").length;
   const broken = results.filter((r) => r.state === "broken").length;
   const unprovable = results.filter((r) => r.state === "unprovable").length;
-  // Доказательство состоялось, если ни один доказуемый гейт не сломан И хоть один доказан.
-  // Второе условие обязательно: проект, у которого все гейты недоказуемы, ничего не доказал —
-  // именно так выглядит подделка с тремя `true`.
-  return { proven, broken, unprovable, ok: broken === 0 && proven > 0, results };
+  const infra = results.filter((r) => r.state === "unprovable" && r.why === "infra").length;
+  return { proven, broken, unprovable, infra, ok: broken === 0 && infra === 0 && proven > 0 };
 }
 
-export { proveGates, commandFor };
+export { proveGates, commandFor, verdict };

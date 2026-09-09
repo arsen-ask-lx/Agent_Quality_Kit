@@ -9,7 +9,7 @@
 //   node --test tool/selfcheck/units-level.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { commandFor } from "../lib/prove.mjs";
+import { commandFor, verdict } from "../lib/prove.mjs";
 import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
 
@@ -265,4 +265,35 @@ test("правильный манифест не порождает жалоб",
 // Комментарии и пустые строки — не находка: они и не должны разбираться.
 test("комментарии и пустые строки не считаются потерянными", () => {
   assert.deepEqual(unparsedLines("# заметка\n\naqk: 1\n   # ещё\n"), []);
+});
+
+// --- ВЕРДИКТ ДОКАЗАТЕЛЬСТВА: один доказанный гейт не покрывает недоказанный -------------
+// ЗАЧЕМ. Прежнее правило было `broken === 0 && proven > 0`. Оно позволяло ОДНОМУ доказанному
+// гейту компенсировать сколько угодно недоказанных: проект с пятью объявленными проверками,
+// из которых четыре не смогли отработать, получал AQK-2 за счёт пятой. Ступень называется
+// «гейты доказаны», а доказан был один.
+//
+// Различие тонкое и обязательное: «нечем доказывать» бывает ЗАКОННЫМ (нет образцов, нет
+// программы на этой машине, стоит рецепт под другой язык) — такое ступень не отнимает.
+// А «запускали и не смогло отработать» — это сбой, и он ступень отнимает: иначе таймаут
+// арбитра снова становится способом получить зелёное.
+test("сбой арбитра отнимает ступень, законная недоказуемость — нет", () => {
+  assert.equal(verdict([{ state: "proven" }]).ok, true);
+  assert.equal(verdict([]).ok, false, "доказывать нечего — не доказано");
+  assert.equal(verdict([{ state: "unprovable", why: "no-samples" }]).ok, false,
+    "ни один гейт не доказан");
+
+  // Законная недоказуемость рядом с доказанным гейтом ступень не отнимает.
+  assert.equal(verdict([
+    { state: "proven" },
+    { state: "unprovable", why: "needs-program" },
+  ]).ok, true);
+
+  // А вот сбой арбитра — отнимает, сколько бы соседей ни было доказано.
+  assert.equal(verdict([
+    { state: "proven" },
+    { state: "unprovable", why: "infra", reason: "timeout" },
+  ]).ok, false, "таймаут арбитра компенсирован соседним гейтом");
+
+  assert.equal(verdict([{ state: "proven" }, { state: "broken" }]).ok, false);
 });
