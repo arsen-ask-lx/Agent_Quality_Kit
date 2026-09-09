@@ -1,0 +1,7 @@
+aqk: 1
+entry:
+  - AGENTS.md
+rules: .aqk/rules
+ratchets: .
+gates:
+  lint: "true"

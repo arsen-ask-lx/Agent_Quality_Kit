@@ -1,0 +1,30 @@
+# Снимок объявленной защиты. Набор может только РАСТИ.
+# Убрал гейт — напиши причину после # в его строке, иначе проверка краснеет.
+ci-actually-fails
+ci-not-hijackable
+commit-explains-itself
+complexity-limit
+dead-code
+deps-are-pinned
+duplicate-code
+entry-links-exist
+file-size-limit
+gate-has-samples
+gate-not-weakened
+gates
+gates-are-runnable
+gates-run-in-ci
+hook-actually-fires
+lesson-has-outcome
+mutation
+no-phantom-package
+personal-config-not-shared
+promise-has-gate
+proof-from-journal
+protection-not-removed
+secrets-not-in-code
+smoke
+syntax
+test-has-assertion
+todo-without-task
+units

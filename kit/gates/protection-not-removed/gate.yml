@@ -1,0 +1,10 @@
+intent: объявленная защита не исчезает молча — набор гейтов в манифесте может только расти
+intent_en: declared protection does not vanish silently — the set of gates in the manifest may only grow
+
+trigger:
+  has_gates: true
+
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md — «2026-09-09 сигнализация построена, выключатель оставлен снаружи без пломбы»
