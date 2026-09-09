@@ -340,7 +340,7 @@ Already using [pre-commit](https://pre-commit.com)? Three lines in the file you 
 ```yaml
 repos:
   - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
-    rev: v0.10.0
+    rev: v0.10.1
     hooks:
       - id: aqk            # runs what the repository declares; blocks below AQK-1
       # - id: aqk-doctor   # read-only: the level and what is missing, blocks nothing
@@ -361,7 +361,7 @@ layer AQK adds.
 [![on the GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Agent%20Quality%20Kit-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ```yaml
-- uses: arsen-ask-lx/Agent_Quality_Kit@v0.10.0
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.10.1
   with:
     min: 1   # the build fails below AQK-1, or if any declared gate failed
 ```

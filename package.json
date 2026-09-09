@@ -1,6 +1,6 @@
 {
   "name": "agent-quality-kit",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Turns the rules an agent is supposed to follow into commands with exit codes, and reports which of them actually run. Zero dependencies.",
   "type": "module",
   "bin": {
