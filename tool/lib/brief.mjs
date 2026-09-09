@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, PKG_ROOT, TARGET_DIR, SELF, c } from "./core.mjs";
 import { L } from "../i18n/index.mjs";
+import { canDrawArt } from "./banner.mjs";
 // tool/lib/brief.mjs — короткая строка присутствия для прогона в хуке.
 //
 // ЗАЧЕМ ЭТО СУЩЕСТВУЕТ. Хук pre-commit молчит на успехе: вывод показывается только при провале
@@ -22,12 +23,20 @@ import { L } from "../i18n/index.mjs";
 // устать. Число здесь спорное — важно, что ограничитель есть и он машинный.
 const ADVICE_EVERY_MS = 24 * 60 * 60 * 1000;
 
-function briefLine(state, L) {
+// ЗНАЧОК ПРИСУТСТВИЯ — здесь, а не в каталогах строк. Символ один на оба языка, и держать его
+// в двух местах значит однажды получить разные значки в ru и en: то же правило, по которому у
+// нас один свод правил на две точки входа. Выбран владельцем из пятидесяти семи вариантов.
+// В терминале без UTF-8 он превратится в мусор — там правило то же, что у заставки, и оно
+// одно на двоих: разойдись эти два условия, и значок рисовался бы там, где картинка уже нет.
+const MARK = "❖";
+
+function briefLine(state, L, env = process.env) {
   const t = L.brief;
+  const mark = canDrawArt(env) ? `${MARK} ` : "";
   const parts = [t.held(state.held), t.todo(state.todo)];
   if (state.level >= 0) parts.push(`AQK-${state.level}`);
   else parts.push(t.levelUnknown);
-  const head = `${t.name}  ${parts.join(" · ")}`;
+  const head = `${mark}${t.name}  ${parts.join(" · ")}`;
   if (!state.red || !state.red.length) return head;
   return `${head}\n${t.red(state.red.join(", "))}`;
 }

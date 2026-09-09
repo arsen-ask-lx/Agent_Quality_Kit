@@ -121,6 +121,9 @@ export const en = {
     manifestUnknown: (keys) =>
       `The manifest has fields the standard does not know: ${keys.join(", ")}. Looks like a typo — ` +
       `such a field is silently read as absent, and the verdict comes out wrong.`,
+    manifestUnparsed: (n, t) => `manifest line ${n} was not parsed and HAS NO EFFECT: ${t}`,
+    manifestUnparsedWhy:
+      "field and gate names use latin letters, digits, dash and underscore. What is declared here\n  does not run at all — while looking as if it does.",
     manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,

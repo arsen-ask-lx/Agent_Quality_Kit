@@ -1538,9 +1538,9 @@ B2=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
 rm -f "$BRFP/.aqk/advice-shown"
 B3=$( cd "$BRFP" && AQK_ADVICE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
 if [ "$B1C" -eq 0 ] &&
-   printf '%s' "$B1" | grep -q "^AQK  держит" &&
+   printf '%s' "$B1" | grep -qE "^(❖ )?AQK  держит" &&
    printf '%s' "$B1" | grep -q "поставить:" &&
-   printf '%s' "$B2" | grep -q "^AQK  держит" &&
+   printf '%s' "$B2" | grep -qE "^(❖ )?AQK  держит" &&
    ! printf '%s' "$B2" | grep -q "поставить:" &&
    ! printf '%s' "$B3" | grep -q "поставить:" &&
    [ "$(printf '%s\n' "$B2" | wc -l)" -le 2 ]; then
@@ -1598,6 +1598,27 @@ else
   bad "проверка версии спрашивает там, где не должна" "вне CI: $ASKED, в CI: $IN_CI, выключено: $OFF"
 fi
 rm -rf "$UPDP"
+
+# --- 102. строка манифеста, которую разбор не понял, называется вслух ---------
+# Найдено случайно 2026-09-09: подсадили падающий гейт с именем «плохой», чтобы посмотреть на
+# вывод, — прогон вышел с НУЛЁМ. Гейт не упал: его не существовало. Разбор берёт имена только
+# латиницей, а строку, не подошедшую под это, выбрасывал без единого слова. Человек видит
+# проверку в файле, а её нет — наш класс в чистом виде, и хуже опечатки в имени поля: ту мы
+# называем с 2026-09-06, а эту не называли вовсе.
+UNPP="$(mktemp -d)"
+( cd "$UNPP" && git init -q . && printf '# вход\n' > AGENTS.md &&
+  printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n  плохой: "false"\n' > .aqk.yml ) >/dev/null 2>&1
+UNP=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
+( cd "$UNPP" && printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n  bad: "false"\n' > .aqk.yml )
+OKM=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
+if printf '%s' "$UNP" | grep -q "НЕ ДЕЙСТВУЕТ" &&
+   printf '%s' "$UNP" | grep -q "строка 6" &&
+   ! printf '%s' "$OKM" | grep -q "НЕ ДЕЙСТВУЕТ"; then
+  ok "непонятая строка манифеста называется с номером, понятая — молчит"
+else
+  bad "потерянная строка манифеста не названа" "$(printf '%s' "$UNP" | grep -c 'НЕ ДЕЙСТВУЕТ') на кириллице, $(printf '%s' "$OKM" | grep -c 'НЕ ДЕЙСТВУЕТ') на латинице"
+fi
+rm -rf "$UNPP"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'

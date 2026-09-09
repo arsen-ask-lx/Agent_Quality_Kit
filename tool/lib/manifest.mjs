@@ -74,6 +74,33 @@ function parseManifest(text) {
   return out;
 }
 
+// СТРОКА, КОТОРУЮ РАЗБОР НЕ ПОНЯЛ, НЕ ИСЧЕЗАЕТ МОЛЧА.
+//
+// Найдено 2026-09-09 случайно: подсаживали падающий гейт с именем «плохой», чтобы посмотреть на
+// вывод, — и прогон вышел с НУЛЁМ. Гейт не упал: его не существовало. Имена разбираются только
+// латиницей, а строка, не подошедшая под это, выбрасывалась без единого слова.
+//
+// Это наш класс в чистом виде: человек объявил проверку, видит её в файле, а её нет. Хуже
+// опечатки в имени поля — ту мы называем с 2026-09-06, а эту не называли вовсе.
+//
+// ЧИНИТСЯ ГОЛОСОМ, А НЕ АЛФАВИТОМ. Расширить набор букв — залатать один случай; строк, которые
+// разбор не понимает, бывает больше (табуляция вместо пробелов, двоеточие в значении без
+// кавычек). Называется любая: разбор ограниченного подмножества YAML честен ровно до тех пор,
+// пока говорит, чего не взял.
+function unparsedLines(text) {
+  const out = [];
+  let n = 0;
+  for (const raw of String(text).split("\n")) {
+    n += 1;
+    const line = stripComment(raw).replace(/\s+$/, "");
+    if (!line.trim()) continue;
+    if (line.trim().startsWith("- ")) continue;
+    if (/^\s*[A-Za-z0-9_-]+:\s*(.*)$/.test(line)) continue;
+    out.push({ line: n, text: raw.trim() });
+  }
+  return out;
+}
+
 // Поля, которые манифест знает. Список здесь, а не в схеме-файле: зависимостей у программы
 // нет, а схема на восемь ключей, которую надо валидировать библиотекой, стоит дороже, чем
 // защищает.
@@ -321,5 +348,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, layoutChecks, coversOf, coversUnproven,
+  entryLifecycle, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines,
 };

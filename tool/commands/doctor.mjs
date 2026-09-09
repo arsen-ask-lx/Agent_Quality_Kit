@@ -4,8 +4,8 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
-import { CWD, PKG_ROOT, TARGET_DIR, SELF, c, exists, die } from "../lib/core.mjs";
-import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven } from "../lib/manifest.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
+import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
@@ -314,6 +314,15 @@ async function cmdDoctor() {
 
   // Опечатка в имени поля означала «поля нет»: вердикт выдавался неверный, а причина молчала.
   // Называем поле и говорим, какие бывают — иначе человек ищет ошибку в проекте, а она в файле.
+  // Строка, которую разбор не понял, называется ПЕРВОЙ и жёлтым: человек видит проверку в
+  // файле, а её не существует. До 2026-09-09 такая строка исчезала без слова — найдено
+  // случайно, гейтом с кириллическим именем, который «прошёл», не запустившись.
+  try {
+    const bad = unparsedLines(await readFile(join(CWD, MANIFEST), "utf8"));
+    for (const b of bad) console.log(c.yellow(`\n  ${L.doctor.manifestUnparsed(b.line, b.text)}`));
+    if (bad.length) console.log(c.dim(`  ${L.doctor.manifestUnparsedWhy}`));
+  } catch { /* манифеста нет — про строки в нём говорить нечего */ }
+
   const unknown = unknownKeys(man);
   if (unknown.length) {
     console.log(c.yellow(`\n  ${L.doctor.manifestUnknown(unknown)}`));

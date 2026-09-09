@@ -56,4 +56,4 @@ function banner(env = process.env) {
   return `${ART.join("\n")}\n      agent quality kit`;
 }
 
-export { banner, BANNER_WIDTH };
+export { banner, BANNER_WIDTH, canDrawArt };

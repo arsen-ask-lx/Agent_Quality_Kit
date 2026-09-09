@@ -10,7 +10,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor } from "../lib/prove.mjs";
-import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven } from "../lib/manifest.mjs";
+import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
 
 // --- доказательство гейтов ------------------------------------------------------------
@@ -241,4 +241,28 @@ test("запись без кодов правил в рецепте не пор�
   const man = parseManifest('gates:\n  lint: "true"\ncovers:\n  lint: [duplicate-code]\n');
   const catalog = [{ slug: "duplicate-code", recipes: { any: "bash {gate}/check.sh {dir}" } }];
   assert.deepEqual(coversUnproven(man, catalog, ""), []);
+});
+
+// --- строка манифеста, которую разбор не понял, не исчезает молча ---------------
+// Найдено 2026-09-09 случайно: подсаживал падающий гейт с именем «плохой», чтобы посмотреть
+// на строку присутствия, — и прогон вышел с НУЛЁМ. Гейт не упал: его вообще не было. Разбор
+// принимает имена только латиницей, а строку, которая под это не подошла, ВЫБРАСЫВАЛ без слова.
+//
+// Это наш класс в чистом виде: человек объявил проверку, видит её в файле, а она не
+// существует. Хуже опечатки в имени поля — ту мы называем с 2026-09-06, а эту не называли.
+// Чинится не расширением алфавита, а голосом: любая непонятая строка обязана быть названа.
+test("непонятая строка манифеста называется с номером", () => {
+  const bad = unparsedLines('aqk: 1\ngates:\n  ok: "true"\n  плохой: "false"\n');
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].line, 4);
+  assert.match(bad[0].text, /плохой/);
+});
+
+test("правильный манифест не порождает жалоб", () => {
+  assert.deepEqual(unparsedLines('aqk: 1\nentry:\n  - AGENTS.md\ngates:\n  ok: "true"\n'), []);
+});
+
+// Комментарии и пустые строки — не находка: они и не должны разбираться.
+test("комментарии и пустые строки не считаются потерянными", () => {
+  assert.deepEqual(unparsedLines("# заметка\n\naqk: 1\n   # ещё\n"), []);
 });
