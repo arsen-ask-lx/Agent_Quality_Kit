@@ -455,6 +455,23 @@ async function cmdDoctor() {
     process.exit(pass ? 0 : 1);
   }
   const ok = !(missing || reached < 0 || gateFailed);
+  // ВЕРДИКТ НАЗЫВАЕТСЯ СЛОВАМИ, а не только кодом возврата. С `--min` он печатался всегда, без
+  // него — никогда: прогон выходил с единицей, а внизу человек видел список зелёных гейтов и
+  // шёл искать причину. Обратная сторона нашего же принципа: молчание неотличимо не только от
+  // успеха, но и от отказа. Найдено аудитом фич 2026-09-09.
+  //
+  // Печатается и на зелёном тоже: «ничего не сказал» и «всё проверено» обязаны различаться.
+  if (wantRun) {
+    if (ok) {
+      console.log(c.green(`  ${L.doctor.runVerdictOk}\n`));
+    } else {
+      const why = [];
+      if (missing) why.push(L.doctor.whyMissing);
+      if (reached < 0) why.push(L.doctor.whyLevel);
+      if (gateFailed) why.push(L.doctor.whyGates(gateFailed, failedNames.join(", ")));
+      console.log(c.red(`  ${L.doctor.runVerdictFail(why.join(", "))}\n`));
+    }
+  }
   await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: [] }, cat.todoRecs, ok);
   process.exit(ok ? 0 : 1);
 }

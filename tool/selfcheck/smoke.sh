@@ -1967,6 +1967,61 @@ else
 fi
 rm -rf "$NARR"
 
+# --- 115. запись не считает держателем ЧУЖОЕ ОПРЕДЕЛЕНИЕ ------------------------
+# НАЙДЕНО АУДИТОМ ФИЧ 2026-09-09, а не образцами. Красный и зелёный образцы записи лежат
+# отдельно; в настоящем проекте рядом стоят ДРУГИЕ записи каталога — и `ci-actually-fails`
+# держит в своём `check.sh` строку со списком запускалок, где перечислены все инструменты про
+# API разом. Проверка нашла её и решила, что спецификацию кто-то держит: договор не держал
+# никто, а гейт был ЗЕЛЁНЫМ. Ложное зелёное — худший исход из возможных.
+#
+# Второй дефект того же прогона: `find "$DIR" $(skip_find) -type f \( … \)` без `-print`
+# печатал ещё и обойдённые каталоги — в списке спецификаций оказались `./.git` и `./.aqk`.
+APIA="$(mktemp -d)"
+(
+  cd "$APIA" && git init -q . && git config user.email a@b && git config user.name a
+  mkdir -p src && printf 'def s():\n    return 1\n' > src/a.py
+  printf 'openapi: 3.0.3\ninfo: { title: t, version: 1.0.0 }\npaths: {}\n' > openapi.yaml
+  mkdir -p .github/workflows
+  printf 'name: ci\non: [push]\njobs:\n  t:\n    runs-on: ubuntu-latest\n    steps:\n      - run: pytest\n' > .github/workflows/ci.yml
+  git add -A && git commit -qm "feat: старт"
+  node "$CLI" init && node "$CLI" add ci-actually-fails && node "$CLI" add api-contract-has-arbiter
+) >/dev/null 2>&1
+APIA_OUT=$(cd "$APIA" && sh gates/api-contract-has-arbiter/check.sh . 2>&1); APIA_CODE=$?
+if [ "$APIA_CODE" -eq 1 ] && ! printf '%s' "$APIA_OUT" | grep -qE '\.git|\.aqk'; then
+  ok "договор без держателя краснеет рядом с другими записями каталога"
+else
+  bad "запись сочла держателем чужое определение либо перечислила каталоги" \
+      "код $APIA_CODE: $(printf '%s' "$APIA_OUT" | head -3 | tr '\n' ' ')"
+fi
+rm -rf "$APIA"
+
+# --- 116. прогон говорит СВОЙ вердикт, а не только код возврата -------------------
+# НАЙДЕНО АУДИТОМ ФИЧ 2026-09-09. `doctor --run` выходил с единицей и в конце не говорил ни
+# слова о том, почему: причина (нет `.gitignore`) оставалась в шапке, а внизу человек видел
+# список зелёных гейтов. Обратная сторона нашего же принципа: молчание неотличимо не только от
+# успеха, но и от отказа. С `--min` вердикт печатался всегда — без него не печатался никогда.
+VERD="$(mktemp -d)"
+(
+  cd "$VERD" && git init -q . && git config user.email a@b && git config user.name a
+  mkdir -p src && printf 'def s():\n    return 1\n' > src/a.py
+  git add -A && git commit -qm "feat: старт"
+  node "$CLI" init && node "$CLI" add todo-without-task
+) >/dev/null 2>&1
+# .gitignore нет — прогон обязан быть красным И обязан сказать, из-за чего.
+VERD_OUT=$(cd "$VERD" && AQK_LANG=ru node "$CLI" doctor --run 2>&1); VERD_CODE=$?
+VERD_TAIL=$(printf '%s' "$VERD_OUT" | tail -4)
+printf 'x\n' > "$VERD/.gitignore"
+( cd "$VERD" && git add -A && git commit -qm "chore: гигиена" ) >/dev/null 2>&1
+VERD_OK_OUT=$(cd "$VERD" && AQK_LANG=ru node "$CLI" doctor --run 2>&1); VERD_OK_CODE=$?
+if [ "$VERD_CODE" -ne 0 ] && printf '%s' "$VERD_TAIL" | grep -q "красн" &&
+   [ "$VERD_OK_CODE" -eq 0 ] && printf '%s' "$VERD_OK_OUT" | tail -4 | grep -q "зелён"; then
+  ok "прогон называет свой вердикт словами, а не только кодом возврата"
+else
+  bad "вердикт прогона не назван" \
+      "красный код $VERD_CODE хвост: $(printf '%s' "$VERD_TAIL" | tr '\n' ' ' | tail -c 120); зелёный код $VERD_OK_CODE"
+fi
+rm -rf "$VERD"
+
 # --- итог -------------------------------------------------------------------
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
