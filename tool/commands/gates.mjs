@@ -9,6 +9,7 @@ import {
   copyDir,
 } from "../lib/core.mjs";
 import { parseManifest, readManifest, manifestWithGate, entryLifecycle } from "../lib/manifest.mjs";
+import { recordProtection } from "../lib/protection.mjs";
 import {
   detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
 } from "../lib/repo.mjs";
@@ -75,6 +76,7 @@ async function installGate(slug, man, facts) {
   const manPath = join(CWD, MANIFEST);
   const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);
   if (text) await writeFile(manPath, text, "utf8");
+  if (text) await recordProtection(man, slug);
   return { rec, cmd, copied, declared: Boolean(text), why };
 }
 
