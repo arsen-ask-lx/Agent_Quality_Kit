@@ -1765,7 +1765,7 @@ rm -rf "$PRVP"
 # и шесть `units-*.mjs`), и заметить это можно было только сверкой руками. Тот же класс, что
 # «гейт объявлен и не существует»: расхождение молчит.
 MISSING=""
-for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/*; do
+for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/* "$ROOT"/tool/selfcheck/*/*; do
   B=$(basename "$F")
   grep -qF "$B" "$ROOT/AGENTS.md" || MISSING="$MISSING $B"
 done
@@ -1908,153 +1908,28 @@ else
 fi
 rm -rf "$CADP" "$CADP2"
 
-# --- 113. проверки контракта API считаются проверками ---------------------------
-# ЗАМЕР, ИЗ КОТОРОГО ВЗЯЛАСЬ ЭТА СТРОКА (2026-09-09). Три шага, каждый выносит вердикт о
-# контракте API, каждый обезврежен `continue-on-error: true`, — и наш `ci-actually-fails`
-# сказал «чисто», код возврата 0. Причина: список опознаваемых проверок знал `pytest` и
-# `eslint` и не знал ни одного инструмента про API. Шаг с фаззером спецификации проходил
-# как строка в логе.
+# --- переехавшие проверки: встроенный раннер --------------------------------
+# ПОЧЕМУ ЗДЕСЬ МОСТ, А НЕ ВТОРАЯ КОМАНДА. Проверки переезжают на `node --test` по одной, и всё
+# это время у прогона обязана оставаться ОДНА точка входа и ОДИН счётчик: два числа в двух
+# местах через месяц разойдутся, и никто не заметит, что половина не запускается.
 #
-# Ловушка, из-за которой этот замер чуть не оказался ложно-зелёным: если назвать шаг
-# «Spec lint», гейт краснеет — но не потому, что узнал инструмент, а потому что в названии
-# есть слово «lint». Поэтому в образце ниже НЕТ слов-подсказок: проверяется опознание
-# инструмента, а не удача в наименовании.
-APIC="$(mktemp -d)"
-mkdir -p "$APIC/.github/workflows"
-cat > "$APIC/.github/workflows/api.yml" <<'YML'
-name: api
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - name: соответствие сервера схеме
-        continue-on-error: true
-        run: schemathesis run openapi.yaml --url http://localhost:8000
-      - name: ломающие изменения
-        continue-on-error: true
-        run: oasdiff breaking base.yaml openapi.yaml
-      - name: ожидания потребителей
-        continue-on-error: true
-        run: pact-broker can-i-deploy --pacticipant web --version "$SHA"
-YML
-if bash "$ROOT/kit/gates/ci-actually-fails/check.sh" "$APIC" >/dev/null 2>&1; then
-  bad "обезвреженные проверки контракта API прошли как чистые" \
-      "schemathesis, oasdiff и pact под continue-on-error — гейт не заметил"
-else
-  ok "шаг с проверкой контракта API под continue-on-error краснеет"
+# ЗАЧЕМ ПЕРЕЕЗД. У встроенного раннера есть то, чего нет у этого файла и не появится: свой
+# каталог и уборка на каждую проверку, таймаут на каждую, точечный перезапуск одной по имени
+# (`--test-name-pattern`). Диагностика отказа падает с сорока секунд до одной. Проверено на
+# Node 20.20.2 — той версии, что стоит в конвейере.
+NODE_SMOKE="$ROOT/tool/selfcheck/smoke"
+if [ -d "$NODE_SMOKE" ]; then
+  NS_OUT=$(cd "$ROOT" && node --test --test-reporter=tap "$NODE_SMOKE"/*.test.mjs 2>&1)
+  # Разбираем только верхний уровень TAP: вложенные строки идут с отступом.
+  while IFS= read -r NS_LINE; do
+    case "$NS_LINE" in
+      "ok "*)     ok "${NS_LINE#*- }" ;;
+      "not ok "*) bad "${NS_LINE#*- }" "подробности: node --test --test-name-pattern=… $NODE_SMOKE/*.test.mjs" ;;
+    esac
+  done <<EOF
+$(printf '%s\n' "$NS_OUT" | grep -E '^(ok|not ok) ')
+EOF
 fi
-rm -rf "$APIC"
-
-# --- 114. сужённый арбитр контракта краснеет ------------------------------------
-# ПОЧЕМУ ОТДЕЛЬНОЙ ПРОВЕРКОЙ, А НЕ ОБРАЗЦОМ. У записи две красные ветки, а `red/` пробуется
-# целиком: первая ветка («держать некому») красит папку, и вторая осталась бы непроверенной —
-# ровно то молчание, неотличимое от успеха, против которого весь комплект.
-#
-# ЗАМЕР (2026-09-09), из-за которого ветка есть. Стенд: сервер врёт в каждом поле ответа,
-# пятисоток нет. `schemathesis` с умолчаниями — код 1 и три нарушения схемы; он же с
-# `-c not_a_server_error` — код 0 и «18 из 18 прошли». Сужение до одной проверки это не
-# настройка, а отключение: у schemathesis по умолчанию включены ВСЕ проверки.
-NARR="$(mktemp -d)"
-mkdir -p "$NARR/.github/workflows"
-printf 'openapi: 3.0.3\ninfo: { title: t, version: 1.0.0 }\npaths: {}\n' > "$NARR/openapi.yaml"
-NARRG="$ROOT/kit/gates/api-contract-has-arbiter/check.sh"
-say_narrow() {
-  cat > "$NARR/.github/workflows/ci.yml" <<YML
-name: ci
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - run: schemathesis run openapi.yaml --url http://localhost:8000 $1
-YML
-}
-say_narrow "-c not_a_server_error"
-SHORT=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-say_narrow "--checks not_a_server_error"
-LONG=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-say_narrow ""
-FULL=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-# Вторая форма арбитра, который не может провалиться, и она коварнее первой: вывод громкий и
-# красный на вид. Замер 2026-09-09: `oasdiff breaking` на паре спецификаций, где из ответа убрано
-# обязательное поле, печатает «1 changes: 1 error» и выходит с НУЛЁМ; с `--fail-on ERR` — код 1.
-cat > "$NARR/.github/workflows/ci.yml" <<'YML'
-name: ci
-on: [push]
-jobs:
-  contract:
-    runs-on: ubuntu-latest
-    steps:
-      - run: schemathesis run openapi.yaml --url http://localhost:8000
-      - run: oasdiff breaking base.yaml openapi.yaml
-YML
-LOUD=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-sed -i 's|oasdiff breaking base.yaml openapi.yaml|oasdiff breaking base.yaml openapi.yaml --fail-on ERR|' "$NARR/.github/workflows/ci.yml"
-LOUDOK=$(bash "$NARRG" "$NARR" >/dev/null 2>&1; echo $?)
-if [ "$SHORT" = "1" ] && [ "$LONG" = "1" ] && [ "$FULL" = "0" ] &&
-   [ "$LOUD" = "1" ] && [ "$LOUDOK" = "0" ]; then
-  ok "арбитр, который не может провалиться, краснеет в обеих формах — а полный молчит"
-else
-  bad "арбитр, не способный провалиться, не опознан" \
-      "-c: $SHORT, --checks: $LONG, полный: $FULL, oasdiff без --fail-on: $LOUD, с ним: $LOUDOK"
-fi
-rm -rf "$NARR"
-
-# --- 115. запись не считает держателем ЧУЖОЕ ОПРЕДЕЛЕНИЕ ------------------------
-# НАЙДЕНО АУДИТОМ ФИЧ 2026-09-09, а не образцами. Красный и зелёный образцы записи лежат
-# отдельно; в настоящем проекте рядом стоят ДРУГИЕ записи каталога — и `ci-actually-fails`
-# держит в своём `check.sh` строку со списком запускалок, где перечислены все инструменты про
-# API разом. Проверка нашла её и решила, что спецификацию кто-то держит: договор не держал
-# никто, а гейт был ЗЕЛЁНЫМ. Ложное зелёное — худший исход из возможных.
-#
-# Второй дефект того же прогона: `find "$DIR" $(skip_find) -type f \( … \)` без `-print`
-# печатал ещё и обойдённые каталоги — в списке спецификаций оказались `./.git` и `./.aqk`.
-APIA="$(mktemp -d)"
-(
-  cd "$APIA" && git init -q . && git config user.email a@b && git config user.name a
-  mkdir -p src && printf 'def s():\n    return 1\n' > src/a.py
-  printf 'openapi: 3.0.3\ninfo: { title: t, version: 1.0.0 }\npaths: {}\n' > openapi.yaml
-  mkdir -p .github/workflows
-  printf 'name: ci\non: [push]\njobs:\n  t:\n    runs-on: ubuntu-latest\n    steps:\n      - run: pytest\n' > .github/workflows/ci.yml
-  git add -A && git commit -qm "feat: старт"
-  node "$CLI" init && node "$CLI" add ci-actually-fails && node "$CLI" add api-contract-has-arbiter
-) >/dev/null 2>&1
-APIA_OUT=$(cd "$APIA" && sh gates/api-contract-has-arbiter/check.sh . 2>&1); APIA_CODE=$?
-if [ "$APIA_CODE" -eq 1 ] && ! printf '%s' "$APIA_OUT" | grep -qE '\.git|\.aqk'; then
-  ok "договор без держателя краснеет рядом с другими записями каталога"
-else
-  bad "запись сочла держателем чужое определение либо перечислила каталоги" \
-      "код $APIA_CODE: $(printf '%s' "$APIA_OUT" | head -3 | tr '\n' ' ')"
-fi
-rm -rf "$APIA"
-
-# --- 116. прогон говорит СВОЙ вердикт, а не только код возврата -------------------
-# НАЙДЕНО АУДИТОМ ФИЧ 2026-09-09. `doctor --run` выходил с единицей и в конце не говорил ни
-# слова о том, почему: причина (нет `.gitignore`) оставалась в шапке, а внизу человек видел
-# список зелёных гейтов. Обратная сторона нашего же принципа: молчание неотличимо не только от
-# успеха, но и от отказа. С `--min` вердикт печатался всегда — без него не печатался никогда.
-VERD="$(mktemp -d)"
-(
-  cd "$VERD" && git init -q . && git config user.email a@b && git config user.name a
-  mkdir -p src && printf 'def s():\n    return 1\n' > src/a.py
-  git add -A && git commit -qm "feat: старт"
-  node "$CLI" init && node "$CLI" add todo-without-task
-) >/dev/null 2>&1
-# .gitignore нет — прогон обязан быть красным И обязан сказать, из-за чего.
-VERD_OUT=$(cd "$VERD" && AQK_LANG=ru node "$CLI" doctor --run 2>&1); VERD_CODE=$?
-VERD_TAIL=$(printf '%s' "$VERD_OUT" | tail -4)
-printf 'x\n' > "$VERD/.gitignore"
-( cd "$VERD" && git add -A && git commit -qm "chore: гигиена" ) >/dev/null 2>&1
-VERD_OK_OUT=$(cd "$VERD" && AQK_LANG=ru node "$CLI" doctor --run 2>&1); VERD_OK_CODE=$?
-if [ "$VERD_CODE" -ne 0 ] && printf '%s' "$VERD_TAIL" | grep -q "красн" &&
-   [ "$VERD_OK_CODE" -eq 0 ] && printf '%s' "$VERD_OK_OUT" | tail -4 | grep -q "зелён"; then
-  ok "прогон называет свой вердикт словами, а не только кодом возврата"
-else
-  bad "вердикт прогона не назван" \
-      "красный код $VERD_CODE хвост: $(printf '%s' "$VERD_TAIL" | tr '\n' ' ' | tail -c 120); зелёный код $VERD_OK_CODE"
-fi
-rm -rf "$VERD"
 
 # --- итог -------------------------------------------------------------------
 printf '\n'
