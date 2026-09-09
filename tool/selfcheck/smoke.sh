@@ -35,6 +35,26 @@ node_in() { D="$1"; shift; ( cd "$D" && node "$@" ); }
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
+# ГЕРМЕТИЧНОСТЬ. Три строки, каждая закрывает свой класс отказов, найденный сплошным чтением
+# и замерами 2026-09-09. Прогон обязан давать один и тот же ответ на любой машине и в любой
+# день — иначе «116 зелёных» означает не «работает», а «сегодня совпало».
+#
+# 1. TMPDIR внутрь $WORK. В файле 65 вызовов `mktemp -d` и ОДИН trap — на $WORK. Прерванный
+#    прогон оставлял 64 каталога, а два из них несут по копии всего дерева (`cp -r tool kit`,
+#    ≈4000 файлов). Одна строка вместо правки шестидесяти пяти: mktemp читает TMPDIR, и вся
+#    временная работа попадает под уже существующую уборку.
+# 2. HOME в песочницу. Комплект пишет `~/.config/aqk/feedback-shown` — просьбу про звезду
+#    показывают один раз НА МАШИНУ. Из 65 фикстур свой HOME задавали 8. Значит на машине
+#    разработчика (отметка лежит с сентября) `init` молчит, а на свежем раннере — говорит:
+#    один и тот же прогон получает РАЗНЫЙ ввод. Плюс прогон гадил в настоящий домашний каталог.
+# 3. AQK_UPDATE=0. `doctor --brief` ходит в реестр npm по сети с таймаутом 3 с — и только вне
+#    конвейера (`updateWanted` выключается при CI). То есть локально тесты сетевые, а в
+#    конвейере нет. Сеть в тестах — отдельный класс флейков во всех разборах; здесь она ещё и
+#    делает две среды разными по построению.
+export TMPDIR="$WORK/tmp"; mkdir -p "$TMPDIR"
+export HOME="$WORK/home"; export USERPROFILE="$HOME"; mkdir -p "$HOME"
+export AQK_UPDATE=0
+
 printf '\n\033[1mtool/selfcheck/smoke.sh\033[0m\n\n'
 
 # --- 1. синтаксис самой программы ------------------------------------------
@@ -345,10 +365,24 @@ if [ -f "$BLOBDIR/GOD_AI.md" ]; then
     bad "blob собрал не все методички" "в kit/docs $EXPECT_MD, в склейке $GOT_MD"
   fi
   # Ссылки на соседние файлы внутри склейки ведут в никуда: соседей рядом больше нет.
-  if grep -qE '\]\((?!https?:)[^)]*\.md\)' "$BLOBDIR/GOD_AI.md" 2>/dev/null; then
+  #
+  # ДВА ПРОХОДА, А НЕ ОПЕРЕЖАЮЩАЯ ПРОВЕРКА. Здесь стояло `grep -qE '...(?!https?:)...'`, и это
+  # была ЛОЖЬ: `(?!` — синтаксис PCRE, в POSIX ERE его нет. GNU grep печатает предупреждение и
+  # не находит ничего, ugrep падает с ошибкой разбора — в обоих случаях `if` уходит в `else`, и
+  # проверка печатала зелёное НА ЛЮБЫХ ДАННЫХ. Ровно тот грех, ради поимки которого написан весь
+  # комплект, внутри прибора, который его ищет. Найдено сплошным чтением 2026-09-09.
+  #
+  # Поэтому же ниже проверяется САМА ПРОВЕРКА: подделываем склейку с относительной ссылкой и
+  # требуем, чтобы её нашли. Без этого следующая такая опечатка снова проедет зелёной.
+  rel_links() { grep -oE '\]\([^)]+\.md[^)]*\)' "$1" 2>/dev/null | grep -vE '^\]\(https?:' | grep -q .; }
+  printf '%s' "$(cat "$BLOBDIR/GOD_AI.md")" > "$BLOBDIR/doctored.md"
+  printf '\nсм. [соседний файл](other.md)\n' >> "$BLOBDIR/doctored.md"
+  if rel_links "$BLOBDIR/GOD_AI.md"; then
     bad "в склейке остались ссылки на соседние файлы" "внутри одного файла они ведут в никуда"
+  elif ! rel_links "$BLOBDIR/doctored.md"; then
+    bad "проверка ссылок не может покраснеть" "подделанная склейка с относительной ссылкой прошла"
   else
-    ok "ссылки на соседние файлы в склейке сняты"
+    ok "ссылки на соседние файлы сняты, и проверка это умеет заметить"
   fi
 else
   bad "blob не создал GOD_AI.md" "$BLOBDIR"
@@ -579,7 +613,7 @@ REPDIR="$(mktemp -d)"
 (
   cd "$REPDIR" && git init -q . && mkdir -p src &&
   printf 'a = 1  # noqa\n' > src/a.py &&
-  node "$CLI" start > /tmp/aqk-start.log 2>&1
+  node "$CLI" start > "$WORK/start.log" 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
 if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ gate-not-weakened'; then
@@ -591,7 +625,7 @@ else
   G_LS=$( cd "$REPDIR" && ls gates 2>&1 | tr '\n' ' ' )
   G_DECL=$( cd "$REPDIR" && sed -n '/^gates:/,$p' .aqk.yml 2>/dev/null | grep -cE '^[[:space:]]+[A-Za-z0-9_-]+:' )
   G_OUT=$( cd "$REPDIR" && bash gates/gate-not-weakened/check.sh . 2>&1 | head -2 ); G_CODE=$?
-  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 /tmp/aqk-start.log 2>/dev/null | tr '\n' ' ')»"
+  bad "report не отличает красное от зелёного" "код отчёта $REP_CODE; гейт напрямую: код $G_CODE, вывод «$(printf '%s' "$G_OUT" | tr '\n' ' ')»; в gates/: «$G_LS»; объявлено гейтов: $G_DECL; хвост start: «$(tail -4 "$WORK/start.log" 2>/dev/null | tr '\n' ' ')»"
 fi
 if [ -f "$REPDIR/.aqk/report.md" ] && grep -q '^## ' "$REPDIR/.aqk/report.md"; then
   ok "report сохраняет .aqk/report.md"
