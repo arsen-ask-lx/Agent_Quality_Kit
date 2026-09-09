@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
+import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
@@ -404,6 +405,29 @@ async function cmdDoctor() {
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
     await writeRunReport({ version, reached, results: run.results });
+
+    // ПРОБА ЗАПУСКАЕТСЯ САМА. Владелец сформулировал так: «команду, о которой надо вспомнить,
+    // агент не вспомнит, а человек о ней не узнает». Это тот же класс, что файл, который можно
+    // не прочитать, — и весь комплект написан против него. `probe` отвечает на важнейший
+    // вопрос («что здесь не прикрыто ничем») и, оставаясь ручной, не задаётся никем.
+    //
+    // Поэтому не напоминание, а действие: раз в сто коммитов прогон делает пробу сам. Единица
+    // — коммиты, а не сутки: месяц без работы перепроверять незачем, сто коммитов за день —
+    // надо. В кратком режиме не запускается: там хук на воротах коммита, и лишние секунды там
+    // стоят дороже. Не влияет на код возврата НИКОГДА — это осмотр, а не порог.
+    // Выключается AQK_PROBE=0 — у всего, что случается само, обязан быть выключатель.
+    if (!brief && process.env.AQK_PROBE !== "0") {
+      try {
+        const st = await probeStatus();
+        if (st.state === "never" || st.state === "stale") {
+          // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
+          // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
+          // Мелочь, но того же класса, что и всё остальное здесь: вывод, который не врёт.
+          console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
+          await cmdProbe([], { auto: true });
+        }
+      } catch { /* проба не состоялась — прогон это не роняет: он про гейты, а не про неё */ }
+    }
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +

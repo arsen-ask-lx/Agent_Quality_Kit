@@ -21,14 +21,15 @@
 // удаляется. Не меняет манифест. Не роняет прогон: код возврата всегда 0 — это осмотр, а
 // не порог. Порог — у `doctor --run --min`.
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, copyFile, rm, readdir } from "node:fs/promises";
+import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
 import { commandFor } from "../lib/prove.mjs";
 import { fixHotspots, probeVerdict } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
-import { CWD, GATES_SRC, c, SELF, exists } from "../lib/core.mjs";
+import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
+import { probeState, PROBE_EVERY } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Тот же набор расширений, что у привязки доказательства к дифу. Список один на программу:
@@ -51,6 +52,42 @@ function gitLog(limit) {
     { cwd: CWD, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
   );
   return r.status === 0 ? r.stdout || "" : null;
+}
+
+// Сколько коммитов в репозитории сейчас. Единица каденции — коммиты, а не сутки: месяц без
+// работы перепроверять незачем, а сто коммитов за день — надо.
+function commitCount() {
+  const r = spawnSync("git", ["rev-list", "--count", "HEAD"], { cwd: CWD, encoding: "utf8" });
+  if (r.status !== 0) return null;
+  const n = Number(String(r.stdout || "").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+const MARK = () => join(CWD, TARGET_DIR, "last-probe.md");
+
+// Отметка о прошлой пробе. Формат человеческий намеренно: файл читают глазами и агентом,
+// а не только программой. Разбирается одна строка — та, что несёт число коммитов.
+async function readMark() {
+  try {
+    const text = await readFile(MARK(), "utf8");
+    const m = /^at:\s*(\d+)/m.exec(text);
+    return m ? { at: Number(m[1]), text } : {};
+  } catch { return null; }
+}
+
+async function writeMark(now, blind, lines) {
+  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+  const body = [
+    "# Проба покрытия — что объявленные проверки НЕ видят",
+    "",
+    `at: ${now === null ? "?" : now}`,
+    `blind: ${blind}`,
+    "",
+    ...lines,
+    "",
+    "Файл эфемерный: его переписывает каждая проба. В .gitignore его стоит держать самому.",
+  ].join("\n");
+  await writeFile(MARK(), body + "\n", "utf8");
 }
 
 // Гейты, которым можно подставить каталог. Команда записи каталога кончается каталогом
@@ -104,10 +141,13 @@ function runGates(gates, dir) {
   return out;
 }
 
-async function cmdProbe(args) {
+// `auto` — проба запущена САМА, по каденции, из `doctor --run`. Тогда она короче и говорит
+// вслух, почему случилась: команда, возникшая без спроса, обязана объяснить себя, иначе её
+// читают как сбой.
+async function cmdProbe(args, { auto = false } = {}) {
   const P = L.probe;
   const topArg = Number(args[args.indexOf("--top") + 1]);
-  const TOP = args.includes("--top") && Number.isFinite(topArg) && topArg > 0 ? topArg : 5;
+  const TOP = args.includes("--top") && Number.isFinite(topArg) && topArg > 0 ? topArg : (auto ? 3 : 5);
 
   console.log(c.bold(`\n${P.title}\n`));
 
@@ -157,6 +197,15 @@ async function cmdProbe(args) {
   }
 
   console.log(blind ? c.yellow(`\n  ${P.summaryBlind(blind)}\n`) : c.green(`\n  ${P.summaryClean}\n`));
+
+  // Отметка нужна не для отчёта, а для КАДЕНЦИИ: по ней следующий прогон поймёт, что пора.
+  // Без неё команда снова становится тем, о чём надо вспомнить.
+  await writeMark(commitCount(), blind, hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`));
 }
 
-export { cmdProbe, scanningGates, isCode };
+// Состояние пробы для тех, кто только ПОКАЗЫВАЕТ его: краткий режим и блок для агента.
+async function probeStatus() {
+  return probeState(await readMark(), commitCount(), PROBE_EVERY);
+}
+
+export { cmdProbe, probeStatus, scanningGates, isCode };

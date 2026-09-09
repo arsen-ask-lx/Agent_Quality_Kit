@@ -25,6 +25,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists, commandRows } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
+import { probeStatus } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Больше пяти имён подряд агент всё равно не удержит, а блок ради них раздувается. Остаток
@@ -62,6 +63,18 @@ function contextBlock(state, T = L.context) {
 
   const rat = (state.ratchets || []).slice(0, MAX_RATCHETS);
   if (rat.length) out.push(T.ratchets(rat.map((r) => `${r.name} (${r.count})`).join(", ")));
+
+  // ЧТО НЕ ПРИКРЫТО НИЧЕМ — сюда попадает потому, что иначе об этом не узнает никто. Команду
+  // `probe` надо вспомнить, а агент не вспомнит: это тот же класс, что файл, который можно не
+  // прочитать. Блок читается по построению, поэтому знание живёт здесь, а не в команде.
+  // Состояние «не делалась» печатается как НЕИЗВЕСТНО, а не опускается: молчание тут
+  // прочиталось бы как «всё прикрыто», а прикрыто ли — мы не знаем.
+  const pr = state.probe;
+  if (pr) {
+    if (pr.state === "never") out.push(T.probeNever);
+    else if (pr.blind > 0) out.push(T.probeBlind(pr.blind, pr.state === "stale" ? pr.behind : 0));
+    else out.push(T.probeClean(pr.state === "stale" ? pr.behind : 0));
+  }
 
   // ПОЛНЫЙ БЛОК — решение владельца от 2026-09-08, принятое ПОСЛЕ возражения и вопреки ему.
   // Возражение было такое: вход, растущий в длину, роняет качество у всех проверенных моделей,
@@ -233,6 +246,20 @@ async function cmdContext(args = []) {
     if (run) run.stale = runIsStale(run.when);
   }
 
+  // Проба: сколько классов не ловит никто и насколько отметка отстала. Читается из файла,
+  // ничего не запускает — блок обязан укладываться в секунду.
+  let probe = null;
+  try {
+    const st = await probeStatus();
+    let blind = null;
+    const mark = join(CWD, TARGET_DIR, "last-probe.md");
+    if (await exists(mark)) {
+      const m = /^blind:\s*(\d+)/m.exec(await readFile(mark, "utf8"));
+      if (m) blind = Number(m[1]);
+    }
+    probe = { ...st, blind };
+  } catch { /* пробы нет — блок просто не покажет строку про неё */ }
+
   const ratchets = [];
   const dir = typeof man?.ratchets === "string" ? man.ratchets.trim() : "";
   if (dir && (await exists(join(CWD, dir)))) {
@@ -257,7 +284,7 @@ async function cmdContext(args = []) {
   }
 
   console.log(contextBlock({
-    entry, entryExists: rules !== null, level, rules, run, ratchets, full: fullPart,
+    entry, entryExists: rules !== null, level, rules, run, ratchets, probe, full: fullPart,
   }).join("\n"));
 }
 

@@ -66,6 +66,13 @@ const enDocs = {
     runRed: (when, names) => `Last run ${when} — RED: ${names}.`,
     andMore: (n) => `and ${n} more`,
     skipped: (n) => `Not run: ${n} — the tool is absent on this machine, their state is unknown.`,
+    probeNever: "No coverage probe has run — what is covered by nothing here is UNKNOWN. That is not \"covered\": `aqk probe`.",
+    probeBlind: (n, behind) =>
+      `Covered by nothing: ${n} defect classes in the places people most often come back to fix` +
+      (behind ? ` (the probe is ${behind} commits behind)` : "") + ". Details: `aqk probe`.",
+    probeClean: (behind) =>
+      "Coverage probe: in the places probed, every applicable class is caught by something" +
+      (behind ? ` (${behind} commits behind)` : "") + ".",
     ratchets: (list) => `Ratchets: ${list}. The list may only get shorter, never longer.`,
     where: (entry) => `The rulebook: ${entry}. What proves a diff: \`aqk report --since main\`.`,
     mapTitle: "WHAT THIS TOOL CAN DO. The full list of commands — not a retelling, the same list\nthe help is built from:",
