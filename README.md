@@ -325,13 +325,12 @@ the same thing in a single line:
 A Python, Go or Rust project where nobody installed Node and nobody will:
 
 ```bash
-docker build -t aqk .                                   # from this repository
-docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" aqk doctor
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/arsen-ask-lx/aqk doctor
 ```
 
-From v0.9.0 the image is pushed to the registry by the same run that publishes the package, so
-there is nothing to build: `ghcr.io/arsen-ask-lx/aqk`. Before that tag the registry holds no
-image, and this says so plainly: a command that points at nothing is worse than no command.
+The image is pushed to the registry by the same run, from the same tag, that publishes the
+package — there is nothing to build. You can still build it yourself: `docker build -t aqk .`
+from this repository.
 
 **The `--user` flag is not decoration.** Without it the container runs as root and the files
 `init` writes end up owned by root — you cannot edit your own manifest. Measured 2026-09-09:

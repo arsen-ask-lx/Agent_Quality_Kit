@@ -56,9 +56,8 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   package itself; there are no dependencies to pull in.
 - Without Node at all (a Python, Go or Rust project where nobody installed it):
   `docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/arsen-ask-lx/aqk doctor`.
-  Published from v0.9.0 onward, by the same run that publishes the package; before that tag,
-  build it from the repository: `docker build -t aqk . && docker run --rm -u "$(id -u):$(id -g)"
-  -v "$PWD:/work" aqk doctor`. Keep the `--user` flag: without it the container runs as root and
+  Pushed to the registry by the same run, from the same tag, that publishes the package.
+  Keep the `--user` flag: without it the container runs as root and
   the files `init` writes are owned by root, so you cannot edit your own manifest. Debian-based
   on purpose: the gates are `sh`, `grep`, `awk`, `find` — under alpine's busybox they behave
   differently, and an image where the gates behave differently is worse than no image
