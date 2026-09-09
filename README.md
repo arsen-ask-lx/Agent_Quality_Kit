@@ -306,6 +306,19 @@ Three states, and they do not merge: caught · **nothing catches it** · nothing
 gate did not run, or the catalogue has no sample for that extension). The working tree is not
 touched and the exit code is always 0 — this is a look, not a threshold.
 
+**The command does not need to be remembered — that is half the design.** Once every hundred
+commits `doctor --run` runs the probe **itself**, unprompted. A command you have to remember is
+the same class as a file you can fail to read: the agent will not recall it, and the human will
+never learn it exists. The unit is commits, not days: a repository nobody touched for a month
+needs no re-probe, a hundred commits in a day does. Turn it off with `AQK_PROBE=0`.
+
+The result also lands in the state block the agent reads by construction, without knowing the
+command. If no probe has ever run, it says **UNKNOWN** rather than staying silent: silence would
+read as "everything is covered".
+
+Your code is not touched — the sample lives in a temporary directory. The probe's own mark goes
+to `.aqk/last-probe.md`, next to the run report; it is ephemeral, keep it in your `.gitignore`.
+
 ## The badge
 
 ```bash

@@ -251,6 +251,8 @@ export const enGates = {
 
 
   probe: {
+    autoFirst: "no coverage probe has ever run here — running it myself. Turn off: AQK_PROBE=0",
+    auto: (n) => `${n} commits since the last probe — running it myself. Turn off: AQK_PROBE=0`,
     title: "aqk probe — what the declared checks cannot see",
     method: (files, entries) =>
       `method: a red sample from a catalogue entry is planted into a copy of each file, ` +
