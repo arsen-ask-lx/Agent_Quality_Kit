@@ -1649,25 +1649,33 @@ rm -rf "$VITP"
 # та тишина, против которой написан стандарт, только про сам прибор. ВТОРОЙ: при `--since` гейт,
 # чей вывод не содержит путей, шёл через ветку «сузить нечем» с безусловным failed++ — то есть
 # совещательный ронял прогон. Проверено сравнением с кодом до починки: было 1, стало 0.
+# Команда гейта — ФАЙЛ, а не строка с `;`. На windows `spawnSync(shell: true)` запускает
+# cmd.exe, а не sh: там `echo x; exit 1` печатается целиком и выходит с НУЛЁМ. Первая версия
+# этой проверки так и провалилась в конвейере на windows — фикстура, а не код. Заодно урок про
+# сам тест: утверждение «зелёный помечен» искало подстроку «совещательный», которая есть и в
+# пометке КРАСНОГО совещательного, — то есть проходило бы и при полном отсутствии починки.
+# Теперь ищется текст, который бывает только на зелёной строке.
 ADVP="$(mktemp -d)"
 (
   cd "$ADVP" && git init -q . && git config user.email a@b && git config user.name a
   printf '# вход\n' > AGENTS.md && mkdir -p r && printf 'x\n' > r/a.md
-  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "true"\nadvisory:\n  - adv\n' > .aqk.yml
+  printf '#!/bin/sh\necho "вердикт без путей"\nexit 1\n' > noscope.sh
+  printf '#!/bin/sh\nexit 0\n' > quiet.sh
+  printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash quiet.sh"\nadvisory:\n  - adv\n' > .aqk.yml
   git add -A && git commit -qm "Сделано: основа. Не уверен: ничего"
 ) >/dev/null 2>&1
 ADVBASE=$( cd "$ADVP" && git rev-parse --abbrev-ref HEAD )
 ( cd "$ADVP" && git checkout -qb feat && printf 'y\n' > r/b.md && git add -A &&
   git commit -qm "Сделано: файл. Не уверен: ничего" ) >/dev/null 2>&1
 ADVGREEN=$( cd "$ADVP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 2>&1 )
-( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "echo нет-путей; exit 1"\nadvisory:\n  - adv\n' > .aqk.yml )
+( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash noscope.sh"\nadvisory:\n  - adv\n' > .aqk.yml )
 ( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); ADV_C=$?
-( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "echo нет-путей; exit 1"\n' > .aqk.yml )
+( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash noscope.sh"\n' > .aqk.yml )
 ( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); BLOCK_C=$?
-if printf '%s' "$ADVGREEN" | grep -q "совещательный" && [ "$ADV_C" -eq 0 ] && [ "$BLOCK_C" -eq 1 ]; then
+if printf '%s' "$ADVGREEN" | grep -q "уронить прогон не может" && [ "$ADV_C" -eq 0 ] && [ "$BLOCK_C" -eq 1 ]; then
   ok "совещательный назван и на зелёном, и не роняет прогон даже когда сузить нечем"
 else
-  bad "совещательный гейт неотличим или роняет прогон" "зелёный помечен: $(printf '%s' "$ADVGREEN" | grep -c 'совещательный'), код совещательного $ADV_C, код блокирующего $BLOCK_C"
+  bad "совещательный гейт неотличим или роняет прогон" "зелёный помечен: $(printf '%s' "$ADVGREEN" | grep -c 'уронить прогон не может'), код совещательного $ADV_C, код блокирующего $BLOCK_C"
 fi
 rm -rf "$ADVP"
 
