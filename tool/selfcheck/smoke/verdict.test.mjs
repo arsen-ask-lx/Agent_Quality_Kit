@@ -17,14 +17,16 @@ test("прогон называет свой вердикт словами в о
 
   // .gitignore нет — прогон красный, и обязан сказать, из-за чего именно.
   const red = aqk(p, "doctor", "--run");
-  assert.notEqual(red.code, 0, "прогон без .gitignore прошёл зелёным");
-  const redTail = red.out.trimEnd().split("\n").slice(-4).join("\n");
-  assert.match(redTail, /красн/, `вердикт не назван в конце вывода:\n${redTail}`);
+  // Сообщение утверждения обязано нести ВЕСЬ хвост: проверка, которая говорит только «не
+  // совпало», отправляет читателя гадать — ровно то, за что мы ругаем чужие проверки.
+  const redTail = red.out.trimEnd().split("\n").slice(-6).join("\n");
+  assert.notEqual(red.code, 0, `прогон без .gitignore прошёл зелёным:\n${redTail}`);
+  assert.match(redTail, /красн/, `вердикт не назван в конце вывода (код ${red.code}):\n${redTail}`);
 
   // Причина устранена — и «ничего не сказал» обязано отличаться от «всё проверено».
   writeFileSync(join(p.dir, ".gitignore"), "x\n", "utf8");
   const green = aqk(p, "doctor", "--run");
-  assert.equal(green.code, 0, `прогон остался красным:\n${green.out.slice(-400)}`);
-  const greenTail = green.out.trimEnd().split("\n").slice(-4).join("\n");
+  const greenTail = green.out.trimEnd().split("\n").slice(-6).join("\n");
+  assert.equal(green.code, 0, `прогон остался красным:\n${greenTail}`);
   assert.match(greenTail, /зелён/, `успех не назван словами:\n${greenTail}`);
 });
