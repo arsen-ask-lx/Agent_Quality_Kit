@@ -1,0 +1,12 @@
+# Арбитр назван и может провалиться. Оба слова важны:
+#   schemathesis с умолчаниями сверяет ОТВЕТЫ сервера со схемой, а не только отсутствие пятисоток;
+#   oasdiff без «--fail-on ERR» печатает ломающие изменения и выходит с нулём — замерено.
+name: ci
+on: [push]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: schemathesis run openapi.yaml --url http://localhost:8000
+      - run: oasdiff breaking base.yaml openapi.yaml --fail-on ERR

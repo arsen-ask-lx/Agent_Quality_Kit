@@ -28,3 +28,4 @@ syntax
 test-has-assertion
 todo-without-task
 units
+api-contract-has-arbiter

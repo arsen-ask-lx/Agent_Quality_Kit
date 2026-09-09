@@ -8,7 +8,7 @@
 //   node --test tool/selfcheck/units-repo.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec } from "../lib/repo.mjs";
 import { CATALOGS, L } from "../i18n/index.mjs";
 import { dirname } from "node:path";
 
@@ -113,6 +113,36 @@ test("сервер уже объявлен — совета нет", () => {
   assert.equal(browserServerAdvice({ has_ui: true }, cfg), null);
   const pw = '{"mcpServers":{"b":{"command":"npx","args":["@playwright/mcp@0.0.80"]}}}';
   assert.equal(browserServerAdvice({ has_ui: true }, pw), null);
+});
+
+// Признак «здесь есть договор с чужим кодом»: спецификация API. Считается обходом дерева, а не
+// списком путей, — файл кладут где угодно (`openapi.yaml`, `docs/api/openapi.json`, `schema.yml`
+// рядом с приложением), и фиксированный список промахнулся бы на большинстве проектов.
+//
+// ПОЧЕМУ ПРИЗНАК ОТДЕЛЬНЫЙ, а не часть has_deps. Запись про арбитра контракта не касается
+// библиотеки, консольной программы и монолита без внешнего интерфейса — а таких большинство.
+// Показанной не тому записи не верят, и каталог теряет доверие целиком, а не одной строкой.
+test("спецификация API опознаётся по имени файла, а не по расположению", () => {
+  assert.equal(isApiSpec("openapi.yaml"), true);
+  assert.equal(isApiSpec("openapi.json"), true);
+  assert.equal(isApiSpec("swagger.yml"), true);
+  assert.equal(isApiSpec("asyncapi.yaml"), true);
+  assert.equal(isApiSpec("openapi-v2.yaml"), true);
+  // Имя без расширения спецификации — не она: договор лежит в разбираемом формате.
+  assert.equal(isApiSpec("openapi.md"), false);
+  // Соседи по алфавиту, которые не договор: обычные файлы проекта.
+  assert.equal(isApiSpec("api.yaml"), false);
+  assert.equal(isApiSpec("schema.sql"), false);
+  assert.equal(isApiSpec("package.json"), false);
+});
+
+// Объяснение обязано быть на обоих языках. Признак без объяснения выключает запись НАВСЕГДА и
+// молча — тот же класс, что поймал has_mcp ниже, поэтому сторожится отдельной строкой: в MARKS
+// этого признака нет, он считается обходом, и общая проверка его не увидит.
+test("у признака спецификации API есть объяснение на обоих языках", () => {
+  for (const lang of ["ru", "en"]) {
+    assert.ok(CATALOGS[lang].trigger.flags.has_api_spec, `${lang}: нет объяснения has_api_spec`);
+  }
 });
 
 // Признак репозитория без объяснения — это запись каталога, ВЫКЛЮЧЕННАЯ НАВСЕГДА. Триггер
