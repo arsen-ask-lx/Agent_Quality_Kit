@@ -181,14 +181,20 @@ function runGates(man, opts = {}) {
     }
     const code = r.status;
     if (code === 0) {
-      console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${cmd}`)}`);
+      // Совещательный называется и когда он зелёный. Иначе гейт, который уронить прогон НЕ
+      // МОЖЕТ, по выводу неотличим от того, который может, — и список `advisory:` в манифесте
+      // виден только в тот день, когда он покраснел. Измерено 2026-09-09: зелёный
+      // совещательный печатался обычной галочкой, а README обещал, что список назван каждый
+      // прогон. Тот же класс, что молчащий гейт, только про сам прибор.
+      const quiet = advisory.has(name) ? ` ${c.yellow(L.doctor.advisoryQuiet)}` : "";
+      console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${quiet} ${c.dim(`${secs}s · ${cmd}`)}`);
       // Зелёный гейт иногда всё-таки говорит человеку что-то важное: храповик, дошедший до цели,
       // просит убрать обёртку. Вывод успешного гейта не показывался вовсе, и это сообщение
       // уходило в никуда — тот же класс, что обрезанный совет у красного, только тише.
       // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
       const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
       for (const line of okAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: true, secs, out: outAll });
+      results.push({ name, cmd, ok: true, secs, advisory: advisory.has(name), out: outAll });
     } else {
       const raw = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean);
       // Совет отделяется ДО сужения. Иначе он сам попадает под фильтр по путям: сообщение
@@ -207,16 +213,23 @@ function runGates(man, opts = {}) {
         if (!s.scopable || out.length === 0) {
           // Гейт печатает вердикт без путей — сузить нечем. Признать его успешным значило бы
           // выдать провал за тишину; остаётся красным, и причина названа.
-          console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.exitCode(code))} ${c.dim(`· ${L.doctor.notScopable}`)}`);
-          failed++;
-          results.push({ name, cmd, ok: false, secs, code, note: L.doctor.notScopable, out: outAll });
+          // Совещательный не роняет прогон НИКОГДА — в том числе здесь. Раньше failed++ стоял
+          // безусловно, и гейт, объявленный совещательным, валил сборку с `--since` только
+          // потому, что в его выводе нет путей. Измерено 2026-09-09.
+          const nsAdv = advisory.has(name);
+          const nsMark = nsAdv ? c.yellow("!") : c.red("✘");
+          const nsVerdict = nsAdv ? c.yellow(L.doctor.advisoryMark) : c.red(L.doctor.exitCode(code));
+          console.log(`  ${nsMark}  ${name.padEnd(14)} ${nsVerdict} ${c.dim(`· ${L.doctor.notScopable}`)}`);
+          if (!nsAdv) failed++;
+          results.push({ name, cmd, ok: false, secs, code, advisory: nsAdv, note: L.doctor.notScopable, out: outAll });
           continue;
         }
         if (s.findings === 0) {
           // Долг есть, но не в том, что внёс диф. Зелёный — но с числом спрятанного: молчаливое
           // «всё хорошо» здесь было бы неправдой.
-          console.log(`  ${c.green("✔")}  ${name.padEnd(14)} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
-          results.push({ name, cmd, ok: true, secs, scopedAway: out.length, out: outAll });
+          const sQuiet = advisory.has(name) ? ` ${c.yellow(L.doctor.advisoryQuiet)}` : "";
+          console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${sQuiet} ${c.dim(`${secs}s · ${L.doctor.outsideDiff(out.length)}`)}`);
+          results.push({ name, cmd, ok: true, secs, advisory: advisory.has(name), scopedAway: out.length, out: outAll });
           continue;
         }
         out = s.kept;
@@ -242,7 +255,7 @@ function runGates(man, opts = {}) {
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та
   // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
-  const advisoryFailed = results.filter((x) => x.advisory).map((x) => x.name);
+  const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
   return { failed, ran: gates.length, results, advisoryFailed };
 }

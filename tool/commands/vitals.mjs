@@ -19,7 +19,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, MANIFEST, SELF, c, exists } from "../lib/core.mjs";
-import { readManifest, unparsedLines } from "../lib/manifest.mjs";
+import { readManifest, unparsedLines, gateRequires } from "../lib/manifest.mjs";
 import { whichSync } from "../lib/repo.mjs";
 import { updateWanted } from "../lib/brief.mjs";
 import { L } from "../i18n/index.mjs";
@@ -87,6 +87,20 @@ async function cmdVitals() {
     const prog = progOf(cmd);
     if (!prog || seen.has(prog)) continue;
     seen.set(prog, { gate, prog, found: Boolean(whichSync(prog)) });
+  }
+
+  // Первого слова мало. Запись каталога бывает обёрткой: команда начинается с `bash`, который
+  // есть всегда, а работать без `slopcheck` или `zizmor` она не может — и `doctor --run`
+  // краснеет там, где `vitals` печатал «все инструменты на месте». Ровно тот разрыв, ради
+  // закрытия которого эта команда и заведена. Программа названа в `requires:` записи.
+  // Найдено 2026-09-09 сверкой вывода двух команд на одном репозитории.
+  const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
+  for (const gate of Object.keys(gates)) {
+    const missing = await gateRequires(samplesDir, gate, whichSync);
+    for (const prog of missing || []) {
+      if (seen.has(prog)) continue;
+      seen.set(prog, { gate, prog, found: false });
+    }
   }
 
   let unparsed = 0;

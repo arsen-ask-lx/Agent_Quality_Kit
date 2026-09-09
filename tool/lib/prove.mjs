@@ -13,7 +13,8 @@ import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, exists } from "./core.mjs";
-import { parseManifest } from "./manifest.mjs";
+import { parseManifest, gateRequires } from "./manifest.mjs";
+import { whichSync } from "./repo.mjs";
 
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
@@ -125,6 +126,15 @@ async function proveGates(man, { timeoutMs = 300000 } = {}) {
     const s = await samplesFor(samplesDir, name);
     if (!s) {
       results.push({ name, state: "unprovable", why: "no-samples" });
+      continue;
+    }
+
+    // Программы, без которой запись не работает, может не быть на машине — тогда доказывать
+    // нечем, а не «гейт сломан». Проверяется ДО запуска: без неё обёртка краснеет на обоих
+    // образцах, и вердикт вышел бы «краснеет на исправном коде».
+    const missing = await gateRequires(samplesDir, name, whichSync);
+    if (missing) {
+      results.push({ name, state: "unprovable", why: "needs-program", missing });
       continue;
     }
 

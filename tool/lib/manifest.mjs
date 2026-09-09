@@ -252,16 +252,41 @@ function entryLifecycle(rec) {
   return { state, why, supersededBy: supersededBy || null, problem };
 }
 
-// СОВЕЩАТЕЛЬНЫЕ ГЕЙТЫ. Правило вводят в проект, где старый код ему не соответствует. Храповик
-// отвечает на это одним способом: старое становится долгом, новое блокируется. Второй способ —
-// показывать, не роняя, пока команда договаривается о правиле. Без него у человека остаётся
-// выбор из двух крайностей: включить и сломать сборку либо не включать вовсе.
+// Программа, без которой запись каталога не работает вовсе: поле `requires` в её `gate.yml`.
+// Возвращает список НЕДОСТАЮЩИХ программ или null.
 //
+// ЗАЧЕМ ОБЩИМ. Переносимый рецепт бывает обёрткой вокруг готового инструмента: первое слово
+// команды тогда `bash`, и по нему не видно, чего не хватает. Этот вопрос задают трое —
+// приёмка каталога, доказательство гейтов и осмотр обвязки, — и каждый отвечал на него
+// по-своему или не отвечал вовсе. 2026-09-09: `prove` объявлял такой гейт сломанным, а
+// `vitals` печатал «все инструменты на месте» ровно там, где прогон краснел.
+// `has` передаётся вызывающим, а не берётся отсюда: manifest.mjs не должен знать про осмотр
+// репозитория — импорт в обратную сторону завёл бы цикл. Заодно функция проверяема модульно.
+async function gateRequires(samplesDir, name, has) {
+  if (!samplesDir) return null;
+  const yml = join(CWD, samplesDir, name, "gate.yml");
+  if (!(await exists(yml))) return null;
+  try {
+    const rec = parseManifest(await readFile(yml, "utf8"));
+    const raw = typeof rec?.requires === "string" ? rec.requires.trim() : "";
+    if (!raw) return null;
+    const missing = raw.split(",").map((x) => x.trim()).filter(Boolean).filter((x) => !has(x));
+    return missing.length ? missing : null;
+  } catch {
+    return null;
+  }
+}
+
 // ПОЧЕМУ СПИСКОМ В МАНИФЕСТЕ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это тот самый
 // `continue-on-error`, против которого написана наша запись ci-actually-fails: он понижает всё
 // разом, не виден в дифе и не назван в сводке. Список виден в манифесте, называется поимённо и
 // печатается КАЖДЫЙ прогон: совещательный гейт, о котором забыли, — это выключенная проверка,
 // и молчать о нём нельзя.
+// СОВЕЩАТЕЛЬНЫЕ ГЕЙТЫ. Правило вводят в проект, где старый код ему не соответствует. Храповик
+// отвечает на это одним способом: старое становится долгом, новое блокируется. Второй способ —
+// показывать, не роняя, пока команда договаривается о правиле. Без него у человека остаётся
+// выбор из двух крайностей: включить и сломать сборку либо не включать вовсе.
+//
 function advisorySet(man) {
   const v = man?.advisory;
   if (Array.isArray(v)) return new Set(v.map((x) => String(x).trim()).filter(Boolean));
@@ -348,5 +373,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines,
+  entryLifecycle, advisorySet, gateRequires, layoutChecks, coversOf, coversUnproven, unparsedLines,
 };

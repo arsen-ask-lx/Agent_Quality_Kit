@@ -107,6 +107,7 @@ export const en = {
     sinceBadRef: (ref) => `cannot compare against "${ref}": no such ref, or this is not a git repository`,
     notScopable: "output carries no paths — cannot be narrowed by diff, left red",
     outsideDiff: (n) => `findings exist, but outside the diff (${n})`,
+    advisoryQuiet: "(advisory — cannot fail the run)",
     advisoryMark: "advisory — shown, the run was not failed",
     advisorySummary: (names) =>
       `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
@@ -463,6 +464,7 @@ export const en = {
     noTarget: "no place to substitute the sample directory — the command was written by hand",
     otherRecipe: (lang) => `the samples are written for the "${lang}" recipe, another one is installed — nothing to prove with`,
     noGates: "no gates declared — nothing to prove",
+    needsProgram: (progs) => `NOT CHECKED here — needs "${progs}"`,
     noSamplesDir: "the samples field in .aqk.yml is empty — nowhere to look for samples",
     nothingProven:
       "not a single gate is proven. A level above AQK-1 would mean trust in the author, not a fact:\n  a project whose gate is `true` would pass it exactly like a project with real protection.",
