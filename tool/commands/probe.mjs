@@ -43,6 +43,15 @@ const isCode = (p) =>
   CODE_EXT.has(extname(p).slice(1).toLowerCase()) &&
   !/(^|\/)gates\/[^/]+\/(red|green)(\/|$)/.test(p);
 
+// Мелкий клон истории не содержит. `fetch-depth: 2` в конвейере — обычная настройка, и на нём
+// рейтинг починок пуст ВСЕГДА. Сказать там «коммитов-починок не найдено» значит выдать
+// отсутствие данных за факт о репозитории: та же подмена, что «зелено, потому что не
+// проверялось». Найдено собственным конвейером 2026-09-09.
+function isShallow() {
+  const r = spawnSync("git", ["rev-parse", "--is-shallow-repository"], { cwd: CWD, encoding: "utf8" });
+  return r.status === 0 && String(r.stdout || "").trim() === "true";
+}
+
 // История берётся одним вызовом: тема коммита и его файлы. Слияния исключены — в них файлы
 // второй ветки, а починку делали не в них.
 function gitLog(limit) {
@@ -158,7 +167,7 @@ async function cmdProbe(args, { auto = false } = {}) {
   const raw = gitLog(2000);
   if (raw === null) { console.log(c.yellow(`  ${P.noGit}\n`)); return; }
   const hot = fixHotspots(raw, { isCode }).slice(0, TOP);
-  if (!hot.length) { console.log(c.yellow(`  ${P.noFixes}\n`)); return; }
+  if (!hot.length) { console.log(c.yellow(`  ${isShallow() ? P.shallow : P.noFixes}\n`)); return; }
 
   // Записи каталога, применимые к ЭТОМУ репозиторию. Показывать пробы записей, которые
   // проекту не подходят, значит советовать закрыть дыру, которой нет.
