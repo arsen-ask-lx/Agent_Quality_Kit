@@ -71,6 +71,7 @@ function commandRows(L) {
     { name: "doctor", args: "--run", text: h.doctorRun },
     { name: "doctor", args: "--run --since main", text: h.doctorSince },
     { name: "prove", args: "", text: h.prove },
+    { name: "probe", args: "", text: h.probe },
     { name: "add", args: h.name, text: h.add },
     { name: "find", args: '"…"', text: h.find },
     { name: "why", args: '"…"', text: h.why },

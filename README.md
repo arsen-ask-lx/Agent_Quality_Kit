@@ -87,6 +87,8 @@ aqk why <name>          what failure this guard was written for
 
 aqk prove               run every declared gate against its own samples:
                         red on the red one, quiet on the green one
+aqk probe               what the declared checks CANNOT see: plant a defect
+                        into files the fix history calls hot
 aqk report              the report form, assembled by a run
 aqk report --since main  ...plus what proves this diff, file by file
 aqk badge               write the level badge into the README
@@ -267,6 +269,42 @@ was not installed. An accusation instead of a diagnosis; the same class as the W
 The level is granted when **no provable gate is broken AND at least one is proven**. The second
 condition is not optional: a project where everything is unprovable has proven nothing — that is
 exactly what the forgery with three `true` gates looks like.
+
+### What your checks cannot see — `probe`
+
+`doctor` says "held by a machine 21". **Twenty-one out of what?** There is no denominator: 21 is
+what we happened to write into the catalogue, not what matters in your project. `prove` shows a
+gate catches a defect **on its own** sample. Neither answers the owner's question: what here is
+covered by nothing.
+
+```bash
+aqk probe
+```
+
+Two sources, both facts rather than our taste: **your repository's history** (where defects come
+back — fix commits) and the **red samples of the catalogue** (each one proven by a run). The
+sample is placed in a temporary directory at the hot file's path, and **your declared** gates are
+run against it.
+
+```
+src/mailer.py  fixes in history: 3
+  ✘  keys and passwords do not end up in the code   NOTHING CATCHES IT
+       close it: aqk add secrets-not-in-code
+  ✘  an error is not silently swallowed             NOTHING CATCHES IT
+       close it: aqk add swallowed-error
+  ✔  no "fix later" markers in finished code        caught by: todo-without-task
+```
+
+**Coverage is not declared, it is proven by planting.** This is the kit's own principle turned on
+the whole repository: a check that cannot go red is indistinguishable from an absent one. We
+demand that of every catalogue entry — and until `probe` never demanded it of a project.
+
+The measurement the command grew from, taken on the kit itself: a real source file, a swallowed
+error and a debug print planted into a copy, 21 declared gates. **Red: none.**
+
+Three states, and they do not merge: caught · **nothing catches it** · nothing to check with (the
+gate did not run, or the catalogue has no sample for that extension). The working tree is not
+touched and the exit code is always 0 — this is a look, not a threshold.
 
 ## The badge
 

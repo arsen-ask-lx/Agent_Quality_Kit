@@ -26,6 +26,7 @@ import { cmdReport } from "./commands/report.mjs";
 import { cmdLearn } from "./commands/learn.mjs";
 import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
+import { cmdProbe } from "./commands/probe.mjs";
 import { cmdContext } from "./commands/context.mjs";
 import { cmdVitals } from "./commands/vitals.mjs";
 
@@ -82,6 +83,12 @@ if (IS_MAIN) {
       break;
     case "prove":
       await cmdProve();
+      break;
+    // Осмотр, а не порог: всегда выходит с нулём. Отвечает на вопрос, которого нет ни у
+    // doctor («держит машина 21» — из чего?), ни у prove («гейт ловит брак на СВОЁМ образце»):
+    // что в ЭТОМ репозитории не прикрыто ничем.
+    case "probe":
+      await cmdProbe(rest);
       break;
     // Печатает состояние репозитория для КОНТЕКСТА агента, а не для человека. Зовётся хуком
     // SessionStart, поэтому ничего не запускает и всегда выходит с нулём: хук, роняющий запуск
