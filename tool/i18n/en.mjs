@@ -383,6 +383,7 @@ export const en = {
     title: "If this was useful:",
     star: (url) => `Star it — ${url}`,
     issue: "Found a bug or it did not fit — open an issue; both are the most useful feedback there is.",
+    notRemembered: "could not remember this (home is not writable) — the message will appear again",
     once: "This message is shown once: it will not appear again on this machine.",
   },
 

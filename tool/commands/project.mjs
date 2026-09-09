@@ -99,7 +99,20 @@ ${c.bold(L.feedback.title)}
     ${url}/issues/new
 ${c.dim(`  ${L.feedback.once}`)}
 `);
-  await writeIfAbsent(FEEDBACK_MARK, "shown\n", { force: false });
+  // Пометка «уже показывали» — удобство, а не работа команды. Домашнего каталога может не быть
+  // записываемым вовсе: в контейнере, запущенном `--user 1001:127`, у этого uid нет записи в
+  // /etc/passwd, `homedir()` даёт «/», и запись падает с EACCES на `/.config`. До 2026-09-09
+  // это роняло ВЕСЬ `init` — то есть любого, кто набрал команду из нашей же документации по
+  // docker. Локально не воспроизводилось случайно: uid разработчика 1000 совпадает с
+  // пользователем `node` в образе, у которого дом есть. Нашёл конвейер, где uid 1001.
+  //
+  // Молча глотать нельзя — это то, что красит наш же swallowed-error. Поэтому вслух: не
+  // запомнили, покажем снова. Установка при этом доходит до конца.
+  try {
+    await writeIfAbsent(FEEDBACK_MARK, "shown\n", { force: false });
+  } catch {
+    console.log(c.dim(`  ${L.feedback.notRemembered}`));
+  }
 }
 
 function findJournal() {
