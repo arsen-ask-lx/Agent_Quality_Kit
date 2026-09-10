@@ -120,6 +120,23 @@ function probeableGates(man) {
     .filter(([, cmd]) => cmd);
 }
 
+// Семьи расширений. Образец подбирается по ТОЧНОМУ расширению, и правило верное: питоновский
+// образец в проекте на TypeScript не проверит ничего, а покажет «не прикрыто» — ложная тревога
+// того же класса, что молчащий гейт, только наоборот.
+//
+// Но `.js` и `.mjs` — одно и то же содержимое, а не два языка. Прогон на самом комплекте
+// 2026-09-10: два горячих файла из пяти — `.mjs`, и обоим ответили «нет образца под .mjs»;
+// комплект целиком написан в этом расширении, то есть проба была слепа к собственному коду.
+// Заводить второй набор файлов ради той же строчки — дублирование, которое разойдётся.
+//
+// Семьи узкие намеренно: `.jsx`/`.tsx` сюда не входят, у них своя разметка.
+const EXT_FAMILIES = [[".js", ".mjs", ".cjs"], [".ts", ".mts", ".cts"]];
+
+function extAlternatives(ext) {
+  const fam = EXT_FAMILIES.find((f) => f.includes(ext));
+  return fam ? [ext, ...fam.filter((e) => e !== ext)] : [ext];
+}
+
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
 // совпадать: питоновский образец в проекте на TypeScript не проверит ничего, а покажет
 // «не прикрыто» — ложная тревога того же класса, что молчащий гейт, только наоборот.
@@ -128,8 +145,11 @@ async function redSampleFor(entry, ext) {
   if (!(await exists(dir))) return null;
   let names = [];
   try { names = await readdir(dir); } catch { return null; }
-  const hit = names.find((n) => extname(n).toLowerCase() === ext);
-  return hit ? join(dir, hit) : null;
+  for (const want of extAlternatives(ext)) {
+    const hit = names.find((n) => extname(n).toLowerCase() === want);
+    if (hit) return join(dir, hit);
+  }
+  return null;
 }
 
 // Песочница: КОПИЯ ПРОЕКТА, в которую подсаживается образец. Раньше здесь был временный каталог
@@ -197,13 +217,40 @@ async function plant(root, relPath, sample) {
 
 // Гейт запускается В ПЕСОЧНИЦЕ и командой КАК ЕСТЬ — ничего в неё не подставляется. Именно это
 // и делает пробу независимой от формы команды.
-function runGates(gates, sandbox) {
+//
+// `stopOnRed` — ранний выход: как только гейт покраснел, вердикт «поймано» уже получен, и гонять
+// остальные незачем. На сухом прогоне выхода нет: там нужны ВСЕ длительности и все коды.
+function runGates(gates, sandbox, { stopOnRed = false } = {}) {
   const out = [];
   for (const [name, cmd] of gates) {
+    const t0 = Date.now();
     const r = spawnSync(cmd, { shell: true, cwd: sandbox, encoding: "utf8", timeout: 120000 });
-    out.push({ name, code: r.status === null ? 2 : r.status });
+    const code = r.status === null ? 2 : r.status;
+    out.push({ name, code, ms: Date.now() - t0 });
+    if (stopOnRed && code === 1) break;
   }
   return out;
+}
+
+// Каким гейтом пробовать и в каком порядке.
+//
+// Цена пробы = (файлы × записи) × сумма длительностей гейтов. На самом комплекте после перехода
+// на песочницу это стало больше десяти минут и упёрлось в таймаут: среди тридцати гейтов есть
+// `smoke` на 58 секунд, и он гонялся заново на каждую подсадку. Команда, идущая четверть часа,
+// не запускается никем.
+//
+// Длительности берутся из сухого прогона, который и так обязателен. Порядок — от быстрых к
+// медленным, чтобы ранний выход срабатывал раньше. Слишком медленные исключаются, но НЕ молча:
+// их имена обязаны попасть в вывод, иначе «никто не ловит» будет означать «никто из тех, кого
+// мы решили спросить».
+const SLOW_MS = 20000;
+
+function planProbeGates(before, { slowMs = SLOW_MS } = {}) {
+  const usable = before.filter((r) => r.code === 0).sort((a, b) => (a.ms || 0) - (b.ms || 0));
+  return {
+    use: usable.filter((r) => (r.ms || 0) <= slowMs),
+    tooSlow: usable.filter((r) => (r.ms || 0) > slowMs),
+  };
 }
 
 // `auto` — проба запущена САМА, по каденции, из `doctor --run`. Тогда она короче и говорит
@@ -244,15 +291,23 @@ async function cmdProbe(args, { auto = false } = {}) {
   // засчитывать эту красноту за поимку значит выдавать чужой долг за свою заслугу.
   // В мутационном тестировании этот прогон обязателен по той же причине.
   const before = runGates(gates, sandbox);
-  const usableGates = before.filter((r) => r.code === 0).length;
-  if (!usableGates) {
+  const plan = planProbeGates(before);
+  if (!plan.use.length) {
     const red = before.filter((r) => r.code === 1).map((r) => r.name);
     const broke = before.filter((r) => r.code !== 0 && r.code !== 1).map((r) => r.name);
-    console.log(c.yellow(`  ${P.noBaseline(red, broke)}\n`));
+    if (plan.tooSlow.length) console.log(c.yellow(`  ${P.allSlow(plan.tooSlow.map((g) => g.name))}\n`));
+    else console.log(c.yellow(`  ${P.noBaseline(red, broke)}\n`));
     return;
   }
+  // Пробуем только запланированными, в порядке плана.
+  const byName = new Map(gates);
+  const probeGates = plan.use.map((g) => [g.name, byName.get(g.name)]);
+  const baseline = plan.use.map((g) => ({ name: g.name, code: g.code }));
 
-  console.log(c.dim(`  ${P.method(hot.length, entries.length, usableGates)}\n`));
+  console.log(c.dim(`  ${P.method(hot.length, entries.length, plan.use.length)}\n`));
+  if (plan.tooSlow.length) {
+    console.log(c.dim(`  ${P.tooSlow(plan.tooSlow.map((g) => `${g.name} (${Math.round(g.ms / 1000)}s)`))}\n`));
+  }
 
   let blind = 0, caughtN = 0, unknownN = 0, unprobedN = 0;
   for (const { path: rel, fixes } of hot) {
@@ -266,10 +321,14 @@ async function cmdProbe(args, { auto = false } = {}) {
       probed++;
       const restore = await plant(sandbox, rel, sample);
       let after;
-      try { after = runGates(gates, sandbox); } finally { await restore(); }
-      const r = probeVerdictPaired(before, after);
+      try { after = runGates(probeGates, sandbox, { stopOnRed: true }); } finally { await restore(); }
+      // Ранний выход обрывает список: гейты, до которых не дошли, считаются такими же, как на
+      // сухом прогоне. Иначе их отсутствие прочиталось бы как сбой запуска.
+      const seen = new Set(after.map((a) => a.name));
+      const full = after.concat(baseline.filter((b) => !seen.has(b.name)));
+      const r = probeVerdictPaired(baseline, full);
       const verdict = r.verdict;
-      const caught = after.filter((a) => a.code === 1 && before.find((b) => b.name === a.name)?.code === 0)
+      const caught = full.filter((a) => a.code === 1 && baseline.find((b) => b.name === a.name)?.code === 0)
         .map((a) => a.name);
       if (verdict === "caught") {
         caughtN++;
@@ -317,4 +376,4 @@ async function probeStatus() {
   return probeState(await readMark(), commitCount(), every);
 }
 
-export { cmdProbe, probeStatus, probeableGates, gatesState, isCode };
+export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, isCode };
