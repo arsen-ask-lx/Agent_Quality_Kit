@@ -174,9 +174,12 @@ function blindAdvice(entry, facts, hot = {}) {
   // `langs` приходит МНОЖЕСТВОМ, а не массивом — `Array.isArray` тихо давал пустой список, и
   // совет не печатался вовсе. Поймано на живом `requests`: langs = Set(1) { python }.
   const langs = facts?.langs ? [...facts.langs] : [];
+  // Тот же порядок, что у `pickRecipe`: свой язык → безъязыковой родной → ничего. Переносимый
+  // (`any`) сюда не идёт никогда: он зовёт файл из комплекта, и человеку без комплекта вставить
+  // его некуда.
   let cmd = null;
-  for (const lang of langs) {
-    const r = recipes[lang];
+  for (const key of [...langs, "native"]) {
+    const r = recipes[key];
     if (!r || /\{gate\}/.test(r)) continue;
     cmd = String(r).replace(/\{dir\}/g, ".").trim();
     break;

@@ -405,3 +405,12 @@ test("совет: пустая запись не роняет разбор", () 
   assert.equal(blindAdvice({}, { langs: new Set() }, {}).command, null);
   assert.equal(blindAdvice({}, {}, {}).command, null);
 });
+
+// Безъязыковой родной рецепт годится в совет так же, как языковой: секреты ищутся в любом
+// файле, и именно они чаще всего оказывались в непокрытых на чужих проектах.
+test("совет: безъязыковой родной рецепт тоже даёт команду", () => {
+  const entry = { slug: "secrets-not-in-code",
+    recipes: { native: "gitleaks dir --no-banner {dir}", any: "bash {gate}/check.sh {dir}" } };
+  const a = blindAdvice(entry, { langs: new Set(["python"]) }, { file: "a.py", fixes: 9 });
+  assert.equal(a.command, "gitleaks dir --no-banner .");
+});
