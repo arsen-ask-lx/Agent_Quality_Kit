@@ -12,7 +12,7 @@ trigger:
 # Отличить их от отладки можно только разбором кода, а не поиском по тексту, — и это
 # ровно то, что уже делают ruff и eslint.
 recipes:
-  python: ruff check --select T20 {dir}
+  python: ruff check -q --output-format=concise --select T20 {dir}
   typescript: eslint --rule '{"no-console":"error"}' {dir}
   javascript: eslint --rule '{"no-console":"error"}' {dir}
 
