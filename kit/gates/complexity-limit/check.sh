@@ -36,8 +36,19 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
         # Разметка вложена по природе: пять уровней тегов — это не сложная логика, а обычная
         # вёрстка. Меряя её тем же пределом, гейт краснеет на нормальном коде и его выключают.
         function limit() { return (wf ~ /\.(jsx|tsx|vue|svelte)$/) ? MAX + 3 : MAX }
-        function flush() { if (worst > limit()) print wf ":" wl ": вложенность " worst ", предел " limit() }
-        FNR == 1 { flush(); worst = 0; wl = 0; wf = FILENAME }
+        # Шаг отступа берётся ИЗ ФАЙЛА, а не считается равным четырём. Пока он был прибит к
+        # четырём, проверка видела ВДВОЕ МЕНЬШУЮ вложенность в javascript и typescript, где
+        # общепринятый отступ — два пробела: шесть уровней давали «три» и проходили предел
+        # молча. Замечено 2026-09-10, когда в каталог впервые добавили образец на .js: go и
+        # python отступают на четыре, и на них дефекта не видно в принципе.
+        # Минимум зажат снизу двойкой: файл с одиночным пробелом в продолжении строки иначе
+        # вчетверо завысил бы вложенность и дал ложную тревогу.
+        function unit() { return (step >= 2 && step <= 8) ? step : 4 }
+        function flush() {
+          if (wf != "" && int(worstN / unit()) > limit())
+            print wf ":" wl ": вложенность " int(worstN / unit()) ", предел " limit()
+        }
+        FNR == 1 { flush(); worstN = 0; wl = 0; step = 0; wf = FILENAME }
         /^[[:space:]]*$/ { next }
         {
           # ширина отступа: табуляция считается за четыре пробела. Отступ берётся ОДНИМ
@@ -45,8 +56,8 @@ find "$DIR" $(skip_find "$DIR") $TESTS -type f \
           # символ отступа и стоил больше, чем весь остальной разбор. Замер 2026-09-08 на uv.
           match($0, /^[ \t]*/); ind = substr($0, 1, RLENGTH)
           n = gsub(/\t/, "", ind) * 4 + length(ind)
-          depth = int(n / 4)
-          if (depth > worst) { worst = depth; wl = FNR }
+          if (n > 0 && (step == 0 || n < step)) step = n
+          if (n > worstN) { worstN = n; wl = FNR }
         }
         END { flush() }
       ' > /tmp/.cplx.$$ 2>/dev/null

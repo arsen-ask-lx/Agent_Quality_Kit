@@ -271,6 +271,8 @@ export const enGates = {
     noSandbox: "could not build a sandbox: `git archive HEAD` failed. The probe needs a copy of the tracked files to plant a sample into — it never touches the working tree.",
     noBaseline: (red, broke) =>
       `nothing to judge by: on a CLEAN checkout ${red.length ? `these gates are ALREADY red (${red.join(", ")})` : ""}${red.length && broke.length ? " and " : ""}${broke.length ? `these failed to run (${broke.join(", ")})` : ""}. A gate that is red before the sample is planted says nothing about the sample. Get the pipeline green first, then repeat.`,
+    tooSlow: (names) => `not probed with (too slow to run on every planting): ${names.join(", ")}. If a class below is caught by nobody, one of these may still catch it — run them by hand.`,
+    allSlow: (names) => `every gate that is green on a clean checkout is too slow to probe with: ${names.join(", ")}. Probing would re-run them for every planting. Declare a fast gate, or run these by hand.`,
     noGit: "not a git repository — there is no fix history to read",
     noFixes: "no fix commits found: the subject starts with fix / bugfix / hotfix",
     summaryBlind: (n) =>
