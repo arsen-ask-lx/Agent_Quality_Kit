@@ -21,7 +21,7 @@ import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo.mjs";
 import { changedCode, coverage, evidenceHash, readForHash } from "../lib/evidence.mjs";
-import { runGates, declaredGates, sinceRef } from "./doctor.mjs";
+import { runGates, declaredGates, sinceRef } from "../lib/run.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Каким рецептом стоит гейт: родным инструментом или переносимой проверкой. Именно это
