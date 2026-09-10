@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { CWD, SELF, REPO_URL, c, exists, die } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { runGates, declaredGates } from "./doctor.mjs";
+import { runGates, declaredGates } from "../lib/run.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Один разбор на запись и на чтение: значок, который мы печатаем, обязан читаться нами же.
