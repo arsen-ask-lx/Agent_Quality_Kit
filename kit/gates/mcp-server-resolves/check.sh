@@ -24,6 +24,13 @@ if [ ! -f "$SKIP_LIB" ]; then
   exit 2
 fi
 . "$SKIP_LIB"
+# Файл на месте — этого мало: подмена содержимого давала код 0. Метка стоит в КОНЦЕ _skip.sh,
+# поэтому проверка ловит и обрыв файла на середине.
+if [ "${AQK_SKIP_READY:-}" != 1 ]; then
+  echo "_skip.sh есть, но обход не собрался — проверка НЕ СОСТОЯЛАСЬ, а не прошла"
+  echo "  почини: замени kit/gates/_skip.sh целым файлом из каталога"
+  exit 2
+fi
 
 OUT=""
 for F in "$DIR/.mcp.json" "$DIR/.cursor/mcp.json" "$DIR/.vscode/mcp.json" "$DIR/.claude/mcp.json"; do
