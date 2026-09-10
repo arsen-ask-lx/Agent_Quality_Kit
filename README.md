@@ -14,6 +14,10 @@ Your `AGENTS.md` says what the project promises. Nothing checks that those promi
 that the commands it lists even run. AQK is that missing layer: one command reads the repository,
 reports a level from AQK-0 to AQK-3, and names every guard that is missing.
 
+And one step further than the tools next door: `probe` plants a known defect into a copy of your
+project and checks whether your **declared** guards actually go red. "Tests exist" and "tests
+catch" are different claims — readiness scores measure the first one.
+
 ```bash
 npx agent-quality-kit doctor    # code already exists: your level and what to install
 npx agent-quality-kit start     # no code yet: day-zero guards, right away

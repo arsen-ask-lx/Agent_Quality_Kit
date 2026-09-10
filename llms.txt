@@ -3,7 +3,9 @@
 > A standard and a CLI that check whether a repository is ready to have its code written by AI
 > coding agents. Every rule the project promises to follow becomes a command with an exit code,
 > so a machine holds the promise instead of somebody's attention. Reports a level from AQK-0 to
-> AQK-3, computed by a run — never by a questionnaire and never by a model's opinion.
+> AQK-3, computed by a run — never by a questionnaire and never by a model's opinion. One step
+> further than readiness scores: `probe` plants a known defect into a copy of the project and
+> checks whether the DECLARED guards go red. "Tests exist" and "tests catch" are different claims.
 
 Vendor-neutral: works with any coding agent (Claude Code, Codex, Cursor, Gemini CLI, GitHub
 Copilot, Windsurf, Aider, OpenCode) and with no AI at all. It calls no vendor API and needs no
