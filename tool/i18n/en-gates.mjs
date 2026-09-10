@@ -275,8 +275,10 @@ export const enGates = {
     allSlow: (names) => `every gate that is green on a clean checkout is too slow to probe with: ${names.join(", ")}. Probing would re-run them for every planting. Declare a fast gate, or run these by hand.`,
     noGit: "not a git repository — there is no fix history to read",
     noFixes: "no fix commits found: the subject starts with fix / bugfix / hotfix",
-    summaryBlind: (n) =>
-      `classes left uncovered: ${n}. This is not a judgement of the code: these are the places ` +
+    summaryBlind: (n, probes) =>
+      `classes caught by nobody: ${n}` +
+      (probes ? ` (over ${probes} plantings — one class repeated across several hot files is still ONE class)` : "") +
+      `. This is not a judgement of the code: these are the places ` +
       `people come back to with a fix, and defects none of your checks would see there.`,
     summaryClean: "in the places probed, every applicable class is caught by something.",
     summaryPartial: (caught, unknown, unprobed) =>

@@ -25,7 +25,7 @@ import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile, symlink } f
 import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
-import { fixHotspots, probeSummary, probeVerdictPaired } from "../lib/history.mjs";
+import { fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
@@ -309,7 +309,10 @@ async function cmdProbe(args, { auto = false } = {}) {
     console.log(c.dim(`  ${P.tooSlow(plan.tooSlow.map((g) => `${g.name} (${Math.round(g.ms / 1000)}s)`))}\n`));
   }
 
-  let blind = 0, caughtN = 0, unknownN = 0, unprobedN = 0;
+  // Записи проб: по ним считаются КЛАССЫ, а не события. Счётчики на месте были
+  // событиями и втрое завышали итог — см. countProbe.
+  const records = [];
+  let unprobedN = 0;
   for (const { path: rel, fixes } of hot) {
     console.log(`  ${c.bold(rel)}  ${c.dim(P.fixes(fixes))}`);
     const ext = extname(rel).toLowerCase();
@@ -330,27 +333,29 @@ async function cmdProbe(args, { auto = false } = {}) {
       const verdict = r.verdict;
       const caught = full.filter((a) => a.code === 1 && baseline.find((b) => b.name === a.name)?.code === 0)
         .map((a) => a.name);
+      records.push({ entry: e.slug, file: rel, verdict });
       if (verdict === "caught") {
-        caughtN++;
         console.log(`    ${c.green("✔")}  ${e.intent.padEnd(48)} ${c.dim(P.caught(caught.join(", ")))}`);
       } else if (verdict === "blind") {
-        blind++;
         console.log(`    ${c.red("✘")}  ${e.intent.padEnd(48)} ${c.red(P.blind)}`);
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
-        unknownN++;
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);
       }
     }
     if (!probed) { unprobedN++; console.log(c.dim(`    ${P.noSampleFor(ext || "—")}`)); }
   }
 
-  const state = probeSummary({ caught: caughtN, blind, unknown: unknownN, unprobed: unprobedN });
+  const n = countProbe(records);
+  const blind = n.blindClasses;
+  const state = probeSummary({
+    caught: n.caughtClasses, blind, unknown: n.unknownClasses, unprobed: unprobedN,
+  });
   const say = {
-    blind: () => c.yellow(P.summaryBlind(blind)),
-    partial: () => c.yellow(P.summaryPartial(caughtN, unknownN, unprobedN)),
+    blind: () => c.yellow(P.summaryBlind(blind, n.probes)),
+    partial: () => c.yellow(P.summaryPartial(n.caughtClasses, n.unknownClasses, unprobedN)),
     clean: () => c.green(P.summaryClean),
-    "nothing-ran": () => c.yellow(P.summaryNothingRan(unknownN)),
+    "nothing-ran": () => c.yellow(P.summaryNothingRan(n.unknownClasses)),
     "nothing-probed": () => c.yellow(P.summaryNothingProbed(unprobedN)),
   };
   console.log(`\n  ${say[state]()}\n`);

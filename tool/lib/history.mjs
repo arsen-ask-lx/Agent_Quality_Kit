@@ -126,4 +126,28 @@ function probeVerdictPaired(before, after) {
   return { verdict, usable, alreadyRed, failed, caught };
 }
 
-export { isFix, fixHotspots, probeSummary, probeVerdictPaired };
+// Счёт непокрытого КЛАССАМИ, а не пробами. Замер на десяти живых репозиториях 2026-09-10:
+// у requests, click, flask и httpx проба сказала «непокрытых классов: 18», а различных классов
+// там ШЕСТЬ — повторены по трём горячим файлам. Втрое завышенное число, и завышали его мы сами
+// тем самым приёмом, который ловим у других: считали события, а называли их сущностями.
+//
+// Число проб остаётся отдельно: «шесть классов на трёх файлах» и «шесть на одном» — разные
+// факты. Класс, слепой ХОТЬ ГДЕ-ТО, считается непокрытым: «где-то ловится» не защищает то
+// место, где не ловится.
+function countProbe(records) {
+  const bins = { blind: new Set(), caught: new Set(), unknown: new Set() };
+  let probes = 0;
+  for (const { entry, verdict } of records) {
+    if (!bins[verdict]) continue;
+    bins[verdict].add(entry);
+    probes++;
+  }
+  return {
+    blindClasses: bins.blind.size,
+    caughtClasses: bins.caught.size,
+    unknownClasses: bins.unknown.size,
+    probes,
+  };
+}
+
+export { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe };

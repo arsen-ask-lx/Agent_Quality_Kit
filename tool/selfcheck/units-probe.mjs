@@ -2,7 +2,7 @@
 // «функция работает» от «функция написана».
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isFix, fixHotspots, probeSummary, probeVerdictPaired } from "../lib/history.mjs";
+import { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
 import { probeableGates, gatesState, extAlternatives, planProbeGates, isCode } from "../commands/probe.mjs";
 
 // Признак починки берётся из ТЕМЫ коммита, а не из тела: тема — единственное, что пишут все,
@@ -304,4 +304,57 @@ test("план пробы: все годные медленные — пробо
   const plan = planProbeGates([{ name: "smoke", code: 0, ms: 58000 }], { slowMs: 20000 });
   assert.deepEqual(plan.use, []);
   assert.deepEqual(plan.tooSlow.map((g) => g.name), ["smoke"]);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Счёт непокрытого: КЛАССЫ, а не проба×файл. Написано ДО кода 2026-09-10.
+//
+// ЗАЧЕМ. Замер на десяти живых репозиториях: у requests, click, flask и httpx проба сказала
+// «непокрытых классов: 18». Различных классов там ШЕСТЬ — они просто повторены по трём горячим
+// файлам. Втрое завышенное число, и завышаем его мы сами, ровно тем приёмом, который ловим у
+// других: считаем события, а называем их сущностями.
+//
+// Списки у всех четырёх проектов совпали побайтово — то есть ответ говорит не про репозиторий,
+// а про связку `ruff + pytest`. Это законный ответ («ваш инструментарий не покрывает вот эти
+// шесть классов»), но продавать его как восемнадцать находок ИМЕННО У ВАС нельзя.
+//
+// Число проб остаётся видно отдельно: «шесть классов на трёх файлах» и «шесть классов на
+// одном» — разные факты, и сливать их тоже нельзя.
+test("счёт непокрытого: шесть классов на трёх файлах — это шесть, а не восемнадцать", () => {
+  const recs = [];
+  for (const f of ["a.py", "b.py", "c.py"]) {
+    for (const e of ["secrets", "dead-code", "print", "swallowed", "todo", "suppress"]) {
+      recs.push({ entry: e, file: f, verdict: "blind" });
+    }
+  }
+  const r = countProbe(recs);
+  assert.equal(r.blindClasses, 6);
+  assert.equal(r.probes, 18);
+});
+
+// Класс, слепой ХОТЬ ГДЕ-ТО, — дыра. Пойманный в одном файле и слепой в другом остаётся дырой:
+// «где-то ловится» не защищает то место, где не ловится.
+test("счёт непокрытого: слепой хоть где-то считается непокрытым", () => {
+  const r = countProbe([
+    { entry: "secrets", file: "a.py", verdict: "caught" },
+    { entry: "secrets", file: "b.py", verdict: "blind" },
+    { entry: "todo", file: "a.py", verdict: "caught" },
+  ]);
+  assert.equal(r.blindClasses, 1);
+  assert.equal(r.caughtClasses, 2);
+});
+
+test("счёт непокрытого: исходы разложены по своим корзинам", () => {
+  const r = countProbe([
+    { entry: "a", file: "f", verdict: "caught" },
+    { entry: "b", file: "f", verdict: "unknown" },
+    { entry: "c", file: "f", verdict: "blind" },
+  ]);
+  assert.deepEqual(
+    { b: r.blindClasses, c: r.caughtClasses, u: r.unknownClasses, p: r.probes },
+    { b: 1, c: 1, u: 1, p: 3 });
+});
+
+test("счёт непокрытого: пусто не роняет", () => {
+  assert.deepEqual(countProbe([]), { blindClasses: 0, caughtClasses: 0, unknownClasses: 0, probes: 0 });
 });
