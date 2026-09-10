@@ -11,6 +11,11 @@ trigger:
 # печать в примерах документации, в тестах, в бенчмарках и в выводе командной строки.
 # Отличить их от отладки можно только разбором кода, а не поиском по тексту, — и это
 # ровно то, что уже делают ruff и eslint.
+# Домашние страницы готовых инструментов, которые зовут рецепты ниже. Адреса сверены
+# по реестру github 2026-09-10, а не написаны по памяти: три выдуманных адреса чужих
+# репозиториев — записанная шишка комплекта.
+tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint
+
 recipes:
   python: ruff check -q --output-format=concise --select T20 {dir}
   typescript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-console":"error"}' {dir}

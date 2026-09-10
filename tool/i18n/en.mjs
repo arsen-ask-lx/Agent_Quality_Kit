@@ -106,6 +106,8 @@ export const en = {
     totalCovered: (n) => `held by another arbiter ${n}`,
     startWith: "Start with these three — born from a real failure, and each closes with one ready command:",
     startCmd: (cmd) => `one line, no kit needed:  ${cmd}`,
+    startTool: (url) => `the tool: ${url}`,
+    startHook: "Running these by hand is a one-off. To have them run before every push: pre-commit (repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit, hooks aqk / aqk-doctor), or a plain .git/hooks/pre-push.",
     haveAlready: (n) => `Checks you ALREADY have (${n}) — found in your own files, not invented:`,
     haveAlreadyHow: (line) => `declare them and a machine holds them, not your attention. In .aqk.yml, under gates:  ${line}`,
     total: "Total:",

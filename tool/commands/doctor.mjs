@@ -147,8 +147,12 @@ async function reportCatalog(man, facts) {
       const adv = blindAdvice(rec, facts, {});
       console.log(`  ${c.yellow("→")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
       if (adv.command) console.log(c.dim(`     ${L.doctor.startCmd(adv.command)}`));
-      if (rec.tool) console.log(c.dim(`     ${rec.tool}`));
+      if (rec.tool) console.log(c.dim(`     ${L.doctor.startTool(rec.tool)}`));
     }
+    // Одна проверка руками — это разовый героизм. Сказать про хук здесь, а не в конце: человек
+    // читает первые строки и закрывает, а именно сейчас у него в руках список того, что стоит
+    // повесить перед пушем.
+    console.log(c.dim(`\n     ${L.doctor.startHook}`));
   }
 
   console.log(

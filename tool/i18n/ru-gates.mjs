@@ -270,6 +270,7 @@ export const ruGates = {
     blindWhere: (file, fixes) => `где: ${file} — починок в истории: ${fixes}`,
     blindWhat: "что подсадили в ваш файл:",
     blindFix: (cmd) => `поймать прямо сейчас, без комплекта:  ${cmd}`,
+    blindTool: (url) => `инструмент: ${url}`,
     install: (cmd) => `закрыть: ${cmd}`,
     noSampleFor: (ext) => `в каталоге нет красного образца под «${ext}» — проверить нечем`,
     noGates: (cmd) => `гейтов не объявлено — пробовать нечем. Сначала: ${cmd}`,

@@ -408,6 +408,7 @@ async function cmdProbe(args, { auto = false } = {}) {
           for (const l of lines) console.log(c.dim(`           ${l}`));
         }
         if (adv.command) console.log(`         ${c.yellow(P.blindFix(adv.command))}`);
+        if (e.tool) console.log(c.dim(`         ${P.blindTool(e.tool)}`));
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);

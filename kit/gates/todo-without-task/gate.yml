@@ -4,6 +4,11 @@ intent_en: "fix later" markers are absent from finished code — a filed task re
 trigger:
   always: true
 
+# Домашние страницы готовых инструментов, которые зовут рецепты ниже. Адреса сверены
+# по реестру github 2026-09-10, а не написаны по памяти: три выдуманных адреса чужих
+# репозиториев — записанная шишка комплекта.
+tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint
+
 recipes:
   any: bash {gate}/check.sh {dir}
   # Готовое правило точнее самописного и не требует поддержки.

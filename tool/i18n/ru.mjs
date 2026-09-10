@@ -107,6 +107,8 @@ export const ru = {
     totalCovered: (n) => `закрыто другим арбитром ${n}`,
     startWith: "Начните с этих трёх — они родились из настоящего отказа и закрываются одной готовой командой:",
     startCmd: (cmd) => `одной строкой, без комплекта:  ${cmd}`,
+    startTool: (url) => `инструмент: ${url}`,
+    startHook: "Прогнать руками — разовый героизм. Чтобы это случалось перед каждым пушем: pre-commit (репозиторий https://github.com/arsen-ask-lx/Agent_Quality_Kit, хуки aqk / aqk-doctor) либо обычный .git/hooks/pre-push.",
     haveAlready: (n) => `Проверки, которые у вас УЖЕ ЕСТЬ (${n}) — прочитаны в ваших файлах, не выдуманы:`,
     haveAlreadyHow: (line) => `объявите их — и держать будет машина, а не ваше внимание. В .aqk.yml, в gates:  ${line}`,
     total: "Итого:",

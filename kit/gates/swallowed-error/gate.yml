@@ -7,6 +7,11 @@ intent_en: an error is not silently swallowed — it is handled and logged, or r
 trigger:
   langs: python, javascript, typescript, go
 
+# Домашние страницы готовых инструментов, которые зовут рецепты ниже. Адреса сверены
+# по реестру github 2026-09-10, а не написаны по памяти: три выдуманных адреса чужих
+# репозиториев — записанная шишка комплекта.
+tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint · https://github.com/kisielk/errcheck
+
 recipes:
   # BLE — ловля голого исключения, TRY400 — запись без трейса, SIM105 — перехват ради тишины.
   python: ruff check -q --output-format=concise --select BLE,TRY400,SIM105 {dir}
