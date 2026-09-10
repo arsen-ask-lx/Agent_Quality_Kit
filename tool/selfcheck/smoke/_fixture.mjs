@@ -23,9 +23,19 @@ const CLI = join(ROOT, "tool", "program.mjs");
 // а ради того, чтобы висящий процесс называл себя, а не съедал бюджет задания молча.
 const TIMEOUT_MS = 30000;
 
+// Настоящий дом СНИМАЕТСЯ ОДИН РАЗ, до всякой подмены: из него берётся PYTHONUSERBASE.
+const REAL_HOME = process.env.HOME || process.env.USERPROFILE || "";
+
 function env(home, dir) {
   return {
     ...process.env,
+    // PYTHONUSERBASE — ИЗ-ЗА подмены HOME и до неё. Инструменты, поставленные `pip --user`
+    // (`vulture`, `pylint`), это python-скрипты, которые ищут свои модули в
+    // $HOME/.local/lib. С песочницей вместо HOME импорт падает, инструмент выходит ненулевым,
+    // и обёртка родного рецепта читает это как НАХОДКУ. То есть проверка краснела не на
+    // дефекте, а на собственной оснастке. Тот же довод дословно записан в шапке `smoke.sh`;
+    // здесь он был потерян при переезде на встроенный раннер.
+    PYTHONUSERBASE: process.env.PYTHONUSERBASE || `${REAL_HOME}/.local`,
     HOME: home,
     USERPROFILE: home,
     TMPDIR: join(home, "tmp"),

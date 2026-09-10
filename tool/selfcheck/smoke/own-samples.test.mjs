@@ -17,18 +17,49 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { project, run, aqk } from "./_fixture.mjs";
 
-// Записи с родным рецептом на ruff. Проект наполняется python-кодом, чтобы `aqk add` выбрал
-// именно его: смысл проверки — в РОДНОМ рецепте, переносимый эту дыру никогда не имел.
-const RUFF_ENTRIES = ["todo-without-task", "no-print-in-prod", "swallowed-error", "complexity-limit"];
+// Записи с РОДНЫМ рецептом. Дыра была не в ruff: она в том, что общий обход построчный, а вывод
+// инструмента — нет. Значит проверять надо не один инструмент, а каждый, который каталог зовёт.
+//
+// Таблица, а не список из четырёх имён: рецепт добавляют в каталог, и покрытие обязано
+// появляться вместе с ним, а не через месяц. Каждая строка — чем наполнить проект, чтобы
+// `aqk add` выбрал ИМЕННО этот рецепт, и какой командой её видно.
+//
+// Инструмента нет на машине — проверка ПРОПУСКАЕТСЯ вслух, а не зеленеет: «нечем проверить
+// здесь» и «проверено» разные факты, и весь комплект написан про эту разницу.
+const NATIVE = [
+  { entry: "todo-without-task", tool: "ruff", files: { "src/app.py": "def add(a, b):\n    return a + b\n" } },
+  { entry: "no-print-in-prod", tool: "ruff", files: { "src/app.py": "def add(a, b):\n    return a + b\n" } },
+  { entry: "swallowed-error", tool: "ruff", files: { "src/app.py": "def add(a, b):\n    return a + b\n" } },
+  { entry: "complexity-limit", tool: "ruff", files: { "src/app.py": "def add(a, b):\n    return a + b\n" } },
+  { entry: "dead-code", tool: "vulture", files: { "src/app.py": "def add(a, b):\n    return a + b\n\n\nprint(add(1, 2))\n" } },
+  { entry: "duplicate-code", tool: "pylint", files: { "src/app.py": "def add(a, b):\n    return a + b\n" } },
+  // javascript/typescript: eslint зовут четыре записи. Проект наполняется .js, чтобы `add`
+  // выбрал именно родной рецепт, а не переносимый.
+  { entry: "todo-without-task", tool: "eslint", files: { "src/app.js": "export const add = (a, b) => a + b;\n" } },
+  { entry: "no-print-in-prod", tool: "eslint", files: { "src/app.js": "export const add = (a, b) => a + b;\n" } },
+  { entry: "swallowed-error", tool: "eslint", files: { "src/app.js": "export const add = (a, b) => a + b;\n" } },
+  { entry: "complexity-limit", tool: "eslint", files: { "src/app.js": "export const add = (a, b) => a + b;\n" } },
+];
 
-const have = (cmd) => run({ dir: process.cwd(), home: process.cwd() }, cmd, ["--version"]).code === 0;
+const RUFF_ENTRIES = NATIVE.filter((n) => n.tool === "ruff").map((n) => n.entry);
+
+// Наличие инструмента спрашивается в НАСТОЯЩЕЙ среде, а не в песочнице проекта. Песочница
+// подменяет HOME, а инструменты, поставленные `pip --user` (vulture, pylint), — это python-
+// скрипты, которые ищут свои модули в $HOME/.local/lib. С чужим HOME импорт падает, и
+// установленный инструмент объявлялся отсутствующим: проверка молча пропускалась вместо того,
+// чтобы что-то проверить. Та же шишка записана в шапке `smoke.sh` про PYTHONUSERBASE.
+const have = (cmd) => spawnSync(cmd, ["--version"], { encoding: "utf8", timeout: 30000 }).status === 0;
 
 function declaredCommand(p, name) {
   const man = readFileSync(join(p.dir, ".aqk.yml"), "utf8");
-  const m = man.match(new RegExp(`^\\s*${name}:\\s*"([^"]+)"`, "m"));
+  // Жадно и до КОНЦА СТРОКИ: команда рецепта сама содержит кавычки (`eslint --rule '{"x":1}'`),
+  // и нежадный разбор обрывал её на первой внутренней — тест падал на своей же выборке, а
+  // винил рецепт.
+  const m = man.match(new RegExp(`^\\s*${name}:\\s*"(.*)"\\s*$`, "m"));
   return m ? m[1] : null;
 }
 
@@ -77,5 +108,24 @@ for (const [name, file, code] of [
       `гейт промолчал о настоящей находке — значит его заглушили целиком.\nкоманда: ${cmd}\nвывод:\n${r.out}`);
     assert.ok(r.out.includes(file.split("/").pop()),
       `гейт покраснел, но не назвал файл ${file}. Вывод:\n${r.out}`);
+  });
+}
+
+// Общая проверка по ТАБЛИЦЕ: любой родной рецепт, чей инструмент здесь есть, обязан молчать на
+// проекте, где единственные «нарушения» — образцы, которые положил `add`.
+for (const { entry, tool, files } of NATIVE) {
+  test(`«${entry}» (${tool}): родной рецепт молчит о наших образцах`, (t) => {
+    if (!have(tool)) return t.skip(`${tool} не установлен — проверить нечем, и это НЕ «проверено»`);
+    const p = project(t, files);
+    assert.equal(aqk(p, "init").code, 0);
+    const add = aqk(p, "add", entry);
+    if (add.code !== 0) return t.skip(`запись не ставится здесь: ${add.out.trim().split("\n")[0]}`);
+    const cmd = declaredCommand(p, entry);
+    assert.ok(cmd, `в манифесте нет команды для «${entry}»`);
+    if (!cmd.includes(tool)) return t.skip(`выбран не ${tool}, а «${cmd}» — эта проверка про родной рецепт`);
+    const r = run(p, "bash", ["-c", cmd]);
+    assert.equal(r.code, 0,
+      `гейт покраснел на проекте без единой находки пользователя — значит выдал наши образцы ` +
+      `за его код.\nкоманда: ${cmd}\nвывод:\n${r.out}`);
   });
 }
