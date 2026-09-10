@@ -24,7 +24,8 @@ npx agent-quality-kit start     # no code yet: day-zero guards, right away
 ```
 
 `doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
-you have decided nothing about yet. Nothing to install: `npx` fetches the package (230 KB).
+you have decided nothing about yet. Nothing to install: `npx` fetches the package (574.1 kB, measured 2026-09-10 — nothing guards this number, so check it
+when it matters).
 
 The one exception, named here because it is the only one: with `--brief` (how the hooks run it)
 `doctor` asks the npm registry for its own latest version — **at most once a day, never in CI**,
