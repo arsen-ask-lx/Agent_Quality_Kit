@@ -9,7 +9,7 @@ trigger:
 
 recipes:
   # BLE — ловля голого исключения, TRY400 — запись без трейса, SIM105 — перехват ради тишины.
-  python: ruff check --select BLE,TRY400,SIM105 {dir}
+  python: ruff check -q --output-format=concise --select BLE,TRY400,SIM105 {dir}
   typescript: eslint --rule '{"no-empty":["error",{"allowEmptyCatch":false}]}' {dir}
   javascript: eslint --rule '{"no-empty":["error",{"allowEmptyCatch":false}]}' {dir}
   # errcheck — канонический инструмент Go под этот же предмет: ошибка присвоена и не проверена.
