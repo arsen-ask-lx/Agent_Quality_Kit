@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
-import { probeableGates, gatesState, extAlternatives, planProbeGates, isCode } from "../commands/probe.mjs";
+import { probeableGates, gatesState, extAlternatives, planProbeGates, blindAdvice, isCode } from "../commands/probe.mjs";
 
 // Признак починки берётся из ТЕМЫ коммита, а не из тела: тема — единственное, что пишут все,
 // и единственное, что видно в `git log --oneline`. Три написания, потому что репозитории
@@ -357,4 +357,60 @@ test("счёт непокрытого: исходы разложены по св
 
 test("счёт непокрытого: пусто не роняет", () => {
   assert.deepEqual(countProbe([]), { blindClasses: 0, caughtClasses: 0, unknownClasses: 0, probes: 0 });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Непокрытый класс объясняется, а не называется. Написано ДО кода 2026-09-10.
+//
+// ЗАЧЕМ. Проба находит настоящие дыры — и печатает про них «close it: aqk add <имя>», то есть
+// «поставь нашу штуку». Человек, который видит комплект впервые, закрывает окно.
+//
+// А готовая однострочная команда под его стек У НАС УЖЕ ЛЕЖИТ, в `recipes` записи каталога. Мы
+// её просто не показываем. Замер руками на `requests` (самый скачиваемый python-пакет): в
+// `src/requests/utils.py` — 75 коммитов-починок; дописана функция с `except Exception: pass`;
+// их собственные `ruff` и `pytest` дали 0 и на чистой копии, и на подсаженной. Строка, которая
+// бы это поймала, — `ruff check --select BLE,TRY400,SIM105 .` — лежала в нашем каталоге всё это
+// время.
+//
+// Польза обязана быть видна ДО установки комплекта: скопировал строку, увидел находки у себя —
+// и только тогда думаешь, ставить ли нас. Отчёт, который учит, а не отчитывается.
+test("совет по непокрытому классу даёт команду под стек, а не «поставь нас»", () => {
+  const entry = {
+    slug: "swallowed-error",
+    recipes: {
+      any: "bash {gate}/check.sh {dir}",
+      python: "ruff check --select BLE,TRY400,SIM105 {dir}",
+    },
+  };
+  const a = blindAdvice(entry, { langs: new Set(["python"]) }, { file: "src/requests/utils.py", fixes: 75 });
+  assert.equal(a.command, "ruff check --select BLE,TRY400,SIM105 .",
+    "команда обязана быть готовой к вставке: {dir} подставлен, {gate} не годится");
+  assert.equal(a.file, "src/requests/utils.py");
+  assert.equal(a.fixes, 75);
+});
+
+// Переносимый рецепт зовёт наш файл — вставить его человеку, у которого комплекта нет, нельзя.
+// Тогда команды нет, и совет остаётся один: поставить запись.
+test("совет: переносимый рецепт вставить некуда — команда не выдумывается", () => {
+  const entry = { slug: "x", recipes: { any: "bash {gate}/check.sh {dir}" } };
+  assert.equal(blindAdvice(entry, { langs: new Set(["python"]) }, { file: "a.py", fixes: 1 }).command, null);
+});
+
+test("совет: у стека нет своего рецепта — команды нет", () => {
+  const entry = { slug: "x", recipes: { python: "ruff check {dir}" } };
+  assert.equal(blindAdvice(entry, { langs: new Set(["go"]) }, { file: "a.go", fixes: 2 }).command, null);
+});
+
+test("совет: пустая запись не роняет разбор", () => {
+  assert.equal(blindAdvice({}, { langs: new Set() }, {}).command, null);
+  assert.equal(blindAdvice({}, {}, {}).command, null);
+});
+
+// Безъязыковой родной рецепт годится в совет так же, как языковой: секреты ищутся в любом
+// файле, и именно они чаще всего оказывались в непокрытых на чужих проектах.
+test("совет: безъязыковой родной рецепт тоже даёт команду", () => {
+  const entry = { slug: "secrets-not-in-code",
+    recipes: { native: "gitleaks dir --no-banner {dir}", any: "bash {gate}/check.sh {dir}" } };
+  const a = blindAdvice(entry, { langs: new Set(["python"]) }, { file: "a.py", fixes: 9 });
+  assert.equal(a.command, "gitleaks dir --no-banner .");
 });

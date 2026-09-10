@@ -22,6 +22,7 @@
 // не порог. Порог — у `doctor --run --min`.
 import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile, symlink } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
@@ -135,6 +136,55 @@ const EXT_FAMILIES = [[".js", ".mjs", ".cjs"], [".ts", ".mts", ".cts"]];
 function extAlternatives(ext) {
   const fam = EXT_FAMILIES.find((f) => f.includes(ext));
   return fam ? [ext, ...fam.filter((e) => e !== ext)] : [ext];
+}
+
+// Показать САМ ОБРАЗЕЦ, а не пересказ. «Класс не прикрыт» остаётся словами, пока человек не
+// увидел, что именно мы подсадили в его файл.
+//
+// Первая версия печатала одну «показательную» строку — и угадывала плохо: у мёртвого кода дефект
+// во ВТОРОЙ функции, у отладочной печати во второй строке тела. Угадывать не надо: образцы
+// каталога маленькие по норме, и четырёх строк хватает, чтобы стало видно. Комментарии
+// выброшены: в наших образцах они объясняют замысел коллеге, а не показывают дефект.
+function sampleLines(path, max = 4) {
+  let text = "";
+  try { text = readFileSync(path, "utf8"); } catch { return []; }
+  return text.split("\n")
+    .map((l) => l.replace(/\s+$/, ""))
+    .filter((l) => l.trim() && !/^\s*(#|\/\/|\/\*|\*|--|<!--)/.test(l))
+    .slice(0, max)
+    .map((l) => l.slice(0, 88));
+}
+
+// Совет по НЕПОКРЫТОМУ классу: команда, которую можно вставить прямо сейчас.
+//
+// Проба находит настоящие дыры и печатала про них «close it: aqk add <имя>» — то есть «поставь
+// нашу штуку». Человек, впервые увидевший комплект, закрывает окно. А готовая однострочная
+// команда под его стек У НАС УЖЕ ЛЕЖИТ в `recipes` записи каталога; мы её не показывали.
+//
+// Замер руками на `requests` (самый скачиваемый python-пакет) 2026-09-10: в
+// `src/requests/utils.py` — 75 коммитов-починок; дописана функция с `except Exception: pass`;
+// их собственные `ruff` и `pytest` дали 0 и на чистой копии, и на подсаженной. Строка, которая
+// поймала бы это, лежала в нашем каталоге всё это время.
+//
+// Переносимый рецепт (`any`) в совет НЕ идёт: он зовёт файл из комплекта, и человеку без
+// комплекта вставить его некуда. Нет родного рецепта под стек — команды нет, и это честнее
+// выдуманной.
+function blindAdvice(entry, facts, hot = {}) {
+  const recipes = entry?.recipes && typeof entry.recipes === "object" ? entry.recipes : {};
+  // `langs` приходит МНОЖЕСТВОМ, а не массивом — `Array.isArray` тихо давал пустой список, и
+  // совет не печатался вовсе. Поймано на живом `requests`: langs = Set(1) { python }.
+  const langs = facts?.langs ? [...facts.langs] : [];
+  // Тот же порядок, что у `pickRecipe`: свой язык → безъязыковой родной → ничего. Переносимый
+  // (`any`) сюда не идёт никогда: он зовёт файл из комплекта, и человеку без комплекта вставить
+  // его некуда.
+  let cmd = null;
+  for (const key of [...langs, "native"]) {
+    const r = recipes[key];
+    if (!r || /\{gate\}/.test(r)) continue;
+    cmd = String(r).replace(/\{dir\}/g, ".").trim();
+    break;
+  }
+  return { command: cmd, file: hot.file ?? null, fixes: hot.fixes ?? null, slug: entry?.slug ?? null };
 }
 
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
@@ -338,6 +388,18 @@ async function cmdProbe(args, { auto = false } = {}) {
         console.log(`    ${c.green("✔")}  ${e.intent.padEnd(48)} ${c.dim(P.caught(caught.join(", ")))}`);
       } else if (verdict === "blind") {
         console.log(`    ${c.red("✘")}  ${e.intent.padEnd(48)} ${c.red(P.blind)}`);
+        // Объяснить, а не назвать. Три строки, каждая отвечает на свой вопрос человека:
+        // «почему именно здесь», «что вы вообще подсадили» и «что мне сделать ПРЯМО СЕЙЧАС».
+        // Последняя обязана работать БЕЗ комплекта: польза до установки — единственный
+        // способ заслужить установку.
+        const adv = blindAdvice(e, facts, { file: rel, fixes });
+        console.log(c.dim(`         ${P.blindWhere(rel, fixes)}`));
+        const lines = sampleLines(sample);
+        if (lines.length) {
+          console.log(c.dim(`         ${P.blindWhat}`));
+          for (const l of lines) console.log(c.dim(`           ${l}`));
+        }
+        if (adv.command) console.log(`         ${c.yellow(P.blindFix(adv.command))}`);
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);
@@ -381,4 +443,4 @@ async function probeStatus() {
   return probeState(await readMark(), commitCount(), every);
 }
 
-export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, isCode };
+export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, blindAdvice, isCode };

@@ -12,7 +12,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
-import { triggerVerdict, recipeFor, stems, overlap, EXT_LANG, whichSync, browserServerAdvice, MARKS } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, pickRecipe, stems, overlap, EXT_LANG, whichSync, browserServerAdvice, MARKS } from "../lib/repo.mjs";
 import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
@@ -398,3 +398,36 @@ test("наборы файлов правил совпадают на обоих 
 
 
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Рецепт, не привязанный к языку. Написано ДО кода 2026-09-10.
+//
+// ЗАЧЕМ. Ключи рецептов — языки: `python`, `javascript`, `go`. Это верно для линтеров, но
+// неверно для инструментов, которым язык безразличен. `secrets-not-in-code` объявлен
+// `always: true`, готовый аналог у него — `gitleaks`, и он ищет ключи в любом файле.
+//
+// Без такого ключа выбор один из двух, и оба плохие: продублировать `gitleaks` под восемь
+// языков (тот самый повтор, против которого у нас есть гейт) или оставить запись без родного
+// рецепта. Второе и было: замер на десяти проектах показал секреты в НЕПОКРЫТЫХ у axios и у
+// всех четырёх python-проектов — то есть там, где польза наибольшая, команды для вставки не
+// было.
+//
+// Порядок предпочтения: свой язык → безъязыковой родной → переносимый. Родной сильнее
+// переносимого (у `gitleaks` сотни форматов токенов и чтение истории), но только если его есть
+// чем выполнить: непоставленная программа даёт «not found», а это отсутствие сигнала, выданное
+// за успех.
+test("рецепт: безъязыковой родной берётся, когда своего языка нет", () => {
+  const rec = { recipes: { native: "true --scan", any: "bash {gate}/check.sh {dir}" } };
+  assert.equal(pickRecipe(rec, { langs: new Set(["python"]) }), "true --scan");
+});
+
+test("рецепт: свой язык сильнее безъязыкового", () => {
+  const rec = { recipes: { python: "true --py", native: "true --scan", any: "bash x {dir}" } };
+  assert.equal(pickRecipe(rec, { langs: new Set(["python"]) }), "true --py");
+});
+
+// Программы нет — родной не берётся ни в каком виде, иначе гейт встанет с «not found».
+test("рецепт: безъязыковой без программы уступает переносимому", () => {
+  const rec = { recipes: { native: "aqk-nesuschestvuyuschiy --scan", any: "bash {gate}/check.sh {dir}" } };
+  assert.equal(pickRecipe(rec, { langs: new Set(["python"]) }), "bash {gate}/check.sh {dir}");
+});
