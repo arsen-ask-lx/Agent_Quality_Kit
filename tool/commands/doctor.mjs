@@ -11,6 +11,7 @@ import { proveGates } from "../lib/prove.mjs";
 import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
+import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
@@ -328,6 +329,21 @@ async function cmdDoctor() {
   const agents = join(CWD, entryFile);
   if (await exists(agents)) {
     const text = await readFile(agents, "utf8");
+
+    // Сколько обещаний НЕ сторожит машина. Считалось и печаталось это давно — но только в
+    // блоке `context`, который читает АГЕНТ. Человеку, который и назначен сторожем, `doctor`
+    // не говорил ни слова: единственный, кто обязан помнить о непроверяемом обещании, был
+    // единственным, кому о нём не сообщали.
+    //
+    // Найдено не нами: отчёт живого проекта 2026-09-10 — «всё, что касается масштаба, помечено
+    // aqk: человек. AQK отработал честно: потребовал назвать сторожа, мы назвали — и сторож не
+    // проверил». В нашем собственном своде так помечены 12 правил из 14.
+    const arb = countArbiters(text, ["человек", "human", "nobody"]);
+    if (arb.total && arb.human) {
+      console.log(`\n  ${c.yellow("!")}  ${L.doctor.rulesByHuman(arb.total, arb.machine, arb.human)}`);
+      console.log(c.dim(`     ${L.doctor.rulesByHumanWhy}`));
+    }
+
     const emptyCommands = (text.match(/^- [^:]+: ``$/gm) || []).length;
     if (emptyCommands) {
       console.log(

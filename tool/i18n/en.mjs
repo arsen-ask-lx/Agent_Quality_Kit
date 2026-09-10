@@ -65,6 +65,9 @@ export const en = {
     gitignore: "repository hygiene",
     git: "project under version control",
 
+    rulesByHuman: (total, machine, human) =>
+      `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
+    rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent.",
     emptyCommands: (n) => `AGENTS.md has ${n} unfilled commands.`,
     emptyCommandsWhy: "An agent cannot execute an empty line.",
 
