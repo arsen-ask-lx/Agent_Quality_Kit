@@ -267,12 +267,19 @@ export const enGates = {
     install: (cmd) => `close it: ${cmd}`,
     noSampleFor: (ext) => `the catalogue has no red sample for "${ext}" — nothing to check with`,
     noGates: (cmd) => `no gates declared — nothing to probe with. First: ${cmd}`,
+    unprobeable: (n) => `${n} gate(s) declared, none of them can be probed: the probe plants a red sample into a directory the gate scans, and none of these commands names one. A probeable gate ends with the directory it checks, e.g. "eslint ." or "bash checks/x.sh .".`,
     noGit: "not a git repository — there is no fix history to read",
     noFixes: "no fix commits found: the subject starts with fix / bugfix / hotfix",
     summaryBlind: (n) =>
       `classes left uncovered: ${n}. This is not a judgement of the code: these are the places ` +
       `people come back to with a fix, and defects none of your checks would see there.`,
     summaryClean: "in the places probed, every applicable class is caught by something.",
+    summaryPartial: (caught, unknown, unprobed) =>
+      `caught: ${caught}. Could NOT be checked: ${unknown} (the tool is missing, not the protection). Not probed at all: ${unprobed} file(s) — the catalogue has no red sample for their type. "Checked and clean", "not checked" and "not looked at" are three different facts and are not merged here.`,
+    summaryNothingRan: (n) =>
+      `NOTHING was checked: all ${n} probe(s) failed to run — the delegated tools are missing. This is not a clean result, it is the absence of a result. Install the tools, then repeat.`,
+    summaryNothingProbed: (unprobed) =>
+      `not a single probe was made${unprobed ? ` — ${unprobed} hot file(s) have no red sample for their type in the catalogue` : ""}. Nothing is known about coverage: this is the absence of a measurement, not a clean result.`,
   },
   prove: {
     title: "aqk prove — proving the gates",

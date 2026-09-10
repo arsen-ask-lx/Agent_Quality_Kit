@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
 import { commandFor } from "../lib/prove.mjs";
-import { fixHotspots, probeVerdict } from "../lib/history.mjs";
+import { fixHotspots, probeVerdict, probeSummary } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
@@ -109,6 +109,25 @@ function scanningGates(man) {
     .filter(([, cmd]) => cmd && /(\.|\.\/)$/.test(cmd));
 }
 
+// Отчего проба не состоялась — тремя состояниями, а не одним «гейтов нет».
+//
+// `scanningGates` берёт только гейты, которым есть куда подставить каталог; фильтр верен и
+// объяснён выше. Ответ при пустом отборе был неверен: он говорил «гейтов не объявлено» и
+// отправлял заводить то, что уже заведено. Разница не косметическая — `npm test`, `pytest -q`,
+// `cargo test` каталогом не кончаются никогда, то есть для настоящего чужого проекта проба
+// недостижима, и единственное сообщение об этом было неправдой о его манифесте.
+//
+// Та же мысль у `prove` сказана верно с самого начала: «некуда подставить каталог — команда
+// написана руками». Здесь она потерялась.
+function gatesState(man) {
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const declared = Object.values(gates).filter((raw) => String(raw || "").trim()).length;
+  const probeable = scanningGates(man).length;
+  if (!declared) return { state: "none", declared: 0, probeable: 0 };
+  if (!probeable) return { state: "unprobeable", declared, probeable: 0 };
+  return { state: "ok", declared, probeable };
+}
+
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
 // совпадать: питоновский образец в проекте на TypeScript не проверит ничего, а покажет
 // «не прикрыто» — ложная тревога того же класса, что молчащий гейт, только наоборот.
@@ -162,7 +181,9 @@ async function cmdProbe(args, { auto = false } = {}) {
 
   const man = await readManifest();
   const gates = scanningGates(man);
-  if (!gates.length) { console.log(c.yellow(`  ${P.noGates(`${SELF} add <имя>`)}\n`)); return; }
+  const gs = gatesState(man);
+  if (gs.state === "none") { console.log(c.yellow(`  ${P.noGates(`${SELF} add <имя>`)}\n`)); return; }
+  if (gs.state === "unprobeable") { console.log(c.yellow(`  ${P.unprobeable(gs.declared)}\n`)); return; }
 
   const raw = gitLog(2000);
   if (raw === null) { console.log(c.yellow(`  ${P.noGit}\n`)); return; }
@@ -177,7 +198,7 @@ async function cmdProbe(args, { auto = false } = {}) {
 
   console.log(c.dim(`  ${P.method(hot.length, entries.length)}\n`));
 
-  let blind = 0;
+  let blind = 0, caughtN = 0, unknownN = 0, unprobedN = 0;
   for (const { path: rel, fixes } of hot) {
     console.log(`  ${c.bold(rel)}  ${c.dim(P.fixes(fixes))}`);
     const ext = extname(rel).toLowerCase();
@@ -193,19 +214,29 @@ async function cmdProbe(args, { auto = false } = {}) {
       const verdict = probeVerdict(results);
       const caught = results.filter((r) => r.code === 1).map((r) => r.name);
       if (verdict === "caught") {
+        caughtN++;
         console.log(`    ${c.green("✔")}  ${e.intent.padEnd(48)} ${c.dim(P.caught(caught.join(", ")))}`);
       } else if (verdict === "blind") {
         blind++;
         console.log(`    ${c.red("✘")}  ${e.intent.padEnd(48)} ${c.red(P.blind)}`);
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
+        unknownN++;
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);
       }
     }
-    if (!probed) console.log(c.dim(`    ${P.noSampleFor(ext || "—")}`));
+    if (!probed) { unprobedN++; console.log(c.dim(`    ${P.noSampleFor(ext || "—")}`)); }
   }
 
-  console.log(blind ? c.yellow(`\n  ${P.summaryBlind(blind)}\n`) : c.green(`\n  ${P.summaryClean}\n`));
+  const state = probeSummary({ caught: caughtN, blind, unknown: unknownN, unprobed: unprobedN });
+  const say = {
+    blind: () => c.yellow(P.summaryBlind(blind)),
+    partial: () => c.yellow(P.summaryPartial(caughtN, unknownN, unprobedN)),
+    clean: () => c.green(P.summaryClean),
+    "nothing-ran": () => c.yellow(P.summaryNothingRan(unknownN)),
+    "nothing-probed": () => c.yellow(P.summaryNothingProbed(unprobedN)),
+  };
+  console.log(`\n  ${say[state]()}\n`);
 
   // Отметка нужна не для отчёта, а для КАДЕНЦИИ: по ней следующий прогон поймёт, что пора.
   // Без неё команда снова становится тем, о чём надо вспомнить.
@@ -225,4 +256,4 @@ async function probeStatus() {
   return probeState(await readMark(), commitCount(), every);
 }
 
-export { cmdProbe, probeStatus, scanningGates, isCode };
+export { cmdProbe, probeStatus, scanningGates, gatesState, isCode };

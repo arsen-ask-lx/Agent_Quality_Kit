@@ -2,8 +2,8 @@
 // «функция работает» от «функция написана».
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isFix, fixHotspots, probeVerdict } from "../lib/history.mjs";
-import { scanningGates, isCode } from "../commands/probe.mjs";
+import { isFix, fixHotspots, probeVerdict, probeSummary } from "../lib/history.mjs";
+import { scanningGates, gatesState, isCode } from "../commands/probe.mjs";
 
 // Признак починки берётся из ТЕМЫ коммита, а не из тела: тема — единственное, что пишут все,
 // и единственное, что видно в `git log --oneline`. Три написания, потому что репозитории
@@ -97,4 +97,78 @@ test("горячим считается код, но не документ и н
   assert.equal(isCode("tool/lib/core.mjs"), true);
   assert.equal(isCode("README.md"), false);
   assert.equal(isCode("gates/secrets-not-in-code/red/a.py"), false);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Итог пробы. Написано ДО кода 2026-09-10, после замера на чужеподобном проекте.
+//
+// ЗАЧЕМ. Итог считался одним числом: `blind ? «есть дыры» : «поймано всё»`. Исходов у
+// пробы три (`probeVerdict`: caught · blind · unknown), а ветки две — и `unknown`
+// молча падал в «поймано всё». Замер: проба, где ЕДИНСТВЕННАЯ запись вернула
+// «нечем проверить — инструмент не установлен», напечатала «в пробованных местах
+// каждый применимый класс кем-то ловится». Ошибка запуска выдана за чистоту — ровно
+// тот класс, ради которого написан весь стандарт, в нашей же главной команде.
+test("итог пробы: ничего не запустилось — это НЕ чистота", () => {
+  assert.equal(probeSummary({ caught: 0, blind: 0, unknown: 4 }), "nothing-ran");
+});
+
+test("итог пробы: поймано и при этом что-то не проверили — это НЕ чистота", () => {
+  assert.equal(probeSummary({ caught: 3, blind: 0, unknown: 2 }), "partial");
+});
+
+// Исходы перечислены исчерпывающе: у каждого сочетания есть имя, и ни одно не
+// сваливается в соседнее по умолчанию.
+test("итог пробы: остальные сочетания названы каждое своим именем", () => {
+  assert.equal(probeSummary({ caught: 3, blind: 0, unknown: 0 }), "clean");
+  assert.equal(probeSummary({ caught: 0, blind: 2, unknown: 0 }), "blind");
+  assert.equal(probeSummary({ caught: 3, blind: 2, unknown: 1 }), "blind");
+  assert.equal(probeSummary({ caught: 0, blind: 0, unknown: 0 }), "nothing-probed");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Отчего проба не состоялась. Написано ДО кода 2026-09-10.
+//
+// ЗАЧЕМ. `scanningGates` намеренно берёт только гейты, чья команда кончается каталогом:
+// подставить образец больше некуда. Фильтр верен, сломан ОТВЕТ. При двух объявленных
+// гейтах проба говорила «гейтов не объявлено — нечем пробовать, сначала: aqk add» и
+// отправляла человека заводить то, что у него уже есть.
+//
+// Цена не косметическая: `npm test`, `pytest -q`, `cargo test` каталогом не кончаются
+// НИКОГДА. Для настоящего чужого проекта проба недостижима, и единственное, что об этом
+// сообщалось, — неправда о его манифесте. У `prove` эта мысль сказана верно
+// («некуда подставить каталог — команда написана руками»), у `probe` потерялась.
+test("гейты есть, но подставлять некуда — это НЕ «гейтов нет»", () => {
+  const man = { gates: { test: "npm test", lint: "npm run lint" } };
+  assert.deepEqual(gatesState(man), { state: "unprobeable", declared: 2, probeable: 0 });
+});
+
+test("гейтов нет вовсе — и это другое состояние", () => {
+  assert.deepEqual(gatesState({ gates: {} }), { state: "none", declared: 0, probeable: 0 });
+  assert.deepEqual(gatesState(null), { state: "none", declared: 0, probeable: 0 });
+});
+
+// Пустая команда не считается объявленным гейтом: объявление без команды ничего не
+// защищает, и его же отклоняет `gates-are-runnable`.
+test("пустая команда гейтом не считается", () => {
+  assert.deepEqual(gatesState({ gates: { a: "", b: "  " } }), { state: "none", declared: 0, probeable: 0 });
+});
+
+test("есть пригодный гейт — проба состоится, и непригодные посчитаны", () => {
+  const man = { gates: { scan: "bash gates/x/check.sh .", test: "npm test" } };
+  assert.deepEqual(gatesState(man), { state: "ok", declared: 2, probeable: 1 });
+});
+
+// Файлы, которым проба НЕ ДЕЛАЛАСЬ ВОВСЕ, тоже обязаны попадать в итог. Написано ДО кода
+// 2026-09-10, после прогона на самом комплекте: из пяти горячих файлов два (`.mjs`) не
+// пробовались никак — красного образца такого расширения в каталоге нет ни одного, — а итог
+// сказал «каждый применимый класс кем-то ловится». Оговорка «в пробованных местах» верна
+// буквально и обманывает по смыслу: она молча сужает утверждение до мест, где проба удалась,
+// и никогда не говорит, сколько мест пропущено. Ровно та тишина, которая читается как чисто.
+test("итог пробы: непробованные файлы не дают права говорить «чисто»", () => {
+  assert.equal(probeSummary({ caught: 3, blind: 0, unknown: 0, unprobed: 2 }), "partial");
+  assert.equal(probeSummary({ caught: 0, blind: 0, unknown: 0, unprobed: 2 }), "nothing-probed");
+});
+
+test("итог пробы: «чисто» — только когда пропущенных нет", () => {
+  assert.equal(probeSummary({ caught: 3, blind: 0, unknown: 0, unprobed: 0 }), "clean");
 });
