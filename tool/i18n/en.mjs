@@ -104,6 +104,8 @@ export const en = {
       `claim unverified: "${e}" is declared held by gate "${g}", but neither its command nor the\n  linter config names rules ${codes} — the entry may be held by nothing`,
     coversUnprovenHow: (cmd) => `settle it: add those rules to the linter, or install the entry — ${cmd}`,
     totalCovered: (n) => `held by another arbiter ${n}`,
+    startWith: "Start with these three — born from a real failure, and each closes with one ready command:",
+    startCmd: (cmd) => `one line, no kit needed:  ${cmd}`,
     haveAlready: (n) => `Checks you ALREADY have (${n}) — found in your own files, not invented:`,
     haveAlreadyHow: (line) => `declare them and a machine holds them, not your attention. In .aqk.yml, under gates:  ${line}`,
     total: "Total:",

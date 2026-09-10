@@ -414,3 +414,21 @@ test("совет: безъязыковой родной рецепт тоже д
   const a = blindAdvice(entry, { langs: new Set(["python"]) }, { file: "a.py", fixes: 9 });
   assert.equal(a.command, "gitleaks dir --no-banner .");
 });
+
+// Из совета вычищается то, что относится к НАМ, а не к его проекту. Исключение наших красных
+// образцов (`gates/*/red`) нужно установленному гейту — рядом с ним лежат образцы. Человеку,
+// который команду только копирует, эти флаги бессмысленны и подрывают доверие: он видит, что
+// инструмент говорит про какие-то чужие каталоги, которых у него нет.
+test("совет: исключения наших образцов в команду не попадают", () => {
+  const entry = { slug: "no-print-in-prod", recipes: { javascript:
+    "eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{\"no-console\":\"error\"}' {dir}" } };
+  const a = blindAdvice(entry, { langs: new Set(["javascript"]) }, {});
+  assert.ok(!a.command.includes("gates/"), `в совете остались наши каталоги: ${a.command}`);
+  assert.ok(a.command.includes("no-console"), "правило потерялось вместе с исключениями");
+  assert.ok(a.command.startsWith("eslint "), a.command);
+});
+
+test("совет: команда без наших исключений не портится", () => {
+  const entry = { slug: "x", recipes: { python: "ruff check --select T20 {dir}" } };
+  assert.equal(blindAdvice(entry, { langs: new Set(["python"]) }, {}).command, "ruff check --select T20 .");
+});

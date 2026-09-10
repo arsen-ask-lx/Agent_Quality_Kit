@@ -8,7 +8,7 @@
 //   node --test tool/selfcheck/units-repo.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec , proposeGates } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec , proposeGates, startWith } from "../lib/repo.mjs";
 import { CATALOGS, L } from "../i18n/index.mjs";
 import { dirname } from "node:path";
 
@@ -211,4 +211,43 @@ test("чужие проверки: нечего предложить — пус�
 test("чужие проверки: у каждого предложения назван источник", () => {
   const got = proposeGates({ "package.json": JSON.stringify({ scripts: { test: "jest" } }) });
   assert.equal(got[0].source, "package.json");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// С чего начать: три записи вместо двадцати равнозначных крестов. Написано ДО кода.
+//
+// ЗАЧЕМ. После установки человек видит двадцать крестов одинаковой формы и не знает, за что
+// взяться. Двадцать одинаковых требований — это ноль требований: закрывают первое попавшееся
+// или не закрывают ничего.
+//
+// Порядок НЕ ПО НАШЕМУ ВКУСУ. Два признака, оба — факты, которые у нас уже есть:
+//   · запись родилась из настоящего отказа (`proof` ссылается на журнал шишек — тот же
+//     признак, которым каталог отделяет условную запись) — она про боль, которая случалась, а не про «хорошую практику»;
+//   · её можно закрыть ОДНОЙ ГОТОВОЙ КОМАНДОЙ — значит цена входа минутная.
+// Сначала то, что и больно, и дёшево.
+test("с чего начать: сперва рождённые из отказа и закрываемые одной командой", () => {
+  const list = [
+    { slug: "praktika", proof: "хорошая практика", recipes: { any: "bash {gate}/c.sh {dir}" } },
+    { slug: "bol-i-deshevo", proof: "incidents/README.md, 2026-09-01", recipes: { native: "gitleaks dir {dir}" } },
+    { slug: "bol-no-dorogo", proof: "incidents/README.md, 2026-08-02", recipes: { any: "bash {gate}/c.sh {dir}" } },
+    { slug: "deshevo", proof: "методичка", recipes: { python: "ruff check {dir}" } },
+  ];
+  assert.deepEqual(startWith(list, { langs: new Set(["python"]) }, 3).map((e) => e.slug),
+    ["bol-i-deshevo", "deshevo", "bol-no-dorogo"]);
+});
+
+test("с чего начать: список короче трёх не ломается", () => {
+  assert.deepEqual(startWith([], { langs: new Set() }, 3), []);
+  const one = [{ slug: "a", proof: "incidents/README.md", recipes: {} }];
+  assert.deepEqual(startWith(one, { langs: new Set() }, 3).map((e) => e.slug), ["a"]);
+});
+
+// Порядок обязан быть УСТОЙЧИВЫМ: одинаковый ввод — одинаковый ответ, иначе человек видит
+// разный совет на двух прогонах подряд и перестаёт верить обоим.
+test("с чего начать: при равенстве признаков порядок стабилен", () => {
+  const list = [
+    { slug: "b", proof: "incidents/README.md", recipes: {} },
+    { slug: "a", proof: "incidents/README.md", recipes: {} },
+  ];
+  assert.deepEqual(startWith(list, { langs: new Set() }, 2).map((e) => e.slug), ["a", "b"]);
 });

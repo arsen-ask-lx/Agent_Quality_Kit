@@ -5,10 +5,10 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
 import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
-import { cmdProbe, probeStatus } from "./probe.mjs";
+import { cmdProbe, probeStatus, blindAdvice } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, proposeGates } from "../lib/repo.mjs";
+import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, proposeGates, startWith } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
@@ -134,6 +134,20 @@ async function reportCatalog(man, facts) {
         console.log(`  ${c.green("✔")}  ${g.name.padEnd(12)} ${c.dim(`${g.cmd}   ← ${g.source}`)}`);
       }
       console.log(c.dim(`     ${L.doctor.haveAlreadyHow(found.map((g) => `${g.name}: "${g.cmd}"`).join("  "))}`));
+    }
+  }
+
+  // С ЧЕГО НАЧАТЬ. Двадцать одинаковых крестов — это ноль требований: закрывают первое
+  // попавшееся или не закрывают ничего. Порядок не по нашему вкусу: сперва то, что родилось из
+  // настоящего отказа И закрывается одной готовой командой.
+  if (todo.length > 3) {
+    const first = startWith(todo, facts, 3);
+    console.log(`\n  ${c.bold(L.doctor.startWith)}`);
+    for (const rec of first) {
+      const adv = blindAdvice(rec, facts, {});
+      console.log(`  ${c.yellow("→")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
+      if (adv.command) console.log(c.dim(`     ${L.doctor.startCmd(adv.command)}`));
+      if (rec.tool) console.log(c.dim(`     ${rec.tool}`));
     }
   }
 
