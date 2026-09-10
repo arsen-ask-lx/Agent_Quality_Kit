@@ -8,7 +8,7 @@ import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../li
 import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice } from "../lib/repo.mjs";
+import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, proposeGates } from "../lib/repo.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
@@ -117,6 +117,26 @@ async function reportCatalog(man, facts) {
     console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
     for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
   }
+  // ЧТО У ВАС УЖЕ ЕСТЬ — до итога и до списка крестов. Комплект, поставленный в проект с
+  // eslint, mocha и конвейером, показывал двадцать крестов и «держит машина 0»: мы считали
+  // только СВОИ записи, а чужие проверки не читали вовсе. С точки зрения владельца это
+  // неправда, и первое, что он видел, было обвинением. Предлагаем, а не вписываем: гейт в
+  // чужом манифесте без спроса — наше решение в чужом файле.
+  if (!declaredGates(man).length) {
+    const files = {};
+    for (const n of ["package.json", "Makefile"]) {
+      try { files[n] = await readFile(join(CWD, n), "utf8"); } catch { /* нет — и ладно */ }
+    }
+    const found = proposeGates(files);
+    if (found.length) {
+      console.log(`\n  ${c.bold(L.doctor.haveAlready(found.length))}`);
+      for (const g of found) {
+        console.log(`  ${c.green("✔")}  ${g.name.padEnd(12)} ${c.dim(`${g.cmd}   ← ${g.source}`)}`);
+      }
+      console.log(c.dim(`     ${L.doctor.haveAlreadyHow(found.map((g) => `${g.name}: "${g.cmd}"`).join("  "))}`));
+    }
+  }
+
   console.log(
     `\n  ${c.bold(L.doctor.total)} ${L.doctor.totalHeld(held.length)}, ${L.doctor.totalTodo(c.yellow(todo.length))}, ` +
       (byOther.length ? `${L.doctor.totalCovered(byOther.length)}, ` : "") +
