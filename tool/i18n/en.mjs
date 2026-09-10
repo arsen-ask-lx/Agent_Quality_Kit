@@ -67,7 +67,7 @@ export const en = {
 
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
-    rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent.",
+    rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the ENTRY POINT only: a promise kept in any other file is checked by nothing at all, and this kit will not tell you it exists.",
     emptyCommands: (n) => `AGENTS.md has ${n} unfilled commands.`,
     emptyCommandsWhy: "An agent cannot execute an empty line.",
 
