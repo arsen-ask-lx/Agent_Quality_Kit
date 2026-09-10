@@ -21,12 +21,11 @@
 // удаляется. Не меняет манифест. Не роняет прогон: код возврата всегда 0 — это осмотр, а
 // не порог. Порог — у `doctor --run --min`.
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
-import { commandFor } from "../lib/prove.mjs";
-import { fixHotspots, probeVerdict, probeSummary } from "../lib/history.mjs";
+import { fixHotspots, probeSummary, probeVerdictPaired } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
@@ -99,33 +98,26 @@ async function writeMark(now, blind, lines) {
   await writeFile(MARK(), body + "\n", "utf8");
 }
 
-// Гейты, которым можно подставить каталог. Команда записи каталога кончается каталогом
-// проверки; написанная руками — чем угодно, и подставлять там некуда. Ровно то же правило,
-// по которому `prove` объявляет запись недоказуемой, а не сломанной.
-function scanningGates(man) {
+
+// Отчего проба не состоялась. Раньше здесь было три состояния: гейты, чья команда не кончается
+// каталогом, объявлялись непригодными — подставить образец было некуда. С песочницей подставлять
+// в команду больше не нужно: образец кладётся в КОПИЮ ПРОЕКТА, а гейт запускается в ней как есть.
+// Поэтому пригодна любая непустая команда, и состояний осталось два.
+function gatesState(man) {
+  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const declared = Object.entries(gates)
+    .map(([name, raw]) => [name, String(raw || "").trim()])
+    .filter(([, cmd]) => cmd);
+  if (!declared.length) return { state: "none", declared: 0, probeable: 0 };
+  return { state: "ok", declared: declared.length, probeable: declared.length };
+}
+
+// Гейты, пригодные для пробы: все объявленные с непустой командой.
+function probeableGates(man) {
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   return Object.entries(gates)
     .map(([name, raw]) => [name, String(raw || "").trim()])
-    .filter(([, cmd]) => cmd && /(\.|\.\/)$/.test(cmd));
-}
-
-// Отчего проба не состоялась — тремя состояниями, а не одним «гейтов нет».
-//
-// `scanningGates` берёт только гейты, которым есть куда подставить каталог; фильтр верен и
-// объяснён выше. Ответ при пустом отборе был неверен: он говорил «гейтов не объявлено» и
-// отправлял заводить то, что уже заведено. Разница не косметическая — `npm test`, `pytest -q`,
-// `cargo test` каталогом не кончаются никогда, то есть для настоящего чужого проекта проба
-// недостижима, и единственное сообщение об этом было неправдой о его манифесте.
-//
-// Та же мысль у `prove` сказана верно с самого начала: «некуда подставить каталог — команда
-// написана руками». Здесь она потерялась.
-function gatesState(man) {
-  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
-  const declared = Object.values(gates).filter((raw) => String(raw || "").trim()).length;
-  const probeable = scanningGates(man).length;
-  if (!declared) return { state: "none", declared: 0, probeable: 0 };
-  if (!probeable) return { state: "unprobeable", declared, probeable: 0 };
-  return { state: "ok", declared, probeable };
+    .filter(([, cmd]) => cmd);
 }
 
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
@@ -140,30 +132,75 @@ async function redSampleFor(entry, ext) {
   return hit ? join(dir, hit) : null;
 }
 
-// Проба: временный каталог, в нём образец по пути горячего файла. Путь сохраняется целиком —
-// правила, привязанные к путям (`.aqkignore`, исключения гейтов), обязаны действовать так же,
-// как в настоящем репозитории. Без этого проба отвечала бы про несуществующее место.
-async function buildProbe(relPath, sample) {
-  const root = await mkdtemp(join(tmpdir(), "aqk-probe-"));
-  const dest = join(root, relPath);
-  await mkdir(dirname(dest), { recursive: true });
-  await copyFile(sample, dest);
-  // Переносится ТОЛЬКО .aqkignore: правила, привязанные к путям, обязаны действовать так же,
-  // как в настоящем репозитории. Манифест НЕ переносится намеренно — иначе записи, читающие
-  // `.aqk.yml` (`gates-are-runnable`, `gate-has-samples`, `protection-not-removed`), краснеют
-  // на том, что в пробе нет объявленных ими файлов, и проба объявляет класс прикрытым, хотя
-  // на подсаженный брак не отреагировал никто. Ошибка в сторону «прикрыто» — это тишина,
-  // а тишина здесь и есть предмет спора. Поймано первым же прогоном на своём репозитории.
-  if (await exists(join(CWD, ".aqkignore"))) {
-    await copyFile(join(CWD, ".aqkignore"), join(root, ".aqkignore"));
+// Песочница: КОПИЯ ПРОЕКТА, в которую подсаживается образец. Раньше здесь был временный каталог
+// с одним файлом, а путь к нему подставлялся в команду гейта — отчего пробовать можно было
+// только команды, кончающиеся каталогом. Замер 2026-09-10 на семи чужих репозиториях: у шести
+// команды такие (`xo`, `eslint lib/**/*.js`, `mocha --require…`, `pytest`), и проба не
+// запускалась вовсе.
+//
+// Способ взят из мутационного тестирования, где та же задача решена двадцать лет назад: Stryker
+// копирует проект во временный каталог, СИМЛИНКУЕТ `node_modules` и гоняет там родную команду.
+// Копируются только ОТСЛЕЖИВАЕМЫЕ файлы (`git archive HEAD`) — рабочее дерево не трогается, а
+// мусор сборки не тащится; тяжёлые каталоги зависимостей симлинкуются, иначе `npm test` в
+// песочнице падал бы с «модуль не найден», и это читалось бы как сбой инструмента.
+const DEP_DIRS = ["node_modules", ".venv", "venv", "vendor", "target", ".tox", ".bundle"];
+
+async function buildSandbox() {
+  // Копируется РАБОЧЕЕ ДЕРЕВО, а не HEAD. Первая версия брала `git archive HEAD`, и это было
+  // неверно: комплект зовут из хука ДО коммита, и пользователь пробует то, что у него сейчас,
+  // а не то, что уже записано. На свежем `init` + `add` без коммита проба вообще ничего не
+  // видела — гейты в песочнице отсутствовали и «не запускались».
+  //
+  // Список — `git ls-files --cached --others --exclude-standard`: отслеживаемые плюс новые, но
+  // БЕЗ игнорируемых. Игнорируемое — это сборка и зависимости; первое пробе не нужно, второе
+  // приходит симлинком.
+  //
+  // Копирование средствами node, а не `tar`: у конвейера есть windows-задание, и полагаться на
+  // ключи GNU tar там нельзя.
+  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    cwd: CWD, encoding: "utf8", timeout: 60000, maxBuffer: 64 * 1024 * 1024,
+  });
+  if (r.status !== 0) return null;
+  const files = String(r.stdout || "").split("\0").filter(Boolean);
+  if (!files.length) return null;
+
+  const root = await mkdtemp(join(tmpdir(), "aqk-sandbox-"));
+  const made = new Set();
+  for (const rel of files) {
+    const dest = join(root, rel);
+    const dir = dirname(dest);
+    if (!made.has(dir)) { await mkdir(dir, { recursive: true }); made.add(dir); }
+    // Файл мог исчезнуть между списком и копией, а каталог — оказаться подмодулем.
+    try { await copyFile(join(CWD, rel), dest); } catch { /* пропускаем, не роняя пробу */ }
+  }
+  for (const dep of DEP_DIRS) {
+    const from = join(CWD, dep);
+    if (await exists(from)) { try { await symlink(from, join(root, dep), "junction"); } catch { /* уже есть */ } }
   }
   return root;
 }
 
-function runGates(gates, dir) {
+// Подсадка образца на место горячего файла и возврат как было. Файл СНАЧАЛА удаляется:
+// в песочнице он может быть жёсткой ссылкой, и запись поверх задела бы оригинал.
+async function plant(root, relPath, sample) {
+  const dest = join(root, relPath);
+  await mkdir(dirname(dest), { recursive: true });
+  let backup = null;
+  try { backup = await readFile(dest); } catch { /* файла может не быть */ }
+  await rm(dest, { force: true });
+  await copyFile(sample, dest);
+  return async () => {
+    await rm(dest, { force: true });
+    if (backup !== null) await writeFile(dest, backup);
+  };
+}
+
+// Гейт запускается В ПЕСОЧНИЦЕ и командой КАК ЕСТЬ — ничего в неё не подставляется. Именно это
+// и делает пробу независимой от формы команды.
+function runGates(gates, sandbox) {
   const out = [];
   for (const [name, cmd] of gates) {
-    const r = spawnSync(commandFor(cmd, dir), { shell: true, cwd: CWD, encoding: "utf8", timeout: 120000 });
+    const r = spawnSync(cmd, { shell: true, cwd: sandbox, encoding: "utf8", timeout: 120000 });
     out.push({ name, code: r.status === null ? 2 : r.status });
   }
   return out;
@@ -180,10 +217,9 @@ async function cmdProbe(args, { auto = false } = {}) {
   console.log(c.bold(`\n${P.title}\n`));
 
   const man = await readManifest();
-  const gates = scanningGates(man);
+  const gates = probeableGates(man);
   const gs = gatesState(man);
   if (gs.state === "none") { console.log(c.yellow(`  ${P.noGates(`${SELF} add <имя>`)}\n`)); return; }
-  if (gs.state === "unprobeable") { console.log(c.yellow(`  ${P.unprobeable(gs.declared)}\n`)); return; }
 
   const raw = gitLog(2000);
   if (raw === null) { console.log(c.yellow(`  ${P.noGit}\n`)); return; }
@@ -196,7 +232,27 @@ async function cmdProbe(args, { auto = false } = {}) {
   const catalog = await readCatalog();
   const entries = catalog.filter((e) => triggerVerdict(e, facts).applies);
 
-  console.log(c.dim(`  ${P.method(hot.length, entries.length)}\n`));
+  // ПЕСОЧНИЦА строится ОДИН раз на прогон, а не на каждую пробу: копия отслеживаемых файлов
+  // стоит доли секунды, но умножать её на файлы × записи незачем — между пробами меняется
+  // ровно один файл.
+  const sandbox = await buildSandbox();
+  if (!sandbox) { console.log(c.yellow(`  ${P.noSandbox}\n`)); return; }
+
+  try {
+  // СУХОЙ ПРОГОН по чистой песочнице. Без него «покраснел от подсадки» неотличимо от «был
+  // красным и до неё»: у чужого проекта гейты краснеют на своём накопленном долге, и
+  // засчитывать эту красноту за поимку значит выдавать чужой долг за свою заслугу.
+  // В мутационном тестировании этот прогон обязателен по той же причине.
+  const before = runGates(gates, sandbox);
+  const usableGates = before.filter((r) => r.code === 0).length;
+  if (!usableGates) {
+    const red = before.filter((r) => r.code === 1).map((r) => r.name);
+    const broke = before.filter((r) => r.code !== 0 && r.code !== 1).map((r) => r.name);
+    console.log(c.yellow(`  ${P.noBaseline(red, broke)}\n`));
+    return;
+  }
+
+  console.log(c.dim(`  ${P.method(hot.length, entries.length, usableGates)}\n`));
 
   let blind = 0, caughtN = 0, unknownN = 0, unprobedN = 0;
   for (const { path: rel, fixes } of hot) {
@@ -208,11 +264,13 @@ async function cmdProbe(args, { auto = false } = {}) {
       const sample = await redSampleFor(e.slug, ext);
       if (!sample) continue;
       probed++;
-      const dir = await buildProbe(rel, sample);
-      let results;
-      try { results = runGates(gates, dir); } finally { await rm(dir, { recursive: true, force: true }); }
-      const verdict = probeVerdict(results);
-      const caught = results.filter((r) => r.code === 1).map((r) => r.name);
+      const restore = await plant(sandbox, rel, sample);
+      let after;
+      try { after = runGates(gates, sandbox); } finally { await restore(); }
+      const r = probeVerdictPaired(before, after);
+      const verdict = r.verdict;
+      const caught = after.filter((a) => a.code === 1 && before.find((b) => b.name === a.name)?.code === 0)
+        .map((a) => a.name);
       if (verdict === "caught") {
         caughtN++;
         console.log(`    ${c.green("✔")}  ${e.intent.padEnd(48)} ${c.dim(P.caught(caught.join(", ")))}`);
@@ -241,6 +299,9 @@ async function cmdProbe(args, { auto = false } = {}) {
   // Отметка нужна не для отчёта, а для КАДЕНЦИИ: по ней следующий прогон поймёт, что пора.
   // Без неё команда снова становится тем, о чём надо вспомнить.
   await writeMark(commitCount(), blind, hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`));
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 }
 
 // Состояние пробы для тех, кто только ПОКАЗЫВАЕТ его: прогон и блок для агента.
@@ -256,4 +317,4 @@ async function probeStatus() {
   return probeState(await readMark(), commitCount(), every);
 }
 
-export { cmdProbe, probeStatus, scanningGates, gatesState, isCode };
+export { cmdProbe, probeStatus, probeableGates, gatesState, isCode };

@@ -256,9 +256,10 @@ export const enGates = {
     autoFirst: "no coverage probe has ever run here — running it myself. Turn off: AQK_PROBE=0",
     auto: (n) => `${n} commits since the last probe — running it myself. Turn off: AQK_PROBE=0`,
     title: "aqk probe — what the declared checks cannot see",
-    method: (files, entries) =>
-      `method: a red sample from a catalogue entry is planted into a copy of each file, ` +
-      `then the DECLARED gates are run against it. Files: ${files}, applicable entries: ${entries}. ` +
+    method: (files, entries, gates) =>
+      `method: a red sample from a catalogue entry is planted into a COPY of the project, then the ` +
+      `DECLARED gates are run there — the command is used as written, nothing is substituted into it. ` +
+      `Files: ${files}, applicable entries: ${entries}, gates green on a clean checkout: ${gates}. ` +
       `The working tree is not touched.`,
     fixes: (n) => `fixes in history: ${n}`,
     caught: (names) => `caught by: ${names}`,
@@ -267,7 +268,9 @@ export const enGates = {
     install: (cmd) => `close it: ${cmd}`,
     noSampleFor: (ext) => `the catalogue has no red sample for "${ext}" — nothing to check with`,
     noGates: (cmd) => `no gates declared — nothing to probe with. First: ${cmd}`,
-    unprobeable: (n) => `${n} gate(s) declared, none of them can be probed: the probe plants a red sample into a directory the gate scans, and none of these commands names one. A probeable gate ends with the directory it checks, e.g. "eslint ." or "bash checks/x.sh .".`,
+    noSandbox: "could not build a sandbox: `git archive HEAD` failed. The probe needs a copy of the tracked files to plant a sample into — it never touches the working tree.",
+    noBaseline: (red, broke) =>
+      `nothing to judge by: on a CLEAN checkout ${red.length ? `these gates are ALREADY red (${red.join(", ")})` : ""}${red.length && broke.length ? " and " : ""}${broke.length ? `these failed to run (${broke.join(", ")})` : ""}. A gate that is red before the sample is planted says nothing about the sample. Get the pipeline green first, then repeat.`,
     noGit: "not a git repository — there is no fix history to read",
     noFixes: "no fix commits found: the subject starts with fix / bugfix / hotfix",
     summaryBlind: (n) =>

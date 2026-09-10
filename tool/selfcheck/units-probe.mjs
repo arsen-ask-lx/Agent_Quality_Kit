@@ -2,8 +2,8 @@
 // «функция работает» от «функция написана».
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isFix, fixHotspots, probeVerdict, probeSummary } from "../lib/history.mjs";
-import { scanningGates, gatesState, isCode } from "../commands/probe.mjs";
+import { isFix, fixHotspots, probeSummary, probeVerdictPaired } from "../lib/history.mjs";
+import { probeableGates, gatesState, isCode } from "../commands/probe.mjs";
 
 // Признак починки берётся из ТЕМЫ коммита, а не из тела: тема — единственное, что пишут все,
 // и единственное, что видно в `git log --oneline`. Три написания, потому что репозитории
@@ -61,33 +61,25 @@ test("пустая история — пустой рейтинг, а не па�
   assert.deepEqual(fixHotspots("", { isCode: () => true }), []);
 });
 
-// Три состояния, и сливать их нельзя. «Не смогли проверить» — не «прикрыто»: ровно та
-// подмена, против которой написан весь комплект.
-test("вердикт пробы различает поймано, не поймано и нечем проверить", () => {
-  assert.equal(probeVerdict([{ code: 1 }, { code: 0 }]), "caught");
-  assert.equal(probeVerdict([{ code: 0 }, { code: 0 }]), "blind");
-  assert.equal(probeVerdict([{ code: 2 }, { code: 0 }]), "unknown");
-  // Поймавший гейт сильнее непроверенного: класс закрыт, даже если рядом чего-то не хватает.
-  assert.equal(probeVerdict([{ code: 2 }, { code: 1 }]), "caught");
-  assert.equal(probeVerdict([]), "unknown");
-});
 
-// Пробовать можно только те гейты, которым есть куда подставить каталог: рецепт каталога
-// кончается каталогом проверки, команда, написанная руками, — чем угодно. То же правило, по
-// которому `prove` объявляет запись недоказуемой, а не сломанной.
-test("пробуются только гейты, кончающиеся каталогом проверки", () => {
+// Пробуется ЛЮБАЯ непустая команда: образец подсаживается в копию проекта, а не в аргумент
+// команды, поэтому форма команды больше ничего не решает. До 2026-09-10 здесь стояло обратное
+// правило — «кончается каталогом», — и из-за него проба не запускалась у шести чужих
+// репозиториев из семи.
+test("пробуется любая непустая команда, форма больше не решает", () => {
   const man = { gates: {
-    ok: "bash gates/x/check.sh .",
-    slash: "bash gates/y/check.sh ./",
-    handmade: "eslint . --max-warnings 0",
+    dir: "bash gates/x/check.sh .",
+    npm: "npm test",
+    glob: "eslint lib/**/*.js",
     empty: "",
+    blank: "   ",
   } };
-  assert.deepEqual(scanningGates(man).map(([n]) => n), ["ok", "slash"]);
+  assert.deepEqual(probeableGates(man).map(([n]) => n), ["dir", "npm", "glob"]);
 });
 
 test("манифест без гейтов не роняет разбор", () => {
-  assert.deepEqual(scanningGates(null), []);
-  assert.deepEqual(scanningGates({ gates: [] }), []);
+  assert.deepEqual(probeableGates(null), []);
+  assert.deepEqual(probeableGates({ gates: [] }), []);
 });
 
 // Образцы каталога исключены по той же причине, по какой их исключает каждая сканирующая
@@ -133,14 +125,6 @@ test("итог пробы: остальные сочетания названы 
 // гейтах проба говорила «гейтов не объявлено — нечем пробовать, сначала: aqk add» и
 // отправляла человека заводить то, что у него уже есть.
 //
-// Цена не косметическая: `npm test`, `pytest -q`, `cargo test` каталогом не кончаются
-// НИКОГДА. Для настоящего чужого проекта проба недостижима, и единственное, что об этом
-// сообщалось, — неправда о его манифесте. У `prove` эта мысль сказана верно
-// («некуда подставить каталог — команда написана руками»), у `probe` потерялась.
-test("гейты есть, но подставлять некуда — это НЕ «гейтов нет»", () => {
-  const man = { gates: { test: "npm test", lint: "npm run lint" } };
-  assert.deepEqual(gatesState(man), { state: "unprobeable", declared: 2, probeable: 0 });
-});
 
 test("гейтов нет вовсе — и это другое состояние", () => {
   assert.deepEqual(gatesState({ gates: {} }), { state: "none", declared: 0, probeable: 0 });
@@ -153,9 +137,9 @@ test("пустая команда гейтом не считается", () => {
   assert.deepEqual(gatesState({ gates: { a: "", b: "  " } }), { state: "none", declared: 0, probeable: 0 });
 });
 
-test("есть пригодный гейт — проба состоится, и непригодные посчитаны", () => {
+test("объявленные гейты пригодны все — состояний осталось два", () => {
   const man = { gates: { scan: "bash gates/x/check.sh .", test: "npm test" } };
-  assert.deepEqual(gatesState(man), { state: "ok", declared: 2, probeable: 1 });
+  assert.deepEqual(gatesState(man), { state: "ok", declared: 2, probeable: 2 });
 });
 
 // Файлы, которым проба НЕ ДЕЛАЛАСЬ ВОВСЕ, тоже обязаны попадать в итог. Написано ДО кода
@@ -171,4 +155,71 @@ test("итог пробы: непробованные файлы не дают �
 
 test("итог пробы: «чисто» — только когда пропущенных нет", () => {
   assert.equal(probeSummary({ caught: 3, blind: 0, unknown: 0, unprobed: 0 }), "clean");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Парный вердикт пробы: гейт прогоняется ДВАЖДЫ — по чистой песочнице и по ней же с
+// подсаженным образцом. Написано ДО кода 2026-09-10.
+//
+// ЗАЧЕМ. Проба умела подставлять образец только гейтам, чья команда кончается каталогом.
+// Замер на семи склонированных чужих репозиториях: у шести из семи (chalk, execa, axios,
+// requests, click, dependency-cruiser) команды — `xo`, `eslint lib/**/*.js`, `mocha --require…`,
+// `pytest`, — и проба не запускалась вовсе. То есть на настоящих проектах она давала ноль
+// сведений.
+//
+// Способ взят не из головы: так работает мутационное тестирование двадцать лет. Stryker
+// копирует проект во временный каталог, симлинкует `node_modules` и гоняет там РОДНУЮ команду
+// тестов; PIT и mutmut делают то же. Прогон по чистой копии («dry run») там обязателен —
+// без него нельзя отличить «поймал подсадку» от «был красным и до неё».
+function pairs(before, after) {
+  return { before: before.map(([name, code]) => ({ name, code })),
+           after: after.map(([name, code]) => ({ name, code })) };
+}
+
+test("парный вердикт: был зелёным, с подсадкой покраснел — поймано", () => {
+  const { before, after } = pairs([["lint", 0], ["test", 0]], [["lint", 0], ["test", 1]]);
+  assert.equal(probeVerdictPaired(before, after).verdict, "caught");
+});
+
+test("парный вердикт: был зелёным и остался — не поймано никем", () => {
+  const { before, after } = pairs([["lint", 0], ["test", 0]], [["lint", 0], ["test", 0]]);
+  assert.equal(probeVerdictPaired(before, after).verdict, "blind");
+});
+
+// Гейт, красный ЕЩЁ ДО подсадки, о подсадке не говорит ничего: его краснота объясняется
+// состоянием проекта. Считать её поимкой значит выдавать чужой долг за свою заслугу.
+test("парный вердикт: гейт был красным до подсадки — судить по нему нельзя", () => {
+  const { before, after } = pairs([["lint", 1]], [["lint", 1]]);
+  const r = probeVerdictPaired(before, after);
+  assert.equal(r.verdict, "unknown");
+  assert.equal(r.alreadyRed, 1);
+  assert.equal(r.usable, 0);
+});
+
+// Сбой ЗАПУСКА (код не 0 и не 1) исключает ОДИН гейт, а не весь вердикт: если сосед
+// отработал и поймал, знание получено.
+test("парный вердикт: сбой одного гейта не отменяет поимку другим", () => {
+  const { before, after } = pairs([["broken", 127], ["test", 0]], [["broken", 127], ["test", 1]]);
+  const r = probeVerdictPaired(before, after);
+  assert.equal(r.verdict, "caught");
+  assert.equal(r.failed, 1);
+  assert.equal(r.usable, 1);
+});
+
+test("парный вердикт: судить не по чему — все гейты либо сломаны, либо уже красные", () => {
+  const { before, after } = pairs([["a", 127], ["b", 1]], [["a", 127], ["b", 1]]);
+  const r = probeVerdictPaired(before, after);
+  assert.equal(r.verdict, "unknown");
+  assert.equal(r.failed, 1);
+  assert.equal(r.alreadyRed, 1);
+});
+
+// Позеленение от подсадки — тоже не поимка, а признак, что гейт смотрит не туда.
+test("парный вердикт: гейт позеленел от подсадки — это не поимка", () => {
+  const { before, after } = pairs([["odd", 1]], [["odd", 0]]);
+  assert.equal(probeVerdictPaired(before, after).verdict, "unknown");
+});
+
+test("парный вердикт: гейтов нет вовсе", () => {
+  assert.equal(probeVerdictPaired([], []).verdict, "unknown");
 });
