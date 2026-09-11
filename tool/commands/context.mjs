@@ -284,7 +284,11 @@ async function readAdvice(man, probe) {
     .map((b) => ({ ...b, command: blindAdvice(catalog.find((r) => r.slug === b.slug), facts, {}).command }));
   const start = startWith(todo, facts, 3)
     .map((rec) => ({ slug: rec.slug, intent: rec.intent || "", command: blindAdvice(rec, facts, {}).command }));
-  return { adopt, blind, start };
+  // Гейт стоит, проба его ГОНЯЛА — и брак он пропустил. Самое ценное, что проба знает: не
+  // «поставь», а «твоя проверка здесь слепа». Гейт, поставленный после пробы, сюда не идёт —
+  // поймает ли, покажет следующая.
+  const missed = (probe?.classes || []).filter((b) => facts.gateKeys.includes(b.slug) && probe?.ran?.has(b.slug));
+  return { adopt, blind, start, missed };
 }
 
 async function cmdContext(args = []) {

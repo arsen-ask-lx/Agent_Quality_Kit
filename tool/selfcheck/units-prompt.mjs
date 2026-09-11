@@ -75,10 +75,22 @@ test("класс из пробы не повторяется в «начните
   assert.match(it[1], /todo-without-task/);
 });
 
+// Гейт стоит, проба его гоняла — и он пропустил. Не «поставь» (стоит), а «здесь он слеп».
+test("гейт стоит, но пропустил брак из пробы — пункт «разберись», сразу после красных", () => {
+  const it = items({
+    run: { when: "x", red: ["lint"], stale: false },
+    missed: [{ slug: "swallowed-error", file: "src/a.py" }],
+    start: [{ slug: "todo-without-task", intent: "i", command: "" }],
+  });
+  assert.match(it[1], /swallowed-error.*src\/a\.py/);
+  assert.doesNotMatch(it[1], /aqk add/, "гейт уже стоит — ставить его второй раз бессмысленно");
+});
+
 test("у каждого пункта — чем доказать, что готово", () => {
   const it = items({
     run: { when: "x", red: ["lint"], stale: false },
     blind: [{ slug: "swallowed-error", file: "src/a.py", command: "" }],
+    missed: [{ slug: "complexity-limit", file: "src/b.py" }],
     start: [{ slug: "todo-without-task", intent: "i", command: "" }],
   });
   for (const line of it) assert.match(line, new RegExp(T.done.slice(0, 6)), `пункт без арбитра: ${line}`);
@@ -87,4 +99,8 @@ test("у каждого пункта — чем доказать, что гот�
 test("оба языка несут одни и те же ключи задания", () => {
   const keys = (o) => Object.keys(o).sort().join(",");
   assert.equal(keys(CATALOGS.ru.prompt), keys(CATALOGS.en.prompt));
+  // Пункты лежат глубже — пропущенный в одном языке пункт упал бы ошибкой только у того, кто
+  // на этом языке работает.
+  assert.equal(keys(CATALOGS.ru.prompt.item), keys(CATALOGS.en.prompt.item));
+  assert.equal(keys(CATALOGS.ru.prompt.item.shim), keys(CATALOGS.en.prompt.item.shim));
 });

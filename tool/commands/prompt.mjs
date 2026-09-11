@@ -23,9 +23,10 @@ import { L } from "../i18n/index.mjs";
 const MAX_ITEMS = 5;
 
 // Чистая функция: состояние → строки задания. Порядок — по тому, насколько пункт ФАКТ о проекте
-// и насколько без него невыполнимы остальные: манифест → прогон → красное → брак, пропущенный
-// пробой в ЕГО файлах → проверки, которые у проекта уже есть → свод, невидимый Claude Code →
-// «начните с этих трёх» из каталога. Класс из пробы в последнем списке не повторяется.
+// и насколько без него невыполнимы остальные: манифест → прогон → красное → гейт стоит, но
+// пропустил брак из пробы → брак, для которого гейта нет → проверки, которые у проекта уже есть
+// → свод, невидимый Claude Code → «начните с этих трёх» из каталога. Класс из пробы в последнем
+// списке не повторяется.
 function taskText(st, T = L.prompt) {
   const self = st.self || "aqk";
   const it = [];
@@ -33,6 +34,7 @@ function taskText(st, T = L.prompt) {
   if (!st.run) it.push(T.item.runNone(self));
   else if (st.run.stale) it.push(T.item.runStale(self, st.run.when));
   for (const name of st.run?.red || []) it.push(T.item.red(name, self));
+  for (const m of st.missed || []) it.push(T.item.missed(m, self));
   for (const b of st.blind || []) it.push(T.item.blind(b, self));
   if ((st.adopt || []).length) it.push(T.item.adopt(st.adopt, self));
   if (st.shim) it.push(T.item.shim[st.shim](self));
@@ -51,7 +53,7 @@ async function cmdPrompt() {
   const man = await readManifest();
   let probe = null;
   try { probe = await probeStatus(); } catch { /* пробы нет — пунктов из неё не будет */ }
-  let advice = { adopt: [], blind: [], start: [] };
+  let advice = { adopt: [], blind: [], start: [], missed: [] };
   try { advice = await readAdvice(man, probe); } catch { /* не посчитали — выдумывать пункты нельзя */ }
   // Команда уходит в чужой контекст и, возможно, в чужие руки: абсолютный путь к нашей
   // программе там не сработает — тот же довод, что у хука `context --install`.
