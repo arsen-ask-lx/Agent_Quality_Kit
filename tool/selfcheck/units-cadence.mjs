@@ -7,7 +7,7 @@
 // незачем, а сто коммитов за день перепроверить надо.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
+import { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed } from "../lib/cadence.mjs";
 
 test("порог по умолчанию — сто коммитов, и он назван числом, а не спрятан", () => {
   assert.equal(PROBE_EVERY, 100);
@@ -102,4 +102,18 @@ test("отметка помнит, какие гейты проба ПРОГОН
   // Старая отметка этой строки не несёт: «не знаем», а не «ничего не было объявлено».
   assert.equal(parseRan("at: 5\nblind: 1\n"), null);
   assert.deepEqual([...parseRan("ran:\n")], []);
+});
+
+// Проба, встроенная в `doctor --run`, в конвейере — это +2–3 минуты в случайном прогоне раз в
+// сто коммитов. Отзыв с живого проекта 2026-09-11: «пусть probe будет отдельной командой или
+// задачей, а не сюрпризом внутри быстрой проверки». В конвейере она сама не запускается; у
+// человека — по-прежнему сама: там её и надо не забыть.
+test("проба сама не запускается в конвейере, в коротком режиме и при AQK_PROBE=0", () => {
+  assert.equal(autoProbeAllowed({ brief: false, env: {} }), true);
+  assert.equal(autoProbeAllowed({ brief: false, env: { CI: "true" } }), false);
+  assert.equal(autoProbeAllowed({ brief: false, env: { GITHUB_ACTIONS: "true" } }), false);
+  assert.equal(autoProbeAllowed({ brief: true, env: {} }), false);
+  assert.equal(autoProbeAllowed({ brief: false, env: { AQK_PROBE: "0" } }), false);
+  // Явное AQK_PROBE=1 включает и в конвейере: у всего, что решено за человека, есть способ решить иначе.
+  assert.equal(autoProbeAllowed({ brief: false, env: { CI: "true", AQK_PROBE: "1" } }), true);
 });

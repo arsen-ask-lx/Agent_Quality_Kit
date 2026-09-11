@@ -16,6 +16,7 @@
 // сознательное решение: pre-commit локально мы не ставим, проверки идут в CI. Команда, которая
 // кричит «сломано» про выбор, — ровно та, которую выключают в первый день, и вместе с ней
 // перестают читать настоящие отказы. Кода возврата касается только `✘`.
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, MANIFEST, SELF, c, exists, preCommitHook } from "../lib/core.mjs";
@@ -138,15 +139,25 @@ async function cmdVitals() {
 
   let version = null;
   if (updateWanted()) {
+    let current = "";
     try {
       const { PKG_ROOT } = await import("../lib/core.mjs");
-      const current = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8")).version || "";
+      current = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8")).version || "";
       const r = await fetch("https://registry.npmjs.org/agent-quality-kit/latest", {
         signal: AbortSignal.timeout(3000),
         headers: { accept: "application/vnd.npm.install-v1+json" },
       });
       version = { current, latest: r.ok ? String((await r.json()).version || "") : "" };
-    } catch { /* сети нет — строку про версию просто не покажем */ }
+    } catch { /* прямой запрос не прошёл — ниже спросим npm */ }
+    // ПРЯМОЙ ЗАПРОС НЕ ПРОШЁЛ — СПРОСИТЬ NPM. Отзыв с живого проекта 2026-09-11: vitals писал «не
+    // достучался до реестра», а `npm view` на той же машине работал. `fetch` в Node не знает
+    // прокси и зеркала из .npmrc, а npm знает. Только здесь, не в хуке: там секунды дороже.
+    if (current && !version?.latest) {
+      const r = spawnSync("npm", ["view", "agent-quality-kit", "version"],
+        { encoding: "utf8", timeout: 10000, shell: process.platform === "win32" });
+      const latest = r.status === 0 ? String(r.stdout || "").trim().split("\n").pop() : "";
+      version = { current, latest };
+    }
   }
 
   const rows = vitalsRows({ tools: [...seen.values()], unparsed, preCommit, sessionHook, version });

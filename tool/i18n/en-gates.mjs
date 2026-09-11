@@ -256,6 +256,7 @@ export const enGates = {
     badEvery: (v) => `the manifest says probe: "${v}", which is not a commit count. The probe does NOT run: silently using the default would mean doing something other than what is written.`,
     autoFirst: "no coverage probe has ever run here — running it myself. Turn off: AQK_PROBE=0",
     auto: (n) => `${n} commits since the last probe — running it myself. Turn off: AQK_PROBE=0`,
+    autoNotInCi: (cmd) => `in CI the probe does not run by itself — it would be minutes of surprise in a fast check; run it as a separate job: ${cmd} (or AQK_PROBE=1)`,
     title: "aqk probe — what the declared checks cannot see",
     method: (files, entries, gates) =>
       `method: a red sample from a catalogue entry is planted into a COPY of the project, then the ` +

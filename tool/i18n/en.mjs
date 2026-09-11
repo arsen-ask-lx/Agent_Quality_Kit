@@ -44,6 +44,7 @@ export const en = {
     blob: "assemble the guides into a single GOD_AI.md",
     learn: "rule candidates from local transcripts: said out loud, never written down",
     context: "the project state in one block — for an agent's context, not for reading",
+    vitals: "is what the kit runs on wired up: gate tools, hooks, version freshness",
     contextInstall: "the same in full — the map and the rulebook — installed as a hook",
     report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",

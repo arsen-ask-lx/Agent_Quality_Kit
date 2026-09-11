@@ -15,6 +15,7 @@ import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 import { declaredGates, sinceRef, runGates, progress } from "../lib/run.mjs";
+import { autoProbeAllowed } from "../lib/cadence.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -411,11 +412,16 @@ async function cmdDoctor() {
         if (st.badEvery !== undefined) {
           console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`));
         } else if (st.state === "never" || st.state === "stale") {
-          // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
-          // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
-          // Мелочь, но того же класса, что и всё остальное здесь: вывод, который не врёт.
-          console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
-          await cmdProbe([], { auto: true });
+          // В конвейере проба сама не идёт — минуты сюрпризом в быстрой проверке (отзыв с живого
+          // проекта 2026-09-11). Сказано ровно тогда, когда она подошла по сроку, а не каждый раз.
+          if (!autoProbeAllowed({ brief })) {
+            console.log(c.dim(`\n  ${L.probe.autoNotInCi(`${SELF} probe`)}`));
+          } else {
+            // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
+            // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
+            console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
+            await cmdProbe([], { auto: true });
+          }
         }
       } catch { /* проба не состоялась — прогон это не роняет: он про гейты, а не про неё */ }
     }
