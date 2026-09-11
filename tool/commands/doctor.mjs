@@ -78,46 +78,6 @@ async function reportCatalog(man, facts, probe = null) {
   );
 
   for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
-  for (const rec of todo) {
-    console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
-    console.log(c.dim(`      ${L.doctor.install(`${SELF} add ${rec.slug}`)}`));
-  }
-  if (byOther.length) {
-    console.log(c.dim(`\n  ${L.doctor.coveredBy(byOther.length)}`));
-    for (const [rec, gate] of byOther) console.log(c.dim(`  ~  ${rec.slug.padEnd(22)} ${L.doctor.coveredByGate(gate)}`));
-  }
-  // Гейт, которого нет в gates:, не закрывает ничего — и молчать об этом нельзя: человек
-  // считает запись закрытой, а её не держит никто. Называется поимённо, жёлтым.
-  if (unknownGates.length) {
-    console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
-  }
-  // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
-  // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
-  // сняла бы запись с долга, не закрыв её ничем.
-  let linterCfg = "";
-  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
-    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
-  }
-  const unproven = coversUnproven(man, catalog, linterCfg);
-  for (const u of unproven) {
-    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
-    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
-  }
-  // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
-  // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
-  let mcpText = "";
-  for (const f of [".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json", ".claude/mcp.json"]) {
-    try { mcpText += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
-  }
-  const browser = browserServerAdvice(facts, mcpText);
-  if (browser) {
-    console.log(c.dim(`\n  ${L.doctor.noBrowserServer}`));
-    console.log(c.dim(`  ${L.doctor.noBrowserServerHow(browser.servers.join("  ·  "))}`));
-  }
-  if (skip.length) {
-    console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
-    for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
-  }
   // ЧТО У ВАС УЖЕ ЕСТЬ — до итога и до списка крестов. Комплект, поставленный в проект с
   // eslint, mocha и конвейером, показывал двадцать крестов и «держит машина 0»: мы считали
   // только СВОИ записи, а чужие проверки не читали вовсе. С точки зрения владельца это
@@ -167,8 +127,8 @@ async function reportCatalog(man, facts, probe = null) {
   // С ЧЕГО НАЧАТЬ. Двадцать одинаковых крестов — это ноль требований: закрывают первое
   // попавшееся или не закрывают ничего. Порядок не по нашему вкусу: сперва то, что родилось из
   // настоящего отказа И закрывается одной готовой командой.
-  if (todo.length > 3) {
-    const first = startWith(todo, facts, 3);
+  const first = todo.length > 3 ? startWith(todo, facts, 3) : [];
+  if (first.length) {
     console.log(`\n  ${c.bold(L.doctor.startWith)}`);
     for (const rec of first) {
       const adv = blindAdvice(rec, facts, {});
@@ -182,6 +142,55 @@ async function reportCatalog(man, facts, probe = null) {
     console.log(c.dim(`\n     ${L.doctor.startHook}`));
   }
 
+  // ОСТАЛЬНОЕ — ПОСЛЕ ГЛАВНОГО И СЖАТО. Список шёл первым, по две строки на запись (вторая —
+  // «поставить: aqk add …»), и на requests главное начиналось со строки 84 из 102: человек
+  // читает сверху и закрывает раньше. Разбор соседа 2026-09-11 (research/competitors/agentlint.md):
+  // там первыми идут пять главных исправлений. Записи не теряются — теряется повтор подсказки.
+  const rest = todo.filter((r) => !first.includes(r));
+  if (rest.length) {
+    if (first.length) console.log(`\n  ${c.bold(L.doctor.todoRest(rest.length))}`);
+    else console.log("");
+    for (const rec of rest) console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
+    console.log(c.dim(`     ${L.doctor.todoRestHow(SELF)}`));
+  }
+
+  // Второстепенное — в конце: что закрыто чужим арбитром, что неприменимо, советы без вердикта.
+  if (byOther.length) {
+    console.log(c.dim(`\n  ${L.doctor.coveredBy(byOther.length)}`));
+    for (const [rec, gate] of byOther) console.log(c.dim(`  ~  ${rec.slug.padEnd(22)} ${L.doctor.coveredByGate(gate)}`));
+  }
+  // Гейт, которого нет в gates:, не закрывает ничего — и молчать об этом нельзя: человек
+  // считает запись закрытой, а её не держит никто. Называется поимённо, жёлтым.
+  if (unknownGates.length) {
+    console.log(c.yellow(`\n  ${L.doctor.coversUnknown(unknownGates.join(", "))}`));
+  }
+  // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
+  // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
+  // сняла бы запись с долга, не закрыв её ничем.
+  let linterCfg = "";
+  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
+    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
+  }
+  const unproven = coversUnproven(man, catalog, linterCfg);
+  for (const u of unproven) {
+    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+  }
+  // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
+  // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
+  let mcpText = "";
+  for (const f of [".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json", ".claude/mcp.json"]) {
+    try { mcpText += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
+  }
+  const browser = browserServerAdvice(facts, mcpText);
+  if (browser) {
+    console.log(c.dim(`\n  ${L.doctor.noBrowserServer}`));
+    console.log(c.dim(`  ${L.doctor.noBrowserServerHow(browser.servers.join("  ·  "))}`));
+  }
+  if (skip.length) {
+    console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
+    for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
+  }
   console.log(
     `\n  ${c.bold(L.doctor.total)} ${L.doctor.totalHeld(held.length)}, ${L.doctor.totalTodo(c.yellow(todo.length))}, ` +
       (byOther.length ? `${L.doctor.totalCovered(byOther.length)}, ` : "") +
