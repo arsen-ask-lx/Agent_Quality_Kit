@@ -1,0 +1,5 @@
+README.md
+.env
+.env.local
+.env.example
+src/app.py
