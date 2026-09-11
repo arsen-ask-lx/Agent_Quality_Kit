@@ -9,7 +9,7 @@
 //   node --test tool/selfcheck/units-context.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { contextBlock, countArbiters, parseLastRun, withHook, hasOurHook, portableSelf } from "../commands/context.mjs";
+import { contextBlock, countArbiters, parseLastRun, withHook, hasOurHook, portableSelf, nextSteps } from "../commands/context.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
 import { commandRows } from "../lib/core.mjs";
 import { readFile } from "node:fs/promises";
@@ -209,4 +209,58 @@ test("выключенная и несостоявшаяся проба не в�
 
   const unknown = text({ probe: { state: "unknown", behind: null, blind: 0 } });
   assert.match(unknown, /НЕИЗВЕСТНО|неизвестн/i, `несостоявшаяся проба не названа: ${unknown}`);
+});
+
+// --- «Дальше» и «Когда что» ------------------------------------------------------------
+// ЗАЧЕМ. Блок отвечал только на «как дела»: уровень, красное, проба. Что делать ДАЛЬШЕ, `doctor`
+// знал — три первых шага, непойманные пробой классы, чужие проверки проекта, — а в контекст это
+// не попадало. Карта «какую команду когда» жила только в полной версии, в восьми тысячах
+// токенов, где агент её пролистывал. Владелец 2026-09-11: «агент читает половину и не
+// пользуется всем функционалом». Документация Claude Code (code.claude.com/docs/en/memory):
+// «The more specific and concise your instructions, the more consistently Claude follows them»;
+// «"Run `npm test` before committing" instead of "Test your changes"».
+test("дальше: не больше трёх шагов, остаток назван числом, свои проверки проекта — первыми", () => {
+  const adopt = [{ name: "test", cmd: "make test" }];
+  const blind = [
+    { slug: "swallowed-error", file: "src/a.py", command: "ruff check --select BLE ." },
+    { slug: "no-print-in-prod", file: "src/b.py", command: null },
+  ];
+  const start = [
+    { slug: "complexity-limit", command: "ruff check --select C901 ." },
+    { slug: "swallowed-error", command: "ruff check --select BLE ." },
+    { slug: "dead-code", command: "vulture ." },
+  ];
+  const { steps, rest } = nextSteps({ adopt, blind, start });
+  assert.deepEqual(steps.map((s) => s.kind), ["adopt", "blind", "blind"]);
+  // Класс из пробы и тот же класс в «начните с трёх» — один шаг, а не два.
+  assert.equal(rest, 2, "complexity-limit и dead-code остаются; swallowed-error уже учтён пробой");
+  assert.deepEqual(nextSteps({}), { steps: [], rest: 0 });
+});
+
+test("дальше: блок печатает шаги по номерам, с командами; пусто — заголовка нет", () => {
+  const next = nextSteps({ start: [{ slug: "dead-code", command: "vulture ." }] });
+  const t = text({ next });
+  assert.match(t, new RegExp(T.nextTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(t, /1\. .*dead-code/);
+  assert.match(t, /vulture \./, "команда, которую можно выполнить сейчас, обязана быть в шаге");
+  assert.doesNotMatch(text({ next: { steps: [], rest: 0 } }), new RegExp(T.nextTitle.slice(0, 12)));
+});
+
+test("когда что: правило про коммит зависит от того, стоит ли хук", () => {
+  const withHook = text({ when: { hook: true } });
+  const noHook = text({ when: { hook: false } });
+  assert.match(withHook, /--no-verify/, "хук стоит — агенту сказано не обходить его");
+  assert.match(noHook, /doctor --run --since main/, "хука нет — агенту дана команда");
+  assert.notEqual(withHook, noHook);
+  // Каждое правило — «ситуация → команда»: без команды в строке правило непроверяемо.
+  for (const line of T.whenRules) assert.match(line, /`[^`]+`/, `в правиле нет команды: ${line}`);
+});
+
+// Без манифеста `aqk add` отказывает («сначала init») — шаг «поставь запись» на таком проекте
+// отправлял агента в ошибку. Найдено живым прогоном блока на requests 2026-09-11.
+test("дальше: манифеста нет — первый шаг `aqk init`, остальные после него", () => {
+  const { steps } = nextSteps({ init: true, start: [{ slug: "dead-code", command: null }] });
+  assert.equal(steps[0].kind, "init");
+  assert.equal(steps[1].kind, "start");
+  assert.match(T.nextStep.init(steps[0]), /`aqk init`/);
 });

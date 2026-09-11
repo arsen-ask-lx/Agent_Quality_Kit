@@ -18,7 +18,7 @@
 // перестают читать настоящие отказы. Кода возврата касается только `✘`.
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CWD, MANIFEST, SELF, c, exists } from "../lib/core.mjs";
+import { CWD, MANIFEST, SELF, c, exists, preCommitHook } from "../lib/core.mjs";
 import { readManifest, unparsedLines, gateRequires } from "../lib/manifest.mjs";
 import { whichSync } from "../lib/repo.mjs";
 import { gitBash } from "../lib/execution.mjs";
@@ -122,14 +122,7 @@ async function cmdVitals() {
   // Хук pre-commit проверяется в `.git/hooks`, а НЕ в `.pre-commit-config.yaml`. Запись в
   // конфиге — это намерение; сработает только то, что лежит в самом гите. Ровно та разница,
   // ради которой весь комплект: объявлено и работает — разные утверждения.
-  let preCommit = null;
-  const hook = join(CWD, ".git", "hooks", "pre-commit");
-  if (await exists(join(CWD, ".git"))) {
-    preCommit = false;
-    if (await exists(hook)) {
-      try { preCommit = /pre-commit|aqk/i.test(await readFile(hook, "utf8")); } catch { preCommit = null; }
-    }
-  }
+  const preCommit = await preCommitHook(CWD);
 
   let sessionHook = null;
   const settings = join(CWD, ".claude", "settings.json");

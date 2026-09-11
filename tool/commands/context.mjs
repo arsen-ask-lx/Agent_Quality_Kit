@@ -23,15 +23,35 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { CWD, TARGET_DIR, SELF, c, exists, commandRows } from "../lib/core.mjs";
-import { readManifest, assessLevel } from "../lib/manifest.mjs";
-import { probeStatus } from "./probe.mjs";
+import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook } from "../lib/core.mjs";
+import { readManifest, assessLevel, coversOf } from "../lib/manifest.mjs";
+import { detectFacts, readCatalog, catalogBuckets, startWith } from "../lib/repo.mjs";
+import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
+import { declaredGates } from "../lib/run.mjs";
+import { probeStatus, blindAdvice } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Больше пяти имён подряд агент всё равно не удержит, а блок ради них раздувается. Остаток
 // называется числом: «и ещё 15» — это факт, а молчание про них было бы враньём.
 const MAX_RED = 5;
 const MAX_RATCHETS = 3;
+
+// ЧТО ДЕЛАТЬ ДАЛЬШЕ — не больше трёх шагов, по убыванию того, насколько это ФАКТ о проекте:
+//   1. объявить проверки, которые у проекта уже есть: дешевле всего, и это его собственное;
+//   2. классы брака, которые проба подсадила в ЕГО файлы и ЕГО проверки не поймали;
+//   3. «начните с этих трёх» из каталога.
+// Класс, названный пробой, в третьем списке не повторяется: один шаг, а не два. Остаток —
+// числом: молчание о нём прочиталось бы как «больше делать нечего».
+function nextSteps({ init = false, adopt = [], blind = [], start = [] } = {}, max = 3) {
+  const all = [];
+  // Без манифеста `aqk add` отказывает — остальные шаги без этого невыполнимы.
+  if (init) all.push({ kind: "init" });
+  if (adopt.length) all.push({ kind: "adopt", gates: adopt });
+  for (const b of blind) all.push({ kind: "blind", ...b });
+  const seen = new Set(blind.map((b) => b.slug));
+  for (const st of start) if (!seen.has(st.slug)) all.push({ kind: "start", ...st });
+  return { steps: all.slice(0, max), rest: Math.max(0, all.length - max) };
+}
 
 // Чистая функция: на входе состояние, на выходе строки. Отделена от чтения диска намеренно —
 // это единственное место комплекта, чей текст читает машина, и проверять его надо не прогоном,
@@ -84,6 +104,22 @@ function contextBlock(state, T = L.context) {
     else if (pr.blind > 0) out.push(T.probeBlind(pr.blind, pr.state === "stale" ? pr.behind : 0,
       (pr.classes || []).map((b) => `${b.slug} (${b.file})`).join(", ")));
     else out.push(T.probeClean(pr.state === "stale" ? pr.behind : 0));
+  }
+
+  // ДАЛЬШЕ — то, что `doctor` знает, а агенту не говорилось: блок отвечал только «как дела».
+  // Шаги вычислены, а не пожелания: у каждого команда, которую можно выполнить сейчас.
+  const nx = state.next;
+  if (nx && nx.steps && nx.steps.length) {
+    out.push("", T.nextTitle);
+    nx.steps.forEach((st, i) => out.push(`${i + 1}. ${T.nextStep[st.kind](st)}`));
+    if (nx.rest) out.push(T.nextMore(nx.rest));
+  }
+
+  // КОГДА ЧТО — правила вида «ситуация → команда». Общий совет («тестируй изменения») агент
+  // пролистывает; проверяемый («перед коммитом — вот эта команда») выполняет. Первое правило
+  // зависит от факта: стоит хук — сказать не обходить его; нет — дать команду, само не случится.
+  if (state.when) {
+    out.push("", T.whenTitle, `- ${T.whenCommit(state.when.hook)}`, ...T.whenRules.map((r) => `- ${r}`));
   }
 
   // ПОЛНЫЙ БЛОК — решение владельца от 2026-09-08, принятое ПОСЛЕ возражения и вопреки ему.
@@ -293,9 +329,25 @@ async function cmdContext(args = []) {
     fullPart = { entry, rows, text };
   }
 
+  // ДАЛЬШЕ — теми же функциями, что у `doctor`: корзины каталога, «начните с трёх», совет под
+  // язык, чужие проверки проекта. Второй расчёт того же самого разошёлся бы с первым.
+  let next = null;
+  try {
+    const facts = await detectFacts(man);
+    const catalog = await readCatalog();
+    const { todo } = catalogBuckets(catalog, facts, coversOf(man).covered);
+    const adopt = declaredGates(man).length ? [] : proposeGates(await readAdoptFiles(CWD));
+    const blind = (probe?.classes || [])
+      .filter((b) => !facts.gateKeys.includes(b.slug))
+      .map((b) => ({ ...b, command: blindAdvice(catalog.find((r) => r.slug === b.slug), facts, {}).command }));
+    const start = startWith(todo, facts, 3).map((rec) => ({ slug: rec.slug, command: blindAdvice(rec, facts, {}).command }));
+    next = nextSteps({ init: !man, adopt, blind, start });
+  } catch { /* не посчитали — блок скажет остальное; выдумывать шаги нельзя */ }
+
   console.log(contextBlock({
     entry, entryExists: rules !== null, level, rules, run, ratchets, probe, full: fullPart,
+    next, when: { hook: await preCommitHook(CWD) },
   }).join("\n"));
 }
 
-export { cmdContext, contextBlock, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf };
+export { cmdContext, contextBlock, nextSteps, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf };
