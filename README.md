@@ -457,6 +457,22 @@ Otherwise a gate that cannot fail the build looks exactly like one that can, and
 is in `advisory:` only on the day it goes red. Red ones are additionally named by name in the
 summary: an advisory gate everyone forgot about is a switched-off check.
 
+**A gate that needs a live stack** (a cost check against a seeded database, e2e) goes into a group,
+and a fast run skips the group:
+
+```yaml
+groups:
+  stack: [cost, e2e]
+```
+
+```bash
+aqk doctor --run --skip stack     # everything except the stack
+aqk doctor --run --only stack     # only the stack, on the stand
+```
+
+Skipped gates are named in the output and written to the run report as "not run" — not as green.
+An unknown name after `--skip` is a refusal: a typo must not quietly mean "skipped nothing".
+
 ## When a bug slips past the guards
 
 ```bash

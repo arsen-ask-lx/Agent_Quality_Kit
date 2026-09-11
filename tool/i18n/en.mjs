@@ -71,6 +71,8 @@ export const en = {
     layoutAdvice: "missing — advice, it does not fail the run",
     coversImpossible: (entry, gate, linter) => `the claim "${gate} holds ${entry}" is wrong: ${linter} has no rule for this class — there is nothing to hold it with`,
     coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
+    selectUnknown: (names, groups) => `--only/--skip: "${names}" is neither a gate from gates: nor a group from groups:${groups ? ` (groups: ${groups})` : ""}. Running everything instead of skipping would be a lie, so stopping.`,
+    selectSkipped: (names) => `not run (by --only/--skip): ${names} — their state is unknown, they are not "green"`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
     rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the ENTRY POINT only: a promise kept in any other file is checked by nothing at all, and this kit will not tell you it exists.",

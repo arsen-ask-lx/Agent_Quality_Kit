@@ -65,9 +65,45 @@ function progress({ tty = process.stdout.isTTY, write = (s) => process.stdout.wr
   };
 }
 
+// ГРУППЫ И --only / --skip. Отзыв с живого проекта 2026-09-11: гейт цены меряет план на
+// засеянной базе — объявишь, и он валит прогон без стенда; уберёшь, и promise-has-gate справедливо
+// ругается. Прогон бывал только «всё или ничего». `groups:` в манифесте называет смысл
+// («этим нужен стенд»), флаги выбирают. Неизвестное имя — ошибка: опечатка `--skip stak` не
+// должна тихо превращаться в «пропустили ничего». Пропущенные называются, а не исчезают.
+function listArg(argv, flag) {
+  const out = [];
+  argv.forEach((a, i) => { if (a === flag && argv[i + 1] && !argv[i + 1].startsWith("--")) out.push(...argv[i + 1].split(",")); });
+  return out.map((x) => x.trim()).filter(Boolean);
+}
+
+function selectGates(gates, man, { only = [], skip = [] } = {}) {
+  const groups = man?.groups && typeof man.groups === "object" && !Array.isArray(man.groups) ? man.groups : {};
+  const declared = new Set(gates.map(([n]) => n));
+  const unknown = [];
+  const expand = (list) => {
+    const out = new Set();
+    for (const name of list) {
+      const g = groups[name];
+      const members = Array.isArray(g) ? g : typeof g === "string" && g ? [g] : null;
+      if (members) for (const m of members) (declared.has(m) ? out.add(m) : unknown.push(m));
+      else if (declared.has(name)) out.add(name);
+      else unknown.push(name);
+    }
+    return out;
+  };
+  const onlySet = only.length ? expand(only) : null;
+  const skipSet = expand(skip);
+  const run = gates.filter(([n]) => (!onlySet || onlySet.has(n)) && !skipSet.has(n));
+  const kept = new Set(run.map(([n]) => n));
+  return { run, skipped: gates.map(([n]) => n).filter((n) => !kept.has(n)), unknown: [...new Set(unknown)] };
+}
+
 function runGates(man, opts = {}) {
-  const gates = declaredGates(man);
-  if (!gates.length) return { failed: 0, ran: 0, results: [] };
+  const all = declaredGates(man);
+  if (!all.length) return { failed: 0, ran: 0, results: [], skipped: [] };
+  const sel = selectGates(all, man, opts);
+  if (sel.unknown.length) die(L.doctor.selectUnknown(sel.unknown.join(", "), Object.keys(man?.groups || {}).join(", ")));
+  const gates = sel.run;
   const advisory = advisorySet(man);
   const bar = progress();
 
@@ -79,6 +115,7 @@ function runGates(man, opts = {}) {
   if (scoped) console.log(c.dim(`\n  ${L.doctor.sinceHeading(opts.since, scoped.size)}`));
 
   console.log(c.bold(`\n  ${L.doctor.runHeading}\n`));
+  if (sel.skipped.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(sel.skipped.join(", "))}\n`));
   let failed = 0;
   const results = [];
 
@@ -188,7 +225,7 @@ function runGates(man, opts = {}) {
   // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
   const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
-  return { failed, ran: gates.length, results, advisoryFailed };
+  return { failed, ran: gates.length, results, advisoryFailed, skipped: sel.skipped };
 }
 
-export { declaredGates, sinceRef, runGates, progress };
+export { declaredGates, sinceRef, runGates, progress, selectGates, listArg };

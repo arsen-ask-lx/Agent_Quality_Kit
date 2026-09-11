@@ -112,7 +112,7 @@ function unparsedLines(text) {
 // Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
 // лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
 // только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
-const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "lang", "gates", "covers", "samples", "ratchets", "lessons", "advisory", "probe"];
+const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "lang", "gates", "covers", "samples", "ratchets", "lessons", "advisory", "probe", "groups"];
 
 // ГДЕ У ПРОЕКТА ЛЕЖИТ РАЗЛОЖЕННЫЙ КОМПЛЕКТ. Список для шапки `doctor`. До 2026-09-08 он был
 // литеральным: `.aqk/rules`, `.aqk/docs`, `AGENTS.md` — независимо от того, что написано в

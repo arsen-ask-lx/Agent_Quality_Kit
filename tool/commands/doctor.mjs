@@ -15,7 +15,7 @@ import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates, progress } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress, listArg } from "../lib/run.mjs";
 import { autoProbeAllowed } from "../lib/cadence.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
@@ -218,7 +218,7 @@ async function reportCatalog(man, facts, probe = null) {
 // сессии и для самого владельца: список объявленных гейтов молчит о том, сколько из них
 // действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
 // история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
-async function writeRunReport({ version, reached, results }) {
+async function writeRunReport({ version, reached, results, skipped = [] }) {
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const ok = results.filter((r) => r.ok).length;
   const lines = [
@@ -227,6 +227,9 @@ async function writeRunReport({ version, reached, results }) {
     `${L.report.level}: AQK-${reached < 0 ? L.doctor.levelNone : reached}`,
     "",
     ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || L.doctor.exitCode(r.code)})`}`),
+    // Пропущенные по --skip/--only — строкой «~»: блок для агента читает их как «не запускались»,
+    // а не как зелёные. Молчание о них прочиталось бы как «проверено».
+    ...skipped.map((n) => `~ ${n} — ${L.report.skippedBySelect}`),
     "",
     L.report.summary(ok, results.length),
   ].filter((l) => l !== null);
@@ -391,11 +394,13 @@ async function cmdDoctor() {
   const gates = declaredGates(man);
   let gateFailed = 0;
   let failedNames = [];
+  let skippedNames = [];
   if (wantRun) {
-    const run = runGates(man, { since: sinceRef() });
+    const run = runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip") });
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
-    await writeRunReport({ version, reached, results: run.results });
+    skippedNames = run.skipped || [];
+    await writeRunReport({ version, reached, results: run.results, skipped: run.skipped });
 
     // ПРОБА ЗАПУСКАЕТСЯ САМА. Владелец сформулировал так: «команду, о которой надо вспомнить,
     // агент не вспомнит, а человек о ней не узнает». Это тот же класс, что файл, который можно
@@ -460,6 +465,7 @@ async function cmdDoctor() {
   if (wantRun) {
     if (ok) {
       console.log(c.green(`  ${L.doctor.runVerdictOk}\n`));
+      if (skippedNames.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(skippedNames.join(", "))}\n`));
     } else {
       const why = [];
       if (missing) why.push(L.doctor.whyMissing);

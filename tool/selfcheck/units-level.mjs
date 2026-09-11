@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
 import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
-import { progress } from "../lib/run.mjs";
+import { progress, selectGates } from "../lib/run.mjs";
 
 // --- строка «идёт» во время прогона ---------------------------------------------------
 // ЗАЧЕМ. Гейт идёт через spawnSync, и строка про него печаталась только по завершении: минута
@@ -363,4 +363,35 @@ test("сбой арбитра отнимает ступень, законная 
   ]).ok, false, "таймаут арбитра компенсирован соседним гейтом");
 
   assert.equal(verdict([{ state: "proven" }, { state: "broken" }]).ok, false);
+});
+
+// --- группы гейтов и --only / --skip ----------------------------------------------------
+// ЗАЧЕМ. Отзыв с живого проекта 2026-09-11: гейт цены меряет план на засеянной базе. Объявишь
+// его — он валит прогон без стенда; уберёшь — promise-has-gate справедливо ругается. Пришлось
+// выкручиваться через advisory. Прогон бывал только «всё или ничего».
+test("выбор гейтов: --skip группой и именем, --only сужает, пропущенные названы", () => {
+  const man = parseManifest('gates:\n  lint: "x"\n  unit: "x"\n  cost: "x"\n  e2e: "x"\ngroups:\n  stack: [cost, e2e]\n');
+  const names = Object.entries(man.gates);
+  const s = selectGates(names, man, { skip: ["stack"] });
+  assert.deepEqual(s.run.map(([n]) => n), ["lint", "unit"]);
+  assert.deepEqual(s.skipped, ["cost", "e2e"]);
+  const o = selectGates(names, man, { only: ["lint", "cost"] });
+  assert.deepEqual(o.run.map(([n]) => n), ["lint", "cost"]);
+  assert.deepEqual(o.skipped, ["unit", "e2e"]);
+});
+
+test("выбор гейтов: неизвестное имя — ошибка, а не тихое «пропустили ничего»", () => {
+  const man = parseManifest('gates:\n  lint: "x"\ngroups:\n  stack: [lint]\n');
+  const s = selectGates(Object.entries(man.gates), man, { skip: ["stak"] });
+  assert.deepEqual(s.unknown, ["stak"]);
+  // Группа, в которой назван необъявленный гейт, — тоже названа: иначе группа молча пустеет.
+  const man2 = parseManifest('gates:\n  lint: "x"\ngroups:\n  stack: [cots]\n');
+  assert.deepEqual(selectGates(Object.entries(man2.gates), man2, { skip: ["stack"] }).unknown, ["cots"]);
+});
+
+test("выбор гейтов: без флагов гоняется всё, как раньше", () => {
+  const man = parseManifest('gates:\n  a: "x"\n  b: "x"\n');
+  const s = selectGates(Object.entries(man.gates), man, {});
+  assert.equal(s.run.length, 2);
+  assert.deepEqual(s.skipped, []);
 });

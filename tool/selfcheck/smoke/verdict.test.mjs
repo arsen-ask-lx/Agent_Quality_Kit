@@ -41,3 +41,22 @@ test("прогон называет свой вердикт словами в о
   assert.equal(green.code, 0, `прогон остался красным:\n${greenTail}`);
   assert.match(greenTail, /зелён/, `успех не назван словами:\n${greenTail}`);
 });
+
+// --skip ГРУППОЙ: гейт, которому нужен стенд, в быстром прогоне не идёт — и это СКАЗАНО, а не
+// скрыто. Отзыв с живого проекта 2026-09-11 (гейт цены без стенда валил прогон).
+test("--skip группой: прогон зелёный, пропущенный назван в выводе и в отчёте", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n" });
+  aqk(p, "init");
+  const man = join(p.dir, ".aqk.yml");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m, 'gates:\n  тихий: "true"\n  cost: "false"') +
+    "groups:\n  stack: [cost]\n", "utf8");
+  const r = aqk(p, "doctor", "--run", "--skip", "stack");
+  assert.equal(r.code, 0, `прогон без стенда покраснел:\n${r.out.slice(-600)}`);
+  assert.match(r.out, /cost/, "пропущенный гейт не назван");
+  const report = readFileSync(join(p.dir, ".aqk", "last-run.md"), "utf8");
+  assert.match(report, /^~ cost/m, `в отчёте для агента пропущенный не отмечен:\n${report}`);
+  // Опечатка в имени группы — отказ с названной причиной, а не прогон всего подряд.
+  const typo = aqk(p, "doctor", "--run", "--skip", "stak");
+  assert.notEqual(typo.code, 0);
+  assert.match(typo.out, /stak/);
+});
