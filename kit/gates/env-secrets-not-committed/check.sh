@@ -82,10 +82,11 @@ OUT=$(printf '%s\n' "$ENVS" | while IFS= read -r F; do
   BASE=${F##*/}
   case "$BASE" in
     .env.local|.env.*.local)
-      # В каталоге тестов `.env.local` — фикстура: библиотека проверяет, что умеет его читать.
-      # Замер 2026-09-11: единственная находка на motdotla/dotenv была `tests/.env.local`, и
-      # она ложная. Правило 2 (настоящий пароль внутри) в тестах действует — туда не сюда.
-      if printf '%s\n' "$F" | grep -qE '(^|/)(tests?|__tests__|specs?)/'; then :; else
+      # В каталоге тестов и демо-приложений `.env.local` — фикстура: библиотека показывает или
+      # проверяет, что умеет его читать. Замер 2026-09-11: `tests/.env.local` у motdotla/dotenv
+      # и `playgrounds/*/.env.local` у инструментов для Next.js — обе находки ложные. Правило 2
+      # (настоящий пароль внутри) там действует: утечка в тестах остаётся утечкой.
+      if printf '%s\n' "$F" | grep -qE '(^|/)(tests?|__tests__|specs?|playgrounds?|demos?)/'; then :; else
         echo "$F: личный файл окружения отслеживается git — «.local» по определению только для этой машины"
         continue
       fi ;;

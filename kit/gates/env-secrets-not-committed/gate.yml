@@ -15,8 +15,7 @@ recipes:
 
 tool: https://github.com/Yelp/detect-secrets
 
-# Условная: живой находки ещё нет. Три проекта владельца (Amplifie, Newsletter, audit_project)
-# держат в git только `.env.example`. Доказательство станет журнальным с первой настоящей.
-proof: research/competitors/agentlint.md — замер 2026-09-11: на закоммиченном .env пароли,
-  придуманные человеком, не видят ни наш secrets-not-in-code, ни gitleaks 8.30.1; .env.local не
-  видит и detect-secrets 1.5.0
+proof: incidents/README.md, 2026-09-11 «пароль из .env, которого не видит ни один сканер» —
+  пять репозиториев с закоммиченным .env.production.local из поиска кода GitHub: гейт краснеет на
+  всех пяти, четыре находки настоящие; контрольные — одиннадцать репозиториев, ложных после
+  исключения ноль
