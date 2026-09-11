@@ -39,10 +39,36 @@ function sinceRef(argv = process.argv) {
   return v && !v.startsWith("-") ? v : null;
 }
 
+// СТРОКА «ИДЁТ». Гейт идёт через spawnSync, и строка про него печаталась только по завершении:
+// минута `smoke` — минута пустого экрана, «работает» неотличимо от «повисло», и человек пишет
+// сам, не дождавшись. Просьба владельца 2026-09-10: «я запустил и должен видеть, как идёт».
+//
+// Только в терминал. В пайп и в конвейер — ни байта: лог там читают глазами и разбирают
+// машиной, и строка, переписанная возвратом каретки, в файле превращается в мусор.
+// Секунды не тикают: для этого нужен асинхронный запуск и убийство группы процессов на
+// таймауте, а у нас windows в конвейере. Имя и номер гейта отвечают на вопрос и без них.
+function progress({ tty = process.stdout.isTTY, write = (s) => process.stdout.write(s) } = {}) {
+  let shown = false;
+  return {
+    show(text) {
+      if (!tty) return;
+      if (shown) write("\r\x1b[K");
+      write(text);
+      shown = true;
+    },
+    clear() {
+      if (!tty || !shown) return;
+      write("\r\x1b[K");
+      shown = false;
+    },
+  };
+}
+
 function runGates(man, opts = {}) {
   const gates = declaredGates(man);
   if (!gates.length) return { failed: 0, ran: 0, results: [] };
   const advisory = advisorySet(man);
+  const bar = progress();
 
   // Сужение по дифу — договор с человеком, и он должен видеть, ЧТО именно сужено. Пустой диф
   // называется вслух: иначе «все гейты зелёные» означало бы «сравнили не с тем» и читалось бы
@@ -55,9 +81,11 @@ function runGates(man, opts = {}) {
   let failed = 0;
   const results = [];
 
-  for (const [name, cmd] of gates) {
+  for (const [i, [name, cmd]] of gates.entries()) {
+    bar.show(`  ${c.dim("⋯")}  ${name.padEnd(14)} ${c.dim(L.doctor.running(i + 1, gates.length))}`);
     const t0 = Date.now();
     const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+    bar.clear();
     const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
     // Вывод гейта запоминается целиком (с потолком, чтобы болтливый инструмент не съел память):
     // по нему считается покрытие дифа — какой файл вообще был назван хоть одной проверкой.
@@ -162,4 +190,4 @@ function runGates(man, opts = {}) {
   return { failed, ran: gates.length, results, advisoryFailed };
 }
 
-export { declaredGates, sinceRef, runGates };
+export { declaredGates, sinceRef, runGates, progress };
