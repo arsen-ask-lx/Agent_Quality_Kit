@@ -2,9 +2,8 @@
 // триггера, выбор рецепта, сверка по намерению.
 
 import { readdir, readFile } from "node:fs/promises";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, statSync, lstatSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 import { CWD, GATES_SRC, c, exists } from "./core.mjs";
 import { parseManifest } from "./manifest.mjs";
 import { L, LANG } from "../i18n/index.mjs";
@@ -340,6 +339,20 @@ function claudeSeesRules({ agents, claude, claudeLink, dotClaude }) {
   return /(^|\s)@(\.{1,2}\/)*AGENTS\.md\b/.test(prose) ? null : "noImport";
 }
 
+// То же, прочитанное с диска: одно место на `doctor` и `prompt`. Оба места CLAUDE.md —
+// документация называет и ./CLAUDE.md, и ./.claude/CLAUDE.md; подключение в любом засчитывается.
+async function claudeShimFor(cwd = CWD) {
+  const readOr = async (rel) => { try { return await readFile(join(cwd, rel), "utf8"); } catch { return null; } };
+  let claudeLink = false;
+  try { claudeLink = lstatSync(join(cwd, "CLAUDE.md")).isSymbolicLink() && /AGENTS\.md$/i.test(realpathSync(join(cwd, "CLAUDE.md"))); } catch { /* файла нет */ }
+  return claudeSeesRules({
+    agents: await exists(join(cwd, "AGENTS.md")),
+    claude: [await readOr("CLAUDE.md"), await readOr(".claude/CLAUDE.md")].filter((t) => t !== null).join("\n") || null,
+    claudeLink,
+    dotClaude: await exists(join(cwd, ".claude")),
+  });
+}
+
 function recipeFor(rec, facts) {
   const cmd = pickRecipe(rec, facts);
   if (!cmd) return L.recipe.none;
@@ -413,4 +426,4 @@ async function matchCatalog(query) {
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
-  stems, overlap, matchCatalog, isApiSpec, claudeSeesRules };
+  stems, overlap, matchCatalog, isApiSpec, claudeSeesRules, claudeShimFor };

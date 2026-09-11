@@ -46,6 +46,10 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   adds the command map and the rulebook verbatim (~7000 tokens): a deliberate trade, chosen by
   the owner after the objection about long inputs, on the grounds that an agent reads files
   poorly and the tokens are the price of it not guessing
+- Hand the agent one task instead of retelling the diagnosis: `npx agent-quality-kit prompt` —
+  ground rules on top, at most five items by weight (red gates, defects the probe planted and no
+  check caught, the project's own checks to declare, rules Claude Code cannot see, catalog
+  entries to propose), and for every item the command that proves it done. Nothing is run
 - Check that the kit's own wiring is actually connected: `npx agent-quality-kit vitals` — are the
   tools the declared gates need installed, is the hook present in `.git/hooks` (a line in the
   config is an intention, not a guard), does the agent receive the state, is the version current.

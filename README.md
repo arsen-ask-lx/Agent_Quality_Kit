@@ -104,6 +104,8 @@ aqk badge --check       fail if the badge disagrees with a run
 aqk context             the repository state in one block, for an agent's context:
                         level, what is red now, rules nobody enforces, ratchets,
                         the next three steps with commands, and when to run what
+aqk prompt              one task to paste into an agent: what to fix, in order, and the
+                        command that proves each item done
 aqk vitals              is what the kit runs on wired up: gate tools, hooks, freshness
 aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
 aqk context --full      the same plus the command map and the rulebook verbatim (~7000

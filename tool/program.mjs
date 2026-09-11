@@ -28,6 +28,7 @@ import { cmdBadge } from "./commands/badge.mjs";
 import { cmdProve } from "./commands/prove.mjs";
 import { cmdProbe } from "./commands/probe.mjs";
 import { cmdContext } from "./commands/context.mjs";
+import { cmdPrompt } from "./commands/prompt.mjs";
 import { cmdVitals } from "./commands/vitals.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
@@ -119,6 +120,9 @@ if (IS_MAIN) {
 
     case "context":
       await cmdContext(rest);
+      break;
+    case "prompt":
+      await cmdPrompt();
       break;
     case "badge":
       await cmdBadge(rest);

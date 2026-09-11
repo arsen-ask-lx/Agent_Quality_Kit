@@ -128,3 +128,17 @@ test("doctor называет свод, которого не видит Claude 
   writeFileSync(join(p.dir, "CLAUDE.md"), "@AGENTS.md\n", "utf8");
   assert.doesNotMatch(plain(aqk(p, "doctor").out), /(Claude Code здесь настроен|не подключает AGENTS|Claude Code is set up|does not import AGENTS)/);
 });
+
+// `aqk prompt` на свежем проекте: прогона не было — задание так и говорит и первым пунктом
+// велит прогнать, а не выдаёт пустой список за «всё чисто». Ничего не пишет на диск.
+test("prompt: задание без прогона начинается с прогона и кончается проверкой", (t) => {
+  const p = project(t, FILES);
+  aqk(p, "init");
+  const r = aqk(p, "prompt");
+  assert.equal(r.code, 0, r.out);
+  const items = r.out.split("\n").filter((l) => /^\d+\. /.test(l));
+  assert.match(items[0] || "", /(Прогона ещё не было|no run yet)/, `первый пункт не про прогон:\n${r.out}`);
+  assert.ok(items.length <= 5, "больше пяти пунктов за раз");
+  assert.match(r.out, /(Как проверить, что готово|How to verify)/);
+  assert.doesNotMatch(r.out, /\x1b\[/, "задание уходит агенту текстом — без цветовых кодов");
+});
