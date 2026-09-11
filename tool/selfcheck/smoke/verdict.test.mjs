@@ -60,3 +60,30 @@ test("--skip группой: прогон зелёный, пропущенный
   assert.notEqual(typo.code, 0);
   assert.match(typo.out, /stak/);
 });
+
+// --jobs N: независимые гейты параллельно. Отзыв с живого проекта 2026-09-11: 34 гейта идут
+// друг за другом больше минуты, «а быструю проверку, которую долго ждать, перестают запускать».
+// Параллельность — по флагу: гейты, пишущие в одни файлы (общий dist/), иначе плавали бы.
+test("--jobs 3: три секундных гейта идут одновременно, порядок и вердикт прежние", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n", ".gitignore": "x\n" });
+  aqk(p, "init");
+  const man = join(p.dir, ".aqk.yml");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m,
+    'gates:\n  a: "sleep 1"\n  b: "sleep 1; exit 1"\n  c: "sleep 1"'), "utf8");
+  const t0 = Date.now();
+  const r = aqk(p, "doctor", "--run", "--jobs", "3");
+  const secs = (Date.now() - t0) / 1000;
+  assert.notEqual(r.code, 0, "упавший гейт b не уронил прогон");
+  const order = [...r.out.matchAll(/^\s+\S+\s+([abc])\s/gm)].map((m) => m[1]);
+  assert.deepEqual(order, ["a", "b", "c"], `порядок вывода не по объявлению: ${order}`);
+  // Три секунды последовательно; параллельно — одна плюс запуск node. Запас на медленную машину.
+  assert.ok(secs < 2.8, `прогон шёл ${secs.toFixed(1)} с — параллельности нет`);
+});
+
+test("--jobs без числа или с нулём — отказ с причиной, а не тихий последовательный прогон", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n" });
+  aqk(p, "init");
+  const r = aqk(p, "doctor", "--run", "--jobs", "0");
+  assert.notEqual(r.code, 0);
+  assert.match(r.out, /--jobs/);
+});

@@ -170,14 +170,16 @@ async function reportCatalog(man, facts, probe = null) {
   let scripts = {}, pkgText = "";
   try { pkgText = await readFile(join(CWD, "package.json"), "utf8"); scripts = JSON.parse(pkgText)?.scripts || {}; } catch { /* нет или не JSON */ }
   const configs = {
-    ruff: await readAll(["ruff.toml", ".ruff.toml", "pyproject.toml"]),
+    // ruff.toml и .ruff.toml — конфиг ruff целиком, слово «ruff» в них писать незачем (поймал наш же
+    // smoke: `extend-select = [..., "T20"]` выбрасывался). pyproject.toml — только если в нём есть
+    // раздел ruff: он есть почти у каждого python-проекта и без ruff.
+    ruff: (await readAll(["ruff.toml", ".ruff.toml"])) +
+      ((await readAll(["pyproject.toml"])).match(/^\[tool\.ruff[\s\S]*/m)?.[0] || ""),
     eslint: (await readAll([".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yml", "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts"])) +
       (/"eslintConfig"/.test(pkgText) ? pkgText : ""),
     biome: await readAll(["biome.json", "biome.jsonc"]),
     scripts,
   };
-  // pyproject.toml есть почти у всех python-проектов; конфигом ruff он считается, только если ruff в нём упомянут.
-  if (!/ruff/.test(configs.ruff)) configs.ruff = "";
   for (const u of coversUnproven(man, catalog, configs)) {
     if (u.kind === "unproven") {
       console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
@@ -237,6 +239,22 @@ async function writeRunReport({ version, reached, results, skipped = [] }) {
   const dst = join(CWD, TARGET_DIR, "last-run.md");
   await mkdir(join(CWD, TARGET_DIR), { recursive: true });
   await writeFile(dst, lines.join("\n") + "\n", "utf8");
+}
+
+// ПРОБА ЗАПУСКАЕТСЯ САМА, раз в сто коммитов, — кроме конвейера (там это минуты сюрпризом в
+// быстрой проверке, отзыв с живого проекта 2026-09-11). Не влияет на код возврата никогда: это
+// осмотр, а не порог. Отдельной функцией: внутри прогона эта лесенка дала вложенность 6, и наш же
+// complexity-limit её поймал.
+async function autoProbe(brief) {
+  let st;
+  try { st = await probeStatus(); } catch { return; /* пробы нет — прогон про гейты, а не про неё */ }
+  if (st.badEvery !== undefined) { console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`)); return; }
+  if (st.state !== "never" && st.state !== "stale") return;
+  if (!autoProbeAllowed({ brief })) { console.log(c.dim(`\n  ${L.probe.autoNotInCi(`${SELF} probe`)}`)); return; }
+  // Сообщение обязано быть верным в обоих случаях: первая версия печатала «прошло сто коммитов»
+  // и там, где пробы не было ВОВСЕ — число бралось из порога, а не из факта.
+  console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
+  try { await cmdProbe([], { auto: true }); } catch { /* проба не состоялась — прогон это не роняет */ }
 }
 
 async function cmdDoctor() {
@@ -396,7 +414,13 @@ async function cmdDoctor() {
   let failedNames = [];
   let skippedNames = [];
   if (wantRun) {
-    const run = runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip") });
+    // --jobs N: сколько гейтов одновременно. Без флага — по одному, как было: чужие гейты бывают
+    // зависимыми (общий dist/), и плавающее красное хуже медленного. Не число — отказ, а не тихий
+    // последовательный прогон под видом параллельного.
+    const ji = process.argv.indexOf("--jobs");
+    const jobs = ji > -1 ? Number(process.argv[ji + 1]) : 1;
+    if (!Number.isInteger(jobs) || jobs < 1) die(L.doctor.jobsBad(process.argv[ji + 1] ?? ""));
+    const run = await runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip"), jobs });
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
     skippedNames = run.skipped || [];
@@ -412,25 +436,7 @@ async function cmdDoctor() {
     // надо. В кратком режиме не запускается: там хук на воротах коммита, и лишние секунды там
     // стоят дороже. Не влияет на код возврата НИКОГДА — это осмотр, а не порог.
     // Выключается AQK_PROBE=0 — у всего, что случается само, обязан быть выключатель.
-    if (!brief && process.env.AQK_PROBE !== "0") {
-      try {
-        const st = await probeStatus();
-        if (st.badEvery !== undefined) {
-          console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`));
-        } else if (st.state === "never" || st.state === "stale") {
-          // В конвейере проба сама не идёт — минуты сюрпризом в быстрой проверке (отзыв с живого
-          // проекта 2026-09-11). Сказано ровно тогда, когда она подошла по сроку, а не каждый раз.
-          if (!autoProbeAllowed({ brief })) {
-            console.log(c.dim(`\n  ${L.probe.autoNotInCi(`${SELF} probe`)}`));
-          } else {
-            // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
-            // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
-            console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
-            await cmdProbe([], { auto: true });
-          }
-        }
-      } catch { /* проба не состоялась — прогон это не роняет: он про гейты, а не про неё */ }
-    }
+    if (!brief && process.env.AQK_PROBE !== "0") await autoProbe(brief);
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
