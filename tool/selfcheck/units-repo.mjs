@@ -321,6 +321,7 @@ test("свод в AGENTS.md виден Claude Code только через CLAUD
   assert.equal(claudeSeesRules({ ...base, claude: "# Rules\n\nSee AGENTS.md for everything.\n" }), "noImport",
     "упоминание словами — не подключение: файл Claude Code в контекст не загрузит");
   assert.equal(claudeSeesRules({ ...base, claude: "# CLAUDE.md\n\n@AGENTS.md\n" }), null);
+  assert.equal(claudeSeesRules({ ...base, claude: "@../AGENTS.md\n" }), null, "из .claude/CLAUDE.md свод подключают на уровень выше");
   assert.equal(claudeSeesRules({ ...base, claude: "Правила — в `@AGENTS.md`.\n" }), "noImport",
     "в обратных кавычках @ не подключает — так в документации");
   assert.equal(claudeSeesRules({ ...base, claude: "x", claudeLink: true }), null, "ссылка на AGENTS.md — тот же файл");

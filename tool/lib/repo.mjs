@@ -337,7 +337,7 @@ function claudeSeesRules({ agents, claude, claudeLink, dotClaude }) {
   if (!agents || claudeLink) return null;
   if (claude === null) return dotClaude ? "missing" : null;
   const prose = String(claude).replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
-  return /(^|\s)@(\.\/)?AGENTS\.md\b/.test(prose) ? null : "noImport";
+  return /(^|\s)@(\.{1,2}\/)*AGENTS\.md\b/.test(prose) ? null : "noImport";
 }
 
 function recipeFor(rec, facts) {

@@ -112,7 +112,9 @@ async function cmdDoctor() {
   try { claudeLink = (await lstat(join(CWD, "CLAUDE.md"))).isSymbolicLink() && /AGENTS\.md$/i.test(await realpath(join(CWD, "CLAUDE.md"))); } catch { /* файла нет */ }
   const shim = claudeSeesRules({
     agents: await exists(join(CWD, "AGENTS.md")),
-    claude: (await readOr("CLAUDE.md")) ?? (await readOr(".claude/CLAUDE.md")),
+    // Оба места — документация называет и ./CLAUDE.md, и ./.claude/CLAUDE.md; подключение в
+    // любом из них засчитывается.
+    claude: [await readOr("CLAUDE.md"), await readOr(".claude/CLAUDE.md")].filter((t) => t !== null).join("\n") || null,
     claudeLink,
     dotClaude: await exists(join(CWD, ".claude")),
   });
