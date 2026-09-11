@@ -104,6 +104,8 @@ aqk badge --check       fail if the badge disagrees with a run
 aqk context             the repository state in one block, for an agent's context:
                         level, what is red now, rules nobody enforces, ratchets,
                         the next three steps with commands, and when to run what
+aqk prompt              one task to paste into an agent: what to fix, in order, and the
+                        command that proves each item done
 aqk vitals              is what the kit runs on wired up: gate tools, hooks, freshness
 aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
 aqk context --full      the same plus the command map and the rulebook verbatim (~7000
@@ -111,8 +113,9 @@ aqk context --full      the same plus the command map and the rulebook verbatim 
 aqk context --install   put a SessionStart hook into .claude/settings.json
                         (add --full to install the full block)
 
-aqk learn               rule candidates from local transcripts:
-                        said out loud, never written down
+aqk learn               rule candidates from local transcripts: said out loud, never
+                        written down — and what you had to repeat ("I told you",
+                        "again"), first of all a written rule the agent still breaks
 aqk note "..."          write a bruise into the journal
 aqk ratchet <name>      a debt registry for a declared gate: may only get shorter
 aqk blob                every guide as a single file
@@ -380,6 +383,12 @@ the same thing in a single line:
 ```yaml
 - run: npx agent-quality-kit doctor --run --min 1
 ```
+
+**Findings show up in the pull request itself.** Inside GitHub Actions a failed gate's finding
+that names a file — `src/a.py:12: …` — becomes a red annotation on that line of the diff, with the
+gate's "fix:" advice attached; an advisory gate gives a yellow one. At most ten of each per run
+(the limit GitHub is reported to take per step); the rest are counted in the log. The verdict
+does not change — annotations print what the run already decided.
 
 ## Without Node at all
 

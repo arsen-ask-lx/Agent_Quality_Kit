@@ -9,12 +9,15 @@
 // файл был полон, и любая следующая правка ложилась туда просто потому, что «так ближе по
 // контексту». Ровно то, о чём предупреждает совет самого гейта.
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { Worker } from "node:worker_threads";
 import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
 import { CWD, c, die } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
 import { L } from "../i18n/index.mjs";
 import { gateCommand } from "./execution.mjs";
+import { annotations } from "./annotate.mjs";
 
 
 // «Гейт объявлен» и «гейт работает» — разные утверждения. Первое читается из манифеста,
@@ -257,7 +260,10 @@ async function runGates(man, opts = {}) {
       }
       // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
       for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll });
+      // `shown` — то, что прогон ПОКАЗАЛ: после сужения по дифу и с советом. Пометки в pull request
+      // берутся отсюда, а не из сырого вывода: иначе при --since они вешались бы на файлы вне
+      // дифа — поймано конвейером на первом же прогоне (smoke: «--since сузил не то»).
+      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll, shown: [...out, ...alwaysAdvice].join("\n") });
     }
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та
@@ -265,6 +271,12 @@ async function runGates(man, opts = {}) {
   if (quietOk.length) console.log(`  ${c.green("✔")}  ${L.doctor.passedQuiet(quietOk.length)}`);
   const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
+  // В GitHub Actions — те же находки пометками у строк файла в pull request. Вердикт не меняется.
+  if (process.env.GITHUB_ACTIONS === "true") {
+    const ann = annotations(results, { exists: (f) => existsSync(join(CWD, f)) });
+    for (const line of ann.lines) console.log(line);
+    if (ann.dropped) console.log(c.dim(`  ${L.doctor.annotDropped(ann.lines.length, ann.dropped)}`));
+  }
   return { failed, ran: gates.length, results, advisoryFailed, skipped: sel.skipped };
 }
 

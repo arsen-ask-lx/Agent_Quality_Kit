@@ -260,6 +260,37 @@ async function installHook(full = false) {
   console.log(c.dim(`  ${T.hookWhat}`));
 }
 
+// Прошлый прогон — из отчёта, который кладёт `doctor --run`. Отдельной функцией: его читают и
+// `context`, и `prompt`, и два разбора одного файла разошлись бы.
+async function readRun() {
+  const lastRun = join(CWD, TARGET_DIR, "last-run.md");
+  if (!(await exists(lastRun))) return null;
+  const run = parseLastRun(await readFile(lastRun, "utf8"));
+  if (run) run.stale = runIsStale(run.when);
+  return run;
+}
+
+// Что советовать — теми же функциями, что у `doctor`: корзины каталога, «начните с трёх», совет
+// под язык, чужие проверки проекта. Одно место на `context` и `prompt`: второй расчёт того же
+// самого разошёлся бы с первым. Класс из пробы, чей гейт уже стоит, в совет не идёт — ставить
+// его второй раз бессмысленно.
+async function readAdvice(man, probe) {
+  const facts = await detectFacts(man);
+  const catalog = await readCatalog();
+  const { todo } = catalogBuckets(catalog, facts, coversOf(man).covered);
+  const adopt = declaredGates(man).length ? [] : proposeGates(await readAdoptFiles(CWD));
+  const blind = (probe?.classes || [])
+    .filter((b) => !facts.gateKeys.includes(b.slug))
+    .map((b) => ({ ...b, command: blindAdvice(catalog.find((r) => r.slug === b.slug), facts, {}).command }));
+  const start = startWith(todo, facts, 3)
+    .map((rec) => ({ slug: rec.slug, intent: rec.intent || "", command: blindAdvice(rec, facts, {}).command }));
+  // Гейт стоит, проба его ГОНЯЛА — и брак он пропустил. Самое ценное, что проба знает: не
+  // «поставь», а «твоя проверка здесь слепа». Гейт, поставленный после пробы, сюда не идёт —
+  // поймает ли, покажет следующая.
+  const missed = (probe?.classes || []).filter((b) => facts.gateKeys.includes(b.slug) && probe?.ran?.has(b.slug));
+  return { adopt, blind, start, missed };
+}
+
 async function cmdContext(args = []) {
   const full = args.includes("--full");
   if (args.includes("--install")) return installHook(full);
@@ -286,12 +317,7 @@ async function cmdContext(args = []) {
     rules = countArbiters(await readFile(join(CWD, entry), "utf8"), ["человек", "human", "nobody"]);
   }
 
-  let run = null;
-  const lastRun = join(CWD, TARGET_DIR, "last-run.md");
-  if (await exists(lastRun)) {
-    run = parseLastRun(await readFile(lastRun, "utf8"));
-    if (run) run.stale = runIsStale(run.when);
-  }
+  const run = await readRun();
 
   // Проба: сколько классов не ловит никто и насколько отметка отстала. Читается из файла,
   // ничего не запускает — блок обязан укладываться в секунду.
@@ -334,14 +360,7 @@ async function cmdContext(args = []) {
   // язык, чужие проверки проекта. Второй расчёт того же самого разошёлся бы с первым.
   let next = null;
   try {
-    const facts = await detectFacts(man);
-    const catalog = await readCatalog();
-    const { todo } = catalogBuckets(catalog, facts, coversOf(man).covered);
-    const adopt = declaredGates(man).length ? [] : proposeGates(await readAdoptFiles(CWD));
-    const blind = (probe?.classes || [])
-      .filter((b) => !facts.gateKeys.includes(b.slug))
-      .map((b) => ({ ...b, command: blindAdvice(catalog.find((r) => r.slug === b.slug), facts, {}).command }));
-    const start = startWith(todo, facts, 3).map((rec) => ({ slug: rec.slug, command: blindAdvice(rec, facts, {}).command }));
+    const { adopt, blind, start } = await readAdvice(man, probe);
     next = nextSteps({ init: !man, adopt, blind, start });
   } catch { /* не посчитали — блок скажет остальное; выдумывать шаги нельзя */ }
 
@@ -351,4 +370,4 @@ async function cmdContext(args = []) {
   }).join("\n"));
 }
 
-export { cmdContext, contextBlock, nextSteps, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf };
+export { cmdContext, contextBlock, nextSteps, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf, readRun, readAdvice };

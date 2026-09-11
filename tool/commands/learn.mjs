@@ -13,10 +13,16 @@
 //     настоящие правила («файл не трогай», «делай прогон с базой обязательно», «никаких
 //     обходных временных путей») и разговорная шелуха примерно поровну.
 //
-// ЧЕГО ЗДЕСЬ НАМЕРЕННО НЕТ. Поиска ПОВТОРОВ — приёма, на котором построен session-analyzer у
-// agent-lint. Замер его не подтвердил: на 67 сессиях владелец не повторяет правило дословно, он
-// говорит его один раз и каждый раз иначе. Те «повторы», что нашлись, оказались задвоением
-// одной реплики в самом логе.
+// ЧЕГО ЗДЕСЬ НАМЕРЕННО НЕТ. Поиска повторов ПО СХОДСТВУ ТЕКСТА — приёма, на котором построен
+// session-analyzer у agent-lint. Замер его не подтвердил: на 67 сессиях владелец не повторяет
+// правило дословно, он говорит его один раз и каждый раз иначе. Те «повторы», что нашлись,
+// оказались задвоением одной реплики в самом логе.
+//
+// ЧТО ЕСТЬ ВМЕСТО НЕГО (2026-09-11). Повтор, который помечает САМ человек: «я же говорил»,
+// «опять», «снова». Не угадывание, что две реплики об одном, а слова «это уже было». На логах
+// двух проектов — 7 и 1 такая реплика, настоящих норм среди них 6 и 1; отбор по маркерам
+// наставления не ловил ни одной. Такой повтор, совпавший с правилом свода, — «записано, а
+// поправлять всё равно приходится»: правилу нужен сторож, текстом оно не держится.
 //
 // ПРИВАТНОСТЬ. Команда читает переписку. Поэтому: только логи ТЕКУЩЕГО проекта (или явно
 // названного), только в терминал, ни строки на диск, код возврата всегда 0. Отчёт, который
@@ -47,14 +53,86 @@ const MARKERS = new RegExp(
 
 // Признаки вставки, а не реплики: длина, код в тройных кавычках, много переносов, пути, ссылки.
 // Каждый добавлен по итогу прогона, а не на всякий случай.
-function looksLikeRule(text) {
+function isPaste(text) {
   const t = String(text || "").trim();
-  if (!t || t.length > 400) return false;
-  if (t.includes("```")) return false;
-  if ((t.match(/\n/g) || []).length > 6) return false;
-  if (/https?:\/\//.test(t)) return false;
-  if ((t.match(/\S+\/\S+/g) || []).length >= 3) return false;
-  return MARKERS.test(t);
+  if (!t || t.length > 400) return true;
+  if (t.includes("```")) return true;
+  if ((t.match(/\n/g) || []).length > 6) return true;
+  if (/https?:\/\//.test(t)) return true;
+  return (t.match(/\S+\/\S+/g) || []).length >= 3;
+}
+
+function looksLikeRule(text) {
+  return !isPaste(text) && MARKERS.test(String(text));
+}
+
+// ПОВТОР — сигнал, который даёт сам человек: «я же говорил», «опять», «снова». Разбор AgentLint
+// 2026-09-11 (research/competitors/agentlint-0xmariowu.md): их SS2 сопоставляет поправку с
+// правилом свода по словам. Замер на логах владельца: из 45 поправок к записанным правилам
+// относятся от силы две — такой приём дал бы шум. А реплик с пометкой повтора в том же проекте
+// 14, настоящих норм среди них 5–6 («опять не хочу плодить файлы», «я же не просил, ты опять не
+// так понял») — и отбор по маркерам наставления выше не ловил НИ ОДНОЙ: слов «всегда»/«никогда»
+// в них нет. `\b` здесь не годится — в JavaScript он не видит границ кириллических слов.
+// Две силы пометки. Сильная — «я же говорил», «сколько раз» — повтор при любой форме реплики.
+// Слабая — «опять», «снова» — только в утверждении: второй прогон на тех же логах показал, что
+// вопрос с ней — недоумение («че опять rust?», «опять в env добавить?»), а не норма. Реплика со
+// значка статуса (⬜ ✅ ❌) — вставленная цитата ответа агента, а не слова человека.
+const STRONG = new RegExp(
+  "(^|[^а-яёa-z])(я же (говорил|говорю|просил|сказал|писал)|говорил же|сколько (раз|можно)|" +
+  "в который раз|(ещё|еще) раз говорю|i (already )?told you)([^а-яёa-z]|$)",
+  "i",
+);
+const WEAK = /(^|[^а-яёa-z])(опять(?! же)|снова|again)([^а-яёa-z]|$)/i;
+
+function isRepeat(text) {
+  const t = String(text || "").trim();
+  if (isPaste(t) || /^[⬜✅❌☐☑]/u.test(t)) return false;
+  return STRONG.test(t) || (WEAK.test(t) && !t.includes("?"));
+}
+
+// Правила свода: пункты списка с меткой сторожа `<!-- aqk: … -->` — так их размечает комплект.
+// Свод без меток — пункты под заголовком про правила. Заголовок правила — жирное начало или
+// часть до двоеточия: по нему и сверяем, хвост пояснения совпал бы с чем угодно.
+function entryRules(entryText) {
+  const items = [];
+  let cur = null;
+  let section = "";
+  for (const line of String(entryText).split(/\r?\n/)) {
+    const h = /^#{1,4}\s+(.+)$/.exec(line);
+    if (h) { section = h[1]; cur = null; continue; }
+    const b = /^[-*]\s+(.+)$/.exec(line);
+    if (b) { cur = { text: b[1], section }; items.push(cur); continue; }
+    if (cur && /^\s{2,}\S/.test(line)) cur.text += ` ${line.trim()}`;
+    else cur = null;
+  }
+  const marked = items.filter((r) => /<!--\s*aqk:/.test(r.text));
+  const pool = marked.length ? marked : items.filter((r) => /правил|rules|constraints|запрет/i.test(r.section));
+  return pool.map((r) => {
+    const body = r.text.replace(/<!--[\s\S]*?-->/g, "").trim();
+    const title = (/^\*\*([^*]+)\*\*/.exec(body) || /^([^:]{3,60}):/.exec(body) || [, body.slice(0, 100)])[1].trim();
+    return { title, arbiter: (/<!--\s*aqk:\s*(\S+?)\s*-->/.exec(r.text) || [])[1] || null };
+  });
+}
+
+// Слова-пометки повтора и служебные слова по правилу не сверяются: иначе «опять» совпало бы с
+// любым правилом, где оно встретилось.
+const NOT_TOPIC = new Set(["опять", "снова", "говор", "проси", "сказа", "писал", "тольк", "всегд",
+  "никог", "нужно", "можно", "котор", "когда", "чтобы", "этого", "again", "told", "always", "never"]);
+const topic = (t) => new Set(keyWords(t).map(stem).filter((s) => !NOT_TOPIC.has(s)));
+
+// Записано, а поправлять всё равно приходится: повтор, у которого с заголовком правила совпали
+// две основы — или все, если заголовок короче трёх слов.
+function repeatedRules(repeats, entryText) {
+  const out = [];
+  for (const r of entryRules(entryText)) {
+    const t = topic(r.title);
+    if (!t.size) continue;
+    for (const m of repeats) {
+      const common = [...topic(m.text)].filter((s) => t.has(s)).length;
+      if (common >= 2 || (t.size <= 2 && common === t.size)) out.push({ rule: r.title, arbiter: r.arbiter, ...m });
+    }
+  }
+  return out;
 }
 
 // Слова, по которым сверяем сказанное с записанным. Короткие отброшены: на них совпадёт что
@@ -127,6 +205,7 @@ async function cmdLearn(argv = process.argv) {
   try { files = (await readdir(root)).filter((f) => f.endsWith(".jsonl")); } catch { files = []; }
   const seen = new Set();
   const said = [];
+  const repeats = [];
   let typedTotal = 0;
   for (const f of files) {
     let raw = "";
@@ -136,24 +215,45 @@ async function cmdLearn(argv = process.argv) {
       const key = m.text.toLowerCase().slice(0, 200);
       if (seen.has(key)) continue;
       seen.add(key);
-      if (looksLikeRule(m.text)) said.push(m);
+      if (isRepeat(m.text)) repeats.push(m);
+      else if (looksLikeRule(m.text)) said.push(m);
     }
   }
 
   const entry = await readEntry(await readManifest());
-  const fresh = said.filter((m) => saidNotWritten(m.text, entry));
-  fresh.sort((a, b) => String(b.when).localeCompare(String(a.when)));
+  const byDate = (a, b) => String(b.when).localeCompare(String(a.when));
+  const fresh = said.filter((m) => saidNotWritten(m.text, entry)).sort(byDate);
+  const ruleHits = repeatedRules(repeats, entry).sort(byDate);
+  const onRule = new Set(ruleHits.map((h) => h.text));
+  const again = repeats.filter((m) => !onRule.has(m.text)).sort(byDate);
 
-  console.log(`  ${c.dim(L.learn.counted(files.length, typedTotal, said.length, fresh.length))}\n`);
-  if (!fresh.length) {
+  console.log(`  ${c.dim(L.learn.counted(files.length, typedTotal, said.length, fresh.length, repeats.length))}\n`);
+  if (!fresh.length && !repeats.length) {
     console.log(`  ${L.learn.nothing}\n`);
     return;
   }
-  for (const m of fresh.slice(0, limit)) {
-    console.log(`  ${c.dim(m.when)}  ${m.text.slice(0, 150)}`);
+  const show = (m) => console.log(`  ${c.dim(m.when)}  ${m.text.slice(0, 150)}`);
+  // Первым — правило, которое ЗАПИСАНО, а человек всё равно поправляет: текстом оно не держится.
+  if (ruleHits.length) {
+    console.log(`  ${c.bold(L.learn.ruleTitle)}`);
+    for (const h of ruleHits.slice(0, limit)) {
+      console.log(`  ${c.yellow("!")}  ${h.rule}${h.arbiter ? c.dim(`  · aqk: ${h.arbiter}`) : ""}`);
+      console.log(`     ${c.dim(h.when)}  ${h.text.slice(0, 140)}`);
+    }
+    console.log(c.dim(`     ${L.learn.ruleHow}\n`));
   }
-  if (fresh.length > limit) console.log(c.dim(`\n  ${L.learn.andMore(fresh.length - limit)}`));
+  if (again.length) {
+    console.log(`  ${c.bold(L.learn.repeatTitle)}`);
+    again.slice(0, limit).forEach(show);
+    if (again.length > limit) console.log(c.dim(`  ${L.learn.andMore(again.length - limit)}`));
+    console.log("");
+  }
+  if (fresh.length) {
+    if (repeats.length) console.log(`  ${c.bold(L.learn.restTitle)}`);
+    fresh.slice(0, limit).forEach(show);
+    if (fresh.length > limit) console.log(c.dim(`\n  ${L.learn.andMore(fresh.length - limit)}`));
+  }
   console.log(`\n  ${c.yellow(L.learn.warn)}\n`);
 }
 
-export { cmdLearn, logSlug, looksLikeRule, saidNotWritten, typedFrom };
+export { cmdLearn, logSlug, looksLikeRule, saidNotWritten, typedFrom, isRepeat, repeatedRules };

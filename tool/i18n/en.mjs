@@ -15,8 +15,12 @@ export const en = {
   learn: {
     title: "Said out loud, never written down",
     noLogs: (p) => `no logs for this project: ${p}\n  The command reads Claude Code transcripts on this machine. Empty means nobody worked here.`,
-    counted: (s, typed, said, fresh) =>
-      `sessions: ${s} · typed by a human: ${typed} · looks like an instruction: ${said} · not in the entry point: ${fresh}`,
+    counted: (s, typed, said, fresh, again) =>
+      `sessions: ${s} · typed by a human: ${typed} · looks like an instruction: ${said} · not in the entry point: ${fresh} · repeated: ${again}`,
+    ruleTitle: "Written down, yet you still have to correct it:",
+    ruleHow: "The rule is in the entry point, and you are repeating it to the agent again — text alone does not hold it. It needs a machine guard: aqk find \"…\" or aqk new <name>.",
+    repeatTitle: "Repeated — you have said this before (\"I told you\", \"again\"):",
+    restTitle: "The rest that looks like a rule and is not written down:",
     nothing: "everything that looks like a rule is already in the entry point",
     andMore: (n) => `… and ${n} more`,
     warn:
@@ -47,6 +51,7 @@ export const en = {
     learn: "rule candidates from local transcripts: said out loud, never written down",
     context: "the project state in one block — for an agent's context, not for reading",
     vitals: "is what the kit runs on wired up: gate tools, hooks, version freshness",
+    prompt: "one task for the agent: what to fix, in order, and how to prove it is done",
     contextInstall: "the same in full — the map and the rulebook — installed as a hook",
     report: "the mandatory report form: what is in place, what is not, what was not read; --since <ref> adds what proves the diff",
     badge: "a level badge for your README — and a check that it does not lie",
@@ -79,6 +84,7 @@ export const en = {
       missing: "Claude Code is set up here (.claude/), but the rules live in AGENTS.md — it does not read that file. Fix: a CLAUDE.md with the single line \"@AGENTS.md\".",
       noImport: "CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Fix: add the line \"@AGENTS.md\" to CLAUDE.md (mentioning the file in prose does not load it).",
     },
+    annotDropped: (n, more) => `pull request annotations: ${n}, ${more} more not shown — GitHub takes about ten per step; every finding is in the log above`,
     heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
     skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
     passedQuiet: (n) => `${n} more passed — by name: --verbose`,
@@ -262,5 +268,41 @@ export const en = {
     alreadyDeclared: "already declared",
   },
 
+  prompt: {
+    title: "# Task: get this project's checks actually working",
+    intro: "Written by AQK from the current state of the repository. Do the items in order.",
+    rulesTitle: "## Ground rules",
+    rules: [
+      "Use only commands from this task and from the repository. Do not invent any.",
+      "Run an item's check first and see it fail. Then fix. Done means the same command passes.",
+      "Fix the code, not the check: do not loosen a threshold, add exclusions or switch a gate off. If you think a check is wrong, stop and ask the owner.",
+      "A decision only the owner can make (what to add to the project, which rules to adopt) — ask, do not guess.",
+      "Change only what these items need.",
+    ],
+    tasksTitle: "## What to do",
+    empty: "Nothing to do: no gate is red, the probe found nothing, nothing to add. Still run the verification below.",
+    done: "Done —",
+    item: {
+      init: (s) => `Create the manifest: \`${s} init\` — without it the other commands refuse. Done — \`${s} doctor\` shows a level.`,
+      runNone: (s) => `There has been no run yet. Run \`${s} doctor --run\` and fix whatever turns red, one gate at a time: \`${s} doctor --run --only <name>\`. Done — the run passes.`,
+      runStale: (s, when) => `The run from ${when} is older than the last commit — the red list below may describe other code. Run \`${s} doctor --run\` again. Done — you have a fresh result and have checked the items below against it.`,
+      missed: ({ slug, file }, s) => `Gate \`${slug}\` is installed but missed the defect the probe planted into \`${file}\`. Find out why — a common cause is that the gate does not look at this file type or folder; \`${s} probe\` has the details. Done — \`${s} probe\` no longer names this class.`,
+      red: (name, s) => `Gate \`${name}\` is red. Run \`${s} doctor --run --only ${name}\`, read the findings and fix the code. Done — that command passes.`,
+      blind: ({ slug, file, command }, s) => `The probe planted a \`${slug}\` defect into \`${file}\` and the project's checks did not notice. Add a check: \`${s} add ${slug}\`${command ? ` (the same as one line, without the kit: \`${command}\`)` : ""}. Done — \`${s} doctor --run --only ${slug}\` passes and \`${s} probe\` no longer names this class.`,
+      adopt: (gates, s) => `The project already has its own checks: ${gates.map((g) => `\`${g.cmd}\` (${g.source})`).join(", ")}. Declare them under gates: in .aqk.yml — ${gates.map((g) => `\`${g.name}: "${g.cmd}"\``).join(", ")}. Done — \`${s} doctor --run\` runs them.`,
+      shim: {
+        missing: (s) => `Claude Code is set up here, but the rules live in AGENTS.md — it only reads CLAUDE.md. Create a CLAUDE.md with the single line \`@AGENTS.md\`. Done — \`${s} doctor\` no longer warns about it.`,
+        noImport: (s) => `CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Add the line \`@AGENTS.md\` to CLAUDE.md (mentioning the file in prose does not load it). Done — \`${s} doctor\` no longer warns about it.`,
+      },
+      start: ({ slug, intent, command }, s) => `Propose the \`${slug}\` check to the owner${intent ? ` — ${intent}` : ""}. If they agree — \`${s} add ${slug}\`${command ? ` (the same as one line, without the kit: \`${command}\`)` : ""}. If it fails on existing code, do not silence it — show the findings to the owner. Done — \`${s} doctor --run --only ${slug}\` passes and \`${s} prove\` shows it proven.`,
+    },
+    more: (n, s) => `And ${n} more — the full list: \`${s} doctor\`. Finish these first.`,
+    verifyTitle: "## How to verify it is done",
+    verify: (s) => [
+      `\`${s} doctor --run\` — the run passes.`,
+      `\`${s} prove\` — no gate is broken: each one fails on its own red sample.`,
+      "Name these commands and their results in your report. \"Looks like it works\" is not done.",
+    ],
+  },
   ...enGates,
 };
