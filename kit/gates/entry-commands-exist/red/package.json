@@ -1,0 +1,9 @@
+{
+  "name": "sample",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "debug": "4.3.4"
+  }
+}

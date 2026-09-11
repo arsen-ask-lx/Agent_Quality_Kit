@@ -147,6 +147,7 @@ async function runGates(man, opts = {}) {
   if (sel.skipped.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(sel.skipped.join(", "))}\n`));
   let failed = 0;
   const results = [];
+  const quietOk = [];
 
   const jobs = Math.max(1, Number(opts.jobs) || 1);
   const pooled = jobs > 1 ? startPool(gates.map(([, cmd]) => cmd), jobs) : null;
@@ -178,12 +179,16 @@ async function runGates(man, opts = {}) {
       // совещательный печатался обычной галочкой, а README обещал, что список назван каждый
       // прогон. Тот же класс, что молчащий гейт, только про сам прибор.
       const quiet = advisory.has(name) ? ` ${c.yellow(L.doctor.advisoryQuiet)}` : "";
-      console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${quiet} ${c.dim(`${secs}s · ${cmd}`)}`);
       // Зелёный гейт иногда всё-таки говорит человеку что-то важное: храповик, дошедший до цели,
       // просит убрать обёртку. Вывод успешного гейта не показывался вовсе, и это сообщение
       // уходило в никуда — тот же класс, что обрезанный совет у красного, только тише.
       // Показываем ровно строки с меткой совета: остальной вывод успешной проверки — шум.
       const okAdvice = splitAdvice(`${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").filter(Boolean)).advice;
+      // Без `--verbose` зелёный гейт своей строки не получает — если ему нечего сказать. Совещательный
+      // и гейт с советом печатаются всегда: первый обязан быть назван каждый прогон (см. выше),
+      // второй несёт строку, ради которой человек и смотрит.
+      if (opts.verbose || quiet || okAdvice.length) console.log(`  ${c.green("✔")}  ${name.padEnd(14)}${quiet} ${c.dim(`${secs}s · ${cmd}`)}`);
+      else quietOk.push(name);
       for (const line of okAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
       results.push({ name, cmd, ok: true, secs, advisory: advisory.has(name), out: outAll });
     } else {
@@ -257,6 +262,7 @@ async function runGates(man, opts = {}) {
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та
   // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
+  if (quietOk.length) console.log(`  ${c.green("✔")}  ${L.doctor.passedQuiet(quietOk.length)}`);
   const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
   return { failed, ran: gates.length, results, advisoryFailed, skipped: sel.skipped };

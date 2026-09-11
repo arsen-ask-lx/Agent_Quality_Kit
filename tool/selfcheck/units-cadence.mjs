@@ -7,7 +7,7 @@
 // незачем, а сто коммитов за день перепроверить надо.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed } from "../lib/cadence.mjs";
+import { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed, parseCounts, levelLimits } from "../lib/cadence.mjs";
 
 test("порог по умолчанию — сто коммитов, и он назван числом, а не спрятан", () => {
   assert.equal(PROBE_EVERY, 100);
@@ -116,4 +116,29 @@ test("проба сама не запускается в конвейере, в 
   assert.equal(autoProbeAllowed({ brief: false, env: { AQK_PROBE: "0" } }), false);
   // Явное AQK_PROBE=1 включает и в конвейере: у всего, что решено за человека, есть способ решить иначе.
   assert.equal(autoProbeAllowed({ brief: false, env: { CI: "true", AQK_PROBE: "1" } }), true);
+});
+
+// --- чего уровень НЕ доказывает --------------------------------------------------
+// Отзыв с живого проекта 2026-09-11: «после одного --run у нас AQK-3, All levels reached. При
+// этом CI ни разу не запускался, а probe засчитывает всё подряд. Уровень меряет наличие
+// артефактов, а не то, что они работают». Смысл ступеней не меняем — поднимать планку молча
+// значит отнять опубликованный уровень у всех разом; вместо этого под уровнем стоит, чего он
+// не доказывает, и что про это знает последняя проба.
+test("отметка пробы несёт числа пойманных и недоказанных, старая — «не знаем»", () => {
+  assert.deepEqual(parseCounts("at: 5\nblind: 0\ncaught: 7\nunknown: 2\n"), { caught: 7, unknown: 2 });
+  assert.equal(parseCounts("at: 5\nblind: 0\n"), null, "старая отметка: чисел нет — это не ноль");
+});
+
+test("строка про брак в ваших файлах говорит ровно то, что знает проба", () => {
+  assert.equal(levelLimits(null).kind, "never");
+  assert.equal(levelLimits({ state: "never", behind: null, classes: [], ran: null }).kind, "never");
+  assert.equal(levelLimits({ state: "off" }).kind, "off");
+  const blind = levelLimits({ state: "fresh", behind: 3, classes: [{ slug: "swallowed-error", file: "a.py" }], ran: new Set(), counts: { caught: 4, unknown: 0 } });
+  assert.deepEqual([blind.kind, blind.names, blind.behind], ["blind", ["swallowed-error"], 3], "непойманное — первым, даже если пойманного больше");
+  const part = levelLimits({ state: "fresh", behind: 0, classes: [], ran: new Set(), counts: { caught: 4, unknown: 2 } });
+  assert.deepEqual([part.kind, part.caught, part.unknown], ["partial", 4, 2]);
+  assert.equal(levelLimits({ state: "stale", behind: 150, classes: [], ran: new Set(), counts: { caught: 5, unknown: 0 } }).kind, "caught");
+  assert.equal(levelLimits({ state: "fresh", behind: 1, classes: [], ran: new Set(), counts: { caught: 0, unknown: 0 } }).kind, "nothing");
+  assert.equal(levelLimits({ state: "fresh", behind: 1, classes: [], ran: new Set(), counts: null }).kind, "old", "старая отметка — «подробности в пробе», а не «всё поймано»");
+  assert.equal(levelLimits({ state: "unknown", behind: null, classes: [], ran: new Set(), counts: { caught: 2, unknown: 0 } }).kind, "caught", "без git отметка всё равно читается");
 });

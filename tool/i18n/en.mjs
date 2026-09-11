@@ -7,6 +7,8 @@ import { enDocs } from "./en-docs.mjs";
 
 import { templates } from "./templates-en.mjs";
 
+const ago = (n) => (n === null || n === undefined ? "" : ` (${n} commit${n === 1 ? "" : "s"} ago)`);
+
 import { enGates } from "./en-gates.mjs";
 
 export const en = {
@@ -73,6 +75,13 @@ export const en = {
     coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
     selectUnknown: (names, groups) => `--only/--skip: "${names}" is neither a gate from gates: nor a group from groups:${groups ? ` (groups: ${groups})` : ""}. Running everything instead of skipping would be a lie, so stopping.`,
     selectSkipped: (names) => `not run (by --only/--skip): ${names} — their state is unknown, they are not "green"`,
+    claudeShim: {
+      missing: "Claude Code is set up here (.claude/), but the rules live in AGENTS.md — it does not read that file. Fix: a CLAUDE.md with the single line \"@AGENTS.md\".",
+      noImport: "CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Fix: add the line \"@AGENTS.md\" to CLAUDE.md (mentioning the file in prose does not load it).",
+    },
+    heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
+    skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
+    passedQuiet: (n) => `${n} more passed — by name: --verbose`,
     jobsBad: (v) => `--jobs expects a whole number from 1: "${v}" will not do. A one-by-one run passed off as parallel would be a lie, so stopping.`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
@@ -95,6 +104,17 @@ export const en = {
     toReach: (n) => `To reach AQK-${n}:`,
     gives: (what) => `What it buys you: ${what}`,
     allDone: "All levels reached.",
+    limitsTitle: "A level measures tooling, not reliability. What it does not prove:",
+    limitsProbe: {
+      never: (_, cmd) => `defects in your files: the probe has never run — ${cmd}`,
+      off: () => "defects in your files: the probe is off (probe: 0) — whether your checks catch them is unknown",
+      blind: ({ names, behind }) => `defects in your files: the probe${ago(behind)} did NOT catch — ${names.join(", ")}`,
+      partial: ({ caught, unknown, behind }, cmd) => `defects in your files: the probe${ago(behind)} caught ${caught} classes, ${unknown} unproven (${cmd})`,
+      caught: ({ caught, behind }) => `defects in your files: the probe${ago(behind)} caught all ${caught} planted classes — only those the catalog has`,
+      nothing: ({ behind }, cmd) => `defects in your files: the probe${ago(behind)} planted nothing — ${cmd}`,
+      old: ({ behind }, cmd) => `defects in your files: the probe ran${ago(behind)}; ${cmd} shows the result`,
+    },
+    limitsCi: "pipeline: whether it passed is not visible from here — we only check that gates are declared in it",
 
     gatesHeading: "Gates",
     langs: "languages",
@@ -216,7 +236,7 @@ export const en = {
       has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],
       has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
       has_mcp: ["no MCP tools are wired up for the agent here", "MCP servers are declared"],
-      has_api_spec: ["no API specification in sight", "an API specification exists"],
+      has_api_spec: ["no API contract in sight: no OpenAPI file, no tRPC, ts-rest or Fastify type provider", "an API contract exists: a specification file or schemas in code"],
     },
   },
 

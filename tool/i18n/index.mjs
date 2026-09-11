@@ -29,13 +29,19 @@ import { en } from "./en.mjs";
 // Переменная окружения оставлена ВЫШЕ манифеста намеренно: человек, набравший AQK_LANG=en
 // руками, хочет английский именно сейчас, и спорить с ним манифестом значит отнять у него
 // последнее средство. Манифест выше локали — он про проект, локаль про машину.
-function pickLang(env = process.env, man = null) {
+//
+// Третьим — ЯЗЫК СВОДА ПРОЕКТА, между манифестом и локалью. Отзыв с живого проекта 2026-09-11:
+// свод и методички на русском, Windows без LANG — весь вывод английский, пока руками не впишешь
+// `lang:`. Текст, который проект сам о себе написал, — такое же свойство проекта, как поле
+// манифеста, только необъявленное: поэтому ниже поля и выше машины.
+function pickLang(env = process.env, man = null, docs = "") {
   const forced = String(env.AQK_LANG || "").toLowerCase();
   if (forced.startsWith("ru")) return "ru";
   if (forced.startsWith("en")) return "en";
   const declared = String(man?.lang || "").toLowerCase();
   if (declared.startsWith("ru")) return "ru";
   if (declared.startsWith("en")) return "en";
+  if (docs === "ru" || docs === "en") return docs;
   const locale = String(env.LC_ALL || env.LC_MESSAGES || env.LANG || "").toLowerCase();
   if (locale.startsWith("ru")) return "ru";
   return "en";
@@ -59,8 +65,41 @@ function manifestLang(cwd = process.cwd()) {
   }
 }
 
+// Язык прозы: код, пути и адреса вырезаются — в русском своде половина слов это `npm run check`
+// и `packages/contract`, и по всем буквам подряд он вышел бы английским. Порог с запасом в обе
+// стороны: кириллицы больше половины букв — русский, меньше десятой при хотя бы двухстах
+// буквах — английский; между ними и на коротком тексте свод молчит, и решает локаль.
+function langFromDocs(text) {
+  const prose = String(text)
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`\n]*`/g, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/https?:\/\/\S+/g, " ");
+  const cyr = (prose.match(/[а-яё]/gi) || []).length;
+  const lat = (prose.match(/[a-z]/gi) || []).length;
+  const all = cyr + lat;
+  if (all < 200) return "";
+  if (cyr / all >= 0.5) return "ru";
+  if (cyr / all <= 0.1) return "en";
+  return "";
+}
+
+// Первые 8 КБ каждого из трёх файлов: язык виден по первому экрану, а читать мегабайтный README
+// ради одной буквы в начале каждой команды — дорого.
+function docsLang(cwd = process.cwd()) {
+  let text = "";
+  for (const name of ["AGENTS.md", "CLAUDE.md", "README.md"]) {
+    try {
+      text += readFileSync(join(cwd, name), "utf8").slice(0, 8192) + "\n";
+    } catch {
+      // Файла нет — язык решат остальные.
+    }
+  }
+  return langFromDocs(text);
+}
+
 const CATALOGS = { ru, en };
-const LANG = pickLang(process.env, manifestLang());
+const LANG = pickLang(process.env, manifestLang(), docsLang());
 const L = CATALOGS[LANG];
 
-export { L, LANG, pickLang, langFromText, CATALOGS };
+export { L, LANG, pickLang, langFromText, langFromDocs, CATALOGS };

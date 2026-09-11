@@ -30,7 +30,7 @@ import { fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, 
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { blindAdvice } from "../lib/advice.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
-import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
+import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, parseCounts } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 import { gateCommand } from "../lib/execution.mjs";
 
@@ -422,6 +422,7 @@ async function cmdProbe(args, { auto = false } = {}) {
   // Отметка нужна не для отчёта, а для КАДЕНЦИИ: по ней следующий прогон поймёт, что пора.
   // Без неё команда снова становится тем, о чём надо вспомнить.
   await writeMark(commitCount(), blind, [
+    `caught: ${n.caughtClasses}`, `unknown: ${n.unknownClasses}`,
     `ran: ${probeGates.map(([name]) => name).join(" ")}`, "",
     ...blindLines(records), "",
     ...hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`),
@@ -442,7 +443,8 @@ async function probeStatus() {
   if (every === null) return { state: "unknown", behind: null, badEvery: String(man?.probe) };
   if (every === 0) return { state: "off", behind: null };
   const mark = await readMark();
-  return { ...probeState(mark, commitCount(), every), classes: parseBlind(mark?.text), ran: parseRan(mark?.text) };
+  const text = mark?.text;
+  return { ...probeState(mark, commitCount(), every), classes: parseBlind(text), ran: parseRan(text), counts: parseCounts(text) };
 }
 
 export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, isCode };

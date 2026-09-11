@@ -99,4 +99,33 @@ function autoProbeAllowed({ brief = false, env = process.env } = {}) {
   return !(env.CI || env.GITHUB_ACTIONS || env.GITLAB_CI || env.BUILDKITE || env.JENKINS_URL);
 }
 
-export { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed };
+// Сколько классов проба поймала и у скольких поимка не доказана. Старая отметка чисел не несёт —
+// null: «не знаем», а не «ноль пойманных».
+function parseCounts(text) {
+  const caught = /^caught:[ \t]*(\d+)/m.exec(String(text || ""));
+  const unknown = /^unknown:[ \t]*(\d+)/m.exec(String(text || ""));
+  return caught && unknown ? { caught: Number(caught[1]), unknown: Number(unknown[1]) } : null;
+}
+
+// Чего уровень НЕ доказывает — строкой под ним. Отзыв с живого проекта 2026-09-11: «AQK-3, All
+// levels reached» при конвейере, который ни разу не запускался. Ступени меряют оснащённость:
+// гейты показаны на образцах КАТАЛОГА. Ловят ли они брак в файлах ПРОЕКТА, знает только проба —
+// и строка говорит ровно то, что знает она. Непойманное идёт первым, даже если пойманного
+// больше: «четыре из пяти» глаз читает как «всё хорошо».
+//
+// Планку ступеней не подняли намеренно: отметка пробы лежит в .gitignore, в конвейере её нет, и
+// «AQK-2 только после пробы» уронило бы уровень и `badge --check` у всех разом.
+function levelLimits(st) {
+  if (st?.state === "off") return { kind: "off" };
+  const behind = Number.isFinite(st?.behind) ? st.behind : null;
+  if (st?.classes?.length) return { kind: "blind", names: st.classes.map((x) => x.slug), behind };
+  if (st?.counts) {
+    const { caught, unknown } = st.counts;
+    if (unknown > 0) return { kind: "partial", caught, unknown, behind };
+    return caught > 0 ? { kind: "caught", caught, behind } : { kind: "nothing", behind };
+  }
+  if (st?.ran) return { kind: "old", behind };
+  return { kind: "never" };
+}
+
+export { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed, parseCounts, levelLimits };

@@ -103,3 +103,28 @@ test("нет .aqk/docs и .aqk/rules — прогон всё равно зелё
   assert.equal(r.code, 0, `прогон покраснел из-за методичек:\n${tail}`);
   assert.match(plain(r.out), /\.aqk\/docs/, "отсутствие методичек не названо вовсе");
 });
+
+// Отзыв с живого проекта 2026-09-11: «AQK-3, All levels reached» при конвейере, который ни разу
+// не запускался. Под уровнем — чего он не доказывает, и что про это знает проба. Здесь пробы
+// не было: строка обязана это сказать, а не промолчать — тишину глаз читает как «всё хорошо».
+test("под уровнем стоит, чего он не доказывает", (t) => {
+  const p = project(t, {
+    ".aqk.yml": 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  lint: "true"\n',
+    "AGENTS.md": "# rules\n",
+    "rules/a.md": "# a\n",
+  });
+  const r = aqk(p, "doctor");
+  assert.match(r.out, /AQK-1/, r.out);
+  assert.match(r.out, /(оснащённость, а не надёжность|tooling, not reliability)/, `нет оговорки под уровнем:\n${r.out}`);
+  assert.match(r.out, /(проба не запускалась|probe has never run)/, `про пробу — тишина:\n${r.out}`);
+  assert.match(r.out, /(конвейер: прошёл ли он|pipeline: whether it passed)/, r.out);
+});
+
+// Claude Code читает CLAUDE.md, а не AGENTS.md (документация, сверено 2026-09-11). Проект с
+// .claude/ и сводом только в AGENTS.md пишет правила агенту, который их не читает.
+test("doctor называет свод, которого не видит Claude Code, и молчит, когда он подключён", (t) => {
+  const p = project(t, { ".claude/settings.json": "{}\n", "AGENTS.md": "# Rules\n\n- run tests\n" });
+  assert.match(plain(aqk(p, "doctor").out), /(Claude Code здесь настроен|Claude Code is set up here)/);
+  writeFileSync(join(p.dir, "CLAUDE.md"), "@AGENTS.md\n", "utf8");
+  assert.doesNotMatch(plain(aqk(p, "doctor").out), /(Claude Code здесь настроен|не подключает AGENTS|Claude Code is set up|does not import AGENTS)/);
+});

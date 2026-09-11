@@ -1,0 +1,10 @@
+{
+  "name": "sample",
+  "scripts": {
+    "build": "tsc",
+    "debug": "npm run build && node dist/index.js"
+  },
+  "dependencies": {
+    "debug": "4.3.4"
+  }
+}

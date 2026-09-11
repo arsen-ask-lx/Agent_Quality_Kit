@@ -40,23 +40,36 @@ SPECS=$(find "$DIR" $(skip_find) -type f \
   -o -iname 'swagger*.yaml' -o -iname 'swagger*.yml' -o -iname 'swagger*.json' \
   -o -iname 'asyncapi*.yaml' -o -iname 'asyncapi*.yml' -o -iname 'asyncapi*.json' \) \
   -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
-[ -z "$SPECS" ] && { echo "спецификации API здесь нет — эта проверка не про тебя"; exit 0; }
 
-# --- кто её держит ------------------------------------------------------------
-# Четыре семьи держателей, и они отвечают на РАЗНЫЕ вопросы — подробности в README:
-#   сверка с сервером  schemathesis, dredd, portman, newman, pact — «документ не врёт»
-#   линт документа     spectral, redocly, vacuum, openapi-spec-validator, swagger-cli
-#   ломающие правки    oasdiff — «вчерашний клиент переживёт сегодняшний выпуск»
-#   потребитель        openapi-typescript, orval, oapi-codegen, openapi-generator, kubb —
-#                      типы порождены договором, и расхождение ломает сборку
-HOLDERS='schemathesis|dredd|portman|newman[[:space:]]+run|pact-broker|pact-verifier|can-i-deploy|spectral[[:space:]]+lint|redocly[[:space:]]+(lint|bundle)|vacuum[[:space:]]+(lint|report|html-report)|openapi-spec-validator|swagger-cli|oasdiff|openapi-typescript|orval|oapi-codegen|openapi-generator|kubb'
-# Ищем в том, что ЗАПУСКАЮТ: конвейер, оболочечные скрипты, сборочные файлы, объявления пакета
-# и манифест самого комплекта. Не в коде: упоминание инструмента в исходнике — не его запуск.
-FOUND=$(grep -rnE "$HOLDERS" $(skip_grep) \
-  --include=*.yml --include=*.yaml --include=*.sh --include=*.json --include=*.toml \
-  --include=*.ini --include=*.cfg --include=*.mk --include=Makefile --include=Justfile \
-  --include=justfile --include=Taskfile.yml --include=*.gradle --include=Jenkinsfile \
-  "$DIR" 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
+# ДОГОВОР В КОДЕ — тот же договор без файла. Отзыв с живого проекта 2026-09-11: схемы zod
+# запросов и ответов в общем пакете, сервер на `@fastify/type-provider-zod` — а проверка писала
+# «спецификации нет», потому что знала только имя `openapi*`. Опознаём по зависимости в
+# `package.json`: tRPC, ts-rest, Hono с zod-openapi, провайдеры типов Fastify (официальные
+# `@fastify/type-provider-*` и `fastify-type-provider-zod`). Один `zod` — НЕ договор: им
+# разбирают формы и конфиги. Имена сверены с реестром npm 2026-09-11, а не по памяти: по
+# памяти был назван `fastify-type-provider-zod`, а на живом проекте стоял `@fastify/...`.
+CODE_DEPS='@trpc/server|@ts-rest/core|@hono/zod-openapi|@fastify/type-provider-[a-z0-9-]+|fastify-type-provider-zod'
+CODE=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null \
+  | own_samples_filter "$DIR" | grep -v '^$' \
+  | while IFS= read -r F; do grep -qE "\"($CODE_DEPS)\"[[:space:]]*:" "$F" && printf '%s\n' "$F"; done)
+
+[ -z "$SPECS$CODE" ] && {
+  echo "договора API здесь нет — ни файла OpenAPI, ни tRPC, ts-rest или провайдера типов"
+  echo "Fastify; эта проверка не про тебя"
+  exit 0
+}
+
+# Где искать запуск: конвейер, оболочечные скрипты, сборочные файлы, объявления пакета и
+# манифест самого комплекта. Не в коде: упоминание инструмента в исходнике — не его запуск.
+# Файлы блокировки — не запуск тоже: `package-lock.json` держит `"bin": { "tsc": … }` у
+# каждого проекта на TypeScript, и без исключения арбитр находился бы всегда.
+run_grep() {
+  grep -rnE "$1" $(skip_grep) --exclude=package-lock.json --exclude=npm-shrinkwrap.json \
+    --include=*.yml --include=*.yaml --include=*.sh --include=*.json --include=*.toml \
+    --include=*.ini --include=*.cfg --include=*.mk --include=Makefile --include=Justfile \
+    --include=justfile --include=Taskfile.yml --include=*.gradle --include=Jenkinsfile \
+    "$DIR" 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | drop_definitions
+}
 
 # ОПРЕДЕЛЕНИЕ ЗАПИСИ КАТАЛОГА — НЕ НАХОДКА, и это касается не только своей записи. Соседняя
 # запись `ci-actually-fails` держит в своём `check.sh` строку со списком запускалок, где
@@ -66,12 +79,42 @@ FOUND=$(grep -rnE "$HOLDERS" $(skip_grep) \
 # Найдено аудитом фич 2026-09-09 — прогоном на настоящем проекте, а не образцами: красный и
 # зелёный образцы лежат по одному, а в проекте записи стоят рядом. Признак определения взят
 # самый надёжный: в той же папке лежит `gate.yml`.
-FOUND=$(printf '%s\n' "$FOUND" | while IFS= read -r L; do
-  F="${L%%:*}"
-  [ -n "$F" ] || continue
-  [ -f "$(dirname "$F")/gate.yml" ] && continue
-  printf '%s\n' "$L"
-done | grep -v '^$')
+drop_definitions() {
+  while IFS= read -r L; do
+    F="${L%%:*}"
+    [ -n "$F" ] || continue
+    [ -f "$(dirname "$F")/gate.yml" ] && continue
+    printf '%s\n' "$L"
+  done | grep -v '^$'
+}
+
+# Арбитр договора в коде — проверка типов: разошлись сервер и клиент, `tsc` краснеет. Слово
+# целиком: `tsc-alias` и `typescript` запуском проверки типов не являются.
+RC=0
+if [ -n "$CODE" ]; then
+  TYPED=$(run_grep '(^|[^a-zA-Z0-9_-])(vue-tsc|tsc|tsgo)([[:space:]]|"|$)')
+  if [ -z "$TYPED" ]; then
+    printf '%s\n' "$CODE" | while IFS= read -r F; do
+      D=$(grep -oE "\"($CODE_DEPS)\"" "$F" | head -1 | tr -d '"')
+      echo "$F: договор API в коде ($D) — проверку типов не запускает ни одна команда"
+    done
+    echo "  почини: заведи «tsc --noEmit» (или «tsc --build») в конвейере или в гейтах"
+    echo "  манифеста. Договор в коде держат типы: разошлись сервер и клиент — краснеет сборка"
+    echo "  типов. Никто её не запускает — договор расходится молча, как файл OpenAPI без сверки."
+    RC=1
+  fi
+fi
+[ -z "$SPECS" ] && exit "$RC"
+
+# --- кто её держит ------------------------------------------------------------
+# Четыре семьи держателей, и они отвечают на РАЗНЫЕ вопросы — подробности в README:
+#   сверка с сервером  schemathesis, dredd, portman, newman, pact — «документ не врёт»
+#   линт документа     spectral, redocly, vacuum, openapi-spec-validator, swagger-cli
+#   ломающие правки    oasdiff — «вчерашний клиент переживёт сегодняшний выпуск»
+#   потребитель        openapi-typescript, orval, oapi-codegen, openapi-generator, kubb —
+#                      типы порождены договором, и расхождение ломает сборку
+HOLDERS='schemathesis|dredd|portman|newman[[:space:]]+run|pact-broker|pact-verifier|can-i-deploy|spectral[[:space:]]+lint|redocly[[:space:]]+(lint|bundle)|vacuum[[:space:]]+(lint|report|html-report)|openapi-spec-validator|swagger-cli|oasdiff|openapi-typescript|orval|oapi-codegen|openapi-generator|kubb'
+FOUND=$(run_grep "$HOLDERS")
 
 if [ -z "$FOUND" ]; then
   printf '%s\n' "$SPECS" | sed 's/$/: спецификацию не держит ни одна команда/'
@@ -121,4 +164,4 @@ if [ -n "$NARROW$LOUD" ]; then
   echo "  провал, погашенный «|| true» или «continue-on-error», — это ci-actually-fails."
   exit 1
 fi
-exit 0
+exit "$RC"

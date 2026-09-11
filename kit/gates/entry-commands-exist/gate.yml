@@ -1,0 +1,19 @@
+# Запись каталога AQK. Норма и все поля — kit/gates/README.md.
+# Читается программой; всё, что нельзя выполнить, живёт в README.md рядом.
+
+intent: команды, которые свод велит запускать, существуют в проекте
+intent_en: commands the agent rules tell it to run actually exist in the project
+
+# Только там, где агенту вообще пишут свод. Проекту без AGENTS.md/CLAUDE.md сверять нечего.
+trigger:
+  has_agent_entry: true
+
+# Переносимая проверка — единственный рецепт. Готовое правило есть у agentlint
+# (`cmd-cross-reference`), но оно знает только npm-скрипты; на живом проекте, где свод называет
+# шестнадцать целей make, оно молчит по построению. Разбор — research/competitors/agentlint.md.
+recipes:
+  any: bash {gate}/check.sh {dir}
+
+proof: incidents/README.md, 2026-09-11 «свод велит команду, которой в проекте больше нет» —
+  9 из 99 публичных репозиториев с AGENTS.md называют скрипт, которого нет ни в одном
+  package.json; в двух история показывает, как: скрипт удалён, строка в своде осталась

@@ -77,3 +77,40 @@ test("держателем не считается определение сос
   // Второй дефект того же прогона: `find` без завершающего -print печатал обойдённые каталоги.
   assert.doesNotMatch(r.out, /\.git|\.aqk/, `в списке спецификаций каталоги:\n${r.out}`);
 });
+
+// ДОГОВОР В КОДЕ. Отзыв с живого проекта 2026-09-11: схемы zod запросов и ответов в общем
+// пакете, сервер на `@fastify/type-provider-zod` — а кит писал «спецификации API не видно»,
+// потому что узнавал договор только по имени файла `openapi*`. У такого договора арбитр —
+// проверка типов: разошлись сервер и клиент — `tsc` краснеет. Не запускает её никто — договор
+// не держит никто, ровно как файл OpenAPI без schemathesis.
+test("договор в коде без проверки типов — находка, с tsc — чисто, zod один — не договор", (t) => {
+  const provider = { "backend/package.json": '{ "dependencies": { "@fastify/type-provider-zod": "1.0.0", "zod": "4.5.4" } }\n' };
+  const bare = gate(project(t, provider), "api-contract-has-arbiter");
+  assert.equal(bare.code, 1, `договор без арбитра прошёл зелёным:\n${bare.out}`);
+  assert.match(bare.out, /backend\/package\.json/, `находка не называет, где договор:\n${bare.out}`);
+
+  const held = gate(project(t, {
+    ...provider,
+    "package.json": '{ "scripts": { "typecheck": "tsc --build" } }\n',
+  }), "api-contract-has-arbiter");
+  assert.equal(held.code, 0, `tsc в scripts не признан арбитром:\n${held.out}`);
+
+  for (const dep of ["@trpc/server", "@ts-rest/core", "@hono/zod-openapi", "fastify-type-provider-zod"]) {
+    const r = gate(project(t, { "package.json": `{ "dependencies": { "${dep}": "1.0.0" } }\n` }), "api-contract-has-arbiter");
+    assert.equal(r.code, 1, `${dep} не опознан как договор:\n${r.out}`);
+  }
+
+  // zod сам по себе — разбор входа, а не договор с чужим кодом: так его зовут и формы, и конфиги.
+  const zod = gate(project(t, { "package.json": '{ "dependencies": { "zod": "4.5.4" } }\n' }), "api-contract-has-arbiter");
+  assert.equal(zod.code, 0, `один zod объявлен договором:\n${zod.out}`);
+});
+
+test("doctor видит договор в коде: запись применима, а не «спецификации не видно»", (t) => {
+  const p = project(t, { "package.json": '{ "dependencies": { "@trpc/server": "11.18.0" } }\n' });
+  aqk(p, "init");
+  // --verbose: без него неприменимые свёрнуты в счёт, причин в выводе нет вовсе — и проверка
+  // прошла бы вхолостую при любом опознании.
+  const r = aqk(p, "doctor", "--verbose");
+  assert.match(r.out, /api-contract-has-arbiter/, `запись не названа вовсе:\n${r.out}`);
+  assert.doesNotMatch(r.out, /не видно (спецификации|договора) API|no API (specification|contract) in sight/, `договор в коде не опознан:\n${r.out}`);
+});

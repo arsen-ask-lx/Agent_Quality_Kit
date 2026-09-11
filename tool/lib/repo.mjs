@@ -34,6 +34,18 @@ function isApiSpec(name) {
   return /^(openapi|swagger|asyncapi)[^/]*\.(ya?ml|json)$/i.test(name);
 }
 
+// Тот же договор без файла: схемы в коде, типы общие у сервера и клиента. Список — тот же, что
+// в `api-contract-has-arbiter/check.sh`; разойдутся — запись покажут не тому проекту, и это
+// сторожит проверка прогона. Один `zod` договором не считается: им разбирают и формы.
+const CODE_CONTRACT = /"(@trpc\/server|@ts-rest\/core|@hono\/zod-openapi|@fastify\/type-provider-[a-z0-9-]+|fastify-type-provider-zod)"\s*:/;
+async function isCodeContract(path) {
+  try {
+    return CODE_CONTRACT.test(await readFile(path, "utf8"));
+  } catch {
+    return false;
+  }
+}
+
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "dist", "build", "__pycache__", ".aqk"]);
 
 // Факты о репозитории. Только то, что видно машине: спрашивать человека анкетой
@@ -102,7 +114,7 @@ async function detectFacts(man) {
         if (/\.(test|spec)\.[a-z]+$/i.test(it.name) || /^test_.*\.py$/i.test(it.name) || /_test\.go$/i.test(it.name)) hasTests = true;
         if (it.name.endsWith(".sql")) hasDb = true;
         if (/\.(css|scss|sass|less|styl|vue|svelte|astro)$/i.test(it.name)) hasUi = true;
-        if (isApiSpec(it.name)) hasApiSpec = true;
+        if (isApiSpec(it.name) || (!hasApiSpec && it.name === "package.json" && (await isCodeContract(full)))) hasApiSpec = true;
         const dot = it.name.lastIndexOf(".");
         if (dot > 0) {
           const lang = EXT_LANG[it.name.slice(dot)];
@@ -312,6 +324,22 @@ function browserServerAdvice(facts, mcpText = "") {
   return { servers: ["chrome-devtools-mcp", "@playwright/mcp"] };
 }
 
+// Свод в AGENTS.md и Claude Code. Документация Claude Code (code.claude.com/docs/en/memory,
+// раздел «AGENTS.md», сверено 2026-09-11): «Claude Code reads CLAUDE.md, not AGENTS.md» —
+// рекомендовано CLAUDE.md с `@AGENTS.md` либо символическая ссылка. Проект, где Claude Code
+// настроен, а правила лежат только в AGENTS.md, пишет их агенту, который их не читает.
+// Молчим, где Claude Code нет вовсе: Codex и Cursor читают AGENTS.md сами. Упоминание словами
+// («see AGENTS.md») — не подключение: файл в контекст не попадёт, агент дочитает или нет по
+// настроению. `@` в обратных кавычках документация прямо называет «не импорт».
+// Исходы: null — всё видно или нечего видеть; "missing" — CLAUDE.md нет; "noImport" — есть, но
+// AGENTS.md не подключает.
+function claudeSeesRules({ agents, claude, claudeLink, dotClaude }) {
+  if (!agents || claudeLink) return null;
+  if (claude === null) return dotClaude ? "missing" : null;
+  const prose = String(claude).replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+  return /(^|\s)@(\.{1,2}\/)*AGENTS\.md\b/.test(prose) ? null : "noImport";
+}
+
 function recipeFor(rec, facts) {
   const cmd = pickRecipe(rec, facts);
   if (!cmd) return L.recipe.none;
@@ -385,4 +413,4 @@ async function matchCatalog(query) {
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
-  stems, overlap, matchCatalog, isApiSpec };
+  stems, overlap, matchCatalog, isApiSpec, claudeSeesRules };

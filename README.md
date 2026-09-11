@@ -184,7 +184,7 @@ aqk: 1
 entry:  [AGENTS.md]        # what the agent reads first
 rules:  .aqk/rules         # where the standards live
 docs:   .aqk/docs          # where the guides live (optional; this is the default)
-lang:   en                 # output language for THIS repo, over the machine locale
+lang:   en                 # output language; without it — the language of AGENTS.md/README
 gates:                     # what must pass — as commands, not as prose
   lint: "npm run lint"
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
@@ -477,6 +477,11 @@ An unknown name after `--skip` is a refusal: a typo must not quietly mean "skipp
 purpose: two gates writing into the same folder (`npm run build` twice into `dist/`) would fail
 at random when run together, and a flaky red is worse than a slow one. Output keeps the declared
 order. On this repository, 30 gates: about 110 s one by one, 68 s with `--jobs 3`.
+
+**Output is short by default.** A passed gate, an entry the machine already holds and an entry that
+does not apply fold into one counted line each; a failed gate, an advisory one, advice and "what to
+add" always print in full. `aqk doctor --verbose` lists everything by name; in a pipeline whose log
+is read later, set `AQK_VERBOSE=1`.
 
 ## When a bug slips past the guards
 

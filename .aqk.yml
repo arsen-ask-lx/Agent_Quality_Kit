@@ -27,6 +27,7 @@ gates:
   # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
   # репозиторий, а копия завтра разойдётся с оригиналом.
   entry-links-exist: "bash kit/gates/entry-links-exist/check.sh ."
+  entry-commands-exist: "bash kit/gates/entry-commands-exist/check.sh ."
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."
