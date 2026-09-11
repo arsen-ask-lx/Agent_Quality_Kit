@@ -4,17 +4,19 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
-import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
-import { cmdProbe, probeStatus, blindAdvice } from "./probe.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";
+import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, browserServerAdvice, startWith, catalogBuckets } from "../lib/repo.mjs";
+import { detectFacts, readCatalog, browserServerAdvice } from "../lib/repo.mjs";
+import { startWith, catalogBuckets, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates, progress } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress, listArg } from "../lib/run.mjs";
+import { autoProbeAllowed } from "../lib/cadence.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -138,7 +140,10 @@ async function reportCatalog(man, facts, probe = null) {
   if (rest.length) {
     if (first.length) console.log(`\n  ${c.bold(L.doctor.todoRest(rest.length))}`);
     else console.log("");
-    for (const rec of rest) console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
+    // ○, а не ✘: запись не установлена — это не падение. Крест в зелёном прогоне глаз читает
+    // как провал, и через неделю человек перестаёт смотреть на красное вообще (отзыв с живого
+    // проекта 2026-09-11). ✘ остаётся за тем, что упало или пропустило брак.
+    for (const rec of rest) console.log(`  ${c.dim("○")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
     console.log(c.dim(`     ${L.doctor.todoRestHow(SELF)}`));
   }
 
@@ -155,14 +160,36 @@ async function reportCatalog(man, facts, probe = null) {
   // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
   // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
   // сняла бы запись с долга, не закрыв её ничем.
-  let linterCfg = "";
-  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
-    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
-  }
-  const unproven = coversUnproven(man, catalog, linterCfg);
-  for (const u of unproven) {
-    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
-    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+  // Конфиги — ПО ЛИНТЕРАМ, а не одной склейкой: заявка сверяется правилами того линтера,
+  // которым закрыт гейт (отзыв с живого проекта 2026-09-11 — коды ruff искались в biome.json).
+  const readAll = async (names) => {
+    let t = "";
+    for (const f of names) { try { t += await readFile(join(CWD, f), "utf8") + "\n"; } catch { /* нет файла */ } }
+    return t;
+  };
+  let scripts = {}, pkgText = "";
+  try { pkgText = await readFile(join(CWD, "package.json"), "utf8"); scripts = JSON.parse(pkgText)?.scripts || {}; } catch { /* нет или не JSON */ }
+  const configs = {
+    // ruff.toml и .ruff.toml — конфиг ruff целиком, слово «ruff» в них писать незачем (поймал наш же
+    // smoke: `extend-select = [..., "T20"]` выбрасывался). pyproject.toml — только если в нём есть
+    // раздел ruff: он есть почти у каждого python-проекта и без ruff.
+    ruff: (await readAll(["ruff.toml", ".ruff.toml"])) +
+      ((await readAll(["pyproject.toml"])).match(/^\[tool\.ruff[\s\S]*/m)?.[0] || ""),
+    eslint: (await readAll([".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yml", "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts"])) +
+      (/"eslintConfig"/.test(pkgText) ? pkgText : ""),
+    biome: await readAll(["biome.json", "biome.jsonc"]),
+    scripts,
+  };
+  for (const u of coversUnproven(man, catalog, configs)) {
+    if (u.kind === "unproven") {
+      console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+      console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+    } else if (u.kind === "impossible") {
+      console.log(c.yellow(`\n  ${L.doctor.coversImpossible(u.entry, u.gate, u.linter)}`));
+      console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+    } else {
+      console.log(c.dim(`\n  ${L.doctor.coversCantCheck(u.entry, u.gate)}`));
+    }
   }
   // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
   // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
@@ -193,7 +220,7 @@ async function reportCatalog(man, facts, probe = null) {
 // сессии и для самого владельца: список объявленных гейтов молчит о том, сколько из них
 // действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
 // история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
-async function writeRunReport({ version, reached, results }) {
+async function writeRunReport({ version, reached, results, skipped = [] }) {
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const ok = results.filter((r) => r.ok).length;
   const lines = [
@@ -202,6 +229,9 @@ async function writeRunReport({ version, reached, results }) {
     `${L.report.level}: AQK-${reached < 0 ? L.doctor.levelNone : reached}`,
     "",
     ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || L.doctor.exitCode(r.code)})`}`),
+    // Пропущенные по --skip/--only — строкой «~»: блок для агента читает их как «не запускались»,
+    // а не как зелёные. Молчание о них прочиталось бы как «проверено».
+    ...skipped.map((n) => `~ ${n} — ${L.report.skippedBySelect}`),
     "",
     L.report.summary(ok, results.length),
   ].filter((l) => l !== null);
@@ -209,6 +239,22 @@ async function writeRunReport({ version, reached, results }) {
   const dst = join(CWD, TARGET_DIR, "last-run.md");
   await mkdir(join(CWD, TARGET_DIR), { recursive: true });
   await writeFile(dst, lines.join("\n") + "\n", "utf8");
+}
+
+// ПРОБА ЗАПУСКАЕТСЯ САМА, раз в сто коммитов, — кроме конвейера (там это минуты сюрпризом в
+// быстрой проверке, отзыв с живого проекта 2026-09-11). Не влияет на код возврата никогда: это
+// осмотр, а не порог. Отдельной функцией: внутри прогона эта лесенка дала вложенность 6, и наш же
+// complexity-limit её поймал.
+async function autoProbe(brief) {
+  let st;
+  try { st = await probeStatus(); } catch { return; /* пробы нет — прогон про гейты, а не про неё */ }
+  if (st.badEvery !== undefined) { console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`)); return; }
+  if (st.state !== "never" && st.state !== "stale") return;
+  if (!autoProbeAllowed({ brief })) { console.log(c.dim(`\n  ${L.probe.autoNotInCi(`${SELF} probe`)}`)); return; }
+  // Сообщение обязано быть верным в обоих случаях: первая версия печатала «прошло сто коммитов»
+  // и там, где пробы не было ВОВСЕ — число бралось из порога, а не из факта.
+  console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
+  try { await cmdProbe([], { auto: true }); } catch { /* проба не состоялась — прогон это не роняет */ }
 }
 
 async function cmdDoctor() {
@@ -233,10 +279,26 @@ async function cmdDoctor() {
   const checks = layoutChecks(man, inKit);
 
   let missing = 0;
-  for (const [path, what] of checks) {
+  for (const [path, what, required] of checks) {
     const ok = await exists(join(CWD, path));
-    if (!ok) missing++;
-    console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
+    if (!ok && required) missing++;
+    const mark = ok ? c.green("✔") : required ? c.red("✘") : c.dim("○");
+    console.log(`  ${mark}  ${path.padEnd(22)} ${c.dim(what)}${!ok && !required ? c.dim(` · ${L.doctor.layoutAdvice}`) : ""}`);
+  }
+
+  // СЛУЖЕБНЫЙ ФАЙЛ, КОТОРЫЙ ВИДИТ GIT. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md`
+  // однажды закоммитили, и каждый прогон оставлял изменённый файл. `init` теперь кладёт их в
+  // .gitignore сам; здесь — для тех, кто поставил раньше. Спрашиваем git, а не диск.
+  const git = (...a) => spawnSync("git", a, { cwd: CWD, encoding: "utf8" });
+  if (git("rev-parse", "--git-dir").status === 0) {
+    const tracked = new Set(String(git("ls-files", "--", TARGET_DIR).stdout || "").split("\n"));
+    for (const f of RUNTIME_FILES.map((n) => `${TARGET_DIR}/${n}`)) {
+      if (tracked.has(f)) {
+        console.log(`\n  ${c.yellow("!")}  ${L.doctor.runtimeTracked(f, `git rm --cached ${f} && echo ${f} >> .gitignore`)}`);
+      } else if (await exists(join(CWD, f)) && git("check-ignore", "-q", f).status !== 0) {
+        console.log(c.dim(`\n  ${L.doctor.runtimeNotIgnored(f, `echo ${f} >> .gitignore`)}`));
+      }
+    }
   }
 
   // Команды в точке входа заполнены или остались пустыми заготовками? Файл берётся тот же,
@@ -350,11 +412,19 @@ async function cmdDoctor() {
   const gates = declaredGates(man);
   let gateFailed = 0;
   let failedNames = [];
+  let skippedNames = [];
   if (wantRun) {
-    const run = runGates(man, { since: sinceRef() });
+    // --jobs N: сколько гейтов одновременно. Без флага — по одному, как было: чужие гейты бывают
+    // зависимыми (общий dist/), и плавающее красное хуже медленного. Не число — отказ, а не тихий
+    // последовательный прогон под видом параллельного.
+    const ji = process.argv.indexOf("--jobs");
+    const jobs = ji > -1 ? Number(process.argv[ji + 1]) : 1;
+    if (!Number.isInteger(jobs) || jobs < 1) die(L.doctor.jobsBad(process.argv[ji + 1] ?? ""));
+    const run = await runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip"), jobs });
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
-    await writeRunReport({ version, reached, results: run.results });
+    skippedNames = run.skipped || [];
+    await writeRunReport({ version, reached, results: run.results, skipped: run.skipped });
 
     // ПРОБА ЗАПУСКАЕТСЯ САМА. Владелец сформулировал так: «команду, о которой надо вспомнить,
     // агент не вспомнит, а человек о ней не узнает». Это тот же класс, что файл, который можно
@@ -366,20 +436,7 @@ async function cmdDoctor() {
     // надо. В кратком режиме не запускается: там хук на воротах коммита, и лишние секунды там
     // стоят дороже. Не влияет на код возврата НИКОГДА — это осмотр, а не порог.
     // Выключается AQK_PROBE=0 — у всего, что случается само, обязан быть выключатель.
-    if (!brief && process.env.AQK_PROBE !== "0") {
-      try {
-        const st = await probeStatus();
-        if (st.badEvery !== undefined) {
-          console.log(c.yellow(`\n  ${L.probe.badEvery(st.badEvery)}`));
-        } else if (st.state === "never" || st.state === "stale") {
-          // Сообщение обязано быть верным в обоих случаях. Первая версия печатала «прошло сто
-          // коммитов» и там, где пробы не было ВОВСЕ: число бралось из порога, а не из факта.
-          // Мелочь, но того же класса, что и всё остальное здесь: вывод, который не врёт.
-          console.log(c.dim(`\n  ${st.state === "never" ? L.probe.autoFirst : L.probe.auto(st.behind)}`));
-          await cmdProbe([], { auto: true });
-        }
-      } catch { /* проба не состоялась — прогон это не роняет: он про гейты, а не про неё */ }
-    }
+    if (!brief && process.env.AQK_PROBE !== "0") await autoProbe(brief);
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
@@ -414,6 +471,7 @@ async function cmdDoctor() {
   if (wantRun) {
     if (ok) {
       console.log(c.green(`  ${L.doctor.runVerdictOk}\n`));
+      if (skippedNames.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(skippedNames.join(", "))}\n`));
     } else {
       const why = [];
       if (missing) why.push(L.doctor.whyMissing);

@@ -457,6 +457,27 @@ Otherwise a gate that cannot fail the build looks exactly like one that can, and
 is in `advisory:` only on the day it goes red. Red ones are additionally named by name in the
 summary: an advisory gate everyone forgot about is a switched-off check.
 
+**A gate that needs a live stack** (a cost check against a seeded database, e2e) goes into a group,
+and a fast run skips the group:
+
+```yaml
+groups:
+  stack: [cost, e2e]
+```
+
+```bash
+aqk doctor --run --skip stack     # everything except the stack
+aqk doctor --run --only stack     # only the stack, on the stand
+```
+
+Skipped gates are named in the output and written to the run report as "not run" — not as green.
+An unknown name after `--skip` is a refusal: a typo must not quietly mean "skipped nothing".
+
+**Independent gates can run in parallel:** `aqk doctor --run --jobs 4`. Off by default, on
+purpose: two gates writing into the same folder (`npm run build` twice into `dist/`) would fail
+at random when run together, and a flaky red is worse than a slow one. Output keeps the declared
+order. On this repository, 30 gates: about 110 s one by one, 68 s with `--jobs 3`.
+
 ## When a bug slips past the guards
 
 ```bash

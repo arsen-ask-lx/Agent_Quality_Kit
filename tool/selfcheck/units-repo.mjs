@@ -8,7 +8,8 @@
 //   node --test tool/selfcheck/units-repo.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec, startWith } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec } from "../lib/repo.mjs";
+import { startWith } from "../lib/advice.mjs";
 import { proposeGates } from "../lib/adopt.mjs";
 import { CATALOGS, L } from "../i18n/index.mjs";
 import { dirname } from "node:path";
@@ -283,4 +284,27 @@ test("с чего начать: при равенстве признаков п�
     { slug: "a", proof: "incidents/README.md", recipes: {} },
   ];
   assert.deepEqual(startWith(list, { langs: new Set() }, 2).map((e) => e.slug), ["a", "b"]);
+});
+
+// Совет под линтер ПРОЕКТА, а не под язык. Отзыв с живого проекта 2026-09-11: «начни с этих
+// трёх» советовал завести eslint проекту на Biome — комплект читал package.json и Makefile, но не
+// biome.json. Команда для Biome — одно правило разово (`--only`), и `--error-on-warnings`
+// обязателен: правило вне рекомендованных Biome ставит на «предупреждение», и без флага команда
+// выходила с нулём, напечатав находку. Проверено на Biome 2.5.12.
+test("совет проекту на Biome: команда Biome, а не eslint", async () => {
+  const { blindAdvice } = await import("../lib/advice.mjs");
+  const entry = {
+    slug: "no-print-in-prod", biome_rules: "suspicious/noConsole",
+    tool: "https://github.com/eslint/eslint",
+    recipes: { javascript: `eslint --no-config-lookup --rule '{"no-console":"error"}' {dir}` },
+  };
+  const biome = blindAdvice(entry, { langs: new Set(["typescript"]), has_biome: true });
+  assert.equal(biome.command, "npx @biomejs/biome lint --error-on-warnings --only=suspicious/noConsole .");
+  assert.equal(biome.tool, "https://github.com/biomejs/biome");
+  // Без biome.json — прежний совет под язык.
+  const plain = blindAdvice(entry, { langs: new Set(["javascript"]), has_biome: false });
+  assert.match(plain.command, /^eslint /);
+  // У Biome правила нет вовсе (`none`) — прежний совет, а не выдуманная команда Biome.
+  const none = blindAdvice({ ...entry, biome_rules: "none" }, { langs: new Set(["javascript"]), has_biome: true });
+  assert.match(none.command, /^eslint /);
 });

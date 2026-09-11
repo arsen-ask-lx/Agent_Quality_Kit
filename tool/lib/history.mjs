@@ -117,9 +117,36 @@ function probeSummary({ caught = 0, blind = 0, unknown = 0, unprobed = 0 } = {})
 // Найдено пробой на самом комплекте 2026-09-11: образец лёг на место общей библиотеки
 // kit/gates/_skip.sh, двенадцать гейтов вышли с кодом 2 — включая тот, что этот образец в
 // отдельной папке ловит. Остальные молчали, и проба назвала класс слепым.
+// «ПОКРАСНЕЛ» ≠ «ПОЙМАЛ». Отзыв с живого проекта 2026-09-11: класс «цвет из токена темы» отмечен
+// пойманным линтером, хотя Biome цвета не проверяет, — подсаженный кусок сломал форматирование.
+// Вердикт сравнивал коды возврата и выбрасывал вывод. Теперь гейт засчитывается, только если в
+// его выводе ПОСЛЕ подсадки подсаженный файл назван чаще, чем до неё. Путь ищется в любой
+// форме: `src/x`, `./src/x`, абсолютный из песочницы (подстрока), с обратными слешами Windows.
+// Одно имя файла без каталога не засчитывается: у двух файлов оно бывает одинаковым, и
+// поимка чужого файла выдалась бы за поимку нашего. Безымянное падение — «неизвестно».
+function namesPlant(before, after, rel) {
+  const forms = [rel, String(rel).replace(/\//g, "\\")];
+  const count = (s) => forms.reduce((n, f) => n + String(s || "").split(f).length - 1, 0);
+  return count(after) > count(before);
+}
+
+// ПАРА, А НЕ ОДИН ОБРАЗЕЦ. Имени файла мало: Biome, падая на форматировании, тоже называет файл.
+// Поэтому поимка подтверждается зелёным образцом той же записи, положенным в то же место, — тем
+// же приёмом, каким мы требуем от чужого гейта доказательства. Три исхода:
+//   caught   — на красном покраснел и назвал файл, на зелёном промолчал (или файла не назвал);
+//   nameless — покраснел, но подсаженного файла не назвал: упал по своей причине;
+//   planting — краснеет и на зелёном, называя тот же файл: падает от самой подсадки.
+// Зелёного образца под это расширение нет — судим по имени файла: пусть слабее, но это не
+// «поймано» на ровном месте, и в README записи такой случай назван.
+function catchVerdict(beforeOut, red, green, rel) {
+  if (!namesPlant(beforeOut, red?.out, rel)) return "nameless";
+  if (green && green.code === 1 && namesPlant(beforeOut, green.out, rel)) return "planting";
+  return "caught";
+}
+
 function probeVerdictPaired(before, after) {
   const byName = new Map(after.map((r) => [r.name, r]));
-  let usable = 0, alreadyRed = 0, failed = 0, caught = 0, brokenByPlant = 0;
+  let usable = 0, alreadyRed = 0, failed = 0, caught = 0, brokenByPlant = 0, unattributed = 0;
   for (const b of before) {
     const a = byName.get(b.name);
     const broke = (r) => !r || (r.code !== 0 && r.code !== 1);
@@ -130,10 +157,12 @@ function probeVerdictPaired(before, after) {
     }
     if (b.code === 1) { alreadyRed++; continue; }
     usable++;
-    if (a.code === 1) caught++;
+    // `named === false` — покраснел, но подсаженного файла не назвал. `undefined` — вызывающий
+    // вывода не собирал (старые вызовы): тогда прежнее правило.
+    if (a.code === 1) { if (a.named === false) unattributed++; else caught++; }
   }
-  const verdict = caught ? "caught" : !usable || brokenByPlant ? "unknown" : "blind";
-  return { verdict, usable, alreadyRed, failed, caught, brokenByPlant };
+  const verdict = caught ? "caught" : !usable || brokenByPlant || unattributed ? "unknown" : "blind";
+  return { verdict, usable, alreadyRed, failed, caught, brokenByPlant, unattributed };
 }
 
 // Счёт непокрытого КЛАССАМИ, а не пробами. Замер на десяти живых репозиториях 2026-09-10:
@@ -160,4 +189,4 @@ function countProbe(records) {
   };
 }
 
-export { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe };
+export { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, catchVerdict };

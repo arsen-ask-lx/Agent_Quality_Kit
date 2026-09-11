@@ -45,7 +45,7 @@ async function cmdBadge(args = []) {
   // Прогон, а не манифест. Значок при красном гейте — это и есть недоказанное утверждение.
   const gates = declaredGates(man);
   if (gates.length) {
-    const run = runGates(man);
+    const run = await runGates(man);
     if (run.failed) {
       const red = run.results.filter((r) => !r.ok).map((r) => r.name).join(", ");
       die(`\n  ${L.badge.redGates(run.failed, red)}\n`);

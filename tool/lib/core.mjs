@@ -142,6 +142,32 @@ async function writeIfAbsent(path, content, { force }) {
   return true;
 }
 
+// СЛУЖЕБНЫЕ ФАЙЛЫ: состояние ЭТОЙ машины, переписываются каждым прогоном — в git им не место.
+// Один список на `init` (кладёт в .gitignore), `doctor` (предупреждает, если git их видит) и
+// читателей. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md` однажды закоммитили, и каждый
+// `make check` оставлял изменённый файл. Целиком `.aqk/` не игнорируется: методички и правила в
+// нём — содержимое проекта.
+const RUNTIME_FILES = ["last-run.md", "last-probe.md", "advice-shown", "update-checked"];
+const L_IGNORE_NOTE = LANG === "en"
+  ? "# aqk: this machine's state — rewritten by every run, it does not belong in git"
+  : "# aqk: состояние этой машины — переписывается каждым прогоном, в git ему не место";
+
+// Дописать служебные файлы в .gitignore, не трогая чужих строк и не дублируя своих. Возвращает
+// список добавленных строк — `init` называет их вслух: правка чужого файла без слова была бы
+// тем самым «пишу в дерево без спроса».
+async function ensureIgnored(cwd = CWD) {
+  const { readFile, writeFile } = await import("node:fs/promises");
+  const file = join(cwd, ".gitignore");
+  let text = "";
+  try { text = await readFile(file, "utf8"); } catch { /* файла нет — создадим */ }
+  const have = new Set(text.split(/\r?\n/).map((l) => l.trim()));
+  const add = RUNTIME_FILES.map((f) => `${TARGET_DIR}/${f}`).filter((l) => !have.has(l) && !have.has(`/${l}`));
+  if (!add.length) return [];
+  const head = text && !text.endsWith("\n") ? "\n" : "";
+  await writeFile(file, `${text}${head}${text ? "\n" : ""}${L_IGNORE_NOTE}\n${add.join("\n")}\n`, "utf8");
+  return add;
+}
+
 // Стоит ли хук pre-commit НА САМОМ ДЕЛЕ — в `.git/hooks`, а не в `.pre-commit-config.yaml`:
 // запись в конфиге — намерение, сработает только то, что лежит в гите. Три ответа: true — стоит,
 // false — нет, null — не git или файл не прочитать («не знаем» не сливается с «нет»).
@@ -158,5 +184,5 @@ export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows, preCommitHook,
+  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows, preCommitHook, RUNTIME_FILES, ensureIgnored,
 };

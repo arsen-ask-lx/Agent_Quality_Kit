@@ -89,4 +89,14 @@ function parseRan(text) {
   return m ? new Set(m[1].split(/\s+/).filter(Boolean)) : null;
 }
 
-export { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan };
+// Запускаться ли пробе САМОЙ внутри `doctor --run`. Не в конвейере: там это +2–3 минуты сюрпризом
+// в случайном прогоне (отзыв с живого проекта 2026-09-11), и место пробы — отдельная задача. Не в
+// коротком режиме: там хук на воротах коммита. `AQK_PROBE=0` — выключить, `AQK_PROBE=1` — включить
+// и в конвейере.
+function autoProbeAllowed({ brief = false, env = process.env } = {}) {
+  if (env.AQK_PROBE === "0" || brief) return false;
+  if (env.AQK_PROBE === "1") return true;
+  return !(env.CI || env.GITHUB_ACTIONS || env.GITLAB_CI || env.BUILDKITE || env.JENKINS_URL);
+}
+
+export { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, autoProbeAllowed };

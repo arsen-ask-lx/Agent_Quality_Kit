@@ -46,6 +46,8 @@ const MARKS = [
   ["has_docker", ["Dockerfile", "compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"]],
   ["has_deps", ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "composer.json"]],
   ["has_env", [".env", ".env.example", ".env.sample"]],
+  // Линтер проекта — Biome: совет даётся на его языке, а не на языке eslint.
+  ["has_biome", ["biome.json", "biome.jsonc"]],
   // Обвес самого агента: настройки, хуки, права. Отдельный признак нужен, потому что записи
   // про него не касаются проектов, где агента не настраивали вовсе, — а таких большинство.
   // Файл `.claude/settings.json` есть и у того, кто настроил один только список разрешений;
@@ -378,55 +380,9 @@ async function matchCatalog(query) {
   return out;
 }
 
-// С ЧЕГО НАЧАТЬ: три записи вместо двадцати равнозначных крестов.
-//
-// Двадцать одинаковых требований — это ноль требований: закрывают первое попавшееся или не
-// закрывают ничего. Порядок НЕ по нашему вкусу; два признака, оба — факты, которые у нас уже
-// есть:
-//   · запись родилась из настоящего отказа (`lifecycle: stable` — `proof` ссылается на журнал
-//     шишек), то есть она про боль, которая СЛУЧАЛАСЬ, а не про «хорошую практику»;
-//   · её можно закрыть одной готовой командой — цена входа минутная.
-// Сначала то, что и больно, и дёшево.
-//
-// При равенстве признаков — по имени: одинаковый ввод обязан давать одинаковый ответ, иначе
-// человек видит разный совет на двух прогонах подряд и перестаёт верить обоим.
-function startWith(entries, facts, n = 3) {
-  const langs = facts?.langs ? [...facts.langs] : [];
-  const cheap = (e) => {
-    const r = e?.recipes && typeof e.recipes === "object" ? e.recipes : {};
-    return [...langs, "native"].some((k) => r[k] && !/\{gate\}/.test(r[k])) ? 1 : 0;
-  };
-  // Зрелость НЕ поле записи, а вычисляемый признак: `proof` ссылается на журнал шишек. Тот же
-  // признак, которым каталог отделяет условную запись с первого дня (`entryLifecycle`).
-  // Заводить второй счёт нельзя: разъехавшись, они дали бы разные ответы про одну запись.
-  const hurt = (e) => (/incidents\//.test(String(e?.proof || "")) ? 1 : 0);
-  return [...entries]
-    .sort((a, b) =>
-      (hurt(b) + cheap(b)) - (hurt(a) + cheap(a)) ||
-      cheap(b) - cheap(a) ||
-      String(a.slug).localeCompare(String(b.slug)))
-    .slice(0, n);
-}
-
-// Корзины каталога для ЭТОГО проекта: держит · к установке · закрыто другим арбитром ·
-// неприменимо. Одна раскладка на `doctor` и на блок для агента: жила внутри `doctor`, и блоку
-// пришлось бы завести вторую — а два счёта одного и того же расходятся первыми.
-function catalogBuckets(catalog, facts, covered = new Map()) {
-  const held = [], todo = [], skip = [], byOther = [];
-  for (const rec of catalog) {
-    const v = triggerVerdict(rec, facts);
-    if (!v.applies) skip.push([rec, v.why]);
-    else if (facts.gateKeys.includes(rec.slug)) held.push(rec);
-    else if (covered.has(rec.slug)) byOther.push([rec, covered.get(rec.slug)]);
-    else todo.push(rec);
-  }
-  return { held, todo, skip, byOther };
-}
-
 // Наружу — то, что действительно импортируют другие файлы и модульные проверки. Экспорт,
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
-  startWith, catalogBuckets,
   stems, overlap, matchCatalog, isApiSpec };

@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { join, dirname, relative } from "node:path";
 import {
   CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
-  copyDir, writeIfAbsent, FEEDBACK_MARK, docPath } from "../lib/core.mjs";
+  copyDir, writeIfAbsent, FEEDBACK_MARK, docPath, ensureIgnored } from "../lib/core.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
 import { banner } from "../lib/banner.mjs";
 import { readManifest } from "../lib/manifest.mjs";
@@ -41,6 +41,10 @@ async function cmdInit(args) {
   const claude = join(CWD, "CLAUDE.md");
   track(await writeIfAbsent(claude, CLAUDE_MD, { force }), claude);
 
+  // Служебные файлы — в .gitignore сразу, до первого прогона: иначе первый же `doctor --run`
+  // оставит в дереве файл, который попадёт в коммит (так и случилось на живом проекте).
+  const ignored = await ensureIgnored(CWD);
+
   // Заставка в начале init — первая встреча человека с комплектом. Второй раз он увидит её
   // только если сам спросит `--version`: то, что видишь тридцатый раз, перестаёт читаться.
   console.log(`\n${banner()}\n`);
@@ -56,6 +60,7 @@ async function cmdInit(args) {
   if (LANG === "en" && created.some((f) => f.includes(`${TARGET_DIR}/docs/`) || f.includes(`${TARGET_DIR}\\docs\\`))) {
     console.log(c.dim(`\n  ${L.init.docsRu}`));
   }
+  if (ignored.length) console.log(c.dim(`\n  ${L.init.ignored(ignored.join(", "))}`));
   if (skipped.length) {
     console.log(c.yellow(`\n  ${L.init.kept(skipped.length)}`));
     for (const f of skipped) console.log(`    ${f}`);

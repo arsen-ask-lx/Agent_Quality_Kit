@@ -86,7 +86,7 @@ async function cmdReport() {
 
   // Прогон, а не чтение манифеста: «объявлен» и «работает» — разные утверждения, и весь
   // смысл этой команды в том, чтобы в отчёт попало второе.
-  const run = declared.length ? runGates(man) : { results: [], failed: 0 };
+  const run = declared.length ? await runGates(man) : { results: [], failed: 0 };
 
   const held = [], broken = [], todo = [], skip = [];
   for (const res of run.results) {

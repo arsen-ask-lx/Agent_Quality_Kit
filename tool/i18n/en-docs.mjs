@@ -66,7 +66,7 @@ const enDocs = {
     runClean: (when) => `Last run ${when} — nothing red.`,
     runRed: (when, names) => `Last run ${when} — RED: ${names}.`,
     andMore: (n) => `and ${n} more`,
-    skipped: (n) => `Not run: ${n} — the tool is absent on this machine, their state is unknown.`,
+    skipped: (n) => `Not run: ${n} — skipped by --only/--skip or the tool is absent on this machine; their state is unknown.`,
     probeNever: "No coverage probe has run — what is covered by nothing here is UNKNOWN. That is not \"covered\": `aqk probe`.",
     probeOff: "The coverage probe is switched off in the manifest (`probe: 0`) — nobody counts what is covered by nothing here.",
     probeUnknown: "The coverage probe could not run — what is covered by nothing here is UNKNOWN. That is not \"covered\".",
@@ -216,6 +216,7 @@ const enDocs = {
     },
   ],
   report: {
+    skippedBySelect: "not run (by --only/--skip), state unknown",
     title: "aqk doctor --run",
     version: "version",
     level: "level",

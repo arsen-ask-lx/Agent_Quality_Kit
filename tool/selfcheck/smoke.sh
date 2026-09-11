@@ -1903,8 +1903,12 @@ CADP="$(mktemp -d)"
   node "$CLI" init && node "$CLI" add todo-without-task
 ) >/dev/null 2>&1
 CTX0=$( cd "$CADP" && AQK_LANG=ru node "$CLI" context 2>&1 )
-RUN1=$( cd "$CADP" && AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
-RUN2=$( cd "$CADP" && AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
+# Путь ЧЕЛОВЕКА: переменные конвейера сняты. С 2026-09-11 в конвейере проба сама не идёт (минуты
+# сюрпризом в быстрой проверке), и без `env -u` эта проверка была зелёной у нас и красной в CI —
+# она проверяла бы окружение, а не каденцию. Поведение в конвейере сторожит units-cadence.mjs.
+NOCI="env -u CI -u GITHUB_ACTIONS -u GITLAB_CI -u BUILDKITE -u JENKINS_URL"
+RUN1=$( cd "$CADP" && $NOCI AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
+RUN2=$( cd "$CADP" && $NOCI AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
 CTX1=$( cd "$CADP" && AQK_LANG=ru node "$CLI" context 2>&1 )
 if printf '%s' "$CTX0" | grep -q "НЕИЗВЕСТНО" &&
    printf '%s' "$RUN1" | grep -q "ещё не делали" &&

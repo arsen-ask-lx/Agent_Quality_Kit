@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
 import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
-import { progress } from "../lib/run.mjs";
+import { progress, selectGates } from "../lib/run.mjs";
 
 // --- строка «идёт» во время прогона ---------------------------------------------------
 // ЗАЧЕМ. Гейт идёт через spawnSync, и строка про него печаталась только по завершении: минута
@@ -249,7 +249,7 @@ test("заявка подтверждена, когда коды правил е
 test("заявка не подтверждена, когда кодов нет нигде", () => {
   const man = parseManifest('gates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n');
   const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
-  assert.deepEqual(coversUnproven(man, catalog, ""), [{ entry: "no-print-in-prod", gate: "lint", codes: ["T20"] }]);
+  assert.deepEqual(coversUnproven(man, catalog, ""), [{ entry: "no-print-in-prod", gate: "lint", codes: ["T20"], linter: "ruff", kind: "unproven" }]);
 });
 
 // Правило может стоять не в команде, а в конфиге линтера — это нормальный уклад, и краснеть
@@ -265,6 +265,49 @@ test("запись без кодов правил в рецепте не пор�
   const man = parseManifest('gates:\n  lint: "true"\ncovers:\n  lint: [duplicate-code]\n');
   const catalog = [{ slug: "duplicate-code", recipes: { any: "bash {gate}/check.sh {dir}" } }];
   assert.deepEqual(coversUnproven(man, catalog, ""), []);
+});
+
+// --- заявка сверяется правилами ТОГО линтера, которым закрыт гейт --------------------
+// Отзыв с живого проекта 2026-09-11 (TypeScript на Biome): заявка «lint держит no-print-in-prod»
+// всегда была «не подтверждена» — комплект искал коды ruff (T20, C901, BLE), а у Biome это
+// noConsole, noExcessiveCognitiveComplexity, noEmptyBlockStatements, и они стояли. Поле, которое
+// должно снимать шум, само его производило и подталкивало ставить второй линтер.
+const NP = { slug: "no-print-in-prod", biome_rules: "noConsole",
+  recipes: { python: "ruff check --select T20 {dir}", javascript: `eslint --rule '{"no-console":"error"}' {dir}` } };
+const TODO = { slug: "todo-without-task", biome_rules: "none", recipes: { python: "ruff check --select FIX,TD {dir}" } };
+
+test("Biome: правило записи стоит в biome.json — заявка подтверждена", () => {
+  const man = parseManifest('gates:\n  lint: "npx biome check ."\ncovers:\n  lint: [no-print-in-prod]\n');
+  const biome = '{"linter":{"rules":{"suspicious":{"noConsole":"error"}}}}';
+  assert.deepEqual(coversUnproven(man, [NP], { biome }), []);
+  const miss = coversUnproven(man, [NP], { biome: '{"linter":{"enabled":true}}' });
+  assert.equal(miss[0].kind, "unproven");
+  assert.deepEqual(miss[0].codes, ["noConsole"], "человеку названо ПРАВИЛО BIOME, а не код ruff");
+});
+
+test("линтер гейта узнаётся и через npm-скрипт", () => {
+  const man = parseManifest('gates:\n  lint: "npm run lint"\ncovers:\n  lint: [no-print-in-prod]\n');
+  const scripts = { lint: "biome check ." };
+  const r = coversUnproven(man, [NP], { biome: '"noConsole": "error"', scripts });
+  assert.deepEqual(r, []);
+});
+
+test("eslint: правило берётся из рецепта записи и ищется в конфиге eslint", () => {
+  const man = parseManifest('gates:\n  lint: "eslint ."\ncovers:\n  lint: [no-print-in-prod]\n');
+  assert.deepEqual(coversUnproven(man, [NP], { eslint: "rules: { 'no-console': 'error' }" }), []);
+  assert.equal(coversUnproven(man, [NP], { eslint: "rules: {}" })[0].kind, "unproven");
+});
+
+test("у линтера нет такого правила вовсе — заявка заведомо неверна, а не «не подтверждена»", () => {
+  const man = parseManifest('gates:\n  lint: "biome check ."\ncovers:\n  lint: [todo-without-task]\n');
+  const r = coversUnproven(man, [TODO], { biome: "{}" });
+  assert.equal(r[0].kind, "impossible");
+});
+
+test("линтер не распознан — «не умею проверить», а не обвинение", () => {
+  const man = parseManifest('gates:\n  lint: "make lint"\ncovers:\n  lint: [no-print-in-prod]\n');
+  const r = coversUnproven(man, [NP], {});
+  assert.equal(r[0].kind, "unknown");
 });
 
 // --- строка манифеста, которую разбор не понял, не исчезает молча ---------------
@@ -320,4 +363,35 @@ test("сбой арбитра отнимает ступень, законная 
   ]).ok, false, "таймаут арбитра компенсирован соседним гейтом");
 
   assert.equal(verdict([{ state: "proven" }, { state: "broken" }]).ok, false);
+});
+
+// --- группы гейтов и --only / --skip ----------------------------------------------------
+// ЗАЧЕМ. Отзыв с живого проекта 2026-09-11: гейт цены меряет план на засеянной базе. Объявишь
+// его — он валит прогон без стенда; уберёшь — promise-has-gate справедливо ругается. Пришлось
+// выкручиваться через advisory. Прогон бывал только «всё или ничего».
+test("выбор гейтов: --skip группой и именем, --only сужает, пропущенные названы", () => {
+  const man = parseManifest('gates:\n  lint: "x"\n  unit: "x"\n  cost: "x"\n  e2e: "x"\ngroups:\n  stack: [cost, e2e]\n');
+  const names = Object.entries(man.gates);
+  const s = selectGates(names, man, { skip: ["stack"] });
+  assert.deepEqual(s.run.map(([n]) => n), ["lint", "unit"]);
+  assert.deepEqual(s.skipped, ["cost", "e2e"]);
+  const o = selectGates(names, man, { only: ["lint", "cost"] });
+  assert.deepEqual(o.run.map(([n]) => n), ["lint", "cost"]);
+  assert.deepEqual(o.skipped, ["unit", "e2e"]);
+});
+
+test("выбор гейтов: неизвестное имя — ошибка, а не тихое «пропустили ничего»", () => {
+  const man = parseManifest('gates:\n  lint: "x"\ngroups:\n  stack: [lint]\n');
+  const s = selectGates(Object.entries(man.gates), man, { skip: ["stak"] });
+  assert.deepEqual(s.unknown, ["stak"]);
+  // Группа, в которой назван необъявленный гейт, — тоже названа: иначе группа молча пустеет.
+  const man2 = parseManifest('gates:\n  lint: "x"\ngroups:\n  stack: [cots]\n');
+  assert.deepEqual(selectGates(Object.entries(man2.gates), man2, { skip: ["stack"] }).unknown, ["cots"]);
+});
+
+test("выбор гейтов: без флагов гоняется всё, как раньше", () => {
+  const man = parseManifest('gates:\n  a: "x"\n  b: "x"\n');
+  const s = selectGates(Object.entries(man.gates), man, {});
+  assert.equal(s.run.length, 2);
+  assert.deepEqual(s.skipped, []);
 });

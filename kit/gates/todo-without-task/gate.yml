@@ -16,3 +16,7 @@ recipes:
   typescript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-warning-comments":["error",{"terms":["todo","fixme","hack","xxx"]}]}' {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: 416 коммитов из 1069 оказались стабилизацией уже выкаченного
+
+# У Biome правила под TODO нет вовсе — сверено по схеме конфигурации Biome 2.5.12. Заявка
+# «lint (biome) держит эту запись» поэтому заведомо неверна, и doctor так и говорит.
+biome_rules: none

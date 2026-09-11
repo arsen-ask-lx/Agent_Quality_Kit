@@ -1,0 +1,10 @@
+README.md
+.env
+.env.example
+.env.production
+.env.test
+tests/fixtures/.env
+templates/.env
+src/app.py
+tests/.env.local
+playgrounds/app/.env.local

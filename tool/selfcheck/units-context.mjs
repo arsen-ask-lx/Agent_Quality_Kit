@@ -264,3 +264,12 @@ test("дальше: манифеста нет — первый шаг `aqk init`
   assert.equal(steps[1].kind, "start");
   assert.match(T.nextStep.init(steps[0]), /`aqk init`/);
 });
+
+// Отзыв с живого проекта 2026-09-11: в `aqk help` у `vitals` вместо описания стояло `undefined` —
+// команду добавили в список, а текст справки забыли. Сторож на весь список, на оба языка.
+test("у каждой команды в справке есть описание на обоих языках", () => {
+  for (const lang of ["ru", "en"]) {
+    const empty = commandRows(CATALOGS[lang]).filter((r) => typeof r.text !== "string" || !r.text.trim()).map((r) => r.name);
+    assert.deepEqual(empty, [], `${lang}: нет описания у ${empty.join(", ")}`);
+  }
+});

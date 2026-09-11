@@ -158,6 +158,7 @@ export const enGates = {
       "the guides in .aqk/docs/ are in Russian — a deliberate decision, not a broken install.\n  The rules in .aqk/rules/ are in English; the guides are prose an agent may ignore anyway,\n  and what a machine holds lives in .aqk.yml and the gates. Translation waits for someone who needs it.",
     created: (n) => `created (${n}):`,
     andMore: (n) => `… and ${n} more`,
+    ignored: (list) => `the kit's runtime files were added to .gitignore — machine state, it does not belong in git: ${list}`,
     kept: (n) => `already there, left untouched (${n}):`,
     overwrite: (cmd) => `overwrite: ${cmd}`,
     nextTitle: "What to do next, in order:",
@@ -255,16 +256,20 @@ export const enGates = {
     badEvery: (v) => `the manifest says probe: "${v}", which is not a commit count. The probe does NOT run: silently using the default would mean doing something other than what is written.`,
     autoFirst: "no coverage probe has ever run here — running it myself. Turn off: AQK_PROBE=0",
     auto: (n) => `${n} commits since the last probe — running it myself. Turn off: AQK_PROBE=0`,
+    autoNotInCi: (cmd) => `in CI the probe does not run by itself — it would be minutes of surprise in a fast check; run it as a separate job: ${cmd} (or AQK_PROBE=1)`,
     title: "aqk probe — what the declared checks cannot see",
     method: (files, entries, gates) =>
       `method: a red sample from a catalogue entry is planted into a COPY of the project, then the ` +
       `DECLARED gates are run there — the command is used as written, nothing is substituted into it. ` +
       `Files: ${files}, applicable entries: ${entries}, gates green on a clean checkout: ${gates}. ` +
-      `The working tree is not touched.`,
+      `Project files are not changed; the probe result goes to .aqk/last-probe.md (in .gitignore after init).`,
     fixes: (n) => `fixes in history: ${n}`,
     caught: (names) => `caught by: ${names}`,
     blind: "NOTHING CATCHES IT",
     unknown: "nothing to check with — the gate did not run (delegated tool missing)",
+    nameless: "did not name the planted file",
+    planting: "goes red on the green sample too — fails from the planting itself",
+    unattributed: (g) => `went red: ${g} — the catch is not proven`,
     blindWhere: (file, fixes) => `where: ${file} — ${fixes} fix commits in its history`,
     blindWhat: "what we planted into your file:",
     blindFix: (cmd) => `catch it right now, no kit needed:  ${cmd}`,

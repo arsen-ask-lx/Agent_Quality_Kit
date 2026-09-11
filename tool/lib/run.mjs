@@ -9,6 +9,7 @@
 // файл был полон, и любая следующая правка ложилась туда просто потому, что «так ближе по
 // контексту». Ровно то, о чём предупреждает совет самого гейта.
 import { spawnSync } from "node:child_process";
+import { Worker } from "node:worker_threads";
 import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
 import { CWD, c, die } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
@@ -65,9 +66,73 @@ function progress({ tty = process.stdout.isTTY, write = (s) => process.stdout.wr
   };
 }
 
-function runGates(man, opts = {}) {
-  const gates = declaredGates(man);
-  if (!gates.length) return { failed: 0, ran: 0, results: [] };
+// ГРУППЫ И --only / --skip. Отзыв с живого проекта 2026-09-11: гейт цены меряет план на
+// засеянной базе — объявишь, и он валит прогон без стенда; уберёшь, и promise-has-gate справедливо
+// ругается. Прогон бывал только «всё или ничего». `groups:` в манифесте называет смысл
+// («этим нужен стенд»), флаги выбирают. Неизвестное имя — ошибка: опечатка `--skip stak` не
+// должна тихо превращаться в «пропустили ничего». Пропущенные называются, а не исчезают.
+function listArg(argv, flag) {
+  const out = [];
+  argv.forEach((a, i) => { if (a === flag && argv[i + 1] && !argv[i + 1].startsWith("--")) out.push(...argv[i + 1].split(",")); });
+  return out.map((x) => x.trim()).filter(Boolean);
+}
+
+function selectGates(gates, man, { only = [], skip = [] } = {}) {
+  const groups = man?.groups && typeof man.groups === "object" && !Array.isArray(man.groups) ? man.groups : {};
+  const declared = new Set(gates.map(([n]) => n));
+  const unknown = [];
+  const expand = (list) => {
+    const out = new Set();
+    for (const name of list) {
+      const g = groups[name];
+      const members = Array.isArray(g) ? g : typeof g === "string" && g ? [g] : null;
+      if (members) for (const m of members) (declared.has(m) ? out.add(m) : unknown.push(m));
+      else if (declared.has(name)) out.add(name);
+      else unknown.push(name);
+    }
+    return out;
+  };
+  const onlySet = only.length ? expand(only) : null;
+  const skipSet = expand(skip);
+  const run = gates.filter(([n]) => (!onlySet || onlySet.has(n)) && !skipSet.has(n));
+  const kept = new Set(run.map(([n]) => n));
+  return { run, skipped: gates.map(([n]) => n).filter((n) => !kept.has(n)), unknown: [...new Set(unknown)] };
+}
+
+const GATE_TIMEOUT = 300000;
+
+// Один гейт в этом потоке — прежний путь, без `--jobs`.
+function spawnGate(cmd) {
+  return spawnSync(gateCommand(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: GATE_TIMEOUT });
+}
+
+// ПАРАЛЛЕЛЬНО — ПО ФЛАГУ. Отзыв с живого проекта 2026-09-11: 34 независимых гейта шли друг за
+// другом больше минуты. Но у чужих проектов гейты бывают зависимыми — два `npm run build` в одну
+// папку `dist/` при одновременном запуске дадут плавающие падения, а плавающее красное хуже
+// медленного. Поэтому без флага всё как было, по одному. Результаты — массив обещаний в порядке
+// объявления: вывод печатается по порядку, какой бы гейт ни кончился первым.
+function startPool(cmds, jobs) {
+  const url = new URL("./gate-worker.mjs", import.meta.url);
+  const results = cmds.map(() => { let res; const pr = new Promise((r) => { res = r; }); pr.res = res; return pr; });
+  let next = 0;
+  const feed = (w) => {
+    if (next >= cmds.length) { w.terminate(); return; }
+    const id = next++;
+    const onErr = (e) => { results[id].res({ status: null, stdout: "", stderr: String(e?.message || e), error: { code: "WORKER" } }); };
+    w.once("error", onErr);
+    w.once("message", (m) => { w.off("error", onErr); results[id].res(m); feed(w); });
+    w.postMessage({ id, cmd: cmds[id], cwd: CWD, timeout: GATE_TIMEOUT });
+  };
+  for (let i = 0; i < Math.min(jobs, cmds.length); i++) feed(new Worker(url));
+  return results;
+}
+
+async function runGates(man, opts = {}) {
+  const all = declaredGates(man);
+  if (!all.length) return { failed: 0, ran: 0, results: [], skipped: [] };
+  const sel = selectGates(all, man, opts);
+  if (sel.unknown.length) die(L.doctor.selectUnknown(sel.unknown.join(", "), Object.keys(man?.groups || {}).join(", ")));
+  const gates = sel.run;
   const advisory = advisorySet(man);
   const bar = progress();
 
@@ -79,14 +144,20 @@ function runGates(man, opts = {}) {
   if (scoped) console.log(c.dim(`\n  ${L.doctor.sinceHeading(opts.since, scoped.size)}`));
 
   console.log(c.bold(`\n  ${L.doctor.runHeading}\n`));
+  if (sel.skipped.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(sel.skipped.join(", "))}\n`));
   let failed = 0;
   const results = [];
 
+  const jobs = Math.max(1, Number(opts.jobs) || 1);
+  const pooled = jobs > 1 ? startPool(gates.map(([, cmd]) => cmd), jobs) : null;
+  const tStart = Date.now();
   for (const [i, [name, cmd]] of gates.entries()) {
     bar.show(`  ${c.dim("⋯")}  ${name.padEnd(14)} ${c.dim(L.doctor.running(i + 1, gates.length))}`);
-    const t0 = Date.now();
-    const r = spawnSync(gateCommand(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+    const t0 = pooled ? tStart : Date.now();
+    const r = pooled ? await pooled[i] : spawnGate(cmd);
     bar.clear();
+    // При --jobs время гейта от начала прогона: точнее не узнать без часов в потоке, и честнее
+    // так и считать, чем приписать гейту чужое ожидание в очереди.
     const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
     // Вывод гейта запоминается целиком (с потолком, чтобы болтливый инструмент не съел память):
     // по нему считается покрытие дифа — какой файл вообще был назван хоть одной проверкой.
@@ -188,7 +259,7 @@ function runGates(man, opts = {}) {
   // тишина, против которой построен стандарт: проверка выключена, а выглядит как её отсутствие.
   const advisoryFailed = results.filter((x) => x.advisory && !x.ok).map((x) => x.name);
   if (advisoryFailed.length) console.log(`\n  ${c.yellow(L.doctor.advisorySummary(advisoryFailed))}`);
-  return { failed, ran: gates.length, results, advisoryFailed };
+  return { failed, ran: gates.length, results, advisoryFailed, skipped: sel.skipped };
 }
 
-export { declaredGates, sinceRef, runGates, progress };
+export { declaredGates, sinceRef, runGates, progress, selectGates, listArg };

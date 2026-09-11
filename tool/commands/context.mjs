@@ -25,10 +25,11 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook } from "../lib/core.mjs";
 import { readManifest, assessLevel, coversOf } from "../lib/manifest.mjs";
-import { detectFacts, readCatalog, catalogBuckets, startWith } from "../lib/repo.mjs";
+import { detectFacts, readCatalog } from "../lib/repo.mjs";
+import { catalogBuckets, startWith, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
 import { declaredGates } from "../lib/run.mjs";
-import { probeStatus, blindAdvice } from "./probe.mjs";
+import { probeStatus } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Больше пяти имён подряд агент всё равно не удержит, а блок ради них раздувается. Остаток
