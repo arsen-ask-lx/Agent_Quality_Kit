@@ -220,6 +220,21 @@ test("парный вердикт: гейт позеленел от подсад
   assert.equal(probeVerdictPaired(before, after).verdict, "unknown");
 });
 
+// Гейт работал ДО подсадки и сломался ОТ неё. Он мог быть тем самым ловцом — «никто не ловит»
+// о нём сказать нельзя. Найдено пробой на самом комплекте 2026-09-11: образец лёг на место
+// kit/gates/_skip.sh, общей библиотеки двенадцати гейтов, все двенадцать вышли с кодом 2 —
+// включая gate-not-weakened, который в отдельной папке этот образец ловит. Остальные молчали,
+// и проба назвала класс слепым; doctor повторил это человеку жирным.
+test("парный вердикт: подсадка сломала работавший гейт — «не смогли», а не «слеп»", () => {
+  const { before, after } = pairs([["lint", 0], ["units", 0]], [["lint", 2], ["units", 0]]);
+  const r = probeVerdictPaired(before, after);
+  assert.equal(r.verdict, "unknown");
+  assert.equal(r.brokenByPlant, 1);
+  // Поимка соседом остаётся поимкой: знание получено, и сломанный гейт его не отменяет.
+  const other = pairs([["lint", 0], ["units", 0]], [["lint", 2], ["units", 1]]);
+  assert.equal(probeVerdictPaired(other.before, other.after).verdict, "caught");
+});
+
 test("парный вердикт: гейтов нет вовсе", () => {
   assert.equal(probeVerdictPaired([], []).verdict, "unknown");
 });

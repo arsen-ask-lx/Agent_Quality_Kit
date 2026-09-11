@@ -111,19 +111,29 @@ function probeSummary({ caught = 0, blind = 0, unknown = 0, unprobed = 0 } = {})
 //   · гейт, ПОЗЕЛЕНЕВШИЙ от подсадки, — он смотрит не туда, и это тоже не поимка.
 // Исключены все — вердикт `unknown`, а не `blind`: «не по чему судить» и «никто не ловит»
 // разные факты, и молчание здесь и есть предмет спора.
+//
+// И ещё одно: гейт, СЛОМАННЫЙ подсадкой (работал до, не смог после), мог быть тем самым
+// ловцом. Пока никто другой не поймал, «слеп» про такой класс — неправда, и вердикт `unknown`.
+// Найдено пробой на самом комплекте 2026-09-11: образец лёг на место общей библиотеки
+// kit/gates/_skip.sh, двенадцать гейтов вышли с кодом 2 — включая тот, что этот образец в
+// отдельной папке ловит. Остальные молчали, и проба назвала класс слепым.
 function probeVerdictPaired(before, after) {
   const byName = new Map(after.map((r) => [r.name, r]));
-  let usable = 0, alreadyRed = 0, failed = 0, caught = 0;
+  let usable = 0, alreadyRed = 0, failed = 0, caught = 0, brokenByPlant = 0;
   for (const b of before) {
     const a = byName.get(b.name);
     const broke = (r) => !r || (r.code !== 0 && r.code !== 1);
-    if (broke(b) || broke(a)) { failed++; continue; }
+    if (broke(b) || broke(a)) {
+      failed++;
+      if (!broke(b)) brokenByPlant++;
+      continue;
+    }
     if (b.code === 1) { alreadyRed++; continue; }
     usable++;
     if (a.code === 1) caught++;
   }
-  const verdict = !usable ? "unknown" : caught ? "caught" : "blind";
-  return { verdict, usable, alreadyRed, failed, caught };
+  const verdict = caught ? "caught" : !usable || brokenByPlant ? "unknown" : "blind";
+  return { verdict, usable, alreadyRed, failed, caught, brokenByPlant };
 }
 
 // Счёт непокрытого КЛАССАМИ, а не пробами. Замер на десяти живых репозиториях 2026-09-10:
