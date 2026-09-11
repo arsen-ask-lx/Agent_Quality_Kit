@@ -8,7 +8,8 @@ import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../li
 import { cmdProbe, probeStatus, blindAdvice } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, proposeGates, startWith } from "../lib/repo.mjs";
+import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, startWith } from "../lib/repo.mjs";
+import { proposeGates, ADOPT_FILES, ADOPT_SCRIPTS } from "../lib/adopt.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
@@ -124,9 +125,10 @@ async function reportCatalog(man, facts) {
   // чужом манифесте без спроса — наше решение в чужом файле.
   if (!declaredGates(man).length) {
     const files = {};
-    for (const n of ["package.json", "Makefile"]) {
+    for (const n of ADOPT_FILES) {
       try { files[n] = await readFile(join(CWD, n), "utf8"); } catch { /* нет — и ладно */ }
     }
+    for (const n of ADOPT_SCRIPTS) if (await exists(join(CWD, n))) files[n] = "";
     const found = proposeGates(files);
     if (found.length) {
       console.log(`\n  ${c.bold(L.doctor.haveAlready(found.length))}`);
@@ -147,7 +149,7 @@ async function reportCatalog(man, facts) {
       const adv = blindAdvice(rec, facts, {});
       console.log(`  ${c.yellow("→")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
       if (adv.command) console.log(c.dim(`     ${L.doctor.startCmd(adv.command)}`));
-      if (rec.tool) console.log(c.dim(`     ${L.doctor.startTool(rec.tool)}`));
+      if (adv.tool) console.log(c.dim(`     ${L.doctor.startTool(adv.tool)}`));
     }
     // Одна проверка руками — это разовый героизм. Сказать про хук здесь, а не в конце: человек
     // читает первые строки и закрывает, а именно сейчас у него в руках список того, что стоит

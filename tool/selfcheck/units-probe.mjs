@@ -401,6 +401,20 @@ test("совет: у стека нет своего рецепта — кома�
   assert.equal(blindAdvice(entry, { langs: new Set(["go"]) }, { file: "a.go", fixes: 2 }).command, null);
 });
 
+// Python-проекту показывалась ссылка на eslint и knip: поле `tool` у записи общее на все языки.
+// Совет, в котором половина не про тебя, читается весь как «не про тебя».
+test("совет: адрес инструмента — того, которым начинается команда", () => {
+  const entry = {
+    slug: "dead-code",
+    tool: "https://github.com/jendrikseipp/vulture · https://github.com/webpro-nl/knip",
+    recipes: { python: "vulture --min-confidence 60 {dir}", javascript: "npx knip" },
+  };
+  assert.equal(blindAdvice(entry, { langs: new Set(["python"]) }).tool, "https://github.com/jendrikseipp/vulture");
+  // Команды нет или имя не совпало — весь список: лучше лишняя ссылка, чем ни одной.
+  assert.equal(blindAdvice(entry, { langs: new Set(["go"]) }).tool, entry.tool);
+  assert.equal(blindAdvice({ slug: "x" }, { langs: new Set() }).tool, null);
+});
+
 test("совет: пустая запись не роняет разбор", () => {
   assert.equal(blindAdvice({}, { langs: new Set() }, {}).command, null);
   assert.equal(blindAdvice({}, {}, {}).command, null);
