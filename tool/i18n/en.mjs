@@ -126,6 +126,8 @@ export const en = {
       `either fix them and drop them from advisory, or admit the rule does not exist.`,
     runHeading: "Running the declared gates",
     timeout: "did not finish within 5 minutes",
+    running: (i, n) => `[${i}/${n}] running…`,
+    proving: "checking that the gates catch defects on their own samples…",
     exitCode: (code) => `exit ${code}`,
     moreLines: (n) => `… and ${n} more lines`,
     declaredNotRun: (n) => `${n} gates declared, but never run.`,

@@ -12,6 +12,30 @@ import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
 import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { pickLang, langFromText } from "../i18n/index.mjs";
+import { progress } from "../lib/run.mjs";
+
+// --- строка «идёт» во время прогона ---------------------------------------------------
+// ЗАЧЕМ. Гейт идёт через spawnSync, и строка про него печаталась только по завершении: минута
+// `smoke` — минута пустого экрана. Человек не отличает «работает» от «повисло» и пишет сам.
+test("строка «идёт» пишется только в терминал и стирается без следа", () => {
+  const out = [];
+  const pipe = progress({ tty: false, write: (s) => out.push(s) });
+  pipe.show("⋯ smoke [2/10]");
+  pipe.clear();
+  assert.deepEqual(out, [], "в пайп и в конвейер — ни байта: лог читается глазами и разбирается машиной");
+
+  const term = [];
+  const p = progress({ tty: true, write: (s) => term.push(s) });
+  p.clear();
+  assert.deepEqual(term, [], "стирать нечего — управляющих кодов нет");
+  p.show("⋯ smoke [2/10]");
+  assert.ok(term.join("").includes("smoke [2/10]"));
+  assert.ok(!term.join("").includes("\n"), "без перевода строки: её перепишет итог гейта");
+  p.clear();
+  assert.equal(term.at(-1), "\r\x1b[K", "итог гейта ложится на чистую строку");
+  p.clear();
+  assert.equal(term.filter((s) => s === "\r\x1b[K").length, 1, "повторное стирание ничего не пишет");
+});
 
 // --- доказательство гейтов ------------------------------------------------------------
 // ЗАЧЕМ. Ступень AQK-2 называлась «гейты доказаны» и проверяла существование двух папок.

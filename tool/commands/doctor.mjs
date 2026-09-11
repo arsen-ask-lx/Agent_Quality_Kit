@@ -13,7 +13,7 @@ import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress } from "../lib/run.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -265,7 +265,11 @@ async function cmdDoctor() {
   // Доказательство считается только при прогоне: узнать, ловит ли гейт брак, нельзя иначе как
   // запустив его по образцу. Без прогона ступени со второй помечаются «не доказано» — это
   // честнее, чем показывать их выполненными по наличию папок.
+  // Доказательство — секунды тишины до первой строки уровня; строка «идёт» их называет.
+  const bar = progress();
+  if (process.argv.includes("--run")) bar.show(c.dim(`  ⋯  ${L.doctor.proving}`));
   const proof = process.argv.includes("--run") ? await proveGates(man) : null;
+  bar.clear();
   const { reached, steps } = await assessLevel(man, proof);
 
   console.log(c.bold(`\n  ${L.doctor.levelHeading}\n`));
