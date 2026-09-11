@@ -72,7 +72,7 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   the files `init` writes are owned by root, so you cannot edit your own manifest. Debian-based
   on purpose: the gates are `sh`, `grep`, `awk`, `find` — under alpine's busybox they behave
   differently, and an image where the gates behave differently is worse than no image
-- As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.12.0` with `min: 1`
+- As a GitHub Action: `uses: arsen-ask-lx/Agent_Quality_Kit@v0.13.0` with `min: 1`
   (https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ## What makes it different
