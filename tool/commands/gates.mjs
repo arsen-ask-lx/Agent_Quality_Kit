@@ -15,6 +15,7 @@ import {
 } from "../lib/repo.mjs";
 import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/templates.mjs";
 import { L } from "../i18n/index.mjs";
+import { gateCommand } from "../lib/execution.mjs";
 
 // Ставит гейт из каталога в проект. Проверка КОПИРУЕТСЯ в репозиторий, а не остаётся
 // ссылкой в пакет: при установке через npx пакет временный, и завтра команда в манифесте
@@ -230,7 +231,7 @@ async function cmdRatchet(args) {
 
   // Снимок текущих нарушений — это и есть долг. Ключ без номера строки: правка соседней
   // строки не должна читаться как новое нарушение.
-  const r = spawnSync(inner, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+  const r = spawnSync(gateCommand(inner), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
   if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
     die(L.ratchet.notRunnable(slug, inner));
   }
@@ -438,7 +439,7 @@ async function cmdWhy(args) {
 
   // --- 3. объявлен: спрашиваем у него самого ---------------------------------
   console.log(c.dim(`  ${L.why.declaredAs(cmd)}`));
-  const r = spawnSync(String(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+  const r = spawnSync(gateCommand(String(cmd)), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
   const ci = await runsInCi(slug, String(cmd));
 
   if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {

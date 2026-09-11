@@ -13,6 +13,7 @@ import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
 import { CWD, c, die } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
 import { L } from "../i18n/index.mjs";
+import { gateCommand } from "./execution.mjs";
 
 
 // «Гейт объявлен» и «гейт работает» — разные утверждения. Первое читается из манифеста,
@@ -84,7 +85,7 @@ function runGates(man, opts = {}) {
   for (const [i, [name, cmd]] of gates.entries()) {
     bar.show(`  ${c.dim("⋯")}  ${name.padEnd(14)} ${c.dim(L.doctor.running(i + 1, gates.length))}`);
     const t0 = Date.now();
-    const r = spawnSync(cmd, { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
+    const r = spawnSync(gateCommand(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: 300000 });
     bar.clear();
     const secs = (Math.max(0, Date.now() - t0) / 1000).toFixed(1);
     // Вывод гейта запоминается целиком (с потолком, чтобы болтливый инструмент не съел память):

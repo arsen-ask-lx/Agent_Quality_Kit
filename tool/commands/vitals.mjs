@@ -21,6 +21,7 @@ import { join } from "node:path";
 import { CWD, MANIFEST, SELF, c, exists } from "../lib/core.mjs";
 import { readManifest, unparsedLines, gateRequires } from "../lib/manifest.mjs";
 import { whichSync } from "../lib/repo.mjs";
+import { gitBash } from "../lib/execution.mjs";
 import { updateWanted } from "../lib/brief.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -94,7 +95,11 @@ async function cmdVitals() {
   for (const [gate, cmd] of Object.entries(gates)) {
     const prog = progOf(cmd);
     if (!prog || seen.has(prog)) continue;
-    seen.set(prog, { gate, prog, found: Boolean(whichSync(prog)) });
+    // На Windows слово `bash` в PATH — часто заглушка WSL, и «найден» было бы неправдой: гейт
+    // запустится через Git Bash (gateCommand) или не запустится вовсе. Спрашиваем того же, кого
+    // спросит прогон, — иначе vitals и doctor --run снова разойдутся.
+    const found = prog === "bash" && process.platform === "win32" ? Boolean(gitBash()) : Boolean(whichSync(prog));
+    seen.set(prog, { gate, prog, found });
   }
 
   // Первого слова мало. Запись каталога бывает обёрткой: команда начинается с `bash`, который

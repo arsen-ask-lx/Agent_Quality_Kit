@@ -130,7 +130,9 @@ jobs:
       - name: функции программы
         # Оба файла: проверки уровня и доказательства живут отдельно, и на Windows они не
         # гонялись вовсе — а именно эта платформа спрятала у нас самый тяжёлый дефект.
-        run: node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs
+        # units-execution — ради живой проверки, что `bash` в команде гейта отвечает из Git Bash,
+        # а не из заглушки WSL: остальные шаги этого задания гейты через комплект не запускают.
+        run: node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-execution.mjs
 
       # --user везде, где контейнер пишет во временные файлы рабочей папки: без него они
       # остаются root-овыми и ломают следующие шаги. Та же причина, что в документации образа.

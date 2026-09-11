@@ -27,6 +27,10 @@
 
 // Умолчание для незнакомой программы: ноль — чисто, единица — находка, остальное — сбой.
 // Это честнее догадки: неизвестный код становится «не знаем», а не «поймал».
+import { existsSync } from "node:fs";
+import { win32 } from "node:path";
+import { whichSync } from "./repo.mjs";
+
 const DEFAULT = (code) => code === 1;
 
 const ADAPTERS = {
@@ -64,4 +68,49 @@ function classify(r, isFinding = DEFAULT) {
   return { state: "infra_error", reason: "unexpected_exit", code };
 }
 
-export { classify, findingCodes };
+// КАКОЙ BASH ЗАПУСКАТЬ НА WINDOWS. В System32 лежит bash.exe — заглушка WSL, и в PATH она стоит
+// раньше Git Bash: установщик Git по умолчанию кладёт туда только Git\cmd. Команда гейта
+// `bash kit/gates/x/check.sh .` уезжала в Linux-подсистему — другие программы, другой git,
+// другие пути — и прогон краснел «не из-за кода». Отчёт с живого проекта 2026-09-11: «гейты
+// под Windows берут bash из WSL. Через Git Bash все проходят».
+//
+// Приём не выдуман: на ту же ловушку наступали Claude Code (anthropics/claude-code#23556) и
+// Archon (coleam00/Archon#1326), и общий ответ — не верить слову `bash` из PATH, а брать его
+// рядом с git. Git комплекту нужен всё равно. Явный путь — AQK_BASH: у всего, что мы решаем
+// сами, обязан быть способ решить иначе.
+//
+// Не нашли — null, и команда остаётся как есть. Подставлять заглушку WSL «за неимением» нельзя:
+// это ровно то, от чего мы уходим; `vitals` назовёт bash ненайденным.
+function gitBash({ platform = process.platform, env = process.env, which = whichSync, exists = existsSync } = {}) {
+  if (platform !== "win32") return null;
+  if (env.AQK_BASH) return env.AQK_BASH;
+  const cands = [];
+  const git = which("git", env);
+  if (git) {
+    // Git\cmd\git.exe и Git\mingw64\bin\git.exe — корень на два и на три уровня выше.
+    for (const root of [win32.dirname(win32.dirname(git)), win32.dirname(win32.dirname(win32.dirname(git)))]) {
+      cands.push(win32.join(root, "bin", "bash.exe"), win32.join(root, "usr", "bin", "bash.exe"));
+    }
+  }
+  for (const base of [env.ProgramFiles, env["ProgramFiles(x86)"], env.LOCALAPPDATA && win32.join(env.LOCALAPPDATA, "Programs")]) {
+    if (base) cands.push(win32.join(base, "Git", "bin", "bash.exe"));
+  }
+  return cands.find((p) => exists(p)) || null;
+}
+
+// Подменяется только ПЕРВОЕ слово: внутренний `bash` у обёртки храповика запускает уже Git Bash,
+// а у него свой PATH. Кавычки — путь почти всегда с пробелом («Program Files»).
+function launchable(cmd, bash) {
+  const s = String(cmd || "");
+  return bash && /^bash(\s|$)/.test(s) ? `"${bash}"${s.slice(4)}` : s;
+}
+
+// Одна точка для всех пяти мест, где запускается команда гейта: прогон, доказательство, проба,
+// храповик, `why`. Поиск делается раз на процесс — он смотрит на диск, а гейтов бывает тридцать.
+let cachedBash;
+function gateCommand(cmd) {
+  if (cachedBash === undefined) cachedBash = gitBash();
+  return launchable(cmd, cachedBash);
+}
+
+export { classify, findingCodes, gitBash, launchable, gateCommand };
