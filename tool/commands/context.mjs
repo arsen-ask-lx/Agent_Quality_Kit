@@ -80,7 +80,9 @@ function contextBlock(state, T = L.context) {
     if (pr.state === "never") out.push(T.probeNever);
     else if (pr.state === "off") out.push(T.probeOff);
     else if (pr.state === "unknown") out.push(T.probeUnknown);
-    else if (pr.blind > 0) out.push(T.probeBlind(pr.blind, pr.state === "stale" ? pr.behind : 0));
+    // Имена — агенту они нужнее числа: «один класс» не говорит, какой файл трогать осторожно.
+    else if (pr.blind > 0) out.push(T.probeBlind(pr.blind, pr.state === "stale" ? pr.behind : 0,
+      (pr.classes || []).map((b) => `${b.slug} (${b.file})`).join(", ")));
     else out.push(T.probeClean(pr.state === "stale" ? pr.behind : 0));
   }
 

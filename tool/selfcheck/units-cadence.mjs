@@ -7,7 +7,7 @@
 // незачем, а сто коммитов за день перепроверить надо.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { probeDue, probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
+import { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
 
 test("порог по умолчанию — сто коммитов, и он назван числом, а не спрятан", () => {
   assert.equal(PROBE_EVERY, 100);
@@ -66,4 +66,40 @@ test("ноль выключает пробу", () => {
 test("непонятое значение порога — null, а не тихое умолчание", () => {
   assert.equal(probeEvery({ probe: "часто" }), null);
   assert.equal(probeEvery({ probe: -5 }), null);
+});
+
+// --- отметка несёт ИМЕНА непойманных классов ------------------------------------------
+// ЗАЧЕМ. Отметка хранила одно число — `blind: 1`. Агент в `context` видел «один класс», человек
+// в `doctor` не видел ничего, и чтобы узнать КАКОЙ, надо было снова запускать пробу — ту самую
+// команду, о которой никто не вспоминает. Находка, которую не показали, не предостерегает.
+test("отметка пробы: по строке на слепой класс, в самом горячем файле, где он слеп", () => {
+  const recs = [
+    { entry: "swallowed-error", file: "src/a.py", verdict: "blind" },
+    { entry: "swallowed-error", file: "src/b.py", verdict: "blind" },
+    { entry: "no-print-in-prod", file: "src/a.py", verdict: "caught" },
+    { entry: "dead-code", file: "src/b.py", verdict: "unknown" },
+  ];
+  const lines = blindLines(recs);
+  // То же правило, что у countProbe: класс, слепой хоть где-то, — непокрыт; «не смогли» — не слеп.
+  assert.deepEqual(lines, ["blind-class: swallowed-error src/a.py"]);
+  const text = ["at: 5", "blind: 1", "", ...lines, "- src/a.py (fixes: 3)"].join("\n");
+  assert.deepEqual(parseBlind(text), [{ slug: "swallowed-error", file: "src/a.py" }]);
+});
+
+test("отметка старого формата и пустая — пустой список, а не падение", () => {
+  assert.deepEqual(parseBlind("at: 5\nblind: 1\n"), []);
+  assert.deepEqual(parseBlind(""), []);
+  assert.deepEqual(parseBlind(null), []);
+});
+
+// «Объявлен сейчас» не значит «поставлен после пробы»: проба и гоняет объявленные гейты.
+// Первая версия так и решила — и на самом комплекте написала «поставлено после пробы» про
+// gate-not-weakened, который стоял ДО неё и в kit/gates/_skip.sh брак пропустил. Самое ценное
+// сообщение («объявлен, но здесь не ловит») подменилось утешительным. Поймано живым прогоном.
+test("отметка помнит, какие гейты проба ПРОГОНЯЛА", () => {
+  const text = "at: 5\nblind: 1\nran: smoke gate-not-weakened units\n\nblind-class: x a.sh\n";
+  assert.deepEqual([...parseRan(text)].sort(), ["gate-not-weakened", "smoke", "units"]);
+  // Старая отметка этой строки не несёт: «не знаем», а не «ничего не было объявлено».
+  assert.equal(parseRan("at: 5\nblind: 1\n"), null);
+  assert.deepEqual([...parseRan("ran:\n")], []);
 });

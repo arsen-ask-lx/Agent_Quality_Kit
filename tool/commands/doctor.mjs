@@ -51,7 +51,7 @@ async function reportBaseline(man, facts) {
   );
 }
 
-async function reportCatalog(man, facts) {
+async function reportCatalog(man, facts, probe = null) {
   const catalog = await readCatalog();
   if (!catalog.length) return;
 
@@ -137,6 +137,31 @@ async function reportCatalog(man, facts) {
       }
       console.log(c.dim(`     ${L.doctor.haveAlreadyHow(found.map((g) => `${g.name}: "${g.cmd}"`).join("  "))}`));
     }
+  }
+
+  // ЧТО ВАШИ ПРОВЕРКИ ПРОПУСТИЛИ. Проба знала имена непойманных классов и писала в отметку одно
+  // число; человек в `doctor` не видел ничего. Это самое конкретное, что мы знаем о проекте, —
+  // не «хорошая практика», а брак, подсаженный в ЕГО файл и ЕГО проверками не замеченный, —
+  // поэтому стоит выше списка «с чего начать». Читается из файла: ничего не запускает.
+  const blindOnes = (probe?.classes || []).map((b) => [b, catalog.find((r) => r.slug === b.slug)]).filter(([, r]) => r);
+  if (blindOnes.length) {
+    console.log(`\n  ${c.yellow("⚠")}  ${c.bold(L.doctor.blindHeading(probe.behind))}`);
+    for (const [b, rec] of blindOnes) {
+      // Три случая, и сливать их нельзя. Гейт стоял и проба его ГОНЯЛА — «стоит, но здесь не
+      // ловит», самое ценное. Гейт объявлен, но проба его не гоняла (поставлен позже или
+      // медленный) — «поймает ли, покажет следующая», а не «пойман». Гейта нет — совет.
+      const ranIt = probe.ran?.has(rec.slug);
+      const now = facts.gateKeys.includes(rec.slug);
+      console.log(`  ${now && !ranIt ? c.dim("~") : c.red("✘")}  ${rec.slug.padEnd(22)} ${c.dim(`${rec.intent || ""}  ← ${b.file}`)}`);
+      if (ranIt) { console.log(c.dim(`     ${L.doctor.blindRan(rec.slug)}`)); continue; }
+      if (now) { console.log(c.dim(`     ${L.doctor.blindInstalled}`)); continue; }
+      const adv = blindAdvice(rec, facts, {});
+      if (adv.command) console.log(c.dim(`     ${L.doctor.startCmd(adv.command)}`));
+      else console.log(c.dim(`     ${L.doctor.install(`${SELF} add ${rec.slug}`)}`));
+    }
+    console.log(c.dim(`     ${L.doctor.blindMore(`${SELF} probe`)}`));
+  } else if (probe?.state === "never" && declaredGates(man).length) {
+    console.log(c.dim(`\n  ${L.doctor.probeNever(`${SELF} probe`)}`));
   }
 
   // С ЧЕГО НАЧАТЬ. Двадцать одинаковых крестов — это ноль требований: закрывают первое
@@ -318,7 +343,10 @@ async function cmdDoctor() {
     await reportBaseline(man, facts);
     process.exit(0);
   }
-  const cat = (await reportCatalog(man, facts)) || { held: 0, todo: 0, todoRecs: [] };
+  // Состояние пробы — из файла отметки, миллисекунды. Нет его — блок про пробу просто молчит.
+  let probe = null;
+  try { probe = await probeStatus(); } catch { /* пробы нет — и ладно */ }
+  const cat = (await reportCatalog(man, facts, probe)) || { held: 0, todo: 0, todoRecs: [] };
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.
   const wantRun = process.argv.includes("--run");
