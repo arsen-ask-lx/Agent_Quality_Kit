@@ -36,7 +36,12 @@ gates:
   deps-are-pinned: "bash kit/gates/deps-are-pinned/check.sh ."
   complexity-limit: "bash kit/gates/complexity-limit/check.sh ."
   duplicate-code: "bash kit/gates/duplicate-code/check.sh ."
-  units: "node --test tool/selfcheck/units.mjs tool/selfcheck/units-level.mjs tool/selfcheck/units-evidence.mjs tool/selfcheck/units-learn.mjs tool/selfcheck/units-context.mjs tool/selfcheck/units-brief.mjs tool/selfcheck/units-banner.mjs tool/selfcheck/units-repo.mjs tool/selfcheck/units-vitals.mjs tool/selfcheck/units-probe.mjs tool/selfcheck/units-cadence.mjs"
+  # Маской, а не списком. Список держал одиннадцать файлов из двенадцати: units-execution.mjs —
+  # коды возврата vulture и pylint, сторож единой точки запуска — не гонялся на Linux НИКОГДА,
+  # кроме как руками. Найдено 2026-09-11 в выводе прогона перед выпуском 0.12.0. Проверка,
+  # которую некому запустить, — тот самый класс, против которого комплект. Без кавычек: маску
+  # раскрывает оболочка, Node 20 в конвейере сам этого не умеет.
+  units: "node --test tool/selfcheck/units*.mjs"
   # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip@6 --directory ."
