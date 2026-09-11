@@ -109,6 +109,8 @@ export const en = {
     blindInstalled: "declared, but the probe did not run this gate (added later or too slow) — the next probe will show whether it catches",
     blindMore: (cmd) => `what was planted and where — ${cmd}`,
     probeNever: (cmd) => `Whether your checks catch a real defect has not been tested yet: ${cmd} plants one in a copy of the project and shows (a minute or two, your files are not touched).`,
+    todoRest: (n) => `The other entries that apply here (${n}):`,
+    todoRestHow: (self) => `install any: ${self} add <name> · what it catches and why: ${self} why <name>`,
     startWith: "Start with these three — born from a real failure, and each closes with one ready command:",
     startCmd: (cmd) => `one line, no kit needed:  ${cmd}`,
     startTool: (url) => `the tool: ${url}`,
