@@ -108,6 +108,9 @@ test("договор в коде без проверки типов — нахо
 test("doctor видит договор в коде: запись применима, а не «спецификации не видно»", (t) => {
   const p = project(t, { "package.json": '{ "dependencies": { "@trpc/server": "11.18.0" } }\n' });
   aqk(p, "init");
-  const r = aqk(p, "doctor");
+  // --verbose: без него неприменимые свёрнуты в счёт, причин в выводе нет вовсе — и проверка
+  // прошла бы вхолостую при любом опознании.
+  const r = aqk(p, "doctor", "--verbose");
+  assert.match(r.out, /api-contract-has-arbiter/, `запись не названа вовсе:\n${r.out}`);
   assert.doesNotMatch(r.out, /не видно (спецификации|договора) API|no API (specification|contract) in sight/, `договор в коде не опознан:\n${r.out}`);
 });

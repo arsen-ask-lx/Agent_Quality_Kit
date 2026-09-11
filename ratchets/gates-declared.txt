@@ -30,3 +30,4 @@ todo-without-task
 units
 api-contract-has-arbiter
 test-not-adjusted
+entry-commands-exist
