@@ -66,6 +66,105 @@
 5. **Свод виден каждому агенту** (переходники CLAUDE.md и т.п.) — только после проверки по
    документации, какие агенты сейчас читают AGENTS.md сами
 
+## Как это у них устроено — подробно, с кодом
+
+Код — MIT, цитаты с изученного коммита `f922222`. Пути от `packages/`.
+
+### 1. Задание для агента (`agentlint prompt`)
+
+Три части. **Рецепт у каждой находки** — поле в типе результата (`core/src/types.ts`):
+
+```ts
+fix?: {
+  summary: string;
+  diff?: string;
+  docsUrl?: string;
+  /** Predefined, copy-pasteable prompt an AI coding agent can run to apply
+   *  the fix. Generated from static templates — never by an LLM. */
+  prompt?: string;
+};
+```
+
+**Шаблон на каждое правило** — словарь `id → функция`, в которую подставляются факты о проекте
+(`cli/src/prompts/registry.ts`). Модель не зовётся никогда; шаблон велит агенту брать значения
+из репозитория:
+
+```ts
+"agents-md-exists": ({ meta }) => `Create an AGENTS.md file at the repository root ...
+1. Read README.md, ${manifestName(meta)}, and any CI workflows to learn the project's real
+   build/test/lint commands. Do not invent commands.
+2. Write AGENTS.md (aim for 30–250 lines) with these sections: ...
+3. Every command you document must exist in the repository today.`,
+```
+
+**Сборка в одно задание** (`cli/src/prompts/compose.ts:72-127`): берутся только действия
+(провал, или предупреждение с рецептом), провалы раньше предупреждений, внутри — по весу
+правила; сверху четыре правила поведения, снизу — как проверить:
+
+```ts
+lines.push("## Ground rules");
+lines.push("- Derive every command, path, and convention from the actual repository — never invent commands that don't exist.");
+lines.push("- Keep changes minimal and scoped to these fixes. Do not refactor unrelated code.");
+lines.push("- Do not game the checks: the goal is genuinely useful agent context, not merely passing the linter.");
+lines.push("- If a fix requires a decision only the repository owner can make (e.g. choosing a license), stop and ask instead of guessing.");
+...
+lines.push("## Verify");
+lines.push("When done, run `npx @agentlinthq/cli@latest .` ... and confirm the rules above now pass and the score improved.");
+```
+
+Команда умеет сузить задание до названных правил: `agentlint prompt --rules a,b`
+(`cli/src/prompt-cmd/index.ts:35-46`); неизвестный id — ошибка, а не молчание.
+
+**Как ляжет к нам.** Источник заданий у нас уже есть и сильнее их: «начните с этих трёх»
+(`startWith`), непойманные классы из пробы (`.aqk/last-probe.md`), готовая команда под язык
+(`blindAdvice`), адрес инструмента. Нужны: шаблон на запись (из `gate.yml` и README записи —
+второй источник истины заводить нельзя), сборка в одно задание, правила поведения из нашего
+же свода («красный тест до кода», «готово = доказано»), и шаг «Проверь» — `aqk doctor --run`.
+Их слабость не копировать: у них «проверь» — это «балл вырос», у нас — «гейт краснеет на
+красном образце».
+
+### 2. «`.env` в репозитории» — их проверка с ошибкой
+
+```ts
+// cli/src/rules/safety.ts
+const hasReal =
+  (await ctx.exists(".env")) ||
+  (await ctx.exists(".env.local")) ||
+  (await ctx.exists(".env.production"));
+if (hasReal)
+  return fail("env-example-no-env", ".env file is committed — credentials may be exposed.", ...);
+```
+
+`ctx.exists` — проверка диска (`cli/src/scan-context.ts:30-38`), а не git. `.env`, лежащий в
+`.gitignore`, — обычное состояние у любого разработчика — даёт ложное «закоммичен».
+
+**Как ляжет к нам.** Новая запись каталога: `git ls-files` → любой `.env`, `.env.*` кроме
+`.example`, `.sample`, `.template` → находка. Красный образец — репозиторий с закоммиченным
+`.env`; зелёный — `.env` в `.gitignore` и `.env.example` в git. Проверить снаружи, что класс
+настоящий (отчёты об утечках), и завести доказательство в `incidents/`.
+
+### 3. «Команда из свода существует» (`cmd-cross-reference`)
+
+```ts
+// cli/src/rules/buildability.ts:234-248
+const reRun = /(?:npm|bun|yarn|pnpm)\s+run\s+([a-zA-Z][\w:-]*)/g;
+const reShort = /(?:npm|bun|yarn|pnpm)\s+(test|start|build|lint|format|typecheck|type-check)\b/g;
+...
+const builtin = new Set(["test", "start", "install", "i", "add", "ci"]);
+const missing = [...mentioned].filter((name) => !(name in scripts) && !builtin.has(name));
+```
+
+Видит только npm-скрипты. **Как ляжет к нам:** то же для всех источников, которые уже читает
+`lib/adopt.mjs` — `npm run X` → `package.json`, `make X` → цели `Makefile`, `tox -e X` →
+окружения tox, `just X` → `justfile`. Место — рядом с `entry-links-exist` (та ловит
+несуществующие ФАЙЛЫ в своде, эта — несуществующие КОМАНДЫ).
+
+### 4. «Только пять главных» (`cli/src/report/terminal.ts:55-63`)
+
+Провалы сортируются по весу правила, в терминал идут первые пять, остальное — в HTML и в
+задание. **Как ляжет к нам:** сверить, где у нас «начните с этих трёх» стоит в выводе — не
+после ли списка из двадцати крестов, который человек пролистывает.
+
 ## Чего не брать
 
 - оценку 0–100 и веса: на близнецах и на самом AQK видно, что число меряет наличие файлов
