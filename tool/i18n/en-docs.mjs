@@ -79,6 +79,26 @@ const enDocs = {
       (behind ? ` (${behind} commits behind)` : "") + ".",
     ratchets: (list) => `Ratchets: ${list}. The list may only get shorter, never longer.`,
     where: (entry) => `The rulebook: ${entry}. What proves a diff: \`aqk report --since main\`.`,
+    nextTitle: "Next, in order — computed from this repository, not generic advice:",
+    nextStep: {
+      init: () => "Set up the standard: `aqk init` — without .aqk.yml `aqk add` refuses.",
+      adopt: (s) => `Declare the checks this project already has: in .aqk.yml, under gates: ${s.gates.map((g) => `${g.name}: "${g.cmd}"`).join(", ")}. Then \`aqk doctor --run\`.`,
+      blind: (s) => `The "${s.slug}" defect the probe planted in ${s.file} was NOT caught by your checks.` +
+        (s.command ? ` Catch it now: \`${s.command}\`.` : "") + ` Keep it caught: \`aqk add ${s.slug}\`.`,
+      start: (s) => `Install ${s.slug}: \`aqk add ${s.slug}\`` + (s.command ? ` (one line, no kit needed: \`${s.command}\`)` : "") +
+        ", then `aqk prove` — the gate must go red on its own red sample.",
+    },
+    nextMore: (n) => `And ${n} more — the full list: \`aqk doctor\`.`,
+    whenTitle: "When to do what:",
+    whenCommit: (hook) => hook === true
+      ? "Before a commit → the `.git/hooks/pre-commit` hook runs the checks itself; do not bypass it (`--no-verify`)."
+      : "Before a commit → `aqk doctor --run --since main`: there is no pre-commit hook, it will not happen by itself.",
+    whenRules: [
+      "Added or changed a check → `aqk prove`: the gate must go red on its own red sample, otherwise it checks nothing.",
+      "Writing a rule into the rulebook → put the arbiter mark next to it, `<!-- aqk: gate-name -->`; no gate — `<!-- aqk: human -->`, which is an admission, not a check.",
+      "A check is in your way → do not weaken it (`|| true`, `--exit-zero`, a suppression without a rule code): stop and ask the owner.",
+      "You think it is done → `aqk report --since main`: every changed file must be named by a check.",
+    ],
     mapTitle: "WHAT THIS TOOL CAN DO. The full list of commands — not a retelling, the same list\nthe help is built from:",
     rulesTitle: (e) => `THE RULEBOOK OF THIS PROJECT (${e}) — verbatim, in full. This is not an invitation\nto read it: it is already here.`,
     hookAlready: (p) => `the hook is already in ${p} — changing nothing.`,

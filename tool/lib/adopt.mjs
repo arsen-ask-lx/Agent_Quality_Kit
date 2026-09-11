@@ -95,4 +95,18 @@ function proposeGates(files = {}) {
 const ADOPT_FILES = ["package.json", "Makefile", ".pre-commit-config.yaml", "tox.ini", "pyproject.toml"];
 const ADOPT_SCRIPTS = ["scripts/test", "scripts/check", "scripts/lint"];
 
-export { proposeGates, ADOPT_FILES, ADOPT_SCRIPTS };
+// Чтение с диска — отдельно от разбора: разбор проверяется перебором случаев, чтение — прогоном.
+async function readAdoptFiles(cwd) {
+  const { readFile, access } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const files = {};
+  for (const n of ADOPT_FILES) {
+    try { files[n] = await readFile(join(cwd, n), "utf8"); } catch { /* нет — и ладно */ }
+  }
+  for (const n of ADOPT_SCRIPTS) {
+    try { await access(join(cwd, n)); files[n] = ""; } catch { /* нет — и ладно */ }
+  }
+  return files;
+}
+
+export { proposeGates, readAdoptFiles };

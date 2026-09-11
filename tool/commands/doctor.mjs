@@ -8,8 +8,8 @@ import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../li
 import { cmdProbe, probeStatus, blindAdvice } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts, readCatalog, triggerVerdict, browserServerAdvice, startWith } from "../lib/repo.mjs";
-import { proposeGates, ADOPT_FILES, ADOPT_SCRIPTS } from "../lib/adopt.mjs";
+import { detectFacts, readCatalog, browserServerAdvice, startWith, catalogBuckets } from "../lib/repo.mjs";
+import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
@@ -59,14 +59,7 @@ async function reportCatalog(man, facts, probe = null) {
   // Пока их считали вместе, вывод каждый прогон называл долгом то, что уже держит biome или
   // ruff. Просьба первого чужого пользователя; она же — наша собственная норма про вывод.
   const { covered, unknownGates } = coversOf(man);
-  const held = [], todo = [], skip = [], byOther = [];
-  for (const rec of catalog) {
-    const v = triggerVerdict(rec, facts);
-    if (!v.applies) skip.push([rec, v.why]);
-    else if (facts.gateKeys.includes(rec.slug)) held.push(rec);
-    else if (covered.has(rec.slug)) byOther.push([rec, covered.get(rec.slug)]);
-    else todo.push(rec);
-  }
+  const { held, todo, skip, byOther } = catalogBuckets(catalog, facts, covered);
 
   console.log(c.bold(`\n  ${L.doctor.gatesHeading}\n`));
   const marks = ["has_ci", "has_db", "has_docker", "has_tests", "has_deps"]
@@ -84,12 +77,7 @@ async function reportCatalog(man, facts, probe = null) {
   // неправда, и первое, что он видел, было обвинением. Предлагаем, а не вписываем: гейт в
   // чужом манифесте без спроса — наше решение в чужом файле.
   if (!declaredGates(man).length) {
-    const files = {};
-    for (const n of ADOPT_FILES) {
-      try { files[n] = await readFile(join(CWD, n), "utf8"); } catch { /* нет — и ладно */ }
-    }
-    for (const n of ADOPT_SCRIPTS) if (await exists(join(CWD, n))) files[n] = "";
-    const found = proposeGates(files);
+    const found = proposeGates(await readAdoptFiles(CWD));
     if (found.length) {
       console.log(`\n  ${c.bold(L.doctor.haveAlready(found.length))}`);
       for (const g of found) {

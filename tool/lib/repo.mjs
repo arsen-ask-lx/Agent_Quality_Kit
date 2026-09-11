@@ -408,10 +408,25 @@ function startWith(entries, facts, n = 3) {
     .slice(0, n);
 }
 
+// Корзины каталога для ЭТОГО проекта: держит · к установке · закрыто другим арбитром ·
+// неприменимо. Одна раскладка на `doctor` и на блок для агента: жила внутри `doctor`, и блоку
+// пришлось бы завести вторую — а два счёта одного и того же расходятся первыми.
+function catalogBuckets(catalog, facts, covered = new Map()) {
+  const held = [], todo = [], skip = [], byOther = [];
+  for (const rec of catalog) {
+    const v = triggerVerdict(rec, facts);
+    if (!v.applies) skip.push([rec, v.why]);
+    else if (facts.gateKeys.includes(rec.slug)) held.push(rec);
+    else if (covered.has(rec.slug)) byOther.push([rec, covered.get(rec.slug)]);
+    else todo.push(rec);
+  }
+  return { held, todo, skip, byOther };
+}
+
 // Наружу — то, что действительно импортируют другие файлы и модульные проверки. Экспорт,
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
-  startWith,
+  startWith, catalogBuckets,
   stems, overlap, matchCatalog, isApiSpec };

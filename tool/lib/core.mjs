@@ -142,9 +142,21 @@ async function writeIfAbsent(path, content, { force }) {
   return true;
 }
 
+// Стоит ли хук pre-commit НА САМОМ ДЕЛЕ — в `.git/hooks`, а не в `.pre-commit-config.yaml`:
+// запись в конфиге — намерение, сработает только то, что лежит в гите. Три ответа: true — стоит,
+// false — нет, null — не git или файл не прочитать («не знаем» не сливается с «нет»).
+// Одна функция на `vitals` (подключено ли) и `context` (что сказать агенту перед коммитом).
+async function preCommitHook(cwd = CWD) {
+  const { readFile } = await import("node:fs/promises");
+  if (!(await exists(join(cwd, ".git")))) return null;
+  const hook = join(cwd, ".git", "hooks", "pre-commit");
+  if (!(await exists(hook))) return false;
+  try { return /pre-commit|aqk/i.test(await readFile(hook, "utf8")); } catch { return null; }
+}
+
 export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows,
+  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows, preCommitHook,
 };
