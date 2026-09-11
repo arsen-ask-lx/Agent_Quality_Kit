@@ -68,6 +68,8 @@ export const en = {
     runtimeTracked: (f, cmd) => `${f} is tracked by git — every run rewrites it, and the tree always shows a modified file. Take it out: ${cmd}`,
     runtimeNotIgnored: (f, cmd) => `${f} is this machine's state, yet git sees it: one \`git add .\` and it is in a commit. Hide it: ${cmd}`,
     layoutAdvice: "missing — advice, it does not fail the run",
+    coversImpossible: (entry, gate, linter) => `the claim "${gate} holds ${entry}" is wrong: ${linter} has no rule for this class — there is nothing to hold it with`,
+    coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
     rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the ENTRY POINT only: a promise kept in any other file is checked by nothing at all, and this kit will not tell you it exists.",

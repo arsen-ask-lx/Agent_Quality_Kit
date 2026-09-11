@@ -158,14 +158,34 @@ async function reportCatalog(man, facts, probe = null) {
   // Заявка «эту запись держит наш линтер» сверяется с кодами правил из рецепта записи.
   // Замерено на живом ruff.toml: девятнадцать групп правил, а print() не ловится — и заявка
   // сняла бы запись с долга, не закрыв её ничем.
-  let linterCfg = "";
-  for (const f of ["ruff.toml", ".ruff.toml", "pyproject.toml", ".eslintrc.json", "eslint.config.js", "eslint.config.mjs", "biome.json"]) {
-    try { linterCfg += await readFile(join(CWD, f), "utf8"); } catch { /* нет файла — нечего читать */ }
-  }
-  const unproven = coversUnproven(man, catalog, linterCfg);
-  for (const u of unproven) {
-    console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
-    console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+  // Конфиги — ПО ЛИНТЕРАМ, а не одной склейкой: заявка сверяется правилами того линтера,
+  // которым закрыт гейт (отзыв с живого проекта 2026-09-11 — коды ruff искались в biome.json).
+  const readAll = async (names) => {
+    let t = "";
+    for (const f of names) { try { t += await readFile(join(CWD, f), "utf8") + "\n"; } catch { /* нет файла */ } }
+    return t;
+  };
+  let scripts = {}, pkgText = "";
+  try { pkgText = await readFile(join(CWD, "package.json"), "utf8"); scripts = JSON.parse(pkgText)?.scripts || {}; } catch { /* нет или не JSON */ }
+  const configs = {
+    ruff: await readAll(["ruff.toml", ".ruff.toml", "pyproject.toml"]),
+    eslint: (await readAll([".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yml", "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts"])) +
+      (/"eslintConfig"/.test(pkgText) ? pkgText : ""),
+    biome: await readAll(["biome.json", "biome.jsonc"]),
+    scripts,
+  };
+  // pyproject.toml есть почти у всех python-проектов; конфигом ruff он считается, только если ruff в нём упомянут.
+  if (!/ruff/.test(configs.ruff)) configs.ruff = "";
+  for (const u of coversUnproven(man, catalog, configs)) {
+    if (u.kind === "unproven") {
+      console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+      console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+    } else if (u.kind === "impossible") {
+      console.log(c.yellow(`\n  ${L.doctor.coversImpossible(u.entry, u.gate, u.linter)}`));
+      console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+    } else {
+      console.log(c.dim(`\n  ${L.doctor.coversCantCheck(u.entry, u.gate)}`));
+    }
   }
   // Не вердикт, а совет: отсутствие браузерного сервера — незанятая возможность, а не дефект.
   // Поэтому строка тусклая и без значка, и её нет у проекта без интерфейса.
