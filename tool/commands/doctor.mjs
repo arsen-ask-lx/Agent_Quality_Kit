@@ -4,7 +4,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { scopeOutput, splitAdvice, changedFiles } from "../lib/scope.mjs";
-import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die } from "../lib/core.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";
 import { cmdProbe, probeStatus, blindAdvice } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, advisorySet, layoutChecks, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
@@ -237,6 +237,21 @@ async function cmdDoctor() {
     const ok = await exists(join(CWD, path));
     if (!ok) missing++;
     console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
+  }
+
+  // СЛУЖЕБНЫЙ ФАЙЛ, КОТОРЫЙ ВИДИТ GIT. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md`
+  // однажды закоммитили, и каждый прогон оставлял изменённый файл. `init` теперь кладёт их в
+  // .gitignore сам; здесь — для тех, кто поставил раньше. Спрашиваем git, а не диск.
+  const git = (...a) => spawnSync("git", a, { cwd: CWD, encoding: "utf8" });
+  if (git("rev-parse", "--git-dir").status === 0) {
+    const tracked = new Set(String(git("ls-files", "--", TARGET_DIR).stdout || "").split("\n"));
+    for (const f of RUNTIME_FILES.map((n) => `${TARGET_DIR}/${n}`)) {
+      if (tracked.has(f)) {
+        console.log(`\n  ${c.yellow("!")}  ${L.doctor.runtimeTracked(f, `git rm --cached ${f} && echo ${f} >> .gitignore`)}`);
+      } else if (await exists(join(CWD, f)) && git("check-ignore", "-q", f).status !== 0) {
+        console.log(c.dim(`\n  ${L.doctor.runtimeNotIgnored(f, `echo ${f} >> .gitignore`)}`));
+      }
+    }
   }
 
   // Команды в точке входа заполнены или остались пустыми заготовками? Файл берётся тот же,

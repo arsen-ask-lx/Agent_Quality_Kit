@@ -7,7 +7,9 @@
 // месте печатает пять главных исправлений первыми.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { project, aqk } from "./_fixture.mjs";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { project, aqk, run } from "./_fixture.mjs";
 
 // Цвет снимается до разбора: заголовок жирный, значки цветные, и регулярка по сырому выводу
 // не узнаёт ни то, ни другое.
@@ -43,4 +45,32 @@ test("первый запуск: «поставить: aqk add» не повто
   assert.ok(hints.length <= 3, `подсказок «поставить» ${hints.length} — по одной на запись:\n${hints.join("\n")}`);
   const crosses = out.split("\n").filter((l) => /^\s*✘\s+[a-z][a-z-]+\s/.test(l));
   assert.ok(crosses.length >= 4, `записей к установке ${crosses.length} — список сократили вместо того, чтобы сжать:\n${out}`);
+});
+
+// СЛУЖЕБНЫЕ ФАЙЛЫ НЕ ПОПАДАЮТ В GIT. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md`
+// однажды закоммитили, и с тех пор каждый `make check` оставляет изменённый файл. А проба
+// печатала «рабочее дерево не трогается», записывая `.aqk/last-probe.md`. В коде лежал
+// комментарий «.aqk/ в .gitignore» — только `init` его туда не клал. Целиком `.aqk/`
+// игнорировать нельзя: методички и правила в нём — содержимое проекта, их коммитят.
+test("init кладёт служебные файлы .aqk в .gitignore, повторный init строк не дублирует", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n", ".gitignore": "node_modules/\n" });
+  aqk(p, "init");
+  aqk(p, "init");
+  const gi = readFileSync(join(p.dir, ".gitignore"), "utf8");
+  for (const f of ["last-run.md", "last-probe.md", "advice-shown", "update-checked"]) {
+    const n = gi.split("\n").filter((l) => l.trim() === `.aqk/${f}`).length;
+    assert.equal(n, 1, `.aqk/${f} в .gitignore ${n} раз(а):\n${gi}`);
+  }
+  assert.match(gi, /^node_modules\/$/m, "чужие строки .gitignore не тронуты");
+  // И методички при этом не спрятаны: их коммитят.
+  assert.equal(run(p, "git", ["check-ignore", "-q", ".aqk/docs"]).code, 1, ".aqk/docs оказался в игноре");
+});
+
+test("doctor называет служебный файл, который отслеживает git, — с командой, как вынуть", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n", ".aqk/last-run.md": "# старый отчёт\n" });
+  run(p, "git", ["add", "-A"]);
+  run(p, "git", ["commit", "-qm", "init"]);
+  const out = plain(aqk(p, "doctor").out);
+  assert.match(out, /\.aqk\/last-run\.md/, `служебный файл в git не назван:\n${out}`);
+  assert.match(out, /git rm --cached \.aqk\/last-run\.md/, "нет готовой команды");
 });

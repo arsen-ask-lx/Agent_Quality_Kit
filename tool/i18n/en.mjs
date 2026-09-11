@@ -65,6 +65,8 @@ export const en = {
     gitignore: "repository hygiene",
     git: "project under version control",
 
+    runtimeTracked: (f, cmd) => `${f} is tracked by git — every run rewrites it, and the tree always shows a modified file. Take it out: ${cmd}`,
+    runtimeNotIgnored: (f, cmd) => `${f} is this machine's state, yet git sees it: one \`git add .\` and it is in a commit. Hide it: ${cmd}`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
     rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the ENTRY POINT only: a promise kept in any other file is checked by nothing at all, and this kit will not tell you it exists.",
@@ -108,7 +110,7 @@ export const en = {
     blindRan: (g) => `gate ${g} is declared and was run — and still missed the defect in this file`,
     blindInstalled: "declared, but the probe did not run this gate (added later or too slow) — the next probe will show whether it catches",
     blindMore: (cmd) => `what was planted and where — ${cmd}`,
-    probeNever: (cmd) => `Whether your checks catch a real defect has not been tested yet: ${cmd} plants one in a copy of the project and shows (a minute or two, your files are not touched).`,
+    probeNever: (cmd) => `Whether your checks catch a real defect has not been tested yet: ${cmd} plants one in a copy of the project and shows (a minute or two, your project files are not changed).`,
     todoRest: (n) => `The other entries that apply here (${n}):`,
     todoRestHow: (self) => `install any: ${self} add <name> · what it catches and why: ${self} why <name>`,
     startWith: "Start with these three — born from a real failure, and each closes with one ready command:",

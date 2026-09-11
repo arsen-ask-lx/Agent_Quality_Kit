@@ -158,6 +158,7 @@ export const enGates = {
       "the guides in .aqk/docs/ are in Russian — a deliberate decision, not a broken install.\n  The rules in .aqk/rules/ are in English; the guides are prose an agent may ignore anyway,\n  and what a machine holds lives in .aqk.yml and the gates. Translation waits for someone who needs it.",
     created: (n) => `created (${n}):`,
     andMore: (n) => `… and ${n} more`,
+    ignored: (list) => `the kit's runtime files were added to .gitignore — machine state, it does not belong in git: ${list}`,
     kept: (n) => `already there, left untouched (${n}):`,
     overwrite: (cmd) => `overwrite: ${cmd}`,
     nextTitle: "What to do next, in order:",
@@ -260,7 +261,7 @@ export const enGates = {
       `method: a red sample from a catalogue entry is planted into a COPY of the project, then the ` +
       `DECLARED gates are run there — the command is used as written, nothing is substituted into it. ` +
       `Files: ${files}, applicable entries: ${entries}, gates green on a clean checkout: ${gates}. ` +
-      `The working tree is not touched.`,
+      `Project files are not changed; the probe result goes to .aqk/last-probe.md (in .gitignore after init).`,
     fixes: (n) => `fixes in history: ${n}`,
     caught: (names) => `caught by: ${names}`,
     blind: "NOTHING CATCHES IT",
