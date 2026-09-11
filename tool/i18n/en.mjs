@@ -216,7 +216,7 @@ export const en = {
       has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],
       has_ui: ["no stylesheets or UI components in sight", "a UI exists: stylesheets or components"],
       has_mcp: ["no MCP tools are wired up for the agent here", "MCP servers are declared"],
-      has_api_spec: ["no API specification in sight", "an API specification exists"],
+      has_api_spec: ["no API contract in sight: no OpenAPI file, no tRPC, ts-rest or Fastify type provider", "an API contract exists: a specification file or schemas in code"],
     },
   },
 
