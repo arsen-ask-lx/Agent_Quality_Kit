@@ -26,7 +26,7 @@ import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
-import { fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
+import { fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, catchVerdict } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
@@ -206,8 +206,8 @@ function blindAdvice(entry, facts, hot = {}) {
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
 // совпадать: питоновский образец в проекте на TypeScript не проверит ничего, а покажет
 // «не прикрыто» — ложная тревога того же класса, что молчащий гейт, только наоборот.
-async function redSampleFor(entry, ext) {
-  const dir = join(GATES_SRC, entry, "red");
+async function sampleFor(entry, ext, kind = "red") {
+  const dir = join(GATES_SRC, entry, kind);
   if (!(await exists(dir))) return null;
   let names = [];
   try { names = await readdir(dir); } catch { return null; }
@@ -284,18 +284,42 @@ async function plant(root, relPath, sample) {
 // Гейт запускается В ПЕСОЧНИЦЕ и командой КАК ЕСТЬ — ничего в неё не подставляется. Именно это
 // и делает пробу независимой от формы команды.
 //
-// `stopOnRed` — ранний выход: как только гейт покраснел, вердикт «поймано» уже получен, и гонять
-// остальные незачем. На сухом прогоне выхода нет: там нужны ВСЕ длительности и все коды.
-function runGates(gates, sandbox, { stopOnRed = false } = {}) {
+// Вывод гейта сохраняется: по нему видно, ИЗ-ЗА ЧЕГО он покраснел (см. catchVerdict).
+function runGates(gates, sandbox) {
   const out = [];
   for (const [name, cmd] of gates) {
     const t0 = Date.now();
     const r = spawnSync(gateCommand(cmd), { shell: true, cwd: sandbox, encoding: "utf8", timeout: 120000 });
     const code = r.status === null ? 2 : r.status;
-    out.push({ name, code, ms: Date.now() - t0 });
-    if (stopOnRed && code === 1) break;
+    out.push({ name, code, ms: Date.now() - t0, out: `${r.stdout || ""}${r.stderr || ""}`.slice(0, 200000) });
   }
   return out;
+}
+
+// Один класс брака на одном файле: гейты по одному, в порядке плана. Покраснел и назвал файл —
+// контроль ЗЕЛЁНЫМ образцом той же записи в том же месте (catchVerdict). Ранний выход — только на
+// ПОДТВЕРЖДЁННОЙ поимке: первым мог покраснеть форматтер, и остановка на нём скрыла бы линтер,
+// который брак действительно поймал.
+async function probeOne({ sandbox, rel, red, green, gates, baseOut }) {
+  const after = [];
+  let restore = await plant(sandbox, rel, red);
+  try {
+    for (const g of gates) {
+      const [res] = runGates([g], sandbox);
+      after.push(res);
+      if (res.code !== 1) continue;
+      let ctl = null;
+      if (green && namesPlant(baseOut(res.name), res.out, rel)) {
+        await restore(); restore = await plant(sandbox, rel, green);
+        [ctl] = runGates([g], sandbox);
+        await restore(); restore = await plant(sandbox, rel, red);
+      }
+      res.why = catchVerdict(baseOut(res.name), res, ctl, rel);
+      res.named = res.why === "caught";
+      if (res.named) break;
+    }
+  } finally { await restore(); }
+  return after;
 }
 
 // Каким гейтом пробовать и в каком порядке.
@@ -368,7 +392,8 @@ async function cmdProbe(args, { auto = false } = {}) {
   // Пробуем только запланированными, в порядке плана.
   const byName = new Map(gates);
   const probeGates = plan.use.map((g) => [g.name, byName.get(g.name)]);
-  const baseline = plan.use.map((g) => ({ name: g.name, code: g.code }));
+  const baseline = plan.use.map((g) => ({ name: g.name, code: g.code, out: g.out }));
+  const baseOut = (name) => baseline.find((b) => b.name === name)?.out || "";
 
   console.log(c.dim(`  ${P.method(hot.length, entries.length, plan.use.length)}\n`));
   if (plan.tooSlow.length) {
@@ -385,20 +410,20 @@ async function cmdProbe(args, { auto = false } = {}) {
     let probed = 0;
 
     for (const e of entries) {
-      const sample = await redSampleFor(e.slug, ext);
+      const sample = await sampleFor(e.slug, ext, "red");
       if (!sample) continue;
       probed++;
-      const restore = await plant(sandbox, rel, sample);
-      let after;
-      try { after = runGates(probeGates, sandbox, { stopOnRed: true }); } finally { await restore(); }
+      const green = await sampleFor(e.slug, ext, "green");
+      const after = await probeOne({ sandbox, rel, red: sample, green, gates: probeGates, baseOut });
       // Ранний выход обрывает список: гейты, до которых не дошли, считаются такими же, как на
       // сухом прогоне. Иначе их отсутствие прочиталось бы как сбой запуска.
       const seen = new Set(after.map((a) => a.name));
       const full = after.concat(baseline.filter((b) => !seen.has(b.name)));
       const r = probeVerdictPaired(baseline, full);
       const verdict = r.verdict;
-      const caught = full.filter((a) => a.code === 1 && baseline.find((b) => b.name === a.name)?.code === 0)
-        .map((a) => a.name);
+      const redNow = full.filter((a) => a.code === 1 && baseline.find((b) => b.name === a.name)?.code === 0);
+      const caught = redNow.filter((a) => a.named !== false).map((a) => a.name);
+      const nameless = redNow.filter((a) => a.named === false).map((a) => `${a.name} (${a.why === "planting" ? P.planting : P.nameless})`);
       records.push({ entry: e.slug, file: rel, verdict });
       if (verdict === "caught") {
         console.log(`    ${c.green("✔")}  ${e.intent.padEnd(48)} ${c.dim(P.caught(caught.join(", ")))}`);
@@ -419,7 +444,7 @@ async function cmdProbe(args, { auto = false } = {}) {
         if (adv.tool) console.log(c.dim(`         ${P.blindTool(adv.tool)}`));
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
-        console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);
+        console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(nameless.length ? P.unattributed(nameless.join(", ")) : P.unknown)}`);
       }
     }
     if (!probed) { unprobedN++; console.log(c.dim(`    ${P.noSampleFor(ext || "—")}`)); }
