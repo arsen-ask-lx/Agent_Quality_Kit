@@ -207,6 +207,7 @@ export const en = {
       has_docker: ["no Dockerfile or compose", "docker is already here"],
       has_deps: ["no dependency file in sight", "dependencies are declared"],
       has_tests: ["no tests in sight", "tests exist"],
+      has_biome: ["the linter is not Biome", "the project's linter is Biome"],
       has_env: ["no environment file", "an environment file exists"],
       has_agent_config: ["the agent was never configured here", "agent settings exist"],
       has_agent_entry: ["no entry point for an agent here", "an entry point for an agent exists"],

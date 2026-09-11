@@ -28,6 +28,7 @@ import { join, dirname, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
 import { fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, catchVerdict } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
+import { blindAdvice } from "../lib/advice.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
@@ -154,53 +155,6 @@ function sampleLines(path, max = 4) {
     .filter((l) => l.trim() && !/^\s*(#|\/\/|\/\*|\*|--|<!--)/.test(l))
     .slice(0, max)
     .map((l) => l.slice(0, 88));
-}
-
-// Совет по НЕПОКРЫТОМУ классу: команда, которую можно вставить прямо сейчас.
-//
-// Проба находит настоящие дыры и печатала про них «close it: aqk add <имя>» — то есть «поставь
-// нашу штуку». Человек, впервые увидевший комплект, закрывает окно. А готовая однострочная
-// команда под его стек У НАС УЖЕ ЛЕЖИТ в `recipes` записи каталога; мы её не показывали.
-//
-// Замер руками на `requests` (самый скачиваемый python-пакет) 2026-09-10: в
-// `src/requests/utils.py` — 75 коммитов-починок; дописана функция с `except Exception: pass`;
-// их собственные `ruff` и `pytest` дали 0 и на чистой копии, и на подсаженной. Строка, которая
-// поймала бы это, лежала в нашем каталоге всё это время.
-//
-// Переносимый рецепт (`any`) в совет НЕ идёт: он зовёт файл из комплекта, и человеку без
-// комплекта вставить его некуда. Нет родного рецепта под стек — команды нет, и это честнее
-// выдуманной.
-function blindAdvice(entry, facts, hot = {}) {
-  const recipes = entry?.recipes && typeof entry.recipes === "object" ? entry.recipes : {};
-  // `langs` приходит МНОЖЕСТВОМ, а не массивом — `Array.isArray` тихо давал пустой список, и
-  // совет не печатался вовсе. Поймано на живом `requests`: langs = Set(1) { python }.
-  const langs = facts?.langs ? [...facts.langs] : [];
-  // Тот же порядок, что у `pickRecipe`: свой язык → безъязыковой родной → ничего. Переносимый
-  // (`any`) сюда не идёт никогда: он зовёт файл из комплекта, и человеку без комплекта вставить
-  // его некуда.
-  let cmd = null;
-  for (const key of [...langs, "native"]) {
-    const r = recipes[key];
-    if (!r || /\{gate\}/.test(r)) continue;
-    cmd = String(r).replace(/\{dir\}/g, ".")
-      // Вычистить то, что относится к НАМ, а не к его проекту. Исключение наших красных
-      // образцов нужно УСТАНОВЛЕННОМУ гейту — рядом с ним лежат образцы. Человеку, который
-      // команду только копирует, этих каталогов не существует, и флаги про них подрывают
-      // доверие: инструмент говорит про чужое хозяйство вместо его кода.
-      .replace(/\s--ignore-pattern\s+'[^']*gates\/[^']*'/g, "")
-      .replace(/\s--ignore-paths=?\s*'[^']*gates\/[^']*'/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    break;
-  }
-  // Адрес — того инструмента, которым команда начинается: поле `tool` общее на все языки, и
-  // python-проекту показывалась ссылка на eslint. Первые три слова, а не одно: `npx knip`,
-  // `python -m vulture`. Не совпало — весь список: лишняя ссылка лучше, чем ни одной.
-  const urls = entry?.tool ? String(entry.tool).split(/\s+·\s+/) : [];
-  const head = cmd ? cmd.split(" ").slice(0, 3) : [];
-  const own = urls.find((u) => head.includes(u.replace(/\/+$/, "").split("/").pop()));
-  const tool = own ?? (entry?.tool ? String(entry.tool) : null);
-  return { command: cmd, tool, file: hot.file ?? null, fixes: hot.fixes ?? null, slug: entry?.slug ?? null };
 }
 
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
@@ -491,4 +445,4 @@ async function probeStatus() {
   return { ...probeState(mark, commitCount(), every), classes: parseBlind(mark?.text), ran: parseRan(mark?.text) };
 }
 
-export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, blindAdvice, isCode };
+export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, isCode };

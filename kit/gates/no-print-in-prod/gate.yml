@@ -30,4 +30,4 @@ proof: incidents/README.md, 2026-09-07 «замер по пяти стекам �
 
 # Правило Biome под эту запись — для сверки `covers:` (рецептов под Biome нет). Имя сверено по
 # схеме конфигурации Biome 2.5.12, а не по памяти.
-biome_rules: noConsole
+biome_rules: suspicious/noConsole

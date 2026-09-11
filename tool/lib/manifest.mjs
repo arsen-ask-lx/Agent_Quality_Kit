@@ -224,7 +224,9 @@ function rulesFor(rec, linter) {
   if (linter === "biome") {
     const v = typeof rec?.biome_rules === "string" ? rec.biome_rules.trim() : "";
     if (!v) return null;
-    return v === "none" ? [] : v.split(",").map((x) => x.trim()).filter(Boolean);
+    // Поле хранит `группа/правило` — так его ждёт `biome lint --only`; в biome.json правило
+    // лежит внутри объекта группы, поэтому ищется по имени без группы.
+    return v === "none" ? [] : v.split(",").map((x) => x.trim().split("/").pop()).filter(Boolean);
   }
   return null;
 }

@@ -20,4 +20,4 @@ proof: incidents/README.md — «2026-08-27 ревизия гейтов», п. 6
 
 # Правило Biome под эту запись — для сверки `covers:` (рецептов под Biome нет). Имя сверено по
 # схеме конфигурации Biome 2.5.12, а не по памяти.
-biome_rules: noExcessiveCognitiveComplexity
+biome_rules: complexity/noExcessiveCognitiveComplexity

@@ -3,7 +3,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { isFix, fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
-import { probeableGates, gatesState, extAlternatives, planProbeGates, blindAdvice, isCode } from "../commands/probe.mjs";
+import { probeableGates, gatesState, extAlternatives, planProbeGates, isCode } from "../commands/probe.mjs";
+import { blindAdvice } from "../lib/advice.mjs";
 
 // Признак починки берётся из ТЕМЫ коммита, а не из тела: тема — единственное, что пишут все,
 // и единственное, что видно в `git log --oneline`. Три написания, потому что репозитории
