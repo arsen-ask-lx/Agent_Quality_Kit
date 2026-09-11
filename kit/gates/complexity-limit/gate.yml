@@ -4,6 +4,11 @@ intent_en: a function does not grow past the complexity you can hold in your hea
 trigger:
   always: true
 
+# Домашние страницы готовых инструментов, которые зовут рецепты ниже. Адреса сверены
+# по реестру github 2026-09-10, а не написаны по памяти: три выдуманных адреса чужих
+# репозиториев — записанная шишка комплекта.
+tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint
+
 recipes:
   # Переносимая мера грубая — глубина вложенности. Готовые правила считают ветвления и
   # инструкции, это точнее; см. kit/docs/ready-made-rules.md

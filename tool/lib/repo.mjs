@@ -380,7 +380,89 @@ async function matchCatalog(query) {
 
 // Наружу — то, что действительно импортируют другие файлы и модульные проверки. Экспорт,
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
+
+// Проверки, которые у проекта УЖЕ ЕСТЬ. Читаются из его собственных файлов, а не выдумываются.
+//
+// ЗАЧЕМ. Комплект, поставленный в `express` — проект с eslint, mocha и конвейером, — показывал
+// двадцать крестов подряд и «держит машина 0». С точки зрения владельца это неправда: его
+// проверки держат, просто мы считали только СВОИ записи. Мы видели, что конвейер ЕСТЬ
+// (`has_ci`), но не читали, что в нём, и человек должен был переписать в манифест руками то,
+// что мы могли прочитать сами. Отсюда и «не понимает, что у него хорошо»: хорошее уже есть, а
+// мы о нём молчим.
+//
+// ПРЕДЛАГАЕМ, А НЕ ОБЪЯВЛЯЕМ. Гейт, вписанный в чужой манифест без спроса, — это наше решение
+// в чужом файле; и человек обязан видеть ИСТОЧНИК, иначе предложение неотличимо от догадки.
+//
+// Сборка и запуск проверками не считаются: `build` собирает, `start` запускает, судит — ни тот
+// ни другой. Берём только то, что отвечает «прошло или нет».
+const CHECK_NAMES = new Set(["test", "tests", "lint", "typecheck", "type-check", "types", "check"]);
+
+function proposeGates(files = {}) {
+  const out = [];
+  const seen = new Set();
+  const push = (name, cmd, source) => {
+    const key = name === "tests" ? "test" : name.replace(/^type-?check$|^types$/, "typecheck");
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ name: key, cmd, source });
+  };
+
+  const pkg = files["package.json"];
+  if (pkg) {
+    let scripts = null;
+    try { scripts = JSON.parse(pkg)?.scripts; } catch { scripts = null; }
+    if (scripts && typeof scripts === "object") {
+      for (const name of Object.keys(scripts)) {
+        if (!CHECK_NAMES.has(name)) continue;
+        // `npm test` — каноничное написание для теста, остальное через `run`.
+        push(name, name === "test" || name === "tests" ? "npm test" : `npm run ${name}`, "package.json");
+      }
+    }
+  }
+
+  const mk = files.Makefile;
+  if (typeof mk === "string") {
+    for (const m of mk.matchAll(/^([A-Za-z][\w-]*):/gm)) {
+      if (CHECK_NAMES.has(m[1])) push(m[1], `make ${m[1]}`, "Makefile");
+    }
+  }
+
+  return out;
+}
+
+
+// С ЧЕГО НАЧАТЬ: три записи вместо двадцати равнозначных крестов.
+//
+// Двадцать одинаковых требований — это ноль требований: закрывают первое попавшееся или не
+// закрывают ничего. Порядок НЕ по нашему вкусу; два признака, оба — факты, которые у нас уже
+// есть:
+//   · запись родилась из настоящего отказа (`lifecycle: stable` — `proof` ссылается на журнал
+//     шишек), то есть она про боль, которая СЛУЧАЛАСЬ, а не про «хорошую практику»;
+//   · её можно закрыть одной готовой командой — цена входа минутная.
+// Сначала то, что и больно, и дёшево.
+//
+// При равенстве признаков — по имени: одинаковый ввод обязан давать одинаковый ответ, иначе
+// человек видит разный совет на двух прогонах подряд и перестаёт верить обоим.
+function startWith(entries, facts, n = 3) {
+  const langs = facts?.langs ? [...facts.langs] : [];
+  const cheap = (e) => {
+    const r = e?.recipes && typeof e.recipes === "object" ? e.recipes : {};
+    return [...langs, "native"].some((k) => r[k] && !/\{gate\}/.test(r[k])) ? 1 : 0;
+  };
+  // Зрелость НЕ поле записи, а вычисляемый признак: `proof` ссылается на журнал шишек. Тот же
+  // признак, которым каталог отделяет условную запись с первого дня (`entryLifecycle`).
+  // Заводить второй счёт нельзя: разъехавшись, они дали бы разные ответы про одну запись.
+  const hurt = (e) => (/incidents\//.test(String(e?.proof || "")) ? 1 : 0);
+  return [...entries]
+    .sort((a, b) =>
+      (hurt(b) + cheap(b)) - (hurt(a) + cheap(a)) ||
+      cheap(b) - cheap(a) ||
+      String(a.slug).localeCompare(String(b.slug)))
+    .slice(0, n);
+}
+
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
+  proposeGates, startWith,
   stems, overlap, matchCatalog, isApiSpec };

@@ -181,7 +181,15 @@ function blindAdvice(entry, facts, hot = {}) {
   for (const key of [...langs, "native"]) {
     const r = recipes[key];
     if (!r || /\{gate\}/.test(r)) continue;
-    cmd = String(r).replace(/\{dir\}/g, ".").trim();
+    cmd = String(r).replace(/\{dir\}/g, ".")
+      // Вычистить то, что относится к НАМ, а не к его проекту. Исключение наших красных
+      // образцов нужно УСТАНОВЛЕННОМУ гейту — рядом с ним лежат образцы. Человеку, который
+      // команду только копирует, этих каталогов не существует, и флаги про них подрывают
+      // доверие: инструмент говорит про чужое хозяйство вместо его кода.
+      .replace(/\s--ignore-pattern\s+'[^']*gates\/[^']*'/g, "")
+      .replace(/\s--ignore-paths=?\s*'[^']*gates\/[^']*'/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     break;
   }
   return { command: cmd, file: hot.file ?? null, fixes: hot.fixes ?? null, slug: entry?.slug ?? null };
@@ -400,6 +408,7 @@ async function cmdProbe(args, { auto = false } = {}) {
           for (const l of lines) console.log(c.dim(`           ${l}`));
         }
         if (adv.command) console.log(`         ${c.yellow(P.blindFix(adv.command))}`);
+        if (e.tool) console.log(c.dim(`         ${P.blindTool(e.tool)}`));
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);

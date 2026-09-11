@@ -268,6 +268,7 @@ export const enGates = {
     blindWhere: (file, fixes) => `where: ${file} — ${fixes} fix commits in its history`,
     blindWhat: "what we planted into your file:",
     blindFix: (cmd) => `catch it right now, no kit needed:  ${cmd}`,
+    blindTool: (url) => `the tool: ${url}`,
     install: (cmd) => `close it: ${cmd}`,
     noSampleFor: (ext) => `the catalogue has no red sample for "${ext}" — nothing to check with`,
     noGates: (cmd) => `no gates declared — nothing to probe with. First: ${cmd}`,
