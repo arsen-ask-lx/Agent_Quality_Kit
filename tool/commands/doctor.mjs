@@ -138,7 +138,10 @@ async function reportCatalog(man, facts, probe = null) {
   if (rest.length) {
     if (first.length) console.log(`\n  ${c.bold(L.doctor.todoRest(rest.length))}`);
     else console.log("");
-    for (const rec of rest) console.log(`  ${c.yellow("✘")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
+    // ○, а не ✘: запись не установлена — это не падение. Крест в зелёном прогоне глаз читает
+    // как провал, и через неделю человек перестаёт смотреть на красное вообще (отзыв с живого
+    // проекта 2026-09-11). ✘ остаётся за тем, что упало или пропустило брак.
+    for (const rec of rest) console.log(`  ${c.dim("○")}  ${rec.slug.padEnd(22)} ${rec.intent || ""}`);
     console.log(c.dim(`     ${L.doctor.todoRestHow(SELF)}`));
   }
 
@@ -233,10 +236,11 @@ async function cmdDoctor() {
   const checks = layoutChecks(man, inKit);
 
   let missing = 0;
-  for (const [path, what] of checks) {
+  for (const [path, what, required] of checks) {
     const ok = await exists(join(CWD, path));
-    if (!ok) missing++;
-    console.log(`  ${ok ? c.green("✔") : c.red("✘")}  ${path.padEnd(22)} ${c.dim(what)}`);
+    if (!ok && required) missing++;
+    const mark = ok ? c.green("✔") : required ? c.red("✘") : c.dim("○");
+    console.log(`  ${mark}  ${path.padEnd(22)} ${c.dim(what)}${!ok && !required ? c.dim(` · ${L.doctor.layoutAdvice}`) : ""}`);
   }
 
   // СЛУЖЕБНЫЙ ФАЙЛ, КОТОРЫЙ ВИДИТ GIT. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md`

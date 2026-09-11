@@ -132,12 +132,16 @@ function layoutChecks(man, inKit) {
   const entries = (Array.isArray(man?.entry) ? man.entry : [])
     .filter((e) => typeof e === "string" && e.trim())
     .map((e) => e.trim());
+  // Третий элемент — обязателен ли пункт. Методички и стандарты `init` кладёт как пособие: проект
+  // вправе держать их где-то ещё или не держать вовсе, и их отсутствие — совет, а не приговор
+  // прогону (отзыв с живого проекта 2026-09-11: прогон краснел только из-за `.aqk/docs`). Точка
+  // входа, .gitignore и .git — обязательны: на них стоит своя проверка вердикта.
   return [
-    [field("docs", inKit ? "kit/docs" : ".aqk/docs"), inKit ? L.doctor.docsKit : L.doctor.docs],
-    [field("rules", inKit ? "kit/rules" : ".aqk/rules"), inKit ? L.doctor.rulesKit : L.doctor.rules],
-    ...(entries.length ? entries : ["AGENTS.md"]).map((e) => [e, L.doctor.agents]),
-    [".gitignore", L.doctor.gitignore],
-    [".git", L.doctor.git],
+    [field("docs", inKit ? "kit/docs" : ".aqk/docs"), inKit ? L.doctor.docsKit : L.doctor.docs, false],
+    [field("rules", inKit ? "kit/rules" : ".aqk/rules"), inKit ? L.doctor.rulesKit : L.doctor.rules, false],
+    ...(entries.length ? entries : ["AGENTS.md"]).map((e) => [e, L.doctor.agents, true]),
+    [".gitignore", L.doctor.gitignore, true],
+    [".git", L.doctor.git, true],
   ];
 }
 

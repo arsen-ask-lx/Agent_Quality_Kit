@@ -6,7 +6,7 @@
 // Обратная сторона нашего же принципа: молчание неотличимо не только от успеха, но и от отказа.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { project, aqk } from "./_fixture.mjs";
 
@@ -23,7 +23,10 @@ test("прогон называет свой вердикт словами в о
   const man = join(p.dir, ".aqk.yml");
   writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m, 'gates:\n  тихий: "true"'), "utf8");
 
-  // .gitignore нет — прогон красный, и обязан сказать, из-за чего именно.
+  // .gitignore нет — прогон красный, и обязан сказать, из-за чего именно. Удаляется ЯВНО:
+  // `init` с 2026-09-11 сам создаёт .gitignore под служебные файлы, и прежняя посылка теста
+  // («после init его нет») перестала быть правдой.
+  rmSync(join(p.dir, ".gitignore"), { force: true });
   const red = aqk(p, "doctor", "--run");
   // Сообщение утверждения обязано нести ВЕСЬ хвост: проверка, которая говорит только «не
   // совпало», отправляет читателя гадать — ровно то, за что мы ругаем чужие проверки.
