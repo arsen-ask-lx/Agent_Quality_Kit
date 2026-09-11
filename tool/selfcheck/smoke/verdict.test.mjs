@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { project, aqk } from "./_fixture.mjs";
+import { project, aqk, aqkEnv } from "./_fixture.mjs";
 
 test("прогон называет свой вердикт словами в обоих исходах", (t) => {
   const p = project(t, { "src/a.py": "def s():\n    return 1\n" });
@@ -106,4 +106,19 @@ test("зелёные гейты свёрнуты в строку, упавший
   const full = aqk(p, "doctor", "--run", "--verbose").out;
   assert.match(full, /^\s+\S+\s+green1\s/m, "--verbose не показал зелёный гейт");
   assert.doesNotMatch(full, /(прошли ещё|more passed)/);
+});
+
+// Находки — пометками у строк файла в pull request, но только в GitHub Actions: в терминале
+// строка `::error …` — мусор. Вердикт от пометок не меняется.
+test("в GitHub Actions упавший гейт даёт пометку у строки файла; вне его — нет", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n", ".gitignore": "x\n" });
+  aqk(p, "init");
+  const man = join(p.dir, ".aqk.yml");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m,
+    "gates:\n  bad: \"echo 'src/a.py:1: x — плохо'; echo '  почини: убери x'; exit 1\""), "utf8");
+  const gh = aqkEnv(p, { GITHUB_ACTIONS: "true" }, "doctor", "--run");
+  assert.notEqual(gh.code, 0, "пометки не должны менять вердикт");
+  assert.match(gh.out, /^::error file=src\/a\.py,line=1,title=aqk%3A bad::x — плохо — почини: убери x$/m, gh.out);
+  const local = aqkEnv(p, { GITHUB_ACTIONS: "" }, "doctor", "--run");
+  assert.doesNotMatch(local.out, /^::error/m, "вне GitHub Actions пометок нет");
 });

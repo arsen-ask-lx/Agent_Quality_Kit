@@ -384,6 +384,12 @@ the same thing in a single line:
 - run: npx agent-quality-kit doctor --run --min 1
 ```
 
+**Findings show up in the pull request itself.** Inside GitHub Actions a failed gate's finding
+that names a file — `src/a.py:12: …` — becomes a red annotation on that line of the diff, with the
+gate's "fix:" advice attached; an advisory gate gives a yellow one. At most ten of each per run
+(the limit GitHub is reported to take per step); the rest are counted in the log. The verdict
+does not change — annotations print what the run already decided.
+
 ## Without Node at all
 
 A Python, Go or Rust project where nobody installed Node and nobody will:

@@ -88,6 +88,7 @@ export const ru = {
       missing: "Claude Code здесь настроен (.claude/), а свод лежит в AGENTS.md — он его не читает. Почини: CLAUDE.md с одной строкой «@AGENTS.md».",
       noImport: "CLAUDE.md не подключает AGENTS.md — Claude Code видит только CLAUDE.md. Почини: строка «@AGENTS.md» в CLAUDE.md (упоминание словами не загружает файл).",
     },
+    annotDropped: (n, more) => `пометок в pull request: ${n}, ещё ${more} не показано — GitHub принимает около десяти за шаг; все находки — в логе выше`,
     heldQuiet: (n, cmd) => `держит машина: ${n} — поимённо: ${cmd}`,
     skipQuiet: (n, cmd) => `не применимо к этому репозиторию: ${n} — поимённо и почему: ${cmd}`,
     passedQuiet: (n) => `прошли ещё ${n} — поимённо: --verbose`,

@@ -85,14 +85,16 @@ function project(t, files = {}, { git = true } = {}) {
 // Запуск чего угодно в каталоге проекта. Возвращается И код, И вывод: проверка, смотрящая
 // только на код, не умеет объяснить провал, а смотрящая только на вывод — не умеет заметить,
 // что команда не роняет прогон.
-function run({ dir, home }, cmd, args = []) {
+// `extra` — переменные поверх песочницы, когда проверка про само окружение (GITHUB_ACTIONS).
+function run({ dir, home }, cmd, args = [], extra = {}) {
   const r = spawnSync(cmd, args, {
-    cwd: dir, encoding: "utf8", timeout: TIMEOUT_MS, env: env(home, dir),
+    cwd: dir, encoding: "utf8", timeout: TIMEOUT_MS, env: { ...env(home, dir), ...extra },
   });
   return { code: r.status, out: `${r.stdout || ""}${r.stderr || ""}` };
 }
 
 const aqk = (p, ...args) => run(p, process.execPath, [CLI, ...args]);
+const aqkEnv = (p, extra, ...args) => run(p, process.execPath, [CLI, ...args], extra);
 
 // ПОЧЕМУ ГЕЙТ ЗОВЁТСЯ ТОЧКОЙ, А НЕ ПУТЁМ, И ПОЧЕМУ ПУТЬ ЧЕРЕЗ КОСУЮ.
 // Node на Windows отдаёт `C:\Users\…\Temp\aqk-smoke-x`, а Git Bash живёт в POSIX-мире и
@@ -111,4 +113,4 @@ const gate = (p, name, sub = ".") =>
 // никто не берёт, читается как часть договора и мешает менять внутренности — поймал наш же
 // dead-code через минуту после того, как файл был написан. `run` вернулся, когда появилась
 // проверка, которой нужен сырой git: экспорт заводится под потребителя, а не про запас.
-export { project, run, aqk, gate };
+export { project, run, aqk, aqkEnv, gate };

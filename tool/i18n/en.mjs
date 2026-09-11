@@ -84,6 +84,7 @@ export const en = {
       missing: "Claude Code is set up here (.claude/), but the rules live in AGENTS.md — it does not read that file. Fix: a CLAUDE.md with the single line \"@AGENTS.md\".",
       noImport: "CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Fix: add the line \"@AGENTS.md\" to CLAUDE.md (mentioning the file in prose does not load it).",
     },
+    annotDropped: (n, more) => `pull request annotations: ${n}, ${more} more not shown — GitHub takes about ten per step; every finding is in the log above`,
     heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
     skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
     passedQuiet: (n) => `${n} more passed — by name: --verbose`,
