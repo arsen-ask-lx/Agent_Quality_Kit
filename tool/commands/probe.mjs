@@ -192,7 +192,14 @@ function blindAdvice(entry, facts, hot = {}) {
       .trim();
     break;
   }
-  return { command: cmd, file: hot.file ?? null, fixes: hot.fixes ?? null, slug: entry?.slug ?? null };
+  // Адрес — того инструмента, которым команда начинается: поле `tool` общее на все языки, и
+  // python-проекту показывалась ссылка на eslint. Первые три слова, а не одно: `npx knip`,
+  // `python -m vulture`. Не совпало — весь список: лишняя ссылка лучше, чем ни одной.
+  const urls = entry?.tool ? String(entry.tool).split(/\s+·\s+/) : [];
+  const head = cmd ? cmd.split(" ").slice(0, 3) : [];
+  const own = urls.find((u) => head.includes(u.replace(/\/+$/, "").split("/").pop()));
+  const tool = own ?? (entry?.tool ? String(entry.tool) : null);
+  return { command: cmd, tool, file: hot.file ?? null, fixes: hot.fixes ?? null, slug: entry?.slug ?? null };
 }
 
 // Красный образец записи, подходящий по расширению горячего файла. Расширение обязано
@@ -408,7 +415,7 @@ async function cmdProbe(args, { auto = false } = {}) {
           for (const l of lines) console.log(c.dim(`           ${l}`));
         }
         if (adv.command) console.log(`         ${c.yellow(P.blindFix(adv.command))}`);
-        if (e.tool) console.log(c.dim(`         ${P.blindTool(e.tool)}`));
+        if (adv.tool) console.log(c.dim(`         ${P.blindTool(adv.tool)}`));
         console.log(c.dim(`         ${P.install(`${SELF} add ${e.slug}`)}`));
       } else {
         console.log(`    ${c.dim("~")}  ${c.dim(e.intent.padEnd(48))} ${c.dim(P.unknown)}`);

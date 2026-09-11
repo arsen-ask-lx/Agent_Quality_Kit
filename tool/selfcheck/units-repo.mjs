@@ -8,7 +8,8 @@
 //   node --test tool/selfcheck/units-repo.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec , proposeGates, startWith } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec, startWith } from "../lib/repo.mjs";
+import { proposeGates } from "../lib/adopt.mjs";
 import { CATALOGS, L } from "../i18n/index.mjs";
 import { dirname } from "node:path";
 
@@ -211,6 +212,38 @@ test("чужие проверки: нечего предложить — пус�
 test("чужие проверки: у каждого предложения назван источник", () => {
   const got = proposeGates({ "package.json": JSON.stringify({ scripts: { test: "jest" } }) });
   assert.equal(got[0].source, "package.json");
+});
+
+// Python-проекты. Замер 2026-09-11 на восьми живых (requests, click, flask, httpx, black,
+// fastapi, pydantic, rich): package.json нет ни у кого, Makefile у трёх — и пятеро из восьми
+// слышали «у вас ничего нет». А `.pre-commit-config.yaml` лежит у семи, tox — у пяти (у click и
+// flask в pyproject.toml), у httpx — исполняемые scripts/test и scripts/check.
+// Куски ниже сняты с этих репозиториев, а не придуманы.
+test("чужие проверки: pre-commit предлагается целиком, хуки названы поимённо", () => {
+  const cfg = "repos:\n  - repo: https://github.com/pre-commit/pre-commit-hooks\n    hooks:\n" +
+    "      - id: check-yaml\n      - id: end-of-file-fixer\n" +
+    "  - repo: https://github.com/astral-sh/ruff-pre-commit\n    hooks:\n    - id: ruff-check\n";
+  const got = proposeGates({ ".pre-commit-config.yaml": cfg });
+  assert.equal(got.length, 1);
+  assert.equal(got[0].cmd, "pre-commit run --all-files");
+  assert.match(got[0].source, /ruff-check/, "человек видит, ЧТО там стоит, а не только файл");
+});
+
+test("чужие проверки: из tox берутся окружения-проверки, а не матрица версий", () => {
+  const ini = "[tox]\nenvlist = py{310,311}-{default}\n\n[testenv]\ncommands = pytest\n\n" +
+    "[testenv:lint]\ncommands = ruff check .\n\n[testenv:docs]\ncommands = sphinx-build\n\n[testenv:{,ci-}pypy3]\n";
+  assert.deepEqual(proposeGates({ "tox.ini": ini }).map((g) => g.cmd), ["tox -e lint"]);
+  // click и flask держат tox в pyproject.toml, новым синтаксисом.
+  const py = "[tool.tox]\nenv_list = [\"py3\"]\n\n[tool.tox.env.style]\ncommands = []\n\n" +
+    "[tool.tox.env.typing]\ncommands = []\n\n[tool.tox.env.docs]\ncommands = []\n";
+  const got = proposeGates({ "pyproject.toml": py });
+  assert.deepEqual(got.map((g) => g.cmd).sort(), ["tox -e style", "tox -e typing"]);
+  assert.equal(got[0].source, "pyproject.toml");
+});
+
+test("чужие проверки: исполняемые scripts/test и scripts/check — как у httpx", () => {
+  const got = proposeGates({ "scripts/test": "", "scripts/check": "", "scripts/publish": "" });
+  assert.deepEqual(got.map((g) => g.cmd).sort(), ["scripts/check", "scripts/test"]);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
