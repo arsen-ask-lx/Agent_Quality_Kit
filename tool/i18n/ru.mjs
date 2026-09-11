@@ -78,6 +78,11 @@ export const ru = {
     coversCantCheck: (entry, gate) => `заявку «${gate} держит ${entry}» проверить не умею: линтер гейта не распознан или правил записи для него нет — принято на слово`,
     selectUnknown: (names, groups) => `--only/--skip: не знаю «${names}» — это не гейт из gates: и не группа из groups:${groups ? ` (группы: ${groups})` : ""}. Прогон всего подряд вместо пропуска был бы неправдой, поэтому стоп.`,
     selectSkipped: (names) => `не запускались (по --only/--skip): ${names} — их состояние неизвестно, это не «зелёные»`,
+    // Claude Code читает CLAUDE.md, а не AGENTS.md — документация Claude Code, раздел «AGENTS.md».
+    claudeShim: {
+      missing: "Claude Code здесь настроен (.claude/), а свод лежит в AGENTS.md — он его не читает. Почини: CLAUDE.md с одной строкой «@AGENTS.md».",
+      noImport: "CLAUDE.md не подключает AGENTS.md — Claude Code видит только CLAUDE.md. Почини: строка «@AGENTS.md» в CLAUDE.md (упоминание словами не загружает файл).",
+    },
     heldQuiet: (n, cmd) => `держит машина: ${n} — поимённо: ${cmd}`,
     skipQuiet: (n, cmd) => `не применимо к этому репозиторию: ${n} — поимённо и почему: ${cmd}`,
     passedQuiet: (n) => `прошли ещё ${n} — поимённо: --verbose`,

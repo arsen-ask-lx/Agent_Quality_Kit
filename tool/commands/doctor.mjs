@@ -1,13 +1,13 @@
 // tool/commands/doctor.mjs — что разложено, какая ступень, какие гейты применимы и работают.
 
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, lstat, realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";
 import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, layoutChecks, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
-import { detectFacts } from "../lib/repo.mjs";
+import { detectFacts, claudeSeesRules } from "../lib/repo.mjs";
 import { reportBaseline, reportCatalog } from "./doctor-catalog.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
@@ -104,6 +104,19 @@ async function cmdDoctor() {
       }
     }
   }
+
+  // СВОД, КОТОРОГО НЕ ВИДИТ CLAUDE CODE. Он читает CLAUDE.md, а не AGENTS.md (документация,
+  // сверено 2026-09-11); подробности и исходы — claudeSeesRules.
+  const readOr = async (rel) => { try { return await readFile(join(CWD, rel), "utf8"); } catch { return null; } };
+  let claudeLink = false;
+  try { claudeLink = (await lstat(join(CWD, "CLAUDE.md"))).isSymbolicLink() && /AGENTS\.md$/i.test(await realpath(join(CWD, "CLAUDE.md"))); } catch { /* файла нет */ }
+  const shim = claudeSeesRules({
+    agents: await exists(join(CWD, "AGENTS.md")),
+    claude: (await readOr("CLAUDE.md")) ?? (await readOr(".claude/CLAUDE.md")),
+    claudeLink,
+    dotClaude: await exists(join(CWD, ".claude")),
+  });
+  if (shim) console.log(`\n  ${c.yellow("!")}  ${L.doctor.claudeShim[shim]}`);
 
   // Команды в точке входа заполнены или остались пустыми заготовками? Файл берётся тот же,
   // что проверен выше, — иначе проект на `CLAUDE.md` этой проверки не получал вовсе.

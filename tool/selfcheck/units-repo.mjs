@@ -8,7 +8,7 @@
 //   node --test tool/selfcheck/units-repo.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec } from "../lib/repo.mjs";
+import { triggerVerdict, recipeFor, EXT_LANG, whichSync, browserServerAdvice, MARKS, isApiSpec, claudeSeesRules } from "../lib/repo.mjs";
 import { startWith } from "../lib/advice.mjs";
 import { proposeGates } from "../lib/adopt.mjs";
 import { CATALOGS, L } from "../i18n/index.mjs";
@@ -307,4 +307,22 @@ test("совет проекту на Biome: команда Biome, а не eslint
   // У Biome правила нет вовсе (`none`) — прежний совет, а не выдуманная команда Biome.
   const none = blindAdvice({ ...entry, biome_rules: "none" }, { langs: new Set(["javascript"]), has_biome: true });
   assert.match(none.command, /^eslint /);
+});
+
+// --- свод виден Claude Code --------------------------------------------------------
+// Документация Claude Code (code.claude.com/docs/en/memory, раздел AGENTS.md, сверено
+// 2026-09-11): «Claude Code reads CLAUDE.md, not AGENTS.md». Рекомендовано: CLAUDE.md с
+// @AGENTS.md либо символическая ссылка. Проект, где Claude Code настроен, а свод лежит только
+// в AGENTS.md, пишет правила агенту, который их не читает.
+test("свод в AGENTS.md виден Claude Code только через CLAUDE.md с @AGENTS.md", () => {
+  const base = { agents: true, claude: null, claudeLink: false, dotClaude: false };
+  assert.equal(claudeSeesRules(base), null, "Claude Code не настроен — молчим: Codex и Cursor читают AGENTS.md сами");
+  assert.equal(claudeSeesRules({ ...base, dotClaude: true }), "missing");
+  assert.equal(claudeSeesRules({ ...base, claude: "# Rules\n\nSee AGENTS.md for everything.\n" }), "noImport",
+    "упоминание словами — не подключение: файл Claude Code в контекст не загрузит");
+  assert.equal(claudeSeesRules({ ...base, claude: "# CLAUDE.md\n\n@AGENTS.md\n" }), null);
+  assert.equal(claudeSeesRules({ ...base, claude: "Правила — в `@AGENTS.md`.\n" }), "noImport",
+    "в обратных кавычках @ не подключает — так в документации");
+  assert.equal(claudeSeesRules({ ...base, claude: "x", claudeLink: true }), null, "ссылка на AGENTS.md — тот же файл");
+  assert.equal(claudeSeesRules({ ...base, agents: false, dotClaude: true }), null, "AGENTS.md нет — подключать нечего");
 });

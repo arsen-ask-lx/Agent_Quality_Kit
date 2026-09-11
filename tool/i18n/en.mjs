@@ -75,6 +75,10 @@ export const en = {
     coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
     selectUnknown: (names, groups) => `--only/--skip: "${names}" is neither a gate from gates: nor a group from groups:${groups ? ` (groups: ${groups})` : ""}. Running everything instead of skipping would be a lie, so stopping.`,
     selectSkipped: (names) => `not run (by --only/--skip): ${names} — their state is unknown, they are not "green"`,
+    claudeShim: {
+      missing: "Claude Code is set up here (.claude/), but the rules live in AGENTS.md — it does not read that file. Fix: a CLAUDE.md with the single line \"@AGENTS.md\".",
+      noImport: "CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Fix: add the line \"@AGENTS.md\" to CLAUDE.md (mentioning the file in prose does not load it).",
+    },
     heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
     skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
     passedQuiet: (n) => `${n} more passed — by name: --verbose`,

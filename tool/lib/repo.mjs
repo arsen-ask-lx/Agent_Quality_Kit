@@ -324,6 +324,22 @@ function browserServerAdvice(facts, mcpText = "") {
   return { servers: ["chrome-devtools-mcp", "@playwright/mcp"] };
 }
 
+// Свод в AGENTS.md и Claude Code. Документация Claude Code (code.claude.com/docs/en/memory,
+// раздел «AGENTS.md», сверено 2026-09-11): «Claude Code reads CLAUDE.md, not AGENTS.md» —
+// рекомендовано CLAUDE.md с `@AGENTS.md` либо символическая ссылка. Проект, где Claude Code
+// настроен, а правила лежат только в AGENTS.md, пишет их агенту, который их не читает.
+// Молчим, где Claude Code нет вовсе: Codex и Cursor читают AGENTS.md сами. Упоминание словами
+// («see AGENTS.md») — не подключение: файл в контекст не попадёт, агент дочитает или нет по
+// настроению. `@` в обратных кавычках документация прямо называет «не импорт».
+// Исходы: null — всё видно или нечего видеть; "missing" — CLAUDE.md нет; "noImport" — есть, но
+// AGENTS.md не подключает.
+function claudeSeesRules({ agents, claude, claudeLink, dotClaude }) {
+  if (!agents || claudeLink) return null;
+  if (claude === null) return dotClaude ? "missing" : null;
+  const prose = String(claude).replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+  return /(^|\s)@(\.\/)?AGENTS\.md\b/.test(prose) ? null : "noImport";
+}
+
 function recipeFor(rec, facts) {
   const cmd = pickRecipe(rec, facts);
   if (!cmd) return L.recipe.none;
@@ -397,4 +413,4 @@ async function matchCatalog(query) {
 export {
   whichSync,
   EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
-  stems, overlap, matchCatalog, isApiSpec };
+  stems, overlap, matchCatalog, isApiSpec, claudeSeesRules };
