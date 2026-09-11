@@ -478,6 +478,10 @@ purpose: two gates writing into the same folder (`npm run build` twice into `dis
 at random when run together, and a flaky red is worse than a slow one. Output keeps the declared
 order. On this repository, 30 gates: about 110 s one by one, 68 s with `--jobs 3`.
 
+**Output is short by default.** A passed gate, an entry the machine already holds and an entry that
+does not apply fold into one counted line each; a failed gate, an advisory one, advice and "what to
+add" always print in full. `aqk doctor --verbose` lists everything by name.
+
 ## When a bug slips past the guards
 
 ```bash

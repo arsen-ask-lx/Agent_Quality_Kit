@@ -51,7 +51,7 @@ async function reportBaseline(man, facts) {
   );
 }
 
-async function reportCatalog(man, facts, probe = null) {
+async function reportCatalog(man, facts, probe = null, verbose = true) {
   const catalog = await readCatalog();
   if (!catalog.length) return;
 
@@ -70,7 +70,8 @@ async function reportCatalog(man, facts, probe = null) {
       (marks.length ? ` · ${L.doctor.hasThings}: ${marks.join(", ")}` : "") + "\n")
   );
 
-  for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
+  if (verbose) for (const rec of held) console.log(`  ${c.green("✔")}  ${rec.slug.padEnd(22)} ${c.dim(rec.intent || "")}`);
+  else if (held.length) console.log(`  ${c.green("✔")}  ${L.doctor.heldQuiet(held.length, `${SELF} doctor --verbose`)}`);
   // ЧТО У ВАС УЖЕ ЕСТЬ — до итога и до списка крестов. Комплект, поставленный в проект с
   // eslint, mocha и конвейером, показывал двадцать крестов и «держит машина 0»: мы считали
   // только СВОИ записи, а чужие проверки не читали вовсе. С точки зрения владельца это
@@ -201,8 +202,12 @@ async function reportCatalog(man, facts, probe = null) {
     console.log(c.dim(`  ${L.doctor.noBrowserServerHow(browser.servers.join("  ·  "))}`));
   }
   if (skip.length) {
-    console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
-    for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
+    if (verbose) {
+      console.log(c.dim(`\n  ${L.doctor.notApplicable(skip.length)}`));
+      for (const [rec, why] of skip) console.log(c.dim(`  ·  ${rec.slug.padEnd(22)} ${why}`));
+    } else {
+      console.log(c.dim(`\n  ${L.doctor.skipQuiet(skip.length, `${SELF} doctor --verbose`)}`));
+    }
   }
   console.log(
     `\n  ${c.bold(L.doctor.total)} ${L.doctor.totalHeld(held.length)}, ${L.doctor.totalTodo(c.yellow(todo.length))}, ` +

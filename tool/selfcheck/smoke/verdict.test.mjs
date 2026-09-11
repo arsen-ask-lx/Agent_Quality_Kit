@@ -71,7 +71,8 @@ test("--jobs 3: три секундных гейта идут одновреме
   writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m,
     'gates:\n  a: "sleep 1"\n  b: "sleep 1; exit 1"\n  c: "sleep 1"'), "utf8");
   const t0 = Date.now();
-  const r = aqk(p, "doctor", "--run", "--jobs", "3");
+  // --verbose: зелёные a и c без него свёрнуты в одну строку, а проверяется порядок всех трёх.
+  const r = aqk(p, "doctor", "--run", "--jobs", "3", "--verbose");
   const secs = (Date.now() - t0) / 1000;
   assert.notEqual(r.code, 0, "упавший гейт b не уронил прогон");
   const order = [...r.out.matchAll(/^\s+\S+\s+([abc])\s/gm)].map((m) => m[1]);
@@ -86,4 +87,23 @@ test("--jobs без числа или с нулём — отказ с причи
   const r = aqk(p, "doctor", "--run", "--jobs", "0");
   assert.notEqual(r.code, 0);
   assert.match(r.out, /--jobs/);
+});
+
+// Коротко по умолчанию. Отзыв с живого проекта 2026-09-11: сто строк вывода, семьдесят из них —
+// зелёные галочки, и красное теряется между ними. Свёрнуто только то, что ничего не требует;
+// упавший и совещательный видны всегда, поимённо — по --verbose.
+test("зелёные гейты свёрнуты в строку, упавший и совещательный видны; --verbose — все", (t) => {
+  const p = project(t, { "src/a.py": "x = 1\n", ".gitignore": "x\n" });
+  aqk(p, "init");
+  const man = join(p.dir, ".aqk.yml");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m,
+    'gates:\n  green1: "true"\n  green2: "true"\n  broken: "false"\n  advice: "true"') + "advisory: [advice]\n", "utf8");
+  const short = aqk(p, "doctor", "--run").out;
+  assert.doesNotMatch(short, /^\s+\S+\s+green1\s/m, `зелёный гейт не свёрнут:\n${short}`);
+  assert.match(short, /^\s+\S+\s+broken\s/m, "упавший гейт спрятан");
+  assert.match(short, /^\s+\S+\s+advice\s/m, "совещательный обязан быть назван каждый прогон");
+  assert.match(short, /(прошли ещё 2|2 more passed)/, `нет строки со счётом свёрнутых:\n${short}`);
+  const full = aqk(p, "doctor", "--run", "--verbose").out;
+  assert.match(full, /^\s+\S+\s+green1\s/m, "--verbose не показал зелёный гейт");
+  assert.doesNotMatch(full, /(прошли ещё|more passed)/);
 });

@@ -75,6 +75,9 @@ export const en = {
     coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
     selectUnknown: (names, groups) => `--only/--skip: "${names}" is neither a gate from gates: nor a group from groups:${groups ? ` (groups: ${groups})` : ""}. Running everything instead of skipping would be a lie, so stopping.`,
     selectSkipped: (names) => `not run (by --only/--skip): ${names} — their state is unknown, they are not "green"`,
+    heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
+    skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
+    passedQuiet: (n) => `${n} more passed — by name: --verbose`,
     jobsBad: (v) => `--jobs expects a whole number from 1: "${v}" will not do. A one-by-one run passed off as parallel would be a lie, so stopping.`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,

@@ -58,6 +58,11 @@ async function autoProbe(brief) {
 
 async function cmdDoctor() {
   const brief = process.argv.includes("--brief");
+  // Коротко по умолчанию, поимённо по `--verbose`. Отзыв с живого проекта 2026-09-11: вывод на
+  // сто строк, из них семьдесят — зелёные галочки, и красное теряется между ними. Сворачивается
+  // только то, что ничего не требует: пройденное, неприменимое, пояснения. Упавшее, совет и
+  // «что поставить» печатаются всегда.
+  const verbose = process.argv.includes("--verbose");
   const buf = brief ? beginBrief() : null;
   // Версия в шапке — единственное, что привязывает баг-репорт к коммиту, если ставили не из
   // релиза: без неё "у меня не работает" ничем не отличается от любой другой версии за год.
@@ -118,7 +123,7 @@ async function cmdDoctor() {
     const arb = countArbiters(text, ["человек", "human", "nobody"]);
     if (arb.total && arb.human) {
       console.log(`\n  ${c.yellow("!")}  ${L.doctor.rulesByHuman(arb.total, arb.machine, arb.human)}`);
-      console.log(c.dim(`     ${L.doctor.rulesByHumanWhy}`));
+      if (verbose) console.log(c.dim(`     ${L.doctor.rulesByHumanWhy}`));
     }
 
     const emptyCommands = (text.match(/^- [^:]+: ``$/gm) || []).length;
@@ -211,7 +216,7 @@ async function cmdDoctor() {
     await reportBaseline(man, facts);
     process.exit(0);
   }
-  const cat = (await reportCatalog(man, facts, probe)) || { held: 0, todo: 0, todoRecs: [] };
+  const cat = (await reportCatalog(man, facts, probe, verbose)) || { held: 0, todo: 0, todoRecs: [] };
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.
   const wantRun = process.argv.includes("--run");
@@ -226,7 +231,7 @@ async function cmdDoctor() {
     const ji = process.argv.indexOf("--jobs");
     const jobs = ji > -1 ? Number(process.argv[ji + 1]) : 1;
     if (!Number.isInteger(jobs) || jobs < 1) die(L.doctor.jobsBad(process.argv[ji + 1] ?? ""));
-    const run = await runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip"), jobs });
+    const run = await runGates(man, { since: sinceRef(), only: listArg(process.argv, "--only"), skip: listArg(process.argv, "--skip"), jobs, verbose });
     gateFailed = run.failed;
     failedNames = run.results.filter((r) => !r.ok).map((r) => r.name);
     skippedNames = run.skipped || [];
