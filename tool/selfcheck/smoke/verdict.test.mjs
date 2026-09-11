@@ -111,11 +111,15 @@ test("зелёные гейты свёрнуты в строку, упавший
 // Находки — пометками у строк файла в pull request, но только в GitHub Actions: в терминале
 // строка `::error …` — мусор. Вердикт от пометок не меняется.
 test("в GitHub Actions упавший гейт даёт пометку у строки файла; вне его — нет", (t) => {
-  const p = project(t, { "src/a.py": "x = 1\n", ".gitignore": "x\n" });
+  // Гейт — файлом через bash: строку «echo …; exit 1» Node на Windows отдаёт cmd.exe, где точка с
+  // запятой не разделяет команды, — код 0, и проверка падала на оснастке (поймано конвейером).
+  const p = project(t, {
+    "src/a.py": "x = 1\n", ".gitignore": "x\n",
+    "bad.sh": "echo 'src/a.py:1: x — плохо'\necho '  почини: убери x'\nexit 1\n",
+  });
   aqk(p, "init");
   const man = join(p.dir, ".aqk.yml");
-  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m,
-    "gates:\n  bad: \"echo 'src/a.py:1: x — плохо'; echo '  почини: убери x'; exit 1\""), "utf8");
+  writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m, 'gates:\n  bad: "bash bad.sh"'), "utf8");
   const gh = aqkEnv(p, { GITHUB_ACTIONS: "true" }, "doctor", "--run");
   assert.notEqual(gh.code, 0, "пометки не должны менять вердикт");
   assert.match(gh.out, /^::error file=src\/a\.py,line=1,title=aqk%3A bad::x — плохо — почини: убери x$/m, gh.out);

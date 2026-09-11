@@ -260,7 +260,10 @@ async function runGates(man, opts = {}) {
       }
       // Совет тоже не бесконечен: гейт, зовущий помощник шесть раз, печатает его шесть раз.
       for (const line of alwaysAdvice.slice(0, 6)) console.log(c.yellow(`        ${line.trim().slice(0, 110)}`));
-      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll });
+      // `shown` — то, что прогон ПОКАЗАЛ: после сужения по дифу и с советом. Пометки в pull request
+      // берутся отсюда, а не из сырого вывода: иначе при --since они вешались бы на файлы вне
+      // дифа — поймано конвейером на первом же прогоне (smoke: «--since сузил не то»).
+      results.push({ name, cmd, ok: false, secs, code, advisory: isAdvisory, out: outAll, shown: [...out, ...alwaysAdvice].join("\n") });
     }
   }
   // Совещательные, которые покраснели, называются вслух ВСЕГДА. Молчание о них — ровно та

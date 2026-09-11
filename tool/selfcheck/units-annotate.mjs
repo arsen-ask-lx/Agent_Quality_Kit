@@ -58,3 +58,10 @@ test("не больше 10 ошибок и 10 предупреждений; ос
   assert.equal(r.lines.filter((l) => l.startsWith("::error")).length, 10);
   assert.equal(r.dropped, 4);
 });
+
+// Поймано конвейером на первом прогоне: при --since пометки вешались на находки ВНЕ дифа, потому
+// что брались из сырого вывода. Показанное прогоном — единственный источник.
+test("пометки берутся из показанного прогоном, а не из сырого вывода", () => {
+  const r = annotations([{ name: "g", ok: false, out: "src/a.py:1: в дифе\nkit/x.sh:2: вне дифа\n", shown: "src/a.py:1: в дифе" }], { exists });
+  assert.deepEqual(r.lines, ["::error file=src/a.py,line=1,title=aqk%3A g::в дифе"]);
+});

@@ -35,7 +35,8 @@ function locate(raw) {
 const escData = (s) => String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 const escProp = (s) => escData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
 
-// results — те же записи, что возвращает runGates: { name, ok, advisory, out }. exists(путь) —
+// results — те же записи, что возвращает runGates: { name, ok, advisory, out, shown }. Берётся
+// `shown` — показанное прогоном после сужения по дифу; сырой `out` — только если его нет. exists(путь) —
 // есть ли файл в репозитории: пометка на несуществующий файл GitHub вешает на `.github`, и
 // человек ищет то, чего нет. Такая находка идёт общей пометкой гейта без файла.
 function annotations(results, { exists = () => true, limit = LIMIT } = {}) {
@@ -53,7 +54,7 @@ function annotations(results, { exists = () => true, limit = LIMIT } = {}) {
     if (r.ok) continue;
     const level = r.advisory ? "warning" : "error";
     const title = `aqk: ${r.name}`;
-    const { findings, advice } = splitAdvice(String(r.out || "").split("\n").filter((l) => l.trim()));
+    const { findings, advice } = splitAdvice(String(r.shown ?? r.out ?? "").split("\n").filter((l) => l.trim()));
     const fix = advice.length ? ` — ${String(advice[0]).replace(ANSI, "").trim()}` : "";
     const located = findings.map(locate).filter((f) => f && exists(f.file));
     for (const f of located) emit(level, title, `${f.message}${fix}`, f);
