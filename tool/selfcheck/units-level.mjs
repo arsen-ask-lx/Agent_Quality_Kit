@@ -11,7 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
 import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
-import { pickLang, langFromText } from "../i18n/index.mjs";
+import { pickLang, langFromText, langFromDocs } from "../i18n/index.mjs";
 import { progress, selectGates } from "../lib/run.mjs";
 
 // --- строка «идёт» во время прогона ---------------------------------------------------
@@ -212,6 +212,26 @@ test("без манифеста всё как раньше — локаль, п�
 
 test("мусор в поле lang не молчит, а просто не действует", () => {
   assert.equal(pickLang({}, { lang: "клингонский" }), "en");
+});
+
+// Отзыв с живого проекта 2026-09-11: свод правил и методички на русском, машина на Windows без
+// LANG — и весь вывод английский, пока руками не впишешь `lang:`. Язык текста, который проект
+// сам о себе написал, — свойство проекта; поэтому он выше локали и ниже манифеста.
+test("язык свода проекта сильнее локали и слабее манифеста", () => {
+  const ruDoc = "# Правила\n\nПеред коммитом запусти `npm run check` и `make gates`. Схемы живут в " +
+    "`packages/contract`, их проверяет сервер.\n\n```sh\nnpm run typecheck && npm run lint\n```\n" +
+    "Любое изменение договора проходит через ревью и фиксируется в журнале решений.\n";
+  const enDoc = "# Rules\n\nBefore committing run `npm run check`. Schemas live in packages/contract " +
+    "and the server validates them. Every contract change goes through review and is logged.\n";
+  assert.equal(langFromDocs(ruDoc.repeat(2)), "ru", "русский свод с кодом внутри не узнан");
+  assert.equal(langFromDocs(enDoc.repeat(2)), "en");
+  assert.equal(langFromDocs("# X\n\n`npm test`\n"), "", "по трём словам язык не решается");
+  assert.equal(pickLang({ LANG: "en_US.UTF-8" }, null, "ru"), "ru");
+  assert.equal(pickLang({}, null, "ru"), "ru", "Windows без LANG: свод решает");
+  assert.equal(pickLang({ LANG: "ru_RU.UTF-8" }, null, "en"), "en");
+  assert.equal(pickLang({}, { lang: "en" }, "ru"), "en", "манифест сильнее свода");
+  assert.equal(pickLang({ AQK_LANG: "en" }, null, "ru"), "en", "переменная сильнее свода");
+  assert.equal(pickLang({ LANG: "ru_RU.UTF-8" }, null, ""), "ru", "свод молчит — решает локаль");
 });
 
 // Сокращённый разбор языка в i18n/index.mjs существует потому, что каталог строк нужен раньше,
