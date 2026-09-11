@@ -16,7 +16,7 @@ import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 import { declaredGates, sinceRef, runGates, progress, listArg } from "../lib/run.mjs";
-import { autoProbeAllowed } from "../lib/cadence.mjs";
+import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -390,6 +390,16 @@ async function cmdDoctor() {
   } else {
     console.log(c.green(`  ${L.doctor.allDone}\n`));
   }
+  // Состояние пробы — из файла отметки, миллисекунды. Нет его — блок про пробу просто молчит.
+  let probe = null;
+  try { probe = await probeStatus(); } catch { /* пробы нет — и ладно */ }
+  // Чего уровень НЕ доказывает — сразу под ним, пока глаз на нём (см. levelLimits).
+  if (reached >= 1) {
+    const lim = levelLimits(probe);
+    console.log(c.dim(`  ${L.doctor.limitsTitle}`));
+    console.log(`    ${L.doctor.limitsProbe[lim.kind](lim, `${SELF} probe`)}`);
+    console.log(`    ${L.doctor.limitsCi}\n`);
+  }
 
   const facts = await detectFacts(man);
   if (process.argv.includes("--baseline")) {
@@ -402,9 +412,6 @@ async function cmdDoctor() {
     await reportBaseline(man, facts);
     process.exit(0);
   }
-  // Состояние пробы — из файла отметки, миллисекунды. Нет его — блок про пробу просто молчит.
-  let probe = null;
-  try { probe = await probeStatus(); } catch { /* пробы нет — и ладно */ }
   const cat = (await reportCatalog(man, facts, probe)) || { held: 0, todo: 0, todoRecs: [] };
 
   // «Объявлен» ≠ «работает». Без --run говорим это вслух, а не молчим.

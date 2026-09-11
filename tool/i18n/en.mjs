@@ -7,6 +7,8 @@ import { enDocs } from "./en-docs.mjs";
 
 import { templates } from "./templates-en.mjs";
 
+const ago = (n) => (n === null || n === undefined ? "" : ` (${n} commit${n === 1 ? "" : "s"} ago)`);
+
 import { enGates } from "./en-gates.mjs";
 
 export const en = {
@@ -95,6 +97,17 @@ export const en = {
     toReach: (n) => `To reach AQK-${n}:`,
     gives: (what) => `What it buys you: ${what}`,
     allDone: "All levels reached.",
+    limitsTitle: "A level measures tooling, not reliability. What it does not prove:",
+    limitsProbe: {
+      never: (_, cmd) => `defects in your files: the probe has never run — ${cmd}`,
+      off: () => "defects in your files: the probe is off (probe: 0) — whether your checks catch them is unknown",
+      blind: ({ names, behind }) => `defects in your files: the probe${ago(behind)} did NOT catch — ${names.join(", ")}`,
+      partial: ({ caught, unknown, behind }, cmd) => `defects in your files: the probe${ago(behind)} caught ${caught} classes, ${unknown} unproven (${cmd})`,
+      caught: ({ caught, behind }) => `defects in your files: the probe${ago(behind)} caught all ${caught} planted classes — only those the catalog has`,
+      nothing: ({ behind }, cmd) => `defects in your files: the probe${ago(behind)} planted nothing — ${cmd}`,
+      old: ({ behind }, cmd) => `defects in your files: the probe ran${ago(behind)}; ${cmd} shows the result`,
+    },
+    limitsCi: "pipeline: whether it passed is not visible from here — we only check that gates are declared in it",
 
     gatesHeading: "Gates",
     langs: "languages",
