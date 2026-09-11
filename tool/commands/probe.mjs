@@ -31,6 +31,7 @@ import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
+import { gateCommand } from "../lib/execution.mjs";
 
 // Тот же набор расширений, что у привязки доказательства к дифу. Список один на программу:
 // второй через месяц разошёлся бы с первым.
@@ -289,7 +290,7 @@ function runGates(gates, sandbox, { stopOnRed = false } = {}) {
   const out = [];
   for (const [name, cmd] of gates) {
     const t0 = Date.now();
-    const r = spawnSync(cmd, { shell: true, cwd: sandbox, encoding: "utf8", timeout: 120000 });
+    const r = spawnSync(gateCommand(cmd), { shell: true, cwd: sandbox, encoding: "utf8", timeout: 120000 });
     const code = r.status === null ? 2 : r.status;
     out.push({ name, code, ms: Date.now() - t0 });
     if (stopOnRed && code === 1) break;

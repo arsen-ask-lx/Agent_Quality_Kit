@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { CWD, exists } from "./core.mjs";
 import { parseManifest, gateRequires } from "./manifest.mjs";
 import { whichSync } from "./repo.mjs";
-import { classify, findingCodes } from "./execution.mjs";
+import { classify, findingCodes, gateCommand } from "./execution.mjs";
 
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
@@ -108,7 +108,7 @@ async function samplesForRecipe(samplesDir, name) {
 // «не знаем» — а вызывающий тут же считал его находкой. Опыт 2026-09-09: проверка, виснущая
 // на красном образце, получала вердикт «доказана».
 function run(cmd, timeoutMs, prog) {
-  const r = spawnSync(cmd, { shell: true, encoding: "utf8", cwd: CWD, timeout: timeoutMs });
+  const r = spawnSync(gateCommand(cmd), { shell: true, encoding: "utf8", cwd: CWD, timeout: timeoutMs });
   const out = `${r.stdout || ""}${r.stderr || ""}`.trim();
   return { ...classify(r, findingCodes(prog)), out };
 }

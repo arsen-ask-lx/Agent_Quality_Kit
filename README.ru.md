@@ -48,6 +48,8 @@ TypeScript, Go, Rust, Java, Ruby, PHP, C#, Kotlin, Swift, Scala. Там, где 
 сообщает, когда откатилась на переносимый.
 
 **Требуется:** Node 18+ и оболочка `sh`. Есть на macOS, Linux и в WSL; на Windows — Git Bash.
+На Windows гейты идут через Git Bash, даже если `bash` в PATH — заглушка WSL из `System32`:
+он ищется рядом с `git.exe`; другой путь задаётся `AQK_BASH`.
 
 ### Одно движение, из которого следует всё остальное
 

@@ -46,6 +46,8 @@ Go, Rust, Java, Ruby, PHP, C#, Kotlin, Swift, Scala. Where the project already h
 says so out loud when it falls back.
 
 **Requirements:** Node 18+ and an `sh` shell. Present on macOS, Linux and WSL; Git Bash on Windows.
+On Windows the gates run through Git Bash even when `bash` on your PATH is the WSL stub in
+`System32` — it is found next to `git.exe`; set `AQK_BASH` to point elsewhere.
 
 ### One movement, and everything follows from it
 
