@@ -29,7 +29,7 @@ import { readManifest } from "../lib/manifest.mjs";
 import { fixHotspots, probeSummary, probeVerdictPaired, countProbe } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
-import { probeState, probeEvery, PROBE_EVERY } from "../lib/cadence.mjs";
+import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Тот же набор расширений, что у привязки доказательства к дифу. Список один на программу:
@@ -440,7 +440,11 @@ async function cmdProbe(args, { auto = false } = {}) {
 
   // Отметка нужна не для отчёта, а для КАДЕНЦИИ: по ней следующий прогон поймёт, что пора.
   // Без неё команда снова становится тем, о чём надо вспомнить.
-  await writeMark(commitCount(), blind, hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`));
+  await writeMark(commitCount(), blind, [
+    `ran: ${probeGates.map(([name]) => name).join(" ")}`, "",
+    ...blindLines(records), "",
+    ...hot.map(({ path: p2, fixes }) => `- ${p2} (${P.fixes(fixes)})`),
+  ]);
   } finally {
     await rm(sandbox, { recursive: true, force: true });
   }
@@ -456,7 +460,8 @@ async function probeStatus() {
   const every = probeEvery(man);
   if (every === null) return { state: "unknown", behind: null, badEvery: String(man?.probe) };
   if (every === 0) return { state: "off", behind: null };
-  return probeState(await readMark(), commitCount(), every);
+  const mark = await readMark();
+  return { ...probeState(mark, commitCount(), every), classes: parseBlind(mark?.text), ran: parseRan(mark?.text) };
 }
 
 export { cmdProbe, probeStatus, probeableGates, gatesState, extAlternatives, planProbeGates, blindAdvice, isCode };

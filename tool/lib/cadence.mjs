@@ -54,4 +54,39 @@ function probeEvery(man) {
   return n;
 }
 
-export { probeDue, probeState, probeEvery, PROBE_EVERY };
+// ИМЕНА непойманных классов в отметке. Хранилось одно число, `blind: 1`: агент в `context`
+// видел «один класс», человек в `doctor` не видел ничего, и чтобы узнать КАКОЙ, надо было снова
+// запускать пробу — ту самую команду, о которой не вспоминают. Находка, которую не показали,
+// ни от чего не предостерегает.
+//
+// Правило то же, что у `countProbe`: класс, слепой хоть где-то, — непокрыт, а «не смогли
+// проверить» слепотой не считается. Файл — первый, где слеп: пробы идут от самого горячего.
+function blindLines(records) {
+  const seen = new Set();
+  const out = [];
+  for (const { entry, file, verdict } of records || []) {
+    if (verdict !== "blind" || seen.has(entry)) continue;
+    seen.add(entry);
+    out.push(`blind-class: ${entry} ${file}`);
+  }
+  return out;
+}
+
+// Отметка старого формата строк `blind-class:` не несёт — тогда список пуст, и это «имён не
+// знаем», а не «слепых нет»: число `blind:` читается отдельно и остаётся правдой.
+function parseBlind(text) {
+  return [...String(text || "").matchAll(/^blind-class:\s*(\S+)\s+(.+?)\s*$/gm)]
+    .map((m) => ({ slug: m[1], file: m[2] }));
+}
+
+// Какие гейты проба ПРОГОНЯЛА. Без этого «объявлен сейчас» читалось как «поставлен после
+// пробы» — а проба как раз и гоняет объявленные: гейт, стоявший ДО неё и брак пропустивший,
+// получал утешительное «поймает ли, покажет следующая» вместо «здесь не ловит». Именно
+// прогонявшиеся, а не объявленные: медленные проба пропускает, и про них «не поймал» — ложь.
+// Старая отметка строки не несёт — null: «не знаем», а не «ничего не прогонялось».
+function parseRan(text) {
+  const m = /^ran:[ \t]*(.*)$/m.exec(String(text || ""));
+  return m ? new Set(m[1].split(/\s+/).filter(Boolean)) : null;
+}
+
+export { probeDue, probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan };
