@@ -15,8 +15,12 @@ export const en = {
   learn: {
     title: "Said out loud, never written down",
     noLogs: (p) => `no logs for this project: ${p}\n  The command reads Claude Code transcripts on this machine. Empty means nobody worked here.`,
-    counted: (s, typed, said, fresh) =>
-      `sessions: ${s} · typed by a human: ${typed} · looks like an instruction: ${said} · not in the entry point: ${fresh}`,
+    counted: (s, typed, said, fresh, again) =>
+      `sessions: ${s} · typed by a human: ${typed} · looks like an instruction: ${said} · not in the entry point: ${fresh} · repeated: ${again}`,
+    ruleTitle: "Written down, yet you still have to correct it:",
+    ruleHow: "The rule is in the entry point, and you are repeating it to the agent again — text alone does not hold it. It needs a machine guard: aqk find \"…\" or aqk new <name>.",
+    repeatTitle: "Repeated — you have said this before (\"I told you\", \"again\"):",
+    restTitle: "The rest that looks like a rule and is not written down:",
     nothing: "everything that looks like a rule is already in the entry point",
     andMore: (n) => `… and ${n} more`,
     warn:

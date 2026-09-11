@@ -113,8 +113,9 @@ aqk context --full      the same plus the command map and the rulebook verbatim 
 aqk context --install   put a SessionStart hook into .claude/settings.json
                         (add --full to install the full block)
 
-aqk learn               rule candidates from local transcripts:
-                        said out loud, never written down
+aqk learn               rule candidates from local transcripts: said out loud, never
+                        written down — and what you had to repeat ("I told you",
+                        "again"), first of all a written rule the agent still breaks
 aqk note "..."          write a bruise into the journal
 aqk ratchet <name>      a debt registry for a declared gate: may only get shorter
 aqk blob                every guide as a single file
