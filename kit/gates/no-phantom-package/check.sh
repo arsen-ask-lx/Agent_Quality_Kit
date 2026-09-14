@@ -87,6 +87,10 @@ fi
 
 printf '%s\n' "$OUT" | awk '
   function val(s) { sub(/^[^:]*:[[:space:]]*/, "", s); sub(/,$/, "", s); gsub(/^"|"$/, "", s); return s }
+  function isPlaceholder(p,   base) {
+    base = p; sub(/^@[^\/]*\//, "", base)
+    return base ~ /^(x+|y+|z+|foo|bar|baz|qux|name|package|pkg|lib|module|something|example|placeholder|your-package|my-package|my-lib|package-name|paket)$/
+  }
   function label(s) {
     if (s == "not_found")     return "в реестре такого пакета нет"
     if (s == "unpublished")   return "пакет был и снят с публикации — имя свободно для захвата"
@@ -116,6 +120,14 @@ printf '%s\n' "$OUT" | awk '
     # находку с английским словом вместо объяснения. Незнакомое состояние — повод сказать
     # «не разобрали», а не вынести вердикт.
     if (label(st) == "") { unknown = st; next }
+    # ПОДСТАНОВКА ВМЕСТО ИМЕНИ — НЕ ПАКЕТ. Замер 2026-09-14 по `Menghuan1918/drawio2go`: в их своде
+    # написано «когда `npm install @types/xxx` не находит пакет типов — создай свой .d.ts».
+    # `xxx` здесь — многоточие словами, и обвинять документ в выдуманном пакете значит писать
+    # человеку неправду. Список закрытый и короткий: настоящих пакетов с такими именами не
+    # бывает, а угадывать заполнители по смыслу нельзя.
+    # Счётчик slopcheck уменьшается вместе с показанным: иначе они разойдутся, и наша же
+    # защита «счётчик есть, а находок нет» объявит, что сменился формат ответа.
+    if (isPlaceholder(pkg)) { bad--; next }
     if (shown < 20) print f ":" ln ": «" pkg "» — " label(st) " · " cmd
     shown++
     next
