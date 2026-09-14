@@ -17,7 +17,8 @@
 // репозитория в отчёте нет — иначе первый же внимательный читатель назовёт это телеметрией,
 // и будет прав.
 import { readFile } from "node:fs/promises";
-import { PKG_ROOT, SELF, REPO_URL, c } from "../lib/core.mjs";
+import { PKG_ROOT, SELF, REPO_URL, c, stateDirs } from "../lib/core.mjs";
+import { askAllowed, markAsked } from "../lib/ask.mjs";
 import { join } from "node:path";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";
 import { detectFacts } from "../lib/repo.mjs";
@@ -91,6 +92,24 @@ function feedbackWanted(env = process.env) {
   return String(env.AQK_FEEDBACK || "") !== "0";
 }
 
+// ОДНА ПРОСЬБА НА ПРОЕКТ — и решение, и ограничитель, и отметка здесь. `doctor` и `context`
+// только печатают: разведи это по двум командам, и они разойдутся в условиях, а человек получит
+// просьбу дважды. Кто первым дошёл, тот и спросил.
+//
+// Ничего не роняет: просьба об одолжении не имеет права стоить человеку прогона.
+async function maybeAsk(state, self, { agent = false } = {}) {
+  if (!feedbackWanted()) return null;
+  try {
+    const dirs = stateDirs();
+    if (!(await askAllowed("value", dirs))) return null;
+    const line = askLine(feedbackAsk(state), self, { agent });
+    if (line) await markAsked("value", dirs);
+    return line;
+  } catch {
+    return null;
+  }
+}
+
 // Предзаполненная ссылка. Параметры `title` и `body` — документация GitHub («Creating an issue
 // from a URL query», сверено 2026-09-14). Кодируется ВСЁ: в теле переносы строк, решётки и
 // пробелы, и незакодированная ссылка обрывается на первом же из них — а всё после решётки
@@ -135,4 +154,4 @@ async function cmdFeedback() {
   // последнее, что человек стерпит.
 }
 
-export { cmdFeedback, feedbackAsk, reportText, issueUrl, askLine, feedbackWanted };
+export { cmdFeedback, feedbackAsk, reportText, issueUrl, askLine, feedbackWanted, maybeAsk };

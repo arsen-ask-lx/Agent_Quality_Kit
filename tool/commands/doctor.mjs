@@ -3,9 +3,8 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES, stateDirs } from "../lib/core.mjs";
-import { askAllowed, markAsked } from "../lib/ask.mjs";
-import { feedbackAsk, askLine, feedbackWanted } from "./feedback.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";
+import { maybeAsk } from "./feedback.mjs";
 import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, layoutChecks, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
@@ -244,25 +243,14 @@ async function cmdDoctor() {
   // блоке `context`; текст и решение «есть ли о чём просить» одни на оба места (feedback.mjs),
   // отметка одна на проект (ask.mjs): кто первым дошёл, тот и спросил, второй раз не спрашивает
   // никто. В кратком режиме молчим — там ворота коммита, и лишняя строка там дороже всего.
-  if (!brief && feedbackWanted()) {
-    try {
-      const dirs = stateDirs();
-      if (await askAllowed("value", dirs)) {
-        const line = askLine(
-          feedbackAsk({
-            cannot: cannotNames,
-            red: failedNames.filter((n) => !cannotNames.includes(n)),
-            blind: (probe?.classes || []).map((b) => b.slug),
-          }),
-          SELF, { agent: false }
-        );
-        if (line) {
-          for (const l of line.split("\n")) console.log(c.dim(`  ${l}`));
-          console.log("");
-          await markAsked("value", dirs);
-        }
-      }
-    } catch { /* просьба об одолжении не имеет права уронить осмотр */ }
+  const askText = brief ? null : await maybeAsk({
+    cannot: cannotNames,
+    red: failedNames.filter((n) => !cannotNames.includes(n)),
+    blind: (probe?.classes || []).map((b) => b.slug),
+  }, SELF);
+  if (askText) {
+    for (const l of askText.split("\n")) console.log(c.dim(`  ${l}`));
+    console.log("");
   }
 
   // Код возврата — для конвейера. Порог задаётся так: aqk doctor --min 1

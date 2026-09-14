@@ -22,9 +22,8 @@
 // так и написано, прогон устарел — тоже, инструмента нет — тоже.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook, stateDirs } from "../lib/core.mjs";
-import { askAllowed, markAsked } from "../lib/ask.mjs";
-import { feedbackAsk, askLine, feedbackWanted } from "./feedback.mjs";
+import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook } from "../lib/core.mjs";
+import { maybeAsk } from "./feedback.mjs";
 import { readManifest, assessLevel, coversOf } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog } from "../lib/repo.mjs";
 import { catalogBuckets, startWith, blindAdvice } from "../lib/advice.mjs";
@@ -356,20 +355,10 @@ async function cmdContext(args = []) {
   // ЕДИНСТВЕННАЯ ЗАПИСЬ НА ДИСК В ЭТОЙ КОМАНДЕ, кроме `--install`. Без отметки просьба
   // повторялась бы каждую сессию: красный гейт живёт в проекте днями, а блок читается заново
   // при каждом запуске агента и после каждого сжатия контекста.
-  let ask = null;
-  try {
-    const dirs = stateDirs();
-    if (feedbackWanted() && (await askAllowed("value", dirs))) {
-      ask = askLine(
-        feedbackAsk({
-          cannot: run?.cannot || [], red: run?.red || [],
-          blind: (probe?.classes || []).map((b) => b.slug),
-        }),
-        portableSelf(SELF), { agent: true }
-      );
-      if (ask) await markAsked("value", dirs);
-    }
-  } catch { /* просьба — последнее, что имеет право уронить блок состояния */ }
+  const ask = await maybeAsk({
+    cannot: run?.cannot || [], red: run?.red || [],
+    blind: (probe?.classes || []).map((b) => b.slug),
+  }, portableSelf(SELF), { agent: true });
 
   console.log(contextBlock({
     entry, entryExists: rules !== null, level, rules, run, ratchets, probe, full: fullPart,
