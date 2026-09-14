@@ -1784,7 +1784,7 @@ else
 fi
 rm -rf "$PRVP"
 
-# --- 104. опись в AGENTS.md покрывает все исходники ---------------------------
+# --- 104. опись в MAP.md покрывает все исходники ------------------------------
 # AGENTS.md — первое, что читает агент, и раздел «Где что лежит» для него карта. Карта,
 # отставшая от дерева, хуже её отсутствия: агент уверен, что видел всё. Проверено 2026-09-09 —
 # в описи не было восьми файлов из четырнадцати добавленных за неделю (`brief.mjs`, `banner.mjs`
@@ -1793,12 +1793,12 @@ rm -rf "$PRVP"
 MISSING=""
 for F in "$ROOT"/tool/lib/*.mjs "$ROOT"/tool/commands/*.mjs "$ROOT"/tool/selfcheck/* "$ROOT"/tool/selfcheck/*/*; do
   B=$(basename "$F")
-  grep -qF "$B" "$ROOT/AGENTS.md" || MISSING="$MISSING $B"
+  grep -qF "$B" "$ROOT/MAP.md" || MISSING="$MISSING $B"
 done
 if [ -z "$MISSING" ]; then
   ok "опись «Где что лежит» называет каждый исходник"
 else
-  bad "AGENTS.md не называет файлы" "$MISSING"
+  bad "MAP.md не называет файлы" "$MISSING"
 fi
 
 # --- 105. два README не расходятся структурно --------------------------------
