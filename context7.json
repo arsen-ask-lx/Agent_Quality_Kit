@@ -1,0 +1,37 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "AQK — Agent Quality Kit",
+  "description": "Checks whether the checks a repository declares can actually fail. Plants a known defect into a copy of the file its own history shows as the most repaired, runs the repository's declared gates against it, and counts a catch only when a gate names the planted file and stays quiet on the clean one. Zero dependencies, one command.",
+  "branch": "main",
+  "excludeFolders": [
+    "research",
+    "incidents",
+    "kit/docs",
+    ".github",
+    ".claude",
+    ".aqk",
+    "tool",
+    "kit/gates/.*/red",
+    "kit/gates/.*/green",
+    "ratchets"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md",
+    "PROJECT.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GOD_AI.md",
+    "LICENSE"
+  ],
+  "rules": [
+    "A green check proves nothing until it has been shown to go red. After adding or changing any gate, run `npx agent-quality-kit prove`: the gate must fail on its own bad sample and stay quiet on the good one. A gate that passes both proves nothing.",
+    "There are three outcomes, not two: clean, finding, and could-not-check. A gate that failed to run is not a finding about the code — fix the tooling, never the file it happened to name while dying.",
+    "Never make a check pass by weakening it: `|| true`, `--exit-zero`, `continue-on-error: true`, blanket suppressions. That turns a failure into silence, which is the exact defect this tool exists to find. If a check is wrong, stop and ask the human.",
+    "Every rule written into AGENTS.md needs a named arbiter beside it: `<!-- aqk: gate-name -->` when a machine holds it, or `<!-- aqk: human -->` when none does. The second is an honest admission; a rule with neither is a promise nobody keeps.",
+    "\"Done\" means an arbiter said so. Name the command that was red and is now green — `looks correct` is not done.",
+    "To decide what to fix first, run `npx agent-quality-kit prompt`: it prints at most five items ordered by weight, and every item carries the command that proves it done.",
+    "`npx agent-quality-kit doctor --run --since main` narrows findings to the files a branch touched, so inherited debt does not bury today's change. A gate that could not run is never narrowed away by it.",
+    "The kit sends nothing anywhere. Its only outgoing request asks npm whether a newer version exists; `aqk feedback` builds a report for the human to send themselves, with no paths, no code and no repository name."
+  ],
+  "url": "https://context7.com/arsen-ask-lx/Agent_Quality_Kit"
+}
