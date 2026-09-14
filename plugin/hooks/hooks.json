@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y agent-quality-kit context"
+          }
+        ]
+      }
+    ]
+  }
+}
