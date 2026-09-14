@@ -28,3 +28,13 @@ jobs:
       - name: провалить сборку, если линтер был красным
         if: steps.lint.outcome == 'failure'
         run: exit 1
+
+      # ЗАКОННОЕ ГАШЕНИЕ: инструмент ОБЯЗАН выйти ненулевым, а вердикт выносит следующая
+      # команда того же блока. Найдено замером 2026-09-14 по семидесяти чужим конвейерам:
+      # это было ЕДИНСТВЕННОЕ срабатывание гейта на всём замере — и оно оказалось ложным
+      # (HorusGoul/eslint-plugin-react-render-types, .github/workflows/ci.yml:51). Снимок
+      # вывода линтера сверяется с эталоном, шаг проваливается на `diff`.
+      - name: линтер как снимок
+        run: |
+          pnpm eslint src > /tmp/lint-output.txt || true
+          diff lint-snapshot.txt /tmp/lint-output.txt

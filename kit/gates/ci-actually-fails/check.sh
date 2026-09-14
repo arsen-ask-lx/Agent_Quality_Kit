@@ -90,6 +90,12 @@ for F in $CI; do
       for (j = 1; j <= nr; j++) if (R[j] != "" && R[j] == id) return 1
       return 0
     }
+    # Погашенная команда, о которой ещё не решено. Печатается, когда стало видно, что после неё
+    # в блоке ничего нет: тогда исход шага действительно погашен.
+    function reportMask(   ) {
+      if (maskLine) printf "%s:%d: провал погашен прямо в команде: %s\n", file, maskLine, substr(maskText, 1, 90)
+      maskLine = 0
+    }
     function flush(   ) {
       if (blockStart && blockCheck && blockMask && !isRedeemed(blockId))
         printf "%s:%d: проверка не может провалиться — шаг под %s\n", file, blockCheckLine, blockMaskText
@@ -100,8 +106,17 @@ for F in $CI; do
       # вспомогательной команде внутри скрипта (`docker network create … || true`) — это
       # идемпотентность, а не выключенная проверка.
       if (!isComment($0) && $0 ~ runners && $0 ~ /\|\|[[:space:]]*(true|:|exit[[:space:]]+0)/) {
-        line = $0; sub(/^[[:space:]]+/, "", line)
-        printf "%s:%d: провал погашен прямо в команде: %s\n", file, NR, substr(line, 1, 90)
+        # ОБВИНЯЕМ, ТОЛЬКО ЕСЛИ ПОГАШЕННАЯ КОМАНДА — ПОСЛЕДНЯЯ В БЛОКЕ. Замер 2026-09-14 по
+        # семидесяти чужим конвейерам дал одно-единственное срабатывание, и оно было ЛОЖНЫМ:
+        # `pnpm eslint src > out.txt || true` строкой ниже сверяется `diff` с эталоном —
+        # инструмент ОБЯЗАН выйти ненулевым, а вердикт выносит следующая команда. Шаг
+        # проваливается прекрасно. Инструмент, который обвиняет напрасно, выключают целиком,
+        # поэтому здесь молчание честнее догадки.
+        maskLine = NR; maskText = $0; sub(/^[[:space:]]+/, "", maskText)
+      } else if (maskLine && !isComment($0) && $0 !~ /^[[:space:]]*$/) {
+        # Печать вердикта не выносит: `echo` после гашения ничего не меняет.
+        if ($0 ~ /^[[:space:]]*(-[[:space:]]+)?[A-Za-z0-9_.-]+[[:space:]]*:/) reportMask()
+        else if ($0 !~ /^[[:space:]]*(echo|printf|cat|ls)[[:space:]]/) maskLine = 0
       }
       if (isBoundary($0)) flush()
       if (!blockStart) blockStart = NR
@@ -111,7 +126,7 @@ for F in $CI; do
         blockId = $0; sub(/^[^:]*:[[:space:]]*/, "", blockId); gsub(/[[:space:]"'"'"']/, "", blockId)
       }
     }
-    END { flush() }' 2>/dev/null)
+    END { reportMask(); flush() }' 2>/dev/null)
   [ -z "$RES" ] || BAD="$BAD$RES
 "
 done
