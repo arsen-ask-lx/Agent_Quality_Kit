@@ -154,6 +154,13 @@ export const en = {
     startHook: "Running these by hand is a one-off. To have them run before every push: pre-commit (repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit, hooks aqk / aqk-doctor), or a plain .git/hooks/pre-push.",
     haveAlready: (n) => `Checks you ALREADY have (${n}) — found in your own files, not invented:`,
     haveAlreadyHow: (line) => `declare them and a machine holds them, not your attention. In .aqk.yml, under gates:  ${line}`,
+    // Проверка, которая у проекта ЕСТЬ и провалиться НЕ МОЖЕТ. Самое ценное, что мы знаем о
+    // чужом репозитории в первые пять секунд, — и до 2026-09-14 мы об этом молчали.
+    weakOff: (text) => `cannot fail: the verdict is swallowed right in the script — «${text}»`,
+    weakZero: () => "cannot fail: --exit-zero tells the tool to exit 0 whatever it finds",
+    weakStub: (text) => `proves nothing: the whole script is a printout — «${text}»`,
+    weakHow: (n) => `${n} of them cannot go red. Declaring a check that cannot fail only makes the ` +
+      "silence machine-readable — fix the command first, then declare it.",
     total: "Total:",
     totalHeld: (n) => `held by a machine ${n}`,
     totalTodo: (n) => `applicable but not installed ${n}`,
@@ -295,7 +302,17 @@ export const en = {
       missed: ({ slug, file }, s) => `Gate \`${slug}\` is installed but missed the defect the probe planted into \`${file}\`. Find out why — a common cause is that the gate does not look at this file type or folder; \`${s} probe\` has the details. Done — \`${s} probe\` no longer names this class.`,
       red: (name, s) => `Gate \`${name}\` is red. Run \`${s} doctor --run --only ${name}\`, read the findings and fix the code. Done — that command passes.`,
       blind: ({ slug, file, command }, s) => `The probe planted a \`${slug}\` defect into \`${file}\` and the project's checks did not notice. Add a check: \`${s} add ${slug}\`${command ? ` (the same as one line, without the kit: \`${command}\`)` : ""}. Done — \`${s} doctor --run --only ${slug}\` passes and \`${s} probe\` no longer names this class.`,
-      adopt: (gates, s) => `The project already has its own checks: ${gates.map((g) => `\`${g.cmd}\` (${g.source})`).join(", ")}. Declare them under gates: in .aqk.yml — ${gates.map((g) => `\`${g.name}: "${g.cmd}"\``).join(", ")}. Done — \`${s} doctor --run\` runs them.`,
+      // СЛАБЫЕ ОТДЕЛЯЮТСЯ ОТ РАБОЧИХ, и это не украшение вывода. Агент исполняет написанное:
+      // велеть ему «впиши эти проверки в манифест», когда одна из них `… || true`, значит руками
+      // агента превратить дыру в зелёную галочку — и с этого дня её будет держать машина.
+      adopt: (gates, s) => {
+        const weak = gates.filter((g) => g.weak);
+        const ok = gates.filter((g) => !g.weak);
+        const out = [];
+        if (ok.length) out.push(`The project already has its own checks: ${ok.map((g) => `\`${g.cmd}\` (${g.source})`).join(", ")}. Declare them under gates: in .aqk.yml — ${ok.map((g) => `\`${g.name}: "${g.cmd}"\``).join(", ")}. Done — \`${s} doctor --run\` runs them.`);
+        if (weak.length) out.push(`These CANNOT go red as written: ${weak.map((g) => `\`${g.cmd}\` — ${g.weak.text}`).join(", ")}. Fix the command before declaring it: a declared check that cannot fail turns a hole into a green tick, and from then on a machine vouches for it. This is the owner's call, not yours — say what you found.`);
+        return out.join(" ");
+      },
       shim: {
         missing: (s) => `Claude Code is set up here, but the rules live in AGENTS.md — it only reads CLAUDE.md. Create a CLAUDE.md with the single line \`@AGENTS.md\`. Done — \`${s} doctor\` no longer warns about it.`,
         noImport: (s) => `CLAUDE.md does not import AGENTS.md — Claude Code only sees CLAUDE.md. Add the line \`@AGENTS.md\` to CLAUDE.md (mentioning the file in prose does not load it). Done — \`${s} doctor\` no longer warns about it.`,

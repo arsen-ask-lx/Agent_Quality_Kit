@@ -327,3 +327,37 @@ test("свод в AGENTS.md виден Claude Code только через CLAUD
   assert.equal(claudeSeesRules({ ...base, claude: "x", claudeLink: true }), null, "ссылка на AGENTS.md — тот же файл");
   assert.equal(claudeSeesRules({ ...base, agents: false, dotClaude: true }), null, "AGENTS.md нет — подключать нечего");
 });
+
+// --- проверка, которая у проекта есть и не может провалиться -----------------------
+//
+// САМЫЙ ЦЕННЫЙ ОТВЕТ В ПЕРВЫЕ ПЯТЬ СЕКУНД, и до 2026-09-14 мы его не давали. `doctor` читал
+// ИМЯ скрипта («test», «lint») и печатал каноничную команду `npm test` с зелёной галочкой,
+// ни разу не заглянув в ТЕЛО скрипта. А выключатель стоит именно там: `node --test || true`.
+// То есть на репозитории, где выключено всё, мы говорили «у вас уже есть 2 проверки» —
+// ровно та ошибка, ради которой написан весь комплект, в нашем собственном первом экране.
+//
+// ГРАНИЦА НАМЕРЕННО УЗКАЯ, и она взята у гейта `ci-actually-fails`: `|| true` в СЕРЕДИНЕ
+// команды — это идемпотентность вспомогательного шага (`mkdir -p … || true`), а не выключенная
+// проверка. Красным делается только гашение, под которое попадает ВЕСЬ исход: в конце тела
+// либо флаг, у которого другого назначения нет.
+test("выключатель в теле скрипта виден, а не прячется за каноничной командой", () => {
+  const pkg = (scripts) => ({ "package.json": JSON.stringify({ scripts }) });
+  const one = (scripts) => proposeGates(pkg(scripts))[0];
+
+  assert.equal(one({ test: "node --test" }).weak, undefined, "рабочая проверка не должна обвиняться");
+  assert.equal(one({ test: "node --test || true" }).weak?.kind, "off", "«|| true» в конце гасит весь исход");
+  assert.equal(one({ test: "node --test || :" }).weak?.kind, "off");
+  assert.equal(one({ test: "node --test || exit 0" }).weak?.kind, "off");
+  assert.equal(one({ lint: "ruff check . --exit-zero" }).weak?.kind, "zero", "флаг, у которого нет другого назначения");
+  assert.equal(one({ test: 'echo "no tests yet"' }).weak?.kind, "stub", "заглушка проходит всегда");
+  assert.equal(one({ test: 'echo "Error: no test specified" && exit 1' }).weak, undefined,
+    "заготовка npm провалиться МОЖЕТ — обвинять её нельзя");
+
+  // Ложные, на которых узость границы и проверяется.
+  assert.equal(one({ test: "mkdir -p tmp || true && node --test" }).weak, undefined,
+    "гашение вспомогательного шага в середине — идемпотентность, а не выключенная проверка");
+  assert.equal(one({ test: "node --test # было || true" }).weak, undefined, "упоминание в комментарии — не выключатель");
+
+  // Своя строка доезжает до человека целиком: без неё он не поверит и не найдёт, что чинить.
+  assert.match(one({ test: "node --test || true" }).weak.text, /\|\| true/);
+});

@@ -18,6 +18,34 @@ import { L } from "../i18n/index.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
+// ЧТО У ПРОЕКТА УЖЕ ЕСТЬ — отдельной функцией, а не ветками внутри вывода: выбор причины из
+// трёх плюс перебор плюс два условия давали вложенность 6 при пределе 5, и наш же гейт это
+// поймал. Печать — единственное, что здесь происходит; решение принято в `adopt.mjs`.
+function weakSay(weak) {
+  return weak.kind === "off" ? L.doctor.weakOff(weak.text)
+    : weak.kind === "zero" ? L.doctor.weakZero()
+    : L.doctor.weakStub(weak.text);
+}
+
+function printAdopted(found) {
+  if (!found.length) return;
+  console.log(`\n  ${c.bold(L.doctor.haveAlready(found.length))}`);
+  for (const g of found) {
+    // ВЫКЛЮЧЕННАЯ ПРОВЕРКА — ЭТО НАХОДКА, а не «посмотреть не смогли»: мы прочитали тело
+    // скрипта и знаем ответ. Поэтому крест, а не вопрос, и причина названа дословно — человек
+    // не поверит обвинению без строки, которую может найти у себя глазами.
+    console.log(`  ${g.weak ? c.red("✘") : c.green("✔")}  ${g.name.padEnd(12)} ${c.dim(`${g.cmd}   ← ${g.source}`)}`);
+    if (g.weak) console.log(`     ${c.red(weakSay(g.weak))}`);
+  }
+  // «Впишите в манифест» — ТОЛЬКО про рабочие. Строкой выше сказано, что слабую объявлять
+  // нельзя; предложить её тут же — это совет, противоречащий собственному предостережению,
+  // и человек послушает тот, что ближе к строке с командой.
+  const weak = found.filter((g) => g.weak).length;
+  const ok = found.filter((g) => !g.weak);
+  if (weak) console.log(c.dim(`     ${L.doctor.weakHow(weak)}`));
+  if (ok.length) console.log(c.dim(`     ${L.doctor.haveAlreadyHow(ok.map((g) => `${g.name}: "${g.cmd}"`).join("  "))}`));
+}
+
 async function reportBaseline(man, facts) {
   const { readdir, readFile } = await import("node:fs/promises");
   let files = [];
@@ -77,16 +105,7 @@ async function reportCatalog(man, facts, probe = null, verbose = true) {
   // только СВОИ записи, а чужие проверки не читали вовсе. С точки зрения владельца это
   // неправда, и первое, что он видел, было обвинением. Предлагаем, а не вписываем: гейт в
   // чужом манифесте без спроса — наше решение в чужом файле.
-  if (!declaredGates(man).length) {
-    const found = proposeGates(await readAdoptFiles(CWD));
-    if (found.length) {
-      console.log(`\n  ${c.bold(L.doctor.haveAlready(found.length))}`);
-      for (const g of found) {
-        console.log(`  ${c.green("✔")}  ${g.name.padEnd(12)} ${c.dim(`${g.cmd}   ← ${g.source}`)}`);
-      }
-      console.log(c.dim(`     ${L.doctor.haveAlreadyHow(found.map((g) => `${g.name}: "${g.cmd}"`).join("  "))}`));
-    }
-  }
+  if (!declaredGates(man).length) printAdopted(proposeGates(await readAdoptFiles(CWD)));
 
   // ЧТО ВАШИ ПРОВЕРКИ ПРОПУСТИЛИ. Проба знала имена непойманных классов и писала в отметку одно
   // число; человек в `doctor` не видел ничего. Это самое конкретное, что мы знаем о проекте, —
