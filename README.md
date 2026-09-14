@@ -456,6 +456,11 @@ The message carries: version, level, stack, what went red, what the kit could no
 defect classes nobody catches here. **No paths, no code, no repository name** — you see every
 character you send. No GitHub? Forward the text as is. Not interested at all? `AQK_FEEDBACK=0`.
 
+Somewhere to say it in your own words:
+[where the kit was wrong](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/90) ·
+[what check is missing](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/91) ·
+[show your manifest](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/92).
+
 Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actually ran and how
 long it took. The list of gates in the manifest says nothing about how many of them are alive
 right now; the report does. The file is ephemeral — keep it in your own `.gitignore`.
