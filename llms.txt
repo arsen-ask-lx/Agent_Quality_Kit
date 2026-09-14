@@ -1,11 +1,15 @@
 # AQK — Agent Quality Kit
 
-> A standard and a CLI that check whether a repository is ready to have its code written by AI
-> coding agents. Every rule the project promises to follow becomes a command with an exit code,
-> so a machine holds the promise instead of somebody's attention. Reports a level from AQK-0 to
-> AQK-3, computed by a run — never by a questionnaire and never by a model's opinion. One step
-> further than readiness scores: `probe` plants a known defect into a copy of the project and
-> checks whether the DECLARED guards go red. "Tests exist" and "tests catch" are different claims.
+> A CLI that answers one question: can the checks this repository declares actually fail? A check
+> that cannot fail looks exactly like a check that passes — `|| true`, `continue-on-error`, a
+> linter aimed at an empty directory, a test with no assertion, a hook nobody installed. AQK plants
+> a known defect into a COPY of the project and reports which declared guard noticed and which
+> stayed silent. It distinguishes three outcomes and never collapses them into two: clean ·
+> finding · COULD NOT CHECK. The third means the check itself failed; treating it as either of the
+> others is how a repository ends up protected by checks that cannot go red. Every rule the project
+> promises becomes a command with an exit code, so a machine holds the promise instead of somebody's
+> attention. Levels AQK-0..3 measure equipment, not quality, and are computed by a run — never by a
+> questionnaire and never by a model's opinion.
 
 Vendor-neutral: works with any coding agent (Claude Code, Codex, Cursor, Gemini CLI, GitHub
 Copilot, Windsurf, Aider, OpenCode) and with no AI at all. It calls no vendor API and needs no
@@ -50,6 +54,18 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
   ground rules on top, at most five items by weight (red gates, defects the probe planted and no
   check caught, the project's own checks to declare, rules Claude Code cannot see, catalog
   entries to propose), and for every item the command that proves it done. Nothing is run
+- Send the author one answer — the only payment the kit asks: `npx agent-quality-kit feedback`
+  prints a short report built from the last run and the probe (version, level, stack, what went
+  red, what it COULD NOT CHECK, which defect classes nothing here catches) with **no paths, no
+  code and no repository name**, plus a prefilled link. `feedback --send "your words"` posts it in
+  one command using the human's own `gh` account, as a comment in an open discussion. **Without
+  the flag nothing ever leaves the machine**, and a machine holds that claim, not this sentence.
+  An agent must show the text and ask before adding the flag
+- Install it into Claude Code as a plugin, from the kit's own marketplace, with nobody's approval
+  to wait for: `/plugin marketplace add arsen-ask-lx/Agent_Quality_Kit` then
+  `/plugin install aqk@agent-quality-kit`. The session-start hook puts the repository state into
+  the agent's context before its first action; two skills cover "can these checks fail" and "what
+  to fix first". A thin wrapper over the same CLI — no logic of its own
 - Check that the kit's own wiring is actually connected: `npx agent-quality-kit vitals` — are the
   tools the declared gates need installed, is the hook present in `.git/hooks` (a line in the
   config is an intention, not a guard), does the agent receive the state, is the version current.
@@ -95,6 +111,9 @@ Zero runtime dependencies. Node 18+ and an `sh` shell. MIT.
 - `.aqk.yml` — the manifest: entry, rules, docs, lang, gates as commands, covers (what a
   declared gate already holds, so it is not reported as debt), samples, ratchets, lessons
 - `.aqkignore` — paths the scanning checks must not read (brought-in code, vendored, generated)
+- `.aqk/last-run.md` — the short report of the last run, with three marks and not two: `✔` clean,
+  `✘` a finding, `?` COULD NOT CHECK. Readers (the context block, the task list, the feedback
+  report) must never collapse the third into either of the others
 
 ## Documentation
 

@@ -5,21 +5,26 @@
 [![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
 [![checks](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
 [![MIT licence](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
-[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
 
-**Check whether a repository is ready to have its code written by AI coding agents — and turn
-the rules it promises to follow into commands with exit codes.**
+**A check that cannot fail looks exactly like a check that passes.**
 
-Your `AGENTS.md` says what the project promises. Nothing checks that those promises are true, or
-that the commands it lists even run. AQK is that missing layer: one command reads the repository,
-reports a level from AQK-0 to AQK-3, and names every guard that is missing.
+`|| true`, `continue-on-error: true`, a linter pointed at an empty directory, a test with no
+assertion, a hook nobody ever installed, a command your `AGENTS.md` names that no longer exists —
+every one of them prints a green tick. AQK plants a known defect into a **copy** of your code,
+runs the checks your repository **declares**, and says which of them noticed and which stayed
+silent.
 
-And one step further than the tools next door: `probe` plants a known defect into a copy of your
-project and checks whether your **declared** guards actually go red. "Tests exist" and "tests
-catch" are different claims — readiness scores measure the first one.
+It never reads "nothing printed" as "nothing wrong". Three outcomes, never two:
+
+| `✔` | `✘` | `?` |
+|---|---|---|
+| ran and found nothing | a finding about the code | **the check itself failed** — fix the tooling, not the file it named while dying |
+
+The third one is the whole point. Counting it as either of the other two is how a repository ends
+up protected by checks that cannot go red.
 
 ```bash
-npx agent-quality-kit doctor    # code already exists: your level and what to install
+npx agent-quality-kit doctor    # code already exists: what it declares, what nothing is watching
 npx agent-quality-kit start     # no code yet: day-zero guards, right away
 ```
 
@@ -234,6 +239,13 @@ Presence is what gets checked, not whether it works: "a linter is configured" an
 catches things" are different claims, and the output says so out loud.
 
 ## Four levels
+
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
+
+**A level measures equipment, not quality.** It says which guards a repository has and has proven
+on samples — not that the code is good, and not that the guards caught anything in *your* files.
+That is what `probe` is for, and `doctor` prints what the level does **not** prove right under it.
+The badge above is this repository's own, kept honest by `aqk badge --check` in its pipeline.
 
 | Level | Required | What it proves |
 |---|---|---|
