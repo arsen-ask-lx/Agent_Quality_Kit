@@ -87,6 +87,7 @@ function commandRows(L) {
     { name: "prompt", args: "", text: h.prompt },
     { name: "badge", args: "", text: h.badge },
     { name: "vitals", args: "", text: h.vitals },
+    { name: "feedback", args: "", text: h.feedback },
     { name: "version", args: "", text: h.version },
   ];
 }

@@ -30,6 +30,7 @@ import { cmdProbe } from "./commands/probe.mjs";
 import { cmdContext } from "./commands/context.mjs";
 import { cmdPrompt } from "./commands/prompt.mjs";
 import { cmdVitals } from "./commands/vitals.mjs";
+import { cmdFeedback } from "./commands/feedback.mjs";
 
 // Разбор аргументов выполняется только при запуске файла как программы. При импорте —
 // а так его читают модульные проверки tool/selfcheck/units.mjs — CLI запускаться не должен.
@@ -126,6 +127,11 @@ if (IS_MAIN) {
       break;
     case "badge":
       await cmdBadge(rest);
+      break;
+    // Собирает отчёт о работе комплекта и даёт готовую ссылку. Ничего не отправляет: исходящий
+    // запрос у комплекта ровно один — про свежесть версии.
+    case "feedback":
+      await cmdFeedback();
       break;
     default: {
       // Ширина колонки считается, а не подбирается пробелами: строки в двух языках разной

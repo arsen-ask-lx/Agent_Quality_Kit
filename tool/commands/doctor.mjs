@@ -3,7 +3,9 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";
+import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES, stateDirs } from "../lib/core.mjs";
+import { askAllowed, markAsked } from "../lib/ask.mjs";
+import { feedbackAsk, askLine, feedbackWanted } from "./feedback.mjs";
 import { cmdProbe, probeStatus } from "./probe.mjs";
 import { readManifest, assessLevel, unknownKeys, KNOWN_KEYS, layoutChecks, unparsedLines } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
@@ -12,33 +14,8 @@ import { reportBaseline, reportCatalog } from "./doctor-catalog.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates, progress, listArg } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport } from "../lib/run.mjs";
 import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
-
-// Короткий отчёт «что из этого реально брали» — не для человека, а для агента в следующей
-// сессии и для самого владельца: список объявленных гейтов молчит о том, сколько из них
-// действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
-// история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
-async function writeRunReport({ version, reached, results, skipped = [] }) {
-  const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
-  const ok = results.filter((r) => r.ok).length;
-  const lines = [
-    `# ${L.report.title} — ${stamp}`,
-    version ? `${L.report.version}: ${version}` : null,
-    `${L.report.level}: AQK-${reached < 0 ? L.doctor.levelNone : reached}`,
-    "",
-    ...results.map((r) => `${r.ok ? "✔" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || L.doctor.exitCode(r.code)})`}`),
-    // Пропущенные по --skip/--only — строкой «~»: блок для агента читает их как «не запускались»,
-    // а не как зелёные. Молчание о них прочиталось бы как «проверено».
-    ...skipped.map((n) => `~ ${n} — ${L.report.skippedBySelect}`),
-    "",
-    L.report.summary(ok, results.length),
-  ].filter((l) => l !== null);
-
-  const dst = join(CWD, TARGET_DIR, "last-run.md");
-  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-  await writeFile(dst, lines.join("\n") + "\n", "utf8");
-}
 
 // ПРОБА ЗАПУСКАЕТСЯ САМА, раз в сто коммитов, — кроме конвейера (там это минуты сюрпризом в
 // быстрой проверке, отзыв с живого проекта 2026-09-11). Не влияет на код возврата никогда: это
@@ -229,6 +206,7 @@ async function cmdDoctor() {
   const gates = declaredGates(man);
   let gateFailed = 0;
   let failedNames = [];
+  let cannotNames = [];
   let skippedNames = [];
   if (wantRun) {
     // --jobs N: сколько гейтов одновременно. Без флага — по одному, как было: чужие гейты бывают
@@ -254,11 +232,37 @@ async function cmdDoctor() {
     // стоят дороже. Не влияет на код возврата НИКОГДА — это осмотр, а не порог.
     // Выключается AQK_PROBE=0 — у всего, что случается само, обязан быть выключатель.
     if (!brief && process.env.AQK_PROBE !== "0") await autoProbe(brief);
+    cannotNames = run.results.filter((r) => r.cannot).map((r) => r.name);
   } else if (gates.length) {
     console.log(
       c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
         c.dim(L.doctor.declaredNotRunWhy(`${SELF} doctor --run`) + "\n")
     );
+  }
+
+  // ЕДИНСТВЕННАЯ ПЛАТА ЗА КОМПЛЕКТ — один ответ автору. Человеку говорим здесь, агенту — в
+  // блоке `context`; текст и решение «есть ли о чём просить» одни на оба места (feedback.mjs),
+  // отметка одна на проект (ask.mjs): кто первым дошёл, тот и спросил, второй раз не спрашивает
+  // никто. В кратком режиме молчим — там ворота коммита, и лишняя строка там дороже всего.
+  if (!brief && feedbackWanted()) {
+    try {
+      const dirs = stateDirs();
+      if (await askAllowed("value", dirs)) {
+        const line = askLine(
+          feedbackAsk({
+            cannot: cannotNames,
+            red: failedNames.filter((n) => !cannotNames.includes(n)),
+            blind: (probe?.classes || []).map((b) => b.slug),
+          }),
+          SELF, { agent: false }
+        );
+        if (line) {
+          for (const l of line.split("\n")) console.log(c.dim(`  ${l}`));
+          console.log("");
+          await markAsked("value", dirs);
+        }
+      }
+    } catch { /* просьба об одолжении не имеет права уронить осмотр */ }
   }
 
   // Код возврата — для конвейера. Порог задаётся так: aqk doctor --min 1

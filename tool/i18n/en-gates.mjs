@@ -185,6 +185,33 @@ export const enGates = {
     issue: "Found a bug or it did not fit — open an issue; both are the most useful feedback there is.",
     notRemembered: "could not remember this (home is not writable) — the message will appear again",
     once: "This message is shown once: it will not appear again on this machine.",
+
+    ask: {
+      cannot: (names, cmd) =>
+        `AQK could not check: ${names}. That is the most valuable thing to tell the author — ${cmd}`,
+      blind: (names, cmd) =>
+        `The probe found defect classes nobody catches here: ${names}. Does that match your experience? — ${cmd}`,
+      red: (names, cmd) =>
+        `The kit caught: ${names}. One line to the author — did it help: ${cmd}`,
+      once: "Asked once per project; switch it off with AQK_FEEDBACK=0",
+      agent: "Say this to the human in one sentence, and do not insist if they do not answer.",
+    },
+    how: "Sending is one click (a prefilled issue opens; the text stays editable):",
+    issueTitle: "Feedback on the kit",
+    nothingSent: "Nothing was sent: the kit makes no outgoing requests other than the version check.",
+    orPaste: (cmd) => `No GitHub? Forward the text above as is — all of it comes from ${cmd}`,
+    report: {
+      title: "### Feedback on the kit",
+      unknown: "unknown",
+      none: "none",
+      env: (v, node, os) => `version: ${v} · node: ${node} · system: ${os}`,
+      level: (x) => `level: ${x}`,
+      stack: (x) => `stack: ${x}`,
+      gates: (n, red, cannot) => `gates declared: ${n} · red: ${red} · could not check: ${cannot}`,
+      blind: (x) => `classes nobody catches here: ${x}`,
+      say: "What you would say in your own words (one line — the most useful part of the whole message):",
+      mark: (v) => `<!-- collected by "aqk feedback" ${v}: no paths, no code, no repository name -->`,
+    },
   },
 
   note: {

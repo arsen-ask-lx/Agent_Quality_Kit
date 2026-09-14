@@ -21,14 +21,15 @@
 // а агент примет его за утверждение. Поэтому каждое незнание называется словом: прогона не было —
 // так и написано, прогон устарел — тоже, инструмента нет — тоже.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook } from "../lib/core.mjs";
+import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook, stateDirs } from "../lib/core.mjs";
+import { askAllowed, markAsked } from "../lib/ask.mjs";
+import { feedbackAsk, askLine, feedbackWanted } from "./feedback.mjs";
 import { readManifest, assessLevel, coversOf } from "../lib/manifest.mjs";
 import { detectFacts, readCatalog } from "../lib/repo.mjs";
 import { catalogBuckets, startWith, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
-import { declaredGates } from "../lib/run.mjs";
+import { declaredGates, readRun } from "../lib/run.mjs";
 import { probeStatus } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -73,11 +74,17 @@ function contextBlock(state, T = L.context) {
     out.push(T.runNone);
   } else {
     const red = state.run.red || [];
-    const shown = red.slice(0, MAX_RED);
-    const names = red.length > MAX_RED
-      ? `${shown.join(", ")} — ${T.andMore(red.length - MAX_RED)}`
-      : shown.join(", ");
-    out.push(red.length ? T.runRed(state.run.when, names) : T.runClean(state.run.when));
+    const cannot = state.run.cannot || [];
+    const short = (list) => (list.length > MAX_RED
+      ? `${list.slice(0, MAX_RED).join(", ")} — ${T.andMore(list.length - MAX_RED)}`
+      : list.join(", "));
+    if (red.length) out.push(T.runRed(state.run.when, short(red)));
+    // «НЕ СМОГЛИ ПРОВЕРИТЬ» — ОТДЕЛЬНОЙ СТРОКОЙ, И ЧИСТО ТОЛЬКО КОГДА ОБА СПИСКА ПУСТЫ.
+    // Гейт, который не сумел отработать, не находка о коде: агент, прочитавший его как находку,
+    // пойдёт чинить исправный файл. А если бы он не попал НИКУДА, прогон, где всё сломалось,
+    // читался бы как «чисто» — та же тишина, только внутри блока, который читает машина.
+    if (cannot.length) out.push(T.runCannot(short(cannot)));
+    if (!red.length && !cannot.length) out.push(T.runClean(state.run.when));
     if (state.run.stale) out.push(T.runStale(state.run.when));
     if (state.run.skipped) out.push(T.skipped(state.run.skipped));
   }
@@ -148,18 +155,11 @@ function contextBlock(state, T = L.context) {
   // чем промолчать: он пойдёт его читать и получит пустоту вместо правил. Замерено на шести
   // чужих проектах: на flask блок писал «Свод правил: AGENTS.md», которого там нет.
   if (state.entryExists !== false) out.push("", T.where(state.entry || "AGENTS.md"));
+  // ПРОСЬБА ОБ ОТЗЫВЕ — последней строкой и только при содержании (feedback.mjs). Последней
+  // потому, что это единственная строка блока, которая не про состояние проекта: ставить её
+  // выше значило бы отодвинуть работой то, ради чего блок и читают.
+  if (state.ask) out.push("", state.ask);
   return out;
-}
-
-// Разбор отчёта прошлого прогона. Формат кладёт сам `doctor` в .aqk/last-run.md; читаем его,
-// а не запускаем гейты заново: хук обязан укладываться в секунду-две, а прогон у нас идёт минуту.
-function parseLastRun(text) {
-  if (!text) return null;
-  const when = (text.match(/^# aqk doctor --run — (.+)$/m) || [])[1] || "";
-  const red = [];
-  for (const m of text.matchAll(/^✘ ([^\s—]+)/gm)) red.push(m[1]);
-  const skipped = (text.match(/^~ /gm) || []).length;
-  return { when: when.trim(), red, skipped, stale: false };
 }
 
 // Правила и их арбитры: отметка `<!-- aqk: имя -->` рядом с правилом. `человек` — честное
@@ -173,16 +173,6 @@ function countArbiters(text, humanWords) {
   return { total: marks.length, machine: marks.length - human, human };
 }
 
-// Прогон старше последнего коммита описывает не тот код, что лежит перед агентом. Молча выдать
-// его за свежий — соврать: именно так «зелёный месяц назад» превращается в «зелёный сейчас».
-function runIsStale(when) {
-  if (!when) return false;
-  const r = spawnSync("git", ["log", "-1", "--format=%cI"], { cwd: CWD, encoding: "utf8" });
-  if (r.status !== 0 || !r.stdout) return false;
-  const commit = Date.parse(r.stdout.trim());
-  const run = Date.parse(when.replace(" ", "T"));
-  return Number.isFinite(commit) && Number.isFinite(run) && run < commit;
-}
 
 
 // УСТАНОВКА ХУКА — отдельной командой, а не частью `init`, и это решение, а не лень. Комплект
@@ -258,16 +248,6 @@ async function installHook(full = false) {
   console.log(c.green(`  ${existed ? T.hookAdded(path) : T.hookCreated(path)}`));
   console.log(c.dim(`    ${JSON.stringify({ SessionStart: [hookEntry(cmd)] })}`));
   console.log(c.dim(`  ${T.hookWhat}`));
-}
-
-// Прошлый прогон — из отчёта, который кладёт `doctor --run`. Отдельной функцией: его читают и
-// `context`, и `prompt`, и два разбора одного файла разошлись бы.
-async function readRun() {
-  const lastRun = join(CWD, TARGET_DIR, "last-run.md");
-  if (!(await exists(lastRun))) return null;
-  const run = parseLastRun(await readFile(lastRun, "utf8"));
-  if (run) run.stale = runIsStale(run.when);
-  return run;
 }
 
 // Что советовать — теми же функциями, что у `doctor`: корзины каталога, «начните с трёх», совет
@@ -364,10 +344,37 @@ async function cmdContext(args = []) {
     next = nextSteps({ init: !man, adopt, blind, start });
   } catch { /* не посчитали — блок скажет остальное; выдумывать шаги нельзя */ }
 
+  // ЕДИНСТВЕННАЯ ПЛАТА ЗА КОМПЛЕКТ — один ответ автору, и просит о нём агент: он читает этот
+  // блок каждую сессию и передаёт человеку то, что в нём написано. Замер 2026-09-14: тысяча
+  // скачиваний в неделю и ноль отзывов за всё время — просьба печаталась только при `init`, то
+  // есть до того, как комплект сделал хоть что-то.
+  //
+  // ТРИ УСЛОВИЯ, И ВСЕ ТРИ ОБЯЗАТЕЛЬНЫ: не выключено человеком, не просили на этом проекте
+  // раньше, и ЕСТЬ О ЧЁМ рассказать. Без третьего это «оставьте отзыв» — шум, а шум выключают
+  // вместе с хуком, в котором он приехал.
+  //
+  // ЕДИНСТВЕННАЯ ЗАПИСЬ НА ДИСК В ЭТОЙ КОМАНДЕ, кроме `--install`. Без отметки просьба
+  // повторялась бы каждую сессию: красный гейт живёт в проекте днями, а блок читается заново
+  // при каждом запуске агента и после каждого сжатия контекста.
+  let ask = null;
+  try {
+    const dirs = stateDirs();
+    if (feedbackWanted() && (await askAllowed("value", dirs))) {
+      ask = askLine(
+        feedbackAsk({
+          cannot: run?.cannot || [], red: run?.red || [],
+          blind: (probe?.classes || []).map((b) => b.slug),
+        }),
+        portableSelf(SELF), { agent: true }
+      );
+      if (ask) await markAsked("value", dirs);
+    }
+  } catch { /* просьба — последнее, что имеет право уронить блок состояния */ }
+
   console.log(contextBlock({
     entry, entryExists: rules !== null, level, rules, run, ratchets, probe, full: fullPart,
-    next, when: { hook: await preCommitHook(CWD) },
+    next, when: { hook: await preCommitHook(CWD) }, ask,
   }).join("\n"));
 }
 
-export { cmdContext, contextBlock, nextSteps, parseLastRun, countArbiters, withHook, hasOurHook, portableSelf, readRun, readAdvice };
+export { cmdContext, contextBlock, nextSteps, countArbiters, withHook, hasOurHook, portableSelf, readAdvice };

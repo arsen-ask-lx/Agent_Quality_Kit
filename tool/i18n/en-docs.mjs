@@ -63,6 +63,7 @@ const enDocs = {
       "No run has been made — which checks are red is UNKNOWN. This is not \"clean\": `aqk doctor --run`.",
     runStale: (when) =>
       `The last run ${when} is OLDER than the last commit — it describes different code.`,
+    runCannot: (names) => `COULD NOT CHECK (the checks themselves failed — not findings about the code): ${names}`,
     runClean: (when) => `Last run ${when} — nothing red.`,
     runRed: (when, names) => `Last run ${when} — RED: ${names}.`,
     andMore: (n) => `and ${n} more`,
