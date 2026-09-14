@@ -38,5 +38,9 @@ you think is in the way. Grinding past three attempts is how a small problem bec
 
 It happens, and it is worth more than praise. `npx -y agent-quality-kit feedback` builds a short
 report — version, level, stack, what went red, what it could not check — with **no paths, no code
-and no repository name**, plus a prefilled link. Nothing is sent automatically; show the text to
-the human and let them decide. Say it once and do not insist.
+and no repository name**, plus a prefilled link.
+
+`npx -y agent-quality-kit feedback --send "what you would say"` sends it in one command, using the
+human's own `gh` account, as a comment in an open discussion. **Never add `--send` on your own.**
+Print the report, show it to the human, ask whether to send it, and add the flag only if they say
+yes. Say it once and do not insist — without the flag nothing ever leaves the machine.

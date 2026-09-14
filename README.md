@@ -118,6 +118,8 @@ aqk prompt              one task to paste into an agent: what to fix, in order, 
 aqk vitals              is what the kit runs on wired up: gate tools, hooks, freshness
 aqk feedback            feedback to the author: a report from the last run and probe,
                         plus a prefilled link. No paths, no code; nothing is sent for you
+aqk feedback --send     send it in one command — with your own gh account, as a comment
+                        in an open discussion. Without the flag nothing ever leaves
 aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
 aqk context --full      the same plus the command map and the rulebook verbatim (~7000
                         tokens against ~500: the price of an agent that does not guess)

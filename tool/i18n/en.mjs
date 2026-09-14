@@ -51,6 +51,7 @@ export const en = {
     learn: "rule candidates from local transcripts: said out loud, never written down",
     context: "the project state in one block — for an agent's context, not for reading",
     feedback: "a report on how the kit worked plus a prefilled link — the only payment it asks",
+    feedbackSend: "send the feedback in one command — with your own gh account; without the flag nothing leaves",
     vitals: "is what the kit runs on wired up: gate tools, hooks, version freshness",
     prompt: "one task for the agent: what to fix, in order, and how to prove it is done",
     contextInstall: "the same in full — the map and the rulebook — installed as a hook",

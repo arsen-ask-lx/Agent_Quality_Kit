@@ -96,6 +96,7 @@ function commandRows(L) {
     { name: "badge", args: "", text: h.badge },
     { name: "vitals", args: "", text: h.vitals },
     { name: "feedback", args: "", text: h.feedback },
+    { name: "feedback", args: "--send", text: h.feedbackSend },
     { name: "version", args: "", text: h.version },
   ];
 }
