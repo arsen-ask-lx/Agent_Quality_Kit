@@ -31,7 +31,7 @@
     "\"Done\" means an arbiter said so. Name the command that was red and is now green — `looks correct` is not done.",
     "To decide what to fix first, run `npx agent-quality-kit prompt`: it prints at most five items ordered by weight, and every item carries the command that proves it done.",
     "`npx agent-quality-kit doctor --run --since main` narrows findings to the files a branch touched, so inherited debt does not bury today's change. A gate that could not run is never narrowed away by it.",
-    "The kit sends nothing anywhere. Its only outgoing request asks npm whether a newer version exists; `aqk feedback` builds a report for the human to send themselves, with no paths, no code and no repository name."
+    "The kit sends nothing on its own. Its only outgoing request of its own asks npm whether a newer version exists. `aqk feedback` prints a report with no paths, no code and no repository name; `aqk feedback --send` posts that same report through the user's own `gh`, and the consent lives in the flag — without it `gh` is never called even once, and a machine check holds that."
   ],
   "url": "https://context7.com/arsen-ask-lx/Agent_Quality_Kit"
 }

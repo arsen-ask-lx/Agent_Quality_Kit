@@ -16,12 +16,13 @@ this repository is three lines over `npx agent-quality-kit doctor --run`.
 ## Install
 
 ```
-/plugin marketplace add anthropics/claude-plugins-community
-/plugin install aqk@claude-community
+/plugin marketplace add arsen-ask-lx/Agent_Quality_Kit
+/plugin install aqk@agent-quality-kit
 ```
 
-Nothing else is required: the hook and the skills call `npx -y agent-quality-kit`, which picks a
-local install from `node_modules/.bin` when the project has one.
+This repository is its own marketplace — no approval from anyone, and the two lines above work
+today. Nothing else is required: the hook and the skills call `npx -y agent-quality-kit`, which
+picks a local install from `node_modules/.bin` when the project has one.
 
 **What it costs you, measured** (2026-09-14, Linux, Node 22): the session-start hook takes **2.6 s
 the first time** (npx fetches the package) and **~1.0 s afterwards**, of which most is npx
@@ -31,10 +32,12 @@ never during a commit. If that is too much, drop the plugin and run
 
 ## What it does not do
 
-- **Sends nothing anywhere.** The kit makes exactly one outgoing request — asking npm whether a
-  newer version exists — and it is documented in
+- **Sends nothing on its own.** The kit makes exactly one outgoing request of its own — asking npm
+  whether a newer version exists — and it is documented in
   [`SECURITY.md`](https://github.com/arsen-ask-lx/Agent_Quality_Kit/blob/main/SECURITY.md).
-  `aqk feedback` builds a report for you to send yourself; no paths, no code, no repository name.
+  `aqk feedback` only prints a report — no paths, no code, no repository name; `aqk feedback --send`
+  posts that same report through **your own `gh`**, and the consent lives in the flag. A machine
+  check holds that: without `--send`, `gh` is never called even once.
 - **Writes nothing into your project** unless you run `init` or `add` yourself.
 - **Never weakens a check to make it green.** That is the failure this tool exists to find.
 
