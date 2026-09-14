@@ -194,8 +194,16 @@ export const enGates = {
       red: (names, cmd) =>
         `The kit caught: ${names}. One line to the author — did it help: ${cmd}`,
       once: "Asked once per project; switch it off with AQK_FEEDBACK=0",
-      agent: "Say this to the human in one sentence, and do not insist if they do not answer.",
+      agent: "Say this to the human in one sentence, and do not insist if they do not answer. If they want to send it, add `--send`; never add the flag on your own.",
     },
+    sending: "sending on your behalf — with your own gh account…",
+    sent: (url) => `sent: ${url}\n  That is the whole price of this kit. Thank you.`,
+    sendFailed: {
+      "no-auth": "could not send: gh is missing or you are not logged in (`gh auth login`). The link below always works.",
+      "no-thread": "could not send: the discussion was not found. Use the link below.",
+      failed: "could not send. The link below always works.",
+    },
+    sendHow: (cmd) => `Send it in one command, with your own GitHub account: ${cmd}`,
     how: "Sending is one click (a prefilled issue opens; the text stays editable):",
     issueTitle: "Feedback on the kit",
     nothingSent: "Nothing was sent: the kit makes no outgoing requests other than the version check.",

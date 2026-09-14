@@ -17,6 +17,7 @@
 // репозитория в отчёте нет — иначе первый же внимательный читатель назовёт это телеметрией,
 // и будет прав.
 import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { PKG_ROOT, SELF, REPO_URL, c, stateDirs } from "../lib/core.mjs";
 import { askAllowed, markAsked } from "../lib/ask.mjs";
 import { join } from "node:path";
@@ -65,6 +66,9 @@ function reportText(state = {}, T = L.feedback.report) {
     "",
     T.say,
     "",
+    // Слова человека — туда же, где приглашение их написать. Пусто — остаётся приглашение:
+    // отправленное письмо без единой своей строки всё равно полезно, но сказать об этом надо.
+    ...(state.note ? [state.note, ""] : []),
     T.mark(state.version || u),
   ];
 }
@@ -110,6 +114,65 @@ async function maybeAsk(state, self, { agent = false } = {}) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ОТПРАВКА — ТОЛЬКО ПО ЯВНОМУ СЛОВУ, И СЛОВО ЭТО `--send`.
+//
+// Владелец 2026-09-14 спросил, нельзя ли отправлять отзыв «без согласия пользователя, чтобы
+// агент мог быстро сообщить». Нельзя, и не из вежливости: в README и SECURITY.md написано, что
+// исходящий запрос у комплекта ровно один — про версию. Инструмент, который втихую шлёт что-то
+// из ЧУЖОГО репозитория, становится ровно тем, что мы критикуем, а наша аудитория — это те, кто
+// проверяет инструменты на вранье. Одного внимательного читателя хватит.
+//
+// Поэтому согласие живёт в самом флаге: `--send` не набирают случайно, а агенту в умениях
+// сказано показать текст человеку и спросить. Утверждение «без флага не уходит ничего» держит
+// машина — smoke/feedback-send.test.mjs, — а не наше обещание в документации.
+//
+// ОТ ЧЬЕГО ИМЕНИ. От самого человека, его же `gh`. Своего сервера у нас нет и не будет: он
+// означал бы приём чужих данных, а значит и ответственность за них.
+const DISCUSSION = 90;
+
+function sendWanted(argv = process.argv) {
+  return argv.includes("--send");
+}
+
+// Своя строка человека — самое ценное во всём письме. Берём всё, что не флаг.
+function userNote(argv = process.argv) {
+  const i = argv.indexOf("feedback");
+  return (i === -1 ? [] : argv.slice(i + 1)).filter((a) => !a.startsWith("-")).join(" ").trim();
+}
+
+// Чем звать gh. Подменяется `AQK_GH` — тот же приём, что у `AQK_BASH` в execution.mjs: у всего,
+// что мы решаем сами, обязан быть способ решить иначе. Через него же проверки подставляют
+// поддельный gh и убеждаются, что без флага его не зовут вовсе.
+function ghArgs(env = process.env) {
+  return String(env.AQK_GH || "gh").split(/\s+/).filter(Boolean);
+}
+
+// Запуск БЕЗ оболочки: в теле отзыва переносы строк, кавычки и обратные апострофы, и оболочка
+// разобрала бы их как свои. Доводы уходят массивом — разбирать нечего.
+function gh(args, timeout = 30000) {
+  const [bin, ...pre] = ghArgs();
+  return spawnSync(bin, [...pre, ...args], { encoding: "utf8", timeout });
+}
+
+const Q_ID = `query($o:String!,$n:String!){repository(owner:$o,name:$n){discussion(number:${DISCUSSION}){id}}}`;
+const Q_ADD = "mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{url}}}";
+
+// Три исхода, как везде: отправлено · не смогли и сказали почему · входа нет. Молчаливый отказ
+// означал бы, что человек считает отзыв ушедшим, а его нет.
+function postComment(body, repo) {
+  if (gh(["auth", "status"], 15000).status !== 0) return { ok: false, reason: "no-auth" };
+  const [owner, name] = repo;
+  const one = gh(["api", "graphql", "-f", `query=${Q_ID}`, "-f", `o=${owner}`, "-f", `n=${name}`]);
+  let id = "";
+  try { id = JSON.parse(one.stdout || "{}").data.repository.discussion.id; } catch { /* разберём ниже */ }
+  if (!id) return { ok: false, reason: "no-thread" };
+  const two = gh(["api", "graphql", "-f", `query=${Q_ADD}`, "-f", `id=${id}`, "-f", `body=${body}`]);
+  let url = "";
+  try { url = JSON.parse(two.stdout || "{}").data.addDiscussionComment.comment.url; } catch { /* разберём ниже */ }
+  return url ? { ok: true, url } : { ok: false, reason: "failed" };
+}
+
 // Предзаполненная ссылка. Параметры `title` и `body` — документация GitHub («Creating an issue
 // from a URL query», сверено 2026-09-14). Кодируется ВСЁ: в теле переносы строк, решётки и
 // пробелы, и незакодированная ссылка обрывается на первом же из них — а всё после решётки
@@ -142,13 +205,24 @@ async function cmdFeedback() {
     version, node: process.version, platform: process.platform, level,
     langs: facts?.langs ? [...facts.langs] : [],
     gates: declaredGates(man).length,
-    red: run?.red || [], cannot: run?.cannot || [], blind,
+    red: run?.red || [], cannot: run?.cannot || [], blind, note: userNote(),
   });
   const body = lines.join("\n");
   console.log(`\n${body}\n`);
+
+  // ОТПРАВКА — ТОЛЬКО ПО ФЛАГУ. Без него ниже печатается ссылка, и это весь путь наружу.
+  if (sendWanted()) {
+    console.log(c.dim(`  ${T.sending}`));
+    const repo = REPO_URL.replace(/^https?:\/\/github\.com\//, "").split("/");
+    const r = postComment(body, repo);
+    if (r.ok) { console.log(c.green(`  ${T.sent(r.url)}\n`)); return; }
+    console.log(c.yellow(`  ${T.sendFailed[r.reason] || T.sendFailed.failed}\n`));
+  }
+
   console.log(c.bold(`  ${T.how}`));
   console.log(`  ${issueUrl(REPO_URL, T.issueTitle, body)}\n`);
   console.log(c.dim(`  ${T.nothingSent}`));
+  console.log(c.dim(`  ${T.sendHow(`${SELF} feedback --send`)}`));
   console.log(c.dim(`  ${T.orPaste(`${SELF} feedback`)}\n`));
   // Код возврата всегда 0: команда, которая просит об одолжении и роняет при этом конвейер, —
   // последнее, что человек стерпит.

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "agent-quality-kit",
+  "description": "AQK — checks whether the checks a repository declares can actually fail.",
+  "owner": {
+    "name": "Arsen Askaryants",
+    "url": "https://github.com/arsen-ask-lx/Agent_Quality_Kit"
+  },
+  "plugins": [
+    {
+      "name": "aqk",
+      "source": "./plugin",
+      "description": "Puts the repository's real state into the agent's context at session start, and adds two skills: whether the declared checks can actually fail, and what to fix first — each item with the command that proves it done.",
+      "homepage": "https://github.com/arsen-ask-lx/Agent_Quality_Kit#readme",
+      "license": "MIT",
+      "keywords": ["quality-gates", "agents-md", "ci", "checks", "verification"]
+    }
+  ]
+}
