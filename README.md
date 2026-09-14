@@ -431,10 +431,12 @@ files the diff touched:
 aqk doctor --run --since main    # only what this branch introduced
 ```
 
-Three outcomes, all of them said out loud. Findings inside the diff — red, as usual. Findings only
-outside it — green, with the number that was hidden, never a silent "all clear". And a gate whose
+Four outcomes, all of them said out loud. Findings inside the diff — red, as usual. Findings only
+outside it — green, with the number that was hidden, never a silent "all clear". A gate whose
 output carries no paths at all (a commit-message check, a CI-config check) **cannot** be narrowed:
-it stays red, and says why. Calling it green because there was nothing to narrow would be exactly
+it stays red, and says why. And a gate that **could not run at all** — no tool, an unexpected exit
+code, killed by a signal — is never narrowed by the diff: a failure has no place in the code, only
+itself. Calling either of the last two green because there was nothing to narrow would be exactly
 the silence this tool exists to remove.
 
 Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actually ran and how
