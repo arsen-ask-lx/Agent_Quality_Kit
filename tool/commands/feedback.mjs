@@ -228,4 +228,4 @@ async function cmdFeedback() {
   // последнее, что человек стерпит.
 }
 
-export { cmdFeedback, feedbackAsk, reportText, issueUrl, askLine, feedbackWanted, maybeAsk, sendWanted, userNote };
+export { cmdFeedback, feedbackAsk, reportText, issueUrl, askLine, feedbackWanted, maybeAsk };
