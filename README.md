@@ -28,6 +28,21 @@ npx agent-quality-kit doctor    # code already exists: what it declares, what no
 npx agent-quality-kit start     # no code yet: day-zero guards, right away
 ```
 
+Here is the first run on a repository whose pipeline is green and whose checks cannot go red.
+Nothing declared, nothing installed, no config written — it read the project's own `package.json`:
+
+```text
+Checks you ALREADY have (3) — found in your own files, not invented:
+✘  test         npm test   ← package.json
+   cannot fail: the verdict is swallowed right in the script — «|| true»
+✔  lint         npm run lint   ← package.json
+✘  typecheck    npm run typecheck   ← package.json
+   proves nothing: the whole script is a printout — «echo 'todo: turn this on'»
+
+2 of them cannot go red. Declaring a check that cannot fail only makes the silence
+machine-readable — fix the command first, then declare it.
+```
+
 `doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
 you have decided nothing about yet. Nothing to install: `npx` fetches the package — **≈0.7 MB**,
 a number a machine re-checks on every run rather than our memory.

@@ -83,7 +83,16 @@ const enDocs = {
     nextTitle: "Next, in order — computed from this repository, not generic advice:",
     nextStep: {
       init: () => "Set up the standard: `aqk init` — without .aqk.yml `aqk add` refuses.",
-      adopt: (s) => `Declare the checks this project already has: in .aqk.yml, under gates: ${s.gates.map((g) => `${g.name}: "${g.cmd}"`).join(", ")}. Then \`aqk doctor --run\`.`,
+      // Слабые НЕ ПОПАДАЮТ в «впиши в манифест»: агент исполняет написанное, и объявленная
+      // проверка с `|| true` — это дыра, за которую с этого дня ручается машина.
+      adopt: (s) => {
+        const ok = s.gates.filter((g) => !g.weak);
+        const weak = s.gates.filter((g) => g.weak);
+        const out = [];
+        if (ok.length) out.push(`Declare the checks this project already has: in .aqk.yml, under gates: ${ok.map((g) => `${g.name}: "${g.cmd}"`).join(", ")}. Then \`aqk doctor --run\`.`);
+        if (weak.length) out.push(`These cannot go red as written — ${weak.map((g) => `${g.cmd} (${g.weak.text})`).join(", ")} — so do not declare them yet: tell the owner and fix the command first.`);
+        return out.join(" ");
+      },
       blind: (s) => `The "${s.slug}" defect the probe planted in ${s.file} was NOT caught by your checks.` +
         (s.command ? ` Catch it now: \`${s.command}\`.` : "") + ` Keep it caught: \`aqk add ${s.slug}\`.`,
       start: (s) => `Install ${s.slug}: \`aqk add ${s.slug}\`` + (s.command ? ` (one line, no kit needed: \`${s.command}\`)` : "") +

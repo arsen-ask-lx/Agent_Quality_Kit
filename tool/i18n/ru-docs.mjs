@@ -87,7 +87,14 @@ const ruDocs = {
     // complexity-limit её поймал.
     nextStep: {
       init: () => "Заведи стандарт: `aqk init` — без .aqk.yml `aqk add` откажет.",
-      adopt: (s) => `Объяви проверки, которые у проекта уже есть: в .aqk.yml, в gates: ${s.gates.map((g) => `${g.name}: "${g.cmd}"`).join(", ")}. Затем \`aqk doctor --run\`.`,
+      adopt: (s) => {
+        const ok = s.gates.filter((g) => !g.weak);
+        const weak = s.gates.filter((g) => g.weak);
+        const out = [];
+        if (ok.length) out.push(`Объяви проверки, которые у проекта уже есть: в .aqk.yml, в gates: ${ok.map((g) => `${g.name}: "${g.cmd}"`).join(", ")}. Затем \`aqk doctor --run\`.`);
+        if (weak.length) out.push(`А эти в нынешнем виде покраснеть не могут — ${weak.map((g) => `${g.cmd} (${g.weak.text})`).join(", ")} — и объявлять их пока нельзя: скажи владельцу и почини команду.`);
+        return out.join(" ");
+      },
       blind: (s) => `Брак «${s.slug}», подсаженный пробой в ${s.file}, ваши проверки НЕ поймали.` +
         (s.command ? ` Поймать сейчас: \`${s.command}\`.` : "") + ` Держать всегда: \`aqk add ${s.slug}\`.`,
       start: (s) => `Поставь ${s.slug}: \`aqk add ${s.slug}\`` + (s.command ? ` (одной строкой, без комплекта: \`${s.command}\`)` : "") +

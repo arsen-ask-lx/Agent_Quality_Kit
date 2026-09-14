@@ -20,6 +20,33 @@
 // ни другой. Берём только то, что отвечает «прошло или нет».
 const CHECK_NAMES = new Set(["test", "tests", "lint", "typecheck", "type-check", "types", "check"]);
 
+// ПРОВЕРКА, КОТОРАЯ ЕСТЬ И НЕ МОЖЕТ ПРОВАЛИТЬСЯ. До 2026-09-14 мы читали ИМЯ скрипта и печатали
+// каноничную команду `npm test` с зелёной галочкой, ни разу не заглянув в его ТЕЛО. А выключатель
+// стоит именно там: `node --test || true`. На репозитории, где выключено всё, первый экран
+// говорил «у вас уже есть 2 проверки» — ровно та ошибка, ради которой написан весь комплект.
+//
+// ГРАНИЦА ВЗЯТА У ГЕЙТА `ci-actually-fails`, дословно его довод: `|| true` в СЕРЕДИНЕ команды —
+// это идемпотентность вспомогательного шага (`mkdir -p … || true`), а не выключенная проверка.
+// Поэтому красным делается только то, под что попадает ВЕСЬ исход: гашение в конце тела либо
+// флаг, у которого другого назначения нет.
+const OFF_TAIL = /(\|\|\s*(?:true|:|exit\s+0)|;\s*(?:true|exit\s+0))\s*$/;
+const ZERO_FLAG = /(?:^|\s)--exit-zero(?:\s|$)/;
+
+function cannotFail(body) {
+  if (typeof body !== "string") return undefined;
+  // Комментарий — не команда. `\s#` (а не просто `#`): в `echo "#1"` решётка стоит внутри строки.
+  const code = body.replace(/\s#[^"']*$/, "").trim();
+  if (!code) return undefined;
+  const off = OFF_TAIL.exec(code);
+  if (off) return { kind: "off", text: off[1].trim() };
+  if (ZERO_FLAG.test(code)) return { kind: "zero", text: "--exit-zero" };
+  // Заглушка: всё тело — печать и ничего больше. Заготовка npm
+  // (`echo "Error: no test specified" && exit 1`) провалиться МОЖЕТ — её обвинять нельзя,
+  // и её отсекает связка `&&`.
+  if (/^echo\b/.test(code) && !/[&|;]/.test(code)) return { kind: "stub", text: code.slice(0, 60) };
+  return undefined;
+}
+
 // Окружения tox, которые судят, а не гоняют тесты под матрицей версий. Голый `tox` не
 // предлагаем: он проходит все интерпретаторы из envlist, и у человека без пяти питонов это
 // красный прогон на пустом месте. Имена сняты с живых tox-файлов (rich, click, flask).
@@ -33,11 +60,15 @@ const TOX_CHECKS = new Set(["lint", "style", "typing", "types", "type", "mypy", 
 function proposeGates(files = {}) {
   const out = [];
   const seen = new Set();
-  const push = (name, cmd, source) => {
+  // ТЕЛО передаётся отдельно от команды: человеку показывается каноничная `npm test`, а судим
+  // мы по тому, что за ней стоит. Где тела у нас нет (Makefile, tox, scripts/) — там и суждения
+  // нет: молчание тут честнее догадки.
+  const push = (name, cmd, source, body) => {
     const key = name === "tests" ? "test" : name.replace(/^type-?check$|^types$/, "typecheck");
     if (seen.has(key)) return;
     seen.add(key);
-    out.push({ name: key, cmd, source });
+    const weak = cannotFail(body);
+    out.push(weak ? { name: key, cmd, source, weak } : { name: key, cmd, source });
   };
 
   const pkg = files["package.json"];
@@ -48,7 +79,8 @@ function proposeGates(files = {}) {
       for (const name of Object.keys(scripts)) {
         if (!CHECK_NAMES.has(name)) continue;
         // `npm test` — каноничное написание для теста, остальное через `run`.
-        push(name, name === "test" || name === "tests" ? "npm test" : `npm run ${name}`, "package.json");
+        push(name, name === "test" || name === "tests" ? "npm test" : `npm run ${name}`,
+          "package.json", scripts[name]);
       }
     }
   }
