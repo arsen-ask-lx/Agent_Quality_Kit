@@ -76,7 +76,11 @@ test("плагин остаётся обёрткой: команды зовут 
 // через десятую долю — это уже рост, о котором человек обязан узнать и либо признать его в
 // тексте, либо остановить.
 test("обещанный в README размер пакета совпадает с настоящим", () => {
-  const out = execFileSync("npm", ["pack", "--dry-run", "--json"], { cwd: ROOT, encoding: "utf8" });
+  // На Windows программа называется `npm.cmd`, и запуск без оболочки падает с ENOENT — ровно
+  // тот же класс, что записан у нас про `bash` в execution.mjs. Поймано windows-заданием
+  // конвейера в тот же день, когда проверка была написана: на Linux её ничто не тревожило.
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const out = execFileSync(npm, ["pack", "--dry-run", "--json"], { cwd: ROOT, encoding: "utf8" });
   const bytes = JSON.parse(out)[0].size;
   const real = (Math.round(bytes / 1024 / 1024 * 10) / 10).toFixed(1);
   for (const [file, re] of [["README.md", /≈([\d.]+) MB/], ["README.ru.md", /≈([\d,]+) МБ/]]) {
