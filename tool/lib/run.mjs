@@ -10,10 +10,11 @@
 // контексту». Ровно то, о чём предупреждает совет самого гейта.
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Worker } from "node:worker_threads";
 import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
-import { CWD, c, die } from "./core.mjs";
+import { CWD, TARGET_DIR, c, die, exists } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
 import { L } from "../i18n/index.mjs";
 import { gateCommand, classify, findingCodes } from "./execution.mjs";
@@ -205,7 +206,9 @@ async function runGates(man, opts = {}) {
       // прогон показал, и у сбоя это причина, а не путь. Иначе «не смогли проверить» повисло бы
       // на первом файле, который гейт успел назвать перед падением, — то есть на невиновном.
       // Сырой `out` не трогаем: по нему считается покрытие дифа.
-      results.push({ name, cmd, ok: false, secs, code: verdict.code, advisory: adv, note, out: outAll, shown: note });
+      // `cannot` — не украшение: по нему отчёт прогона отличает сбой от находки одним знаком,
+      // а блок для агента и просьба об отзыве читают это из файла, ничего не запуская.
+      results.push({ name, cmd, ok: false, cannot: true, secs, code: verdict.code, advisory: adv, note, out: outAll, shown: note });
       continue;
     }
     const code = r.status;
@@ -314,4 +317,80 @@ async function runGates(man, opts = {}) {
   return { failed, ran: gates.length, results, advisoryFailed, skipped: sel.skipped };
 }
 
-export { declaredGates, sinceRef, runGates, progress, selectGates, listArg };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ОТЧЁТ ПРОГОНА: пишется здесь же, где прогон, и читается здесь же. Раньше `doctor` его ПИСАЛ,
+// а `context` РАЗБИРАЛ — два файла, которые друг о друге не знают, держали один формат. Третий
+// знак («?» — не смогли проверить) пришлось заводить в обоих, и это ровно тот случай, когда
+// одно знание живёт в двух местах: правишь одно, второе молча расходится.
+//
+// Читателей у отчёта трое — блок для агента, задание и просьба об отзыве, — и ни один не
+// запускает гейты заново: хук обязан укладываться в секунду, а прогон идёт минуту.
+// Короткий отчёт «что из этого реально брали» — не для человека, а для агента в следующей
+// сессии и для самого владельца: список объявленных гейтов молчит о том, сколько из них
+// действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
+// история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
+async function writeRunReport({ version, reached, results, skipped = [] }) {
+  const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+  const ok = results.filter((r) => r.ok).length;
+  const lines = [
+    `# ${L.report.title} — ${stamp}`,
+    version ? `${L.report.version}: ${version}` : null,
+    `${L.report.level}: AQK-${reached < 0 ? L.doctor.levelNone : reached}`,
+    "",
+    // ТРИ ЗНАКА, А НЕ ДВА: ✔ прошло · ✘ находка · ? НЕ СМОГЛИ ПРОВЕРИТЬ. Отчёт читает не только
+    // человек: из него блок для агента и просьба об отзыве узнают, что случилось, ничего не
+    // запуская. Слив «не смогли» с находкой означал бы, что агент чинит код там, где сломан
+    // инструмент, — и никогда не узнает, что инструмент сломан.
+    ...results.map((r) => `${r.ok ? "✔" : r.cannot ? "?" : "✘"} ${r.name} — ${r.secs}s${r.ok ? "" : ` (${r.note || L.doctor.exitCode(r.code)})`}`),
+    // Пропущенные по --skip/--only — строкой «~»: блок для агента читает их как «не запускались»,
+    // а не как зелёные. Молчание о них прочиталось бы как «проверено».
+    ...skipped.map((n) => `~ ${n} — ${L.report.skippedBySelect}`),
+    "",
+    L.report.summary(ok, results.length),
+  ].filter((l) => l !== null);
+
+  const dst = join(CWD, TARGET_DIR, "last-run.md");
+  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+  await writeFile(dst, lines.join("\n") + "\n", "utf8");
+}
+
+// Разбор отчёта прошлого прогона. Формат кладёт сам `doctor` в .aqk/last-run.md; читаем его,
+// а не запускаем гейты заново: хук обязан укладываться в секунду-две, а прогон у нас идёт минуту.
+function parseLastRun(text) {
+  if (!text) return null;
+  const when = (text.match(/^# aqk doctor --run — (.+)$/m) || [])[1] || "";
+  const red = [];
+  for (const m of text.matchAll(/^✘ ([^\s—]+)/gm)) red.push(m[1]);
+  // «Не смогли проверить» — свой знак и свой список. Гейт, который не сумел отработать, не
+  // находка о коде: агент, прочитавший его как находку, пойдёт чинить исправный файл, а
+  // сломанный инструмент останется сломанным. Слить их в один список было бы той же тишиной,
+  // только наоборот.
+  const cannot = [];
+  for (const m of text.matchAll(/^\? ([^\s—]+)/gm)) cannot.push(m[1]);
+  const skipped = (text.match(/^~ /gm) || []).length;
+  return { when: when.trim(), red, cannot, skipped, stale: false };
+}
+
+// Прогон старше последнего коммита описывает не тот код, что лежит перед агентом. Молча выдать
+// его за свежий — соврать: именно так «зелёный месяц назад» превращается в «зелёный сейчас».
+function runIsStale(when) {
+  if (!when) return false;
+  const r = spawnSync("git", ["log", "-1", "--format=%cI"], { cwd: CWD, encoding: "utf8" });
+  if (r.status !== 0 || !r.stdout) return false;
+  const commit = Date.parse(r.stdout.trim());
+  const run = Date.parse(when.replace(" ", "T"));
+  return Number.isFinite(commit) && Number.isFinite(run) && run < commit;
+}
+
+// Прошлый прогон — из отчёта, который кладёт `doctor --run`. Отдельной функцией: его читают и
+// `context`, и `prompt`, и два разбора одного файла разошлись бы.
+async function readRun() {
+  const lastRun = join(CWD, TARGET_DIR, "last-run.md");
+  if (!(await exists(lastRun))) return null;
+  const run = parseLastRun(await readFile(lastRun, "utf8"));
+  if (run) run.stale = runIsStale(run.when);
+  return run;
+}
+
+export { declaredGates, sinceRef, runGates, progress, selectGates, listArg, writeRunReport, parseLastRun, readRun };

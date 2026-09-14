@@ -1,6 +1,7 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CWD, PKG_ROOT, TARGET_DIR, SELF, c } from "./core.mjs";
+import { PKG_ROOT, SELF, c, stateDirs } from "./core.mjs";
+import { askAllowed, markAsked } from "./ask.mjs";
 import { L } from "../i18n/index.mjs";
 import { canDrawArt } from "./banner.mjs";
 // tool/lib/brief.mjs — короткая строка присутствия для прогона в хуке.
@@ -19,10 +20,6 @@ import { canDrawArt } from "./banner.mjs";
 // то, что видишь тридцатый раз, перестаёт читаться — и пролистывается вместе с настоящими
 // находками, стоящими рядом.
 
-// Сутки. Не «раз в прогон» и не «раз в неделю»: за сутки человек успевает забыть, но не успевает
-// устать. Число здесь спорное — важно, что ограничитель есть и он машинный.
-const ADVICE_EVERY_MS = 24 * 60 * 60 * 1000;
-
 // ЗНАЧОК ПРИСУТСТВИЯ — здесь, а не в каталогах строк. Символ один на оба языка, и держать его
 // в двух местах значит однажды получить разные значки в ru и en: то же правило, по которому у
 // нас один свод правил на две точки входа. Выбран владельцем из пятидесяти семи вариантов.
@@ -39,16 +36,6 @@ function briefLine(state, L, env = process.env) {
   const head = `${mark}${t.name}  ${parts.join(" · ")}`;
   if (!state.red || !state.red.length) return head;
   return `${head}\n${t.red(state.red.join(", "))}`;
-}
-
-// «Не знаем, когда показывали» и «показывали давно» — одно и то же решение: показать.
-// Испорченная отметка попадает сюда же намеренно: молчать из-за нечитаемого файла состояния
-// значит потерять совет навсегда и не сказать почему.
-function adviceDue(lastIso, now = Date.now()) {
-  if (!lastIso) return true;
-  const t = Date.parse(String(lastIso));
-  if (!Number.isFinite(t)) return true;
-  return now - t >= ADVICE_EVERY_MS;
 }
 
 // Первая из непоставленных, а не «самая важная»: важность мы не считаем, а порядок каталога
@@ -112,9 +99,7 @@ function beginBrief() {
 
 // Печать краткого итога. Совет — не чаще раза в сутки и с явным способом отказаться: то, что
 // видишь тридцатый раз, перестаёт читаться и пролистывается вместе с настоящими находками рядом.
-// Отметка времени лежит в .aqk/ и попадает в .gitignore при `init` (RUNTIME_FILES в core.mjs):
-// это состояние машины, а не проекта. Раньше здесь было написано «.aqk/ в .gitignore» — а
-// `init` туда ничего не клал, и на живом проекте служебный файл уехал в коммит.
+// Сам ограничитель и отметка — в `ask.mjs`, общие на все обращения комплекта к человеку.
 async function finishBrief(buf, state, todoRecs, ok) {
   if (!buf) return;
   buf.restore();
@@ -129,18 +114,16 @@ async function finishBrief(buf, state, todoRecs, ok) {
   if (!ok) { console.log(buf.lines.join("\n")); return; }
 
   if (process.env.AQK_ADVICE === "0" || !state.todo) return;
-  const stampFile = join(CWD, TARGET_DIR, "advice-shown");
-  let last = null;
-  try { last = (await readFile(stampFile, "utf8")).trim(); } catch { /* не показывали ещё */ }
-  if (!adviceDue(last)) return;
+  // Ограничитель — общий на все обращения комплекта к человеку (ask.mjs): совет, проверка
+  // версии и просьба об отзыве считают «уже показывали» одним кодом и одним форматом.
+  const dirs = stateDirs();
+  if (!(await askAllowed("advice", dirs))) return;
   const advice = pickAdvice(todoRecs);
   if (!advice) return;
   console.log(c.dim(L.brief.advise(advice.slug, advice.intent || "")));
   console.log(c.dim(L.brief.adviseOff(`${SELF} why ${advice.slug}`, "AQK_ADVICE=0")));
-  try {
-    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-    await writeFile(stampFile, new Date().toISOString(), "utf8");
-  } catch { /* не смогли записать отметку — совет повторится, это не беда */ }
+  // Не записалось — совет повторится завтра, и это не беда: молчать об этом человеку незачем.
+  await markAsked("advice", dirs);
 }
 
 // Спрашивает реестр npm о своей версии. РАЗ В СУТКИ, НЕ В КОНВЕЙЕРЕ, С ТАЙМАУТОМ, И МОЛЧА
@@ -152,10 +135,8 @@ async function finishBrief(buf, state, todoRecs, ok) {
 // и вместе с ним всё остальное, что печатает эта строка.
 async function maybeUpdateNotice() {
   if (!updateWanted()) return;
-  const stamp = join(CWD, TARGET_DIR, "update-checked");
-  let last = null;
-  try { last = (await readFile(stamp, "utf8")).trim(); } catch { /* ещё не спрашивали */ }
-  if (!adviceDue(last)) return;
+  const dirs = stateDirs();
+  if (!(await askAllowed("update", dirs))) return;
 
   let current = "";
   try { current = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8")).version || ""; } catch { return; }
@@ -163,10 +144,7 @@ async function maybeUpdateNotice() {
   // ОТМЕТКА СТАВИТСЯ ДО ЗАПРОСА, а не после удачного ответа. Сперва было наоборот, и замер
   // показал цену: человек без сети платил бы ожиданием на КАЖДОМ коммите, а не раз в сутки.
   // Из двух ошибок выбрана дешёвая: пропущенное за день уведомление против ежедневного стопора.
-  try {
-    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-    await writeFile(stamp, new Date().toISOString(), "utf8");
-  } catch { /* не смогли записать — спросим ещё раз, это не беда */ }
+  await markAsked("update", dirs);
 
   let latest = "";
   try {
@@ -189,6 +167,7 @@ async function maybeUpdateNotice() {
   if (notice) console.log(c.dim(notice));
 }
 
-// Наружу — только то, что зовут снаружи. `cmpVer` и `ADVICE_EVERY_MS` внутренние: экспорт,
-// который никто не импортирует, читается как часть договора и мешает менять внутренности.
-export { briefLine, adviceDue, pickAdvice, updateNotice, updateWanted, beginBrief, finishBrief };
+// Наружу — только то, что зовут снаружи. `cmpVer` внутренний: экспорт, который никто не
+// импортирует, читается как часть договора и мешает менять внутренности. Ограничитель обращений
+// уехал целиком в `ask.mjs` — вместе с проверками, которые его сторожили.
+export { briefLine, pickAdvice, updateNotice, updateWanted, beginBrief, finishBrief };

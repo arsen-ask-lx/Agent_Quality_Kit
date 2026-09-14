@@ -107,6 +107,8 @@ aqk context             the repository state in one block, for an agent's contex
 aqk prompt              one task to paste into an agent: what to fix, in order, and the
                         command that proves each item done
 aqk vitals              is what the kit runs on wired up: gate tools, hooks, freshness
+aqk feedback            feedback to the author: a report from the last run and probe,
+                        plus a prefilled link. No paths, no code; nothing is sent for you
 aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
 aqk context --full      the same plus the command map and the rulebook verbatim (~7000
                         tokens against ~500: the price of an agent that does not guess)
@@ -438,6 +440,21 @@ it stays red, and says why. And a gate that **could not run at all** — no tool
 code, killed by a signal — is never narrowed by the diff: a failure has no place in the code, only
 itself. Calling either of the last two green because there was nothing to narrow would be exactly
 the silence this tool exists to remove.
+
+### The only payment: one answer
+
+The kit is free and collects nothing about you: it makes exactly one outgoing request — asking the
+npm registry whether a newer version exists. The payment is different: **one answer to the author**.
+So once per project, and only when there is something to tell, `doctor` or the agent block prints a
+line like "AQK could not check `smoke`; that is the most valuable thing to tell the author". Then:
+
+```bash
+aqk feedback     # builds the message and hands you a prefilled link — you send it, not us
+```
+
+The message carries: version, level, stack, what went red, what the kit could not check, which
+defect classes nobody catches here. **No paths, no code, no repository name** — you see every
+character you send. No GitHub? Forward the text as is. Not interested at all? `AQK_FEEDBACK=0`.
 
 Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actually ran and how
 long it took. The list of gates in the manifest says nothing about how many of them are alive

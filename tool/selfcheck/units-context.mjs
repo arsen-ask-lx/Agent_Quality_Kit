@@ -9,7 +9,8 @@
 //   node --test tool/selfcheck/units-context.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { contextBlock, countArbiters, parseLastRun, withHook, hasOurHook, portableSelf, nextSteps } from "../commands/context.mjs";
+import { contextBlock, countArbiters, withHook, hasOurHook, portableSelf, nextSteps } from "../commands/context.mjs";
+import { parseLastRun } from "../lib/run.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
 import { commandRows } from "../lib/core.mjs";
 import { readFile } from "node:fs/promises";

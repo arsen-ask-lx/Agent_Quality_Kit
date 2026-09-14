@@ -8,7 +8,7 @@
 //   node --test tool/selfcheck/units-brief.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { briefLine, adviceDue, pickAdvice, updateNotice, updateWanted } from "../lib/brief.mjs";
+import { briefLine, pickAdvice, updateNotice, updateWanted } from "../lib/brief.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
 
 const T = CATALOGS.ru;
@@ -35,18 +35,8 @@ test("невычисленный уровень не выдумывается", 
 });
 
 // --- ограничитель совета -----------------------------------------------------
-// Совет на КАЖДОМ коммите превращается в шум, а шум пролистывают вместе с настоящими
-// находками. Раз в сутки — это заметно и не мешает.
-test("совет не повторяется чаще раза в сутки", () => {
-  const now = Date.parse("2026-09-08T20:00:00Z");
-  assert.equal(adviceDue(null, now), true, "первый раз показывается");
-  assert.equal(adviceDue("2026-09-08T19:00:00Z", now), false, "час назад — рано");
-  assert.equal(adviceDue("2026-09-07T19:00:00Z", now), true, "сутки прошли");
-});
-
-test("испорченная отметка времени не мешает показать совет", () => {
-  assert.equal(adviceDue("не дата", Date.parse("2026-09-08T20:00:00Z")), true);
-});
+// Сам ограничитель переехал в `ask.mjs` — он общий на все обращения комплекта к человеку, и
+// проверки на него лежат в units-ask.mjs. Здесь остаётся то, что про краткий режим.
 
 // --- выбор совета ------------------------------------------------------------
 // Один совет за раз, а не список: список читается как «у вас всё плохо» и не помогает выбрать.

@@ -15,7 +15,8 @@
 import { readManifest } from "../lib/manifest.mjs";
 import { claudeShimFor } from "../lib/repo.mjs";
 import { CWD, SELF } from "../lib/core.mjs";
-import { readRun, readAdvice, portableSelf } from "./context.mjs";
+import { readAdvice, portableSelf } from "./context.mjs";
+import { readRun } from "../lib/run.mjs";
 import { probeStatus } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 

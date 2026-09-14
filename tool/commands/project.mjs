@@ -6,7 +6,8 @@ import { spawnSync } from "node:child_process";
 import { join, dirname, relative } from "node:path";
 import {
   CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
-  copyDir, writeIfAbsent, FEEDBACK_MARK, docPath, ensureIgnored } from "../lib/core.mjs";
+  copyDir, writeIfAbsent, stateDirs, docPath, ensureIgnored } from "../lib/core.mjs";
+import { askAllowed, markAsked } from "../lib/ask.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
 import { banner } from "../lib/banner.mjs";
 import { readManifest } from "../lib/manifest.mjs";
@@ -95,7 +96,10 @@ ${c.dim(L.init.burned(`${SELF} note "…"`))}
 // Ничего не постится само: ссылки печатаются, дальше решает человек. Обратная связь важнее
 // звезды, но без звезды меньше шансов, что кто-то вообще дойдёт до фидбека.
 async function maybeAskFeedback() {
-  if (await exists(FEEDBACK_MARK)) return;
+  // Ограничитель — общий на все обращения комплекта (ask.mjs). Вид `install` разовый и живёт
+  // в доме пользователя: второй init в другом репозитории на том же компьютере молчит.
+  const dirs = stateDirs();
+  if (!(await askAllowed("install", dirs))) return;
   const url = REPO_URL;
   console.log(`
 ${c.bold(L.feedback.title)}
@@ -104,20 +108,14 @@ ${c.bold(L.feedback.title)}
     ${url}/issues/new
 ${c.dim(`  ${L.feedback.once}`)}
 `);
-  // Пометка «уже показывали» — удобство, а не работа команды. Домашнего каталога может не быть
-  // записываемым вовсе: в контейнере, запущенном `--user 1001:127`, у этого uid нет записи в
-  // /etc/passwd, `homedir()` даёт «/», и запись падает с EACCES на `/.config`. До 2026-09-09
-  // это роняло ВЕСЬ `init` — то есть любого, кто набрал команду из нашей же документации по
-  // docker. Локально не воспроизводилось случайно: uid разработчика 1000 совпадает с
-  // пользователем `node` в образе, у которого дом есть. Нашёл конвейер, где uid 1001.
+  // Пометка «уже показывали» — удобство, а не работа команды: `markAsked` не бросает, а
+  // возвращает, записалось ли. Дом бывает недоступен для записи (в контейнере с `--user
+  // 1001:127` у этого uid нет записи в /etc/passwd, homedir() даёт «/»), и до 2026-09-09 это
+  // роняло ВЕСЬ `init` — то есть любого, кто набрал команду из нашей же документации по docker.
   //
   // Молча глотать нельзя — это то, что красит наш же swallowed-error. Поэтому вслух: не
   // запомнили, покажем снова. Установка при этом доходит до конца.
-  try {
-    await writeIfAbsent(FEEDBACK_MARK, "shown\n", { force: false });
-  } catch {
-    console.log(c.dim(`  ${L.feedback.notRemembered}`));
-  }
+  if (!(await markAsked("install", dirs))) console.log(c.dim(`  ${L.feedback.notRemembered}`));
 }
 
 function findJournal() {

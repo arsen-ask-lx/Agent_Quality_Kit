@@ -5,6 +5,7 @@
 // размер файла. Зависимостей по-прежнему нет ни одной: только встроенные модули Node.
 
 import { LANG } from "../i18n/index.mjs";
+import { ASK_FILES } from "./ask.mjs";
 import { access, readdir, mkdir, copyFile, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -86,6 +87,7 @@ function commandRows(L) {
     { name: "prompt", args: "", text: h.prompt },
     { name: "badge", args: "", text: h.badge },
     { name: "vitals", args: "", text: h.vitals },
+    { name: "feedback", args: "", text: h.feedback },
     { name: "version", args: "", text: h.version },
   ];
 }
@@ -105,10 +107,9 @@ const RATCHET_DIR = "ratchets";
 // обёртка плюс реестр, и разносить их по разным каталогам значит прятать половину механизма.
 const RATCHET_LIB = `${RATCHET_DIR}/_ratchet.sh`;
 
-// Отметка «просьбу про звезду уже показали» — вне репозитория, в доме пользователя. Внутри
-// .aqk/ она либо закоммитится в чужой проект как наш мусор, либо пропадёт при init --force:
-// то и другое врёт о том, видел человек просьбу или нет.
-const FEEDBACK_MARK = join(homedir(), ".config", "aqk", "feedback-shown");
+// Служебный каталог этого проекта и дом пользователя — два места, где комплект держит
+// состояние. Кто и как часто туда пишет, решает `ask.mjs`; здесь только адреса.
+const stateDirs = () => ({ project: join(CWD, TARGET_DIR), home: homedir() });
 
 // Путь, попадающий в ДОКУМЕНТ, всегда пишется через «/». `relative()` отдаёт разделитель
 // платформы, и на Windows склейка методичек и отчёт получались с «kit\\docs» вместо «kit/docs»:
@@ -148,7 +149,7 @@ async function writeIfAbsent(path, content, { force }) {
 // читателей. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md` однажды закоммитили, и каждый
 // `make check` оставлял изменённый файл. Целиком `.aqk/` не игнорируется: методички и правила в
 // нём — содержимое проекта.
-const RUNTIME_FILES = ["last-run.md", "last-probe.md", "advice-shown", "update-checked"];
+const RUNTIME_FILES = ["last-run.md", "last-probe.md", ...ASK_FILES];
 const L_IGNORE_NOTE = LANG === "en"
   ? "# aqk: this machine's state — rewritten by every run, it does not belong in git"
   : "# aqk: состояние этой машины — переписывается каждым прогоном, в git ему не место";
@@ -185,5 +186,5 @@ export {
   copyDir, writeIfAbsent,
   PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
-  SELF, REPO_URL, c, exists, die, FEEDBACK_MARK, commandRows, preCommitHook, RUNTIME_FILES, ensureIgnored,
+  SELF, REPO_URL, c, exists, die, stateDirs, commandRows, preCommitHook, RUNTIME_FILES, ensureIgnored,
 };
