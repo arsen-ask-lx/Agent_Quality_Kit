@@ -1,11 +1,15 @@
 # AQK — Agent Quality Kit
 
-> A standard and a CLI that check whether a repository is ready to have its code written by AI
-> coding agents. Every rule the project promises to follow becomes a command with an exit code,
-> so a machine holds the promise instead of somebody's attention. Reports a level from AQK-0 to
-> AQK-3, computed by a run — never by a questionnaire and never by a model's opinion. One step
-> further than readiness scores: `probe` plants a known defect into a copy of the project and
-> checks whether the DECLARED guards go red. "Tests exist" and "tests catch" are different claims.
+> A CLI that answers one question: can the checks this repository declares actually fail? A check
+> that cannot fail looks exactly like a check that passes — `|| true`, `continue-on-error`, a
+> linter aimed at an empty directory, a test with no assertion, a hook nobody installed. AQK plants
+> a known defect into a COPY of the project and reports which declared guard noticed and which
+> stayed silent. It distinguishes three outcomes and never collapses them into two: clean ·
+> finding · COULD NOT CHECK. The third means the check itself failed; treating it as either of the
+> others is how a repository ends up protected by checks that cannot go red. Every rule the project
+> promises becomes a command with an exit code, so a machine holds the promise instead of somebody's
+> attention. Levels AQK-0..3 measure equipment, not quality, and are computed by a run — never by a
+> questionnaire and never by a model's opinion.
 
 Vendor-neutral: works with any coding agent (Claude Code, Codex, Cursor, Gemini CLI, GitHub
 Copilot, Windsurf, Aider, OpenCode) and with no AI at all. It calls no vendor API and needs no
