@@ -12,7 +12,10 @@ import { gateCommand } from "./execution.mjs";
 parentPort.on("message", ({ id, cmd, cwd, timeout }) => {
   const r = spawnSync(gateCommand(cmd), { shell: true, cwd, encoding: "utf8", timeout });
   parentPort.postMessage({
-    id, status: r.status, stdout: r.stdout || "", stderr: r.stderr || "",
+    // `signal` передаётся наравне со статусом: по нему исход отличает наш срок (SIGTERM) от
+    // чужого убийства. Без него параллельный прогон объяснял бы сбой иначе, чем одиночный, —
+    // а одно и то же событие обязано называться одним словом в обоих.
+    id, status: r.status, signal: r.signal || null, stdout: r.stdout || "", stderr: r.stderr || "",
     error: r.error ? { code: r.error.code || String(r.error.message || r.error) } : null,
   });
 });
