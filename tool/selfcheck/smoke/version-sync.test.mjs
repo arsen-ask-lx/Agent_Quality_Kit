@@ -76,11 +76,14 @@ test("плагин остаётся обёрткой: команды зовут 
 // через десятую долю — это уже рост, о котором человек обязан узнать и либо признать его в
 // тексте, либо остановить.
 test("обещанный в README размер пакета совпадает с настоящим", () => {
-  // На Windows программа называется `npm.cmd`, и запуск без оболочки падает с ENOENT — ровно
-  // тот же класс, что записан у нас про `bash` в execution.mjs. Поймано windows-заданием
-  // конвейера в тот же день, когда проверка была написана: на Linux её ничто не тревожило.
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  const out = execFileSync(npm, ["pack", "--dry-run", "--json"], { cwd: ROOT, encoding: "utf8" });
+  // WINDOWS, ДВА ШАГА, И ОБА ПОЙМАЛ КОНВЕЙЕР В ДЕНЬ НАПИСАНИЯ ПРОВЕРКИ. Сперва `npm` дал
+  // ENOENT — там программа называется `npm.cmd`. Потом `npm.cmd` дал EINVAL: Node отказывается
+  // запускать `.cmd` без оболочки, это его защита от подстановки через аргументы. Значит
+  // оболочка нужна, и она здесь безопасна: доводы постоянные, снаружи в них ничего не приходит.
+  // Тот же класс, что записан у нас про `bash` в execution.mjs, — и снова на Linux его не видно.
+  const win = process.platform === "win32";
+  const out = execFileSync(win ? "npm.cmd" : "npm", ["pack", "--dry-run", "--json"],
+    { cwd: ROOT, encoding: "utf8", shell: win });
   const bytes = JSON.parse(out)[0].size;
   const real = (Math.round(bytes / 1024 / 1024 * 10) / 10).toFixed(1);
   for (const [file, re] of [["README.md", /≈([\d.]+) MB/], ["README.ru.md", /≈([\d,]+) МБ/]]) {
