@@ -16,7 +16,7 @@ import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
 import { CWD, c, die } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
 import { L } from "../i18n/index.mjs";
-import { gateCommand } from "./execution.mjs";
+import { gateCommand, classify, findingCodes } from "./execution.mjs";
 import { annotations } from "./annotate.mjs";
 
 
@@ -168,10 +168,44 @@ async function runGates(man, opts = {}) {
     // Без этого «готово = доказано» остаётся правилом, за которым следит только человек.
     const outAll = `${r.stdout || ""}${r.stderr || ""}`.slice(0, 200000);
 
-    if (r.error && r.error.code === "ETIMEDOUT") {
-      console.log(`  ${c.red("✘")}  ${name.padEnd(14)} ${c.red(L.doctor.timeout)}`);
-      failed++;
-      results.push({ name, cmd, ok: false, secs, note: L.doctor.timeout, out: outAll });
+    // ИСХОД ЗАПУСКА — ДО РАЗБОРА ВЫВОДА И ДО СУЖЕНИЯ. Состояний три, а не два: clean · finding
+    // · infra_error. Знание о кодах живёт рядом с инструментом (`execution.mjs`): у vulture
+    // находка это 3, у pylint — битовая маска, а у незнакомой программы находка только 1.
+    //
+    // ЗАЧЕМ ЗДЕСЬ. Прежде прогон ловил один лишь ETIMEDOUT, а любой другой ненулевой код шёл в
+    // разбор находок — и `--since` фильтровал его ПО ПУТЯМ. Гейт, который НЕ СМОГ отработать,
+    // называл путь вне дифа и печатался зелёным: проверка сломалась, прогон сказал «чисто».
+    // Найдено внешним разбором 2026-09-13 (аудит Runcap), воспроизведено проверкой
+    // `fail-closed`. Сужать дифом можно только НАХОДКУ: у сбоя нет места в коде, которое он
+    // называет, — есть только сам сбой.
+    const verdict = classify(r, findingCodes(String(cmd).trim().split(/\s+/)[0]));
+    if (verdict.state === "infra_error") {
+      const why =
+        verdict.reason === "timeout" ? L.doctor.timeout
+        : verdict.reason === "spawn_error" ? L.doctor.whySpawn(r.error?.code || "")
+        : verdict.reason === "signal" ? L.doctor.whySignal(r.signal)
+        : L.doctor.whyExit(verdict.code);
+      // Совещательный не роняет прогон НИКОГДА — в том числе своим сбоем: список `advisory:`
+      // означает «эта проверка не имеет права останавливать работу», и причина остановки тут
+      // ни при чём. Но НАЗВАН он обязан быть: «не смогли» и «чисто» неразличимы только там,
+      // где о них молчат. Раньше таймаут ронял прогон и у совещательного — тот же класс, что
+      // измеренный 2026-09-09 случай с гейтом без путей в выводе.
+      const adv = advisory.has(name);
+      const note = L.doctor.cannotCheck(why);
+      const paint = adv ? c.yellow : c.red;
+      console.log(`  ${adv ? c.yellow("!") : c.red("✘")}  ${name.padEnd(14)} ${paint(note)} ${c.dim(`· ${secs}s · ${cmd}`)}`);
+      // Вывод сбоя показывается тоже. «Не смогли проверить: код 127» без строки
+      // «command not found: ruff» не говорит, ЧТО чинить, — а чинить тут надо инструмент,
+      // и первые строки обычно и есть его жалоба.
+      for (const line of outAll.trim().split("\n").filter(Boolean).slice(0, 3)) {
+        console.log(c.dim(`        ${line.slice(0, 100)}`));
+      }
+      if (!adv) failed++;
+      // В pull request это ОБЩАЯ пометка гейта, а не пометка у строки файла: `shown` — то, что
+      // прогон показал, и у сбоя это причина, а не путь. Иначе «не смогли проверить» повисло бы
+      // на первом файле, который гейт успел назвать перед падением, — то есть на невиновном.
+      // Сырой `out` не трогаем: по нему считается покрытие дифа.
+      results.push({ name, cmd, ok: false, secs, code: verdict.code, advisory: adv, note, out: outAll, shown: note });
       continue;
     }
     const code = r.status;

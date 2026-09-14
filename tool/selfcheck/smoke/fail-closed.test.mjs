@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { cpSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { project, run, aqk } from "./_fixture.mjs";
+import { project, run, aqk, aqkEnv } from "./_fixture.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const posix = (p) => String(p).replace(/\\/g, "/");
@@ -109,4 +109,99 @@ test("doctor называет человеку, сколько правил не
     `doctor не назвал число правил со сторожем-человеком. Вывод:\n${r.out}`);
   assert.ok(/человек/i.test(r.out),
     `doctor не сказал про сторожа-человека ни слова, хотя таких правил здесь два.\n${r.out}`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// СБОЙ САМОЙ ПРОВЕРКИ НЕ СУЖАЕТСЯ ДИФОМ. Написано ДО кода 2026-09-14.
+//
+// ЗАЧЕМ. Внешний разбор (аудит Runcap, 2026-09-13) искал у нас тот же класс отказа, что нашёл
+// у соседа, и нашёл: `--since` фильтрует вывод ПО ПУТЯМ, и гейт, который НЕ СМОГ отработать,
+// печатался зелёным, если названный им путь в диф не попал. То есть
+//
+//   проверка сломалась → прогон говорит «чисто»
+//
+// — ровно та тишина, против которой построен весь стандарт, только внутри нашего же флага.
+// Договор уже записан в `execution.mjs` и уже соблюдается в `prove`: 0 чисто, 1 находка (у
+// vulture 3, у pylint битовой маской), ВСЁ ОСТАЛЬНОЕ — «не смогли». Сужать дифом можно только
+// НАХОДКУ: у сбоя нет места в коде, которое он называет, — есть только сам сбой.
+// Цвет снимается: в терминале между знаком и именем гейта стоит управляющая
+// последовательность, и проверка, написанная «по глазам», не совпала бы ни разу.
+const plain = (s) => String(s).replace(/\u001b\[[0-9;]*m/g, "");
+
+function scopeProject(t, { code, path }) {
+  const p = project(t, {
+    "AGENTS.md": "# проект\n",
+    ".aqk.yml": 'aqk: 1\nentry:\n  - AGENTS.md\ngates:\n  broken: "bash broken.sh"\n',
+    // Команда — ФАЙЛОМ, а не строкой `echo …; exit 2`: на Windows строку исполняет cmd.exe,
+    // где `;` не разделитель, и гейт выходит нулём. Поймано конвейером 2026-09-11.
+    "broken.sh": `echo "${path}: infrastructure failure"\nexit ${code}\n`,
+  });
+  run(p, "git", ["add", "-A"]);
+  run(p, "git", ["commit", "-qm", "база"]);
+  // Изменение ПОСЛЕ коммита: ровно один файл в дифе, и путь из вывода гейта в него не входит.
+  mkdirSync(join(p.dir, "src"), { recursive: true });
+  writeFileSync(join(p.dir, "src", "a.mjs"), "export const a = 1;\n", "utf8");
+  return p;
+}
+
+test("гейт, выпавший с непонятным кодом, остаётся красным и при --since", (t) => {
+  const p = scopeProject(t, { code: 2, path: "outside/old.mjs:1" });
+  const r = aqk(p, "doctor", "--run", "--since", "HEAD");
+  assert.match(plain(r.out), /✘\s+broken/,
+    "гейт вышел с кодом 2 — «не смогли проверить» — и показан зелёным, потому что названный " +
+    `им путь не попал в диф. Вывод:\n${r.out}`);
+});
+
+test("контроль: НАХОДКА вне дифа по-прежнему сужается", (t) => {
+  const p = scopeProject(t, { code: 1, path: "outside/old.mjs:1" });
+  const r = aqk(p, "doctor", "--run", "--since", "HEAD");
+  assert.match(plain(r.out), /✔\s+broken/,
+    `находка вне дифа обязана сужаться — иначе --since не делает ничего. Вывод:\n${r.out}`);
+});
+
+test("контроль: находка ВНУТРИ дифа остаётся красной", (t) => {
+  const p = scopeProject(t, { code: 1, path: "src/a.mjs:1" });
+  const r = aqk(p, "doctor", "--run", "--since", "HEAD");
+  assert.match(plain(r.out), /✘\s+broken/, `находка в изменённом файле пропала. Вывод:\n${r.out}`);
+});
+
+test("контроль: нулевой код остаётся «чисто»", (t) => {
+  const p = scopeProject(t, { code: 0, path: "outside/old.mjs:1" });
+  const r = aqk(p, "doctor", "--run", "--since", "HEAD", "--verbose");
+  assert.match(plain(r.out), /✔\s+broken/, `нулевой код перестал означать «чисто». Вывод:\n${r.out}`);
+});
+
+test("параллельный прогон говорит о сбое то же самое, что одиночный", (t) => {
+  const p = scopeProject(t, { code: 2, path: "outside/old.mjs:1" });
+  const one = plain(aqk(p, "doctor", "--run", "--since", "HEAD").out);
+  const many = plain(aqk(p, "doctor", "--run", "--since", "HEAD", "--jobs", "2").out);
+  const line = (out) => (out.split("\n").find((l) => /broken/.test(l) && /[✘✔!]/.test(l)) || "").trim();
+  assert.match(line(many), /✘/, `при --jobs сбой не покраснел. Вывод:\n${many}`);
+  assert.equal(line(many).replace(/\d+\.\ds/, ""), line(one).replace(/\d+\.\ds/, ""),
+    `одно и то же событие названо по-разному в одиночном и параллельном прогоне:\n${line(one)}\n${line(many)}`);
+});
+
+// Совещательный — это «показать, но не останавливать». Причина остановки тут ни при чём: сбой
+// такой проверки обязан быть НАЗВАН и обязан не ронять прогон. Раньше на таймауте ронял.
+test("сбой СОВЕЩАТЕЛЬНОГО гейта назван, но прогон не уронен", (t) => {
+  const p = scopeProject(t, { code: 2, path: "outside/old.mjs:1" });
+  writeFileSync(join(p.dir, ".aqk.yml"),
+    'aqk: 1\nentry:\n  - AGENTS.md\ngates:\n  broken: "bash broken.sh"\nadvisory:\n  - broken\n', "utf8");
+  const r = aqk(p, "doctor", "--run", "--since", "HEAD");
+  const out = plain(r.out);
+  assert.match(out, /!\s+broken/, `совещательный сбой не назван вовсе. Вывод:\n${out}`);
+  assert.match(out, /не смогли проверить/, `сбой назван находкой, а не «не смогли». Вывод:\n${out}`);
+  assert.doesNotMatch(out, /красных гейтов/,
+    `совещательный уронил прогон — список advisory перестал что-либо значить. Вывод:\n${out}`);
+});
+
+// Пометка в pull request у сбоя — ОБЩАЯ, без file=: путь из вывода упавшего гейта назвал не
+// виноватого, а того, до кого гейт успел дойти.
+test("в GitHub Actions сбой помечается гейтом, а не строкой чужого файла", (t) => {
+  const p = scopeProject(t, { code: 2, path: "outside/old.mjs:1" });
+  const r = aqkEnv(p, { GITHUB_ACTIONS: "true" }, "doctor", "--run", "--since", "HEAD");
+  const ann = plain(r.out).split("\n").filter((l) => l.startsWith("::error"));
+  assert.equal(ann.length, 1, `пометок про сбой не одна:\n${ann.join("\n")}`);
+  assert.doesNotMatch(ann[0], /file=/, `пометка повешена на файл, которого сбой не касается: ${ann[0]}`);
+  assert.match(ann[0], /title=aqk%3A broken/, `пометка не называет гейт: ${ann[0]}`);
 });
