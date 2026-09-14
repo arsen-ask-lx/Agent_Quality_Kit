@@ -24,8 +24,17 @@ npx agent-quality-kit start     # no code yet: day-zero guards, right away
 ```
 
 `doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
-you have decided nothing about yet. Nothing to install: `npx` fetches the package (574.1 kB, measured 2026-09-10 — nothing guards this number, so check it
-when it matters).
+you have decided nothing about yet. Nothing to install: `npx` fetches the package — **≈0.7 MB**,
+a number a machine re-checks on every run rather than our memory.
+
+For Claude Code there is a plugin: the repository's real state reaches the agent's context before
+its first action, plus two skills — whether the declared checks can actually fail, and what to fix
+first. Installable from our own marketplace, with nobody's approval to wait for:
+
+```bash
+/plugin marketplace add arsen-ask-lx/Agent_Quality_Kit
+/plugin install aqk@agent-quality-kit
+```
 
 The one exception, named here because it is the only one: with `--brief` (how the hooks run it)
 `doctor` asks the npm registry for its own latest version — **at most once a day, never in CI**,

@@ -16,6 +16,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -63,4 +64,27 @@ test("плагин остаётся обёрткой: команды зовут 
   const hooks = read("plugin/hooks/hooks.json");
   assert.match(hooks, /agent-quality-kit/, "хук плагина зовёт не наш пакет");
   assert.doesNotMatch(hooks, /node\s+\//, "в хук плагина попал абсолютный путь — у чужого его нет");
+});
+
+// РАЗМЕР ПАКЕТА — ЧИСЛО, КОТОРОЕ ДО СЕГОДНЯ НЕ СТОРОЖИЛ НИКТО, и оно врало трижды: «230 КБ» в
+// core.mjs при настоящих 692, «574.1 kB» в обоих README при тех же 692. В самом README рядом
+// стояла честная приписка «это число не сторожит никто» — вот она и есть признание, что
+// утверждение без арбитра живёт ровно до первой правки.
+//
+// СВЕРЯЕТСЯ ОКРУГЛЁННОЕ до десятой доли мегабайта: точный байт меняется от версии npm и от
+// сжатия, и требовать его совпадения значило бы получить красное на пустом месте. А вот переход
+// через десятую долю — это уже рост, о котором человек обязан узнать и либо признать его в
+// тексте, либо остановить.
+test("обещанный в README размер пакета совпадает с настоящим", () => {
+  const out = execFileSync("npm", ["pack", "--dry-run", "--json"], { cwd: ROOT, encoding: "utf8" });
+  const bytes = JSON.parse(out)[0].size;
+  const real = (Math.round(bytes / 1024 / 1024 * 10) / 10).toFixed(1);
+  for (const [file, re] of [["README.md", /≈([\d.]+) MB/], ["README.ru.md", /≈([\d,]+) МБ/]]) {
+    const m = re.exec(read(file));
+    assert.ok(m, `в ${file} нет обещания размера пакета — строка «≈… МБ» пропала`);
+    const said = m[1].replace(",", ".");
+    assert.equal(said, real,
+      `${file} обещает ≈${said} МБ, а пакет весит ${real} МБ (${bytes} байт). ` +
+      "Либо поправьте текст, либо остановите рост — молча расходиться этим двум нельзя");
+  }
 });
