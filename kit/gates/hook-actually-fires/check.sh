@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
-# Хук, который не сработает никогда: имя события с опечаткой, либо `matcher` на событии,
-# которое его не поддерживает.
+# Хук, который не сработает никогда: имя события с опечаткой, `matcher` на событии, которое его
+# не поддерживает, либо команда, указывающая на файл, которого нет.
+#
+# ТРЕТИЙ КЛАСС ДОБАВЛЕН 2026-09-14, И НАШЁЛ ЕГО ЧУЖОЙ ИНСТРУМЕНТ. `agnix`, прогнанный по нашему
+# же репозиторию, сказал «Script file not found» о ШЕСТИ хуках в нашем ЗЕЛЁНОМ образце: гейт с
+# именем `hook-actually-fires` говорил «чисто» о настройке, где ни один хук сработать не мог.
+# Это второй раз за неделю, когда соседский инструмент находит у нас то, чего не видят наши же
+# проверки, — и ровно тот класс, ради которого написан весь комплект.
 #
 # ЗАЧЕМ. Человек заводит хук, чтобы машина держала то, что он держать не может: не дать
 # сделать force-push, отформатировать после правки, не отпустить работу с красным линтером.
@@ -117,6 +123,10 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
             # означают «всё» — ровно то, что и происходит на событии без поддержки matcher, то
             # есть автор не обманут. Замер по 39 чужим настройкам: без этого сужения гейт краснел
             # на четырёх, и все четыре были «matcher»: "" либо "*", то есть шум.
+            if (awaitCmd) {
+              awaitCmd = 0
+              printf "@CMD@%d@%s\n", cmdLine, pending
+            }
             if (awaitMatcher) {
               awaitMatcher = 0
               if (pending != "" && pending != "*" && pending != ".*")
@@ -130,6 +140,9 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
         if (c == ":") {
           key = pending; keyLine = pendingLine
           if (ev != "" && key == "matcher" && (ev in NOMATCHER)) { awaitMatcher = 1; matcherLine = keyLine; matcherEv = ev }
+          # Команда хука. Существование файла проверяет ОБОЛОЧКА, а не awk: у awk нет способа
+          # спросить файловую систему, не вызывая внешний процесс на каждую строку.
+          if (key == "command") { awaitCmd = 1; cmdLine = keyLine }
           continue
         }
         # ЛЮБОЙ структурный символ снимает ожидание значения matcher. Без этого нестроковое
@@ -137,7 +150,7 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
         # следующая строка документа — обычно ключ «hooks» — печаталась как значение matcher.
         # Найдено код-ревью 2026-09-07.
         if (c == "{" || c == "[") {
-          awaitMatcher = 0
+          awaitMatcher = 0; awaitCmd = 0
           depth++
           if (c == "{" && rootIsHooks == 1 && depth == 1 && hooksDepth == -1) hooksDepth = 1
           else if (c == "{" && key == "hooks" && hooksDepth == -1) hooksDepth = depth
@@ -145,12 +158,12 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
           key = ""; continue
         }
         if (c == "}" || c == "]") {
-          awaitMatcher = 0
+          awaitMatcher = 0; awaitCmd = 0
           if (depth == evDepth) { ev = ""; evDepth = -1 }
           if (depth == hooksDepth) hooksDepth = -1
           depth--; key = ""; continue
         }
-        if (c == ",") { awaitMatcher = 0; key = ""; continue }
+        if (c == ",") { awaitMatcher = 0; awaitCmd = 0; key = ""; continue }
       }
     }
   ' "$F" 2>/tmp/.hookerr.$$)
@@ -160,6 +173,36 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
   # Разделяем их кодом возврата: «не смогли разобрать» — это 2, а не молчаливый ноль.
   if [ "$CODE" -ne 0 ] || [ -n "$E" ]; then
     ERR="$ERR$F: разобрать не удалось${E:+ — }$E
+"
+  fi
+  # КОМАНДЫ ХУКОВ — отдельной дорожкой: awk отдал их помеченными строками, файловую систему
+  # спрашивает оболочка.
+  #
+  # ГРАНИЦА НАМЕРЕННО УЗКАЯ. Красим только ОТНОСИТЕЛЬНЫЙ путь со слэшем: `.claude/hooks/x.sh`,
+  # `scripts/guard.sh`. Программа из PATH (`npx`, `prettier`, `bash -c …`) нам не видна — у неё
+  # нет пути, и «не нашли» означало бы обвинение по догадке. Абсолютный путь пропускаем: он
+  # относится к чужой машине, а не к репозиторию. Из двух ошибок здесь выбирается молчание:
+  # ложное обвинение выключает гейт целиком.
+  CMDS=$(printf '%s\n' "$RES" | grep '^@CMD@' || true)
+  RES=$(printf '%s\n' "$RES" | grep -v '^@CMD@' || true)
+  if [ -n "$CMDS" ]; then
+    MISS=$(printf '%s\n' "$CMDS" | while IFS= read -r L; do
+      [ -z "$L" ] && continue
+      LN=$(printf '%s' "$L" | cut -d@ -f3)
+      CMD=$(printf '%s' "$L" | cut -d@ -f4-)
+      # Переменная окружения, которой Claude Code называет корень проекта, — это и есть DIR.
+      CMD=$(printf '%s' "$CMD" | sed 's|"\$CLAUDE_PROJECT_DIR"/*||g; s|\${CLAUDE_PROJECT_DIR}/*||g; s|\$CLAUDE_PROJECT_DIR/*||g')
+      # Первое слово — программа. Если это запускалка, файл стоит вторым.
+      P=$(printf '%s' "$CMD" | awk "{print \$1}")
+      case "$P" in
+        bash|sh|node|python|python3|ruby|perl|deno|bun) P=$(printf '%s' "$CMD" | awk "{print \$2}") ;;
+      esac
+      case "$P" in
+        ""|-*|/*) continue ;;
+        */*) [ -e "$DIR/$P" ] || printf "%s:%s: команда хука указывает на «%s» — такого файла в проекте нет, хук не сработает никогда\n" "$F" "$LN" "$P" ;;
+      esac
+    done)
+    [ -n "$MISS" ] && OUT="$OUT$MISS
 "
   fi
   [ -n "$RES" ] && OUT="$OUT$RES
@@ -178,6 +221,7 @@ fi
 ALL=$(printf '%s' "$OUT" | grep -v '^$')
 [ -z "$ALL" ] && exit 0
 printf '%s\n' "$ALL"
-echo "  почини: сверь имя события с https://code.claude.com/docs/en/hooks и убери matcher там, где его нет."
+echo "  почини: сверь имя события с https://code.claude.com/docs/en/hooks, убери matcher там, где его нет,"
+echo "  и верни на место файл, на который указывает команда, — либо убери сам хук."
 echo "  хук с неверным именем не вызывается и об этом не сообщается — защита существует только на бумаге."
 exit 1
