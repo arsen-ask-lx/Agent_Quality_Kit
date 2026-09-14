@@ -1,0 +1,10 @@
+{
+  "name": "aqk",
+  "description": "Checks whether the checks a repository declares can actually fail. Plants a known defect into a copy of the hottest file and runs the repo's own gates against it, so \"green\" means \"proven\", not \"nobody looked\". Zero dependencies.",
+  "version": "0.15.0",
+  "author": { "name": "Arsen Askaryants" },
+  "homepage": "https://github.com/arsen-ask-lx/Agent_Quality_Kit",
+  "repository": "https://github.com/arsen-ask-lx/Agent_Quality_Kit",
+  "license": "MIT",
+  "keywords": ["quality-gates", "agents-md", "ci", "checks", "verification"]
+}
