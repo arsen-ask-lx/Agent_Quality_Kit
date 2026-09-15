@@ -43,6 +43,25 @@ function runCase(c) {
 }
 
 const files = readdirSync(CASES).filter((f) => f.endsWith(".json")).sort();
+
+// СПИСОК ВМЕСТО ПРОГОНА. Владелец 2026-09-15 попросил полный перечень наших ошибок. Он печатается
+// ИЗ САМИХ СЛУЧАЕВ, а не пишется отдельным документом: перечень, набранный руками, к третьей
+// правке разойдётся с корпусом — это тот же класс, что «свод велит команду, которой нет».
+if (process.argv.includes("--list")) {
+  const all = files.map((f) => ({ f, c: JSON.parse(readFileSync(join(CASES, f), "utf8")) }));
+  for (const want of ["green", "red"]) {
+    const part = all.filter((x) => x.c.expect === want);
+    console.log(want === "green"
+      ? `\nНАШИ ЛОЖНЫЕ СРАБАТЫВАНИЯ — ${part.length}. Каждое стало бы письмом с неправдой:`
+      : `\nНАСТОЯЩИЕ НАХОДКИ — ${part.length}. На них гейт обязан краснеть:`);
+    for (const { f, c } of part) {
+      console.log(`\n  ${f.replace(/\.json$/, "")}  [${c.gate}]`);
+      console.log(`    ${c.why}`);
+      console.log(`    откуда: ${c.source?.repo} · ${c.source?.checked}`);
+    }
+  }
+  process.exit(0);
+}
 if (!files.length) {
   console.log("корпус пуст — это не «всё хорошо», а «нечего проверять»");
   process.exit(2);

@@ -43,7 +43,11 @@ async function installGate(slug, man, facts) {
 
   // Общий список исключений едет вместе с проверкой: без него она читает окружение и
   // зависимости, и человек получает тысячу чужих нарушений вместо сотни своих.
-  for (const helper of ["_skip.sh", "_native.sh"]) {
+  // `_target.sh` добавлен 2026-09-15 вместе с общим швом «судим только то, что можем разрешить».
+  // Без него скопированный гейт выходит с кодом 2 — это честно, но у человека он не работает.
+  // Поймано нашим же смоуком в день правки: список помощников тут — единственное место, и
+  // забыть его значит выпустить гейт, который у чужого проекта не запускается вовсе.
+  for (const helper of ["_skip.sh", "_native.sh", "_target.sh"]) {
     const from = join(GATES_SRC, helper);
     if (await exists(from)) await copyFile(from, join(CWD, PROJECT_GATES, helper));
   }
@@ -170,8 +174,10 @@ async function cmdNew(args) {
   // зовут установленные записи каталога. В самом комплекте оригинал уже лежит на месте (../),
   // в чужом проекте его никто не клал, пока не было ни одной установленной записи через `add`.
   if (!inKit) {
-    const skipSrc = join(GATES_SRC, "_skip.sh");
-    if (await exists(skipSrc)) await copyFile(skipSrc, join(CWD, PROJECT_GATES, "_skip.sh"));
+    for (const helper of ["_skip.sh", "_target.sh"]) {
+      const from = join(GATES_SRC, helper);
+      if (await exists(from)) await copyFile(from, join(CWD, PROJECT_GATES, helper));
+    }
   }
 
   console.log(c.bold(`\naqk new ${slug}\n`));
