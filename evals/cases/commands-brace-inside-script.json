@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "jantimon/web-performance-debugger",
+    "checked": "в их package.json скрипт prebuild содержит rmSync('dist',{recursive:true,force:true}) — фигурная скобка внутри значения; все скрипты на месте, прочитан raw-файл 2026-09-15"
+  },
+  "why": "Разбор блока scripts регуляркой [^}]* обрывается на первой же фигурной скобке ВНУТРИ значения скрипта. Шесть существующих скриптов объявлены несуществующими — письмо ушло бы живому человеку с неправдой.",
+  "files": {
+    "AGENTS.md": "# свод\n\nПеред коммитом: `npm run lint`, `npm run knip`.\n",
+    "package.json": "{\n  \"name\": \"x\",\n  \"scripts\": {\n    \"prebuild\": \"node -e \\\"require('node:fs').rmSync('dist',{recursive:true,force:true})\\\"\",\n    \"lint\": \"eslint .\",\n    \"knip\": \"knip\"\n  }\n}\n"
+  }
+}

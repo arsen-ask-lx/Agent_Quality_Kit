@@ -41,11 +41,25 @@ ENTRIES=$( { find "$DIR" -maxdepth 1 -type f \( -iname 'agents.md' -o -iname 'cl
 # --- что в проекте есть ---------------------------------------------------------
 # Скрипты — только из блока "scripts" каждого package.json (рабочие пространства тоже: команда
 # из свода часто живёт в пакете, а не в корне). Файл склеивается в строку: блок бывает и в одну.
-SCRIPTS=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' \
-  | while IFS= read -r P; do
-      tr '\r\n' '  ' < "$P" | sed -n 's/.*"scripts"[[:space:]]*:[[:space:]]*{\([^}]*\)}.*/\1/p' \
-        | grep -oE '"[^"]+"[[:space:]]*:' | sed 's/^"//; s/"[[:space:]]*:$//'
-    done)
+# ИМЕНА СКРИПТОВ ЧИТАЕТ РАЗБОРЩИК JSON, А НЕ РЕГУЛЯРКА. Найдено 2026-09-15 на
+# `jantimon/web-performance-debugger`: их скрипт `prebuild` содержит
+# `rmSync('dist',{recursive:true,force:true})` — фигурная скобка ВНУТРИ значения. Прежний разбор
+# `[^}]*` обрывался на ней, и шесть существующих скриптов объявлялись несуществующими. Письмо
+# ушло бы живому человеку с неправдой.
+#
+# Структуру разбирает тот, кто умеет её разбирать. `package.json` означает проект на Node, и node
+# там почти наверняка есть; но «почти» нам не годится — без него мы НЕ ПРОВЕРЯЕМ скрипты и
+# говорим об этом, а не додумываем регуляркой.
+NPM_BLIND=""
+if command -v node >/dev/null 2>&1; then
+  SCRIPTS=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' \
+    | while IFS= read -r P; do
+        node -e 'try{const s=require("fs").readFileSync(process.argv[1],"utf8");const j=JSON.parse(s);for(const k of Object.keys(j.scripts||{}))console.log(k)}catch(e){}' "$P"
+      done)
+else
+  SCRIPTS=""
+  NPM_BLIND=1
+fi
 HAS_PKG=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
 
 # Цели make: строка вне рецепта, слова до двоеточия; «VAR := x» — присваивание, не цель.
@@ -103,6 +117,8 @@ while IFS= read -r E; do
   grep -oE '(npm|pnpm|yarn|bun)[[:space:]]+run[[:space:]]+[A-Za-z][A-Za-z0-9_:.-]*[*<{]?' "$E" \
     | grep -v '[*<{:]$' | sed 's/\.$//; s/[[:space:]][[:space:]]*/ /g' | sort -u > "$TMP"
   while IFS= read -r CMD; do
+    # Без разборщика JSON перечень скриптов неполон, и «такого скрипта нет» — догадка.
+    [ -n "$NPM_BLIND" ] && continue
     N=${CMD##* }
     has "$N" "$SCRIPTS" && continue
     if [ -n "$HAS_PKG" ]; then report "$E" "$CMD" "такого скрипта нет ни в одном package.json"
@@ -128,6 +144,10 @@ if [ "$MISS" = 1 ]; then
 fi
 # ЧТО МЫ НЕ СМОГЛИ ПОСМОТРЕТЬ — говорится вслух и при находках, и без них. Молчание здесь
 # означало бы «цели make проверены», а они не проверены вовсе.
+if [ -n "$NPM_BLIND" ]; then
+  echo "  не проверено: скрипты npm. Разобрать package.json нечем — на этой машине нет node."
+  echo "    почини: поставь node либо прогони проверку там, где он есть."
+fi
 if [ -n "$MK_BLIND" ]; then
   echo "  не проверено: цели make. Makefile подключает файлы, которых нет в этом каталоге:"
   printf '%s' "$MK_BLIND" | sort -u | sed 's/^/    /'
