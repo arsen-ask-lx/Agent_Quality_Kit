@@ -1,0 +1,12 @@
+{
+  "gate": "ci-actually-fails",
+  "expect": "green",
+  "source": {
+    "repo": "HorusGoul/eslint-plugin-react-render-types",
+    "checked": "прочитан .github/workflows/ci.yml, строки 47-51: за гашением идёт diff с эталоном, 2026-09-14"
+  },
+  "why": "«|| true» здесь намеренный: линтер ОБЯЗАН выйти ненулевым, его вывод сверяется с эталоном, и вердикт выносит diff строкой ниже. Шаг проваливается прекрасно.",
+  "files": {
+    ".github/workflows/ci.yml": "name: ci\non: [push]\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - name: линтер как снимок\n        run: |\n          eslint src > /tmp/out.txt || true\n          diff lint-snapshot.txt /tmp/out.txt\n"
+  }
+}

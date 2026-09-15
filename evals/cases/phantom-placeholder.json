@@ -1,0 +1,13 @@
+{
+  "gate": "no-phantom-package",
+  "expect": "green",
+  "source": {
+    "repo": "Menghuan1918/drawio2go",
+    "checked": "реестр npm отвечает 404 на @types/xxx — и это ожидаемо: имени не существует по замыслу, 2026-09-14"
+  },
+  "why": "«Когда npm install @types/xxx не находит пакет типов» — это многоточие, сказанное словами, а не выдуманный пакет.",
+  "files": {
+    "AGENTS.md": "# свод\n\nКогда `npm install @types/xxx` не находит пакет типов — создай свой файл объявлений.\n"
+  },
+  "requires": "slopcheck"
+}

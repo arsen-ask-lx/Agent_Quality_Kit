@@ -191,7 +191,13 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
       LN=$(printf '%s' "$L" | cut -d@ -f3)
       CMD=$(printf '%s' "$L" | cut -d@ -f4-)
       # Переменная окружения, которой Claude Code называет корень проекта, — это и есть DIR.
-      CMD=$(printf '%s' "$CMD" | sed 's|"\$CLAUDE_PROJECT_DIR"/*||g; s|\${CLAUDE_PROJECT_DIR}/*||g; s|\$CLAUDE_PROJECT_DIR/*||g')
+      CMD=$(printf '%s' "$CMD" | sed 's|\${CLAUDE_PROJECT_DIR}/*||g; s|\$CLAUDE_PROJECT_DIR/*||g')
+      # КАВЫЧКИ СНИМАЮТСЯ ПОСЛЕ ПЕРЕМЕННОЙ И ДО РАЗБОРА НА СЛОВА. Найдено замером 2026-09-15 по
+      # `kupzed/catatz`: у них `node "$CLAUDE_PROJECT_DIR/.claude/hooks/adapter.mjs"` — путь
+      # лежит ВНУТРИ кавычек вместе с переменной. Переменную мы снимали, кавычки оставались, и
+      # файл искался по имени с кавычками. Пять «пропавших» хуков, и все пять на месте (200).
+      # Письмо по такой находке было бы неправдой — а писать мы собирались именно по ним.
+      CMD=$(printf '%s' "$CMD" | tr -d '"'"'"'"')
       # Первое слово — программа. Если это запускалка, файл стоит вторым.
       P=$(printf '%s' "$CMD" | awk "{print \$1}")
       case "$P" in

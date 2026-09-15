@@ -1,0 +1,12 @@
+{
+  "gate": "hook-actually-fires",
+  "expect": "red",
+  "source": {
+    "repo": "arsen-ask-lx/Agent_Quality_Kit",
+    "checked": "нашёл чужой линтер agnix 0.53.0 в нашем же зелёном образце: шесть хуков, ни одного файла, 2026-09-14"
+  },
+  "why": "Хук объявлен, файла команды нет — он не сработает никогда, а гейт с таким именем говорил «чисто».",
+  "files": {
+    ".claude/settings.json": "{\n  \"hooks\": {\n    \"Stop\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".claude/hooks/stop-gate.sh\"\n          }\n        ]\n      }\n    ]\n  }\n}\n"
+  }
+}

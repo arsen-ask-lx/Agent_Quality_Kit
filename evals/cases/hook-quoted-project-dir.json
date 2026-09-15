@@ -1,0 +1,13 @@
+{
+  "gate": "hook-actually-fires",
+  "expect": "green",
+  "source": {
+    "repo": "kupzed/catatz",
+    "checked": "файл .claude/hooks/adapter.mjs отдаёт 200 на raw.githubusercontent.com, 2026-09-15"
+  },
+  "why": "Путь лежит ВНУТРИ кавычек вместе с переменной: node \"$CLAUDE_PROJECT_DIR/.claude/hooks/adapter.mjs\". Переменную снимали, кавычки оставались, и файл искался по имени с кавычками. Пять «пропавших» хуков, все пять на месте.",
+  "files": {
+    ".claude/settings.json": "{\n  \"hooks\": {\n    \"SessionStart\": [\n      {\n        \"matcher\": \"startup|resume\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"node \\\"$CLAUDE_PROJECT_DIR/.claude/hooks/adapter.mjs\\\"\",\n            \"timeout\": 15\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+    ".claude/hooks/adapter.mjs": "// существует\n"
+  }
+}

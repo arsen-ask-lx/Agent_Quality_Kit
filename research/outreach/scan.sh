@@ -15,7 +15,10 @@
 #     ложное. Дорого по времени, пусто по выходу.
 #
 # ОСТАЁТСЯ ОДИН КЛАСС, зато проверяемый чужими глазами за минуту: ОБЪЯВЛЕНО ТО, ЧЕГО НЕТ.
-GATES="entry-commands-exist entry-links-exist hook-actually-fires no-phantom-package mcp-server-resolves"
+#   · `mcp-server-resolves` — его находка «версия сервера не закреплена» это СОВЕТ, а не
+#     «объявлено то, чего нет». Замер 2026-09-15: три срабатывания из семнадцати, и все три
+#     такие. Письмо с мнением о чужом укладе читается как рассылка.
+GATES="entry-commands-exist entry-links-exist hook-actually-fires no-phantom-package"
 KIT="$(cd "$(dirname "$0")/../../kit/gates" && pwd)"
 LIST="${1:?дай файл со списком репозиториев, по одному на строку}"
 

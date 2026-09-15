@@ -1,0 +1,13 @@
+{
+  "gate": "entry-links-exist",
+  "expect": "red",
+  "source": {
+    "repo": "dwebagents/AgentPipe",
+    "checked": "CODE_OF_CONDUCT.md лежит в корне (200), а ссылка ведёт в .../blob/master/blob/master/... и даёт 404, 2026-09-15"
+  },
+  "why": "Лишняя приставка «blob/master/» в относительной ссылке: файл есть, ссылка на него не ведёт.",
+  "files": {
+    "CONTRIBUTING.md": "# свод\n\nЧитайте [правила общения](blob/master/CODE_OF_CONDUCT.md).\n",
+    "CODE_OF_CONDUCT.md": "# правила\n"
+  }
+}

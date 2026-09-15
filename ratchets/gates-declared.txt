@@ -1,5 +1,6 @@
 # Снимок объявленной защиты. Набор может только РАСТИ.
 # Убрал гейт — напиши причину после # в его строке, иначе проверка краснеет.
+api-contract-has-arbiter
 ci-actually-fails
 ci-not-hijackable
 commit-explains-itself
@@ -7,7 +8,9 @@ complexity-limit
 dead-code
 deps-are-pinned
 duplicate-code
+entry-commands-exist
 entry-links-exist
+evals
 file-size-limit
 gate-has-samples
 gate-not-weakened
@@ -26,8 +29,6 @@ secrets-not-in-code
 smoke
 syntax
 test-has-assertion
+test-not-adjusted
 todo-without-task
 units
-api-contract-has-arbiter
-test-not-adjusted
-entry-commands-exist
