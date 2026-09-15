@@ -1,0 +1,15 @@
+{
+  "gate": "no-phantom-package",
+  "expect": "green",
+  "source": {
+    "repo": "Automattic/wp-calypso",
+    "checked": "имя @automattic/search объявлено в шести package.json того же репозитория (поиск кода GitHub), в реестре npm — 404, 2026-09-15"
+  },
+  "why": "Пакет монорепозитория: он существует в самом проекте и публиковаться в реестр не обязан. Обвинять проект в выдуманном имени, которое он сам же и определяет, — неправда.",
+  "files": {
+    "AGENTS.md": "# свод\n\nСобрать пакет поиска: `npm install @acme/search`.\n",
+    "package.json": "{\n  \"name\": \"root\",\n  \"workspaces\": [\n    \"packages/*\"\n  ]\n}\n",
+    "packages/search/package.json": "{\n  \"name\": \"@acme/search\",\n  \"version\": \"1.0.0\"\n}\n"
+  },
+  "requires": "slopcheck"
+}

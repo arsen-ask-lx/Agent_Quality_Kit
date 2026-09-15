@@ -204,6 +204,12 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
         bash|sh|node|python|python3|ruby|perl|deno|bun) P=$(printf '%s' "$CMD" | awk "{print \$2}") ;;
       esac
       case "$P" in
+        # ПЕРЕМЕННАЯ, КОТОРУЮ МЫ НЕ РАСКРЫВАЕМ, — повод молчать. Замер 2026-09-15 по
+        # `Aurealibe/claude-config`: `${CLAUDE_PLUGIN_ROOT:-.}/.claude/hooks/session-start`.
+        # Значение задаётся снаружи, проверить путь на диске нельзя, и объявить его пропавшим
+        # значит обвинить по догадке. CLAUDE_PROJECT_DIR — исключение: он и есть корень, и
+        # снимается выше.
+        *'$'*) continue ;;
         ""|-*|/*) continue ;;
         */*) [ -e "$DIR/$P" ] || printf "%s:%s: команда хука указывает на «%s» — такого файла в проекте нет, хук не сработает никогда\n" "$F" "$LN" "$P" ;;
       esac

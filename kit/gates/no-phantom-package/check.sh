@@ -85,7 +85,27 @@ fi
   exit 2
 }
 
-printf '%s\n' "$OUT" | awk '
+# СВОИ ПАКЕТЫ МОНОРЕПОЗИТОРИЯ — НЕ ВЫДУМАННЫЕ. Замер 2026-09-15 по `Automattic/wp-calypso`:
+# `@automattic/search`, `@automattic/odie-client` и ещё десяток объявлены находками, а их имена
+# определены в package.json ТОГО ЖЕ репозитория (шесть файлов по поиску кода GitHub). Пакет
+# рабочей области существует в проекте и публиковаться в реестр не обязан — обвинять проект в
+# выдуманном имени, которое он сам же и определяет, это неправда.
+#
+# Имена берутся из всех package.json проекта, кроме пропускаемых каталогов.
+# shellcheck disable=SC2046
+OWN=$(find "$DIR" $(skip_find "$DIR") -type f -name package.json -print 2>/dev/null \
+  | head -400 \
+  | while IFS= read -r PJ; do
+      sed -n 's/^[[:space:]]*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PJ" | head -1
+    done | sort -u | tr '\n' '|' | sed 's/|$//')
+
+printf '%s\n' "$OUT" | awk -v own="$OWN" '
+  function isOwn(p,   i, n, a) {
+    if (own == "") return 0
+    n = split(own, a, "|")
+    for (i = 1; i <= n; i++) if (a[i] != "" && a[i] == p) return 1
+    return 0
+  }
   function val(s) { sub(/^[^:]*:[[:space:]]*/, "", s); sub(/,$/, "", s); gsub(/^"|"$/, "", s); return s }
   function isPlaceholder(p,   base) {
     base = p; sub(/^@[^\/]*\//, "", base)
@@ -127,7 +147,7 @@ printf '%s\n' "$OUT" | awk '
     # бывает, а угадывать заполнители по смыслу нельзя.
     # Счётчик slopcheck уменьшается вместе с показанным: иначе они разойдутся, и наша же
     # защита «счётчик есть, а находок нет» объявит, что сменился формат ответа.
-    if (isPlaceholder(pkg)) { bad--; next }
+    if (isPlaceholder(pkg) || isOwn(pkg)) { bad--; next }
     if (shown < 20) print f ":" ln ": «" pkg "» — " label(st) " · " cmd
     shown++
     next
