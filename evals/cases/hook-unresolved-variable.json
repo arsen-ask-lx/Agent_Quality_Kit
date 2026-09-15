@@ -1,0 +1,12 @@
+{
+  "gate": "hook-actually-fires",
+  "expect": "green",
+  "source": {
+    "repo": "Aurealibe/claude-config",
+    "checked": "команда хука — ${CLAUDE_PLUGIN_ROOT:-.}/.claude/hooks/session-start; переменная задаётся снаружи, её значение нам неизвестно, 2026-09-15"
+  },
+  "why": "Путь зависит от переменной, которую мы не раскрываем. Проверить его на диске нельзя, а объявить пропавшим — обвинение по догадке.",
+  "files": {
+    ".claude/settings.json": "{\n  \"hooks\": {\n    \"SessionStart\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"${CLAUDE_PLUGIN_ROOT:-.}/.claude/hooks/session-start\"\n          }\n        ]\n      }\n    ]\n  }\n}\n"
+  }
+}

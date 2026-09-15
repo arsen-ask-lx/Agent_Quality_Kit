@@ -1,0 +1,12 @@
+{
+  "gate": "entry-links-exist",
+  "expect": "green",
+  "source": {
+    "repo": "dwebagents/AgentPipe",
+    "checked": "путь от корня сайта раскрывается от github.com, а не от корня репозитория, 2026-09-15"
+  },
+  "why": "«/issues» — адрес на сайте, а не файл в каталоге. Судить о нём мы не можем: смотрим только диск.",
+  "files": {
+    "CONTRIBUTING.md": "# свод\n\nНашли беду — заведите [задачу](/issues) или [новую](/issues/new).\n"
+  }
+}

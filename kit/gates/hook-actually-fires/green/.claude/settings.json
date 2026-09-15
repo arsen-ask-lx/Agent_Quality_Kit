@@ -69,6 +69,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session.mjs\"",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "red",
+  "source": {
+    "repo": "geoff-maddock/events-tracker",
+    "checked": "скрипта watch нет ни в одном package.json репозитория — прочитан package.json, 2026-09-14"
+  },
+  "why": "Свод велит агенту «npm run watch». Агент выполнит, получит Missing script и пойдёт «чинить» то, что не ломалось.",
+  "files": {
+    "AGENTS.md": "# свод\n\nПеред коммитом: `npm run watch`.\n",
+    "package.json": "{\n  \"name\": \"x\",\n  \"scripts\": {\n    \"build\": \"tsc\"\n  }\n}\n"
+  }
+}

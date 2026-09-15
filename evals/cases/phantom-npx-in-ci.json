@@ -1,0 +1,13 @@
+{
+  "gate": "no-phantom-package",
+  "expect": "red",
+  "source": {
+    "repo": "aashaexo/soundshuman",
+    "checked": "реестр npm отвечает 404 на пакет soundshuman, 2026-09-14"
+  },
+  "why": "Шаг конвейера зовёт «npx --yes <имя>», которого в реестре нет: имя может зарегистрировать кто угодно, и конвейер выполнит чужой код.",
+  "files": {
+    ".github/workflows/check.yml": "name: check\non: [push]\njobs:\n  scan:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npx --yes soundshuman scan docs\n"
+  },
+  "requires": "slopcheck"
+}

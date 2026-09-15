@@ -191,13 +191,25 @@ for F in "$DIR/.claude/settings.json" "$DIR/.claude/settings.local.json" \
       LN=$(printf '%s' "$L" | cut -d@ -f3)
       CMD=$(printf '%s' "$L" | cut -d@ -f4-)
       # Переменная окружения, которой Claude Code называет корень проекта, — это и есть DIR.
-      CMD=$(printf '%s' "$CMD" | sed 's|"\$CLAUDE_PROJECT_DIR"/*||g; s|\${CLAUDE_PROJECT_DIR}/*||g; s|\$CLAUDE_PROJECT_DIR/*||g')
+      CMD=$(printf '%s' "$CMD" | sed 's|\${CLAUDE_PROJECT_DIR}/*||g; s|\$CLAUDE_PROJECT_DIR/*||g')
+      # КАВЫЧКИ СНИМАЮТСЯ ПОСЛЕ ПЕРЕМЕННОЙ И ДО РАЗБОРА НА СЛОВА. Найдено замером 2026-09-15 по
+      # `kupzed/catatz`: у них `node "$CLAUDE_PROJECT_DIR/.claude/hooks/adapter.mjs"` — путь
+      # лежит ВНУТРИ кавычек вместе с переменной. Переменную мы снимали, кавычки оставались, и
+      # файл искался по имени с кавычками. Пять «пропавших» хуков, и все пять на месте (200).
+      # Письмо по такой находке было бы неправдой — а писать мы собирались именно по ним.
+      CMD=$(printf '%s' "$CMD" | tr -d '"'"'"'"')
       # Первое слово — программа. Если это запускалка, файл стоит вторым.
       P=$(printf '%s' "$CMD" | awk "{print \$1}")
       case "$P" in
         bash|sh|node|python|python3|ruby|perl|deno|bun) P=$(printf '%s' "$CMD" | awk "{print \$2}") ;;
       esac
       case "$P" in
+        # ПЕРЕМЕННАЯ, КОТОРУЮ МЫ НЕ РАСКРЫВАЕМ, — повод молчать. Замер 2026-09-15 по
+        # `Aurealibe/claude-config`: `${CLAUDE_PLUGIN_ROOT:-.}/.claude/hooks/session-start`.
+        # Значение задаётся снаружи, проверить путь на диске нельзя, и объявить его пропавшим
+        # значит обвинить по догадке. CLAUDE_PROJECT_DIR — исключение: он и есть корень, и
+        # снимается выше.
+        *'$'*) continue ;;
         ""|-*|/*) continue ;;
         */*) [ -e "$DIR/$P" ] || printf "%s:%s: команда хука указывает на «%s» — такого файла в проекте нет, хук не сработает никогда\n" "$F" "$LN" "$P" ;;
       esac

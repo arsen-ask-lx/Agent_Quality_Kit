@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "red",
+  "source": {
+    "repo": "exoscale/cli",
+    "checked": "цели build нет ни в одном Makefile репозитория — прочитан Makefile, 2026-09-15"
+  },
+  "why": "Свод велит «make build», такой цели в проекте нет.",
+  "files": {
+    "AGENTS.md": "# свод\n\nСобрать: `make build`.\n",
+    "Makefile": "test:\n\techo ok\n"
+  }
+}

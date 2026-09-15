@@ -1,0 +1,13 @@
+{
+  "gate": "entry-links-exist",
+  "expect": "green",
+  "source": {
+    "repo": "bwz96sco/or_llm_agent",
+    "checked": "файл assets/dynamic.gif отдаёт 200 на raw.githubusercontent.com, 2026-09-14"
+  },
+  "why": "Строка запроса читалась как часть имени файла: «assets/demo.gif?raw=1» есть на диске как «assets/demo.gif».",
+  "files": {
+    "AGENTS.md": "# свод\n\nВот как это выглядит: [кадр](assets/demo.gif?raw=1).\n",
+    "assets/demo.gif": "GIF89a\n"
+  }
+}
