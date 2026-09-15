@@ -26,14 +26,20 @@ while IFS= read -r REPO; do
   [ -z "$REPO" ] && continue
   case "$REPO" in \#*) continue ;; esac
   D=$(mktemp -d)
-  if ! git clone -q --depth 1 "https://github.com/$REPO" "$D" 2>/dev/null; then
+  # ПРЕДЕЛ НА КАЖДЫЙ ШАГ. Замер 2026-09-15 встал на репозитории, где лежит корпус из десятков
+  # тысяч файлов умений: `slopcheck` шёл по каждому имени в реестр npm, вывод не пополнялся
+  # полчаса, и снаружи это было неотличимо от работы. Ровно тот класс, против которого написан
+  # комплект, — в приборе того, кто его пишет. Предел вышел — это «не смогли проверить», а не
+  # «чисто», и печатается вопросом.
+  if ! timeout 120 git clone -q --depth 1 "https://github.com/$REPO" "$D" 2>/dev/null; then
     echo "?  $REPO: склонировать не удалось — это НЕ «чисто»"
     rm -rf "$D"; continue
   fi
   HITS=0
   for G in $GATES; do
-    OUT=$(sh "$KIT/$G/check.sh" "$D" 2>&1); CODE=$?
+    OUT=$(timeout 180 sh "$KIT/$G/check.sh" "$D" 2>&1); CODE=$?
     # Три исхода, а не два, — то же правило, что в самом комплекте.
+    [ "$CODE" = 124 ] && { echo "?  $REPO  $G: предел времени 180с — НЕ ПРОВЕРЕНО"; continue; }
     [ "$CODE" = 2 ] && { echo "?  $REPO  $G: проверка не состоялась"; continue; }
     [ "$CODE" = 0 ] && continue
     HITS=1

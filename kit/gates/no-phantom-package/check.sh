@@ -107,6 +107,21 @@ printf '%s\n' "$OUT" | awk -v own="$OWN" '
     return 0
   }
   function val(s) { sub(/^[^:]*:[[:space:]]*/, "", s); sub(/,$/, "", s); gsub(/^"|"$/, "", s); return s }
+  # ПРОЗА, А НЕ КОМАНДА. Замер 2026-09-15 дал два таких: «yarn add a visual dimension to the
+  # perceptual challenge of crochet» — английское предложение про вязание, где «yarn add» просто
+  # слова; и «npm install on macOS removes the cached build». Обвинить проект в выдуманном пакете
+  # «perceptual» или «macOS» — это письмо, после которого нам перестанут отвечать.
+  #
+  # Примета: сразу за глаголом установки идёт артикль или предлог. Пакетов с такими именами не
+  # бывает, а решать по смыслу мы не умеем и не будем.
+  function looksLikeProse(cmd,   i, n, a, k) {
+    n = split(cmd, a, /[ \t]+/)
+    for (i = 1; i <= n && i <= 6; i++) {
+      k = tolower(a[i])
+      if (k ~ /^(a|an|the|on|to|of|in|for|with|from|that|this|your|our|will|can)$/) return 1
+    }
+    return 0
+  }
   function isPlaceholder(p,   base) {
     base = p; sub(/^@[^\/]*\//, "", base)
     return base ~ /^(x+|y+|z+|foo|bar|baz|qux|name|package|pkg|lib|module|something|example|placeholder|your-package|my-package|my-lib|package-name|paket)$/
@@ -147,7 +162,7 @@ printf '%s\n' "$OUT" | awk -v own="$OWN" '
     # бывает, а угадывать заполнители по смыслу нельзя.
     # Счётчик slopcheck уменьшается вместе с показанным: иначе они разойдутся, и наша же
     # защита «счётчик есть, а находок нет» объявит, что сменился формат ответа.
-    if (isPlaceholder(pkg) || isOwn(pkg)) { bad--; next }
+    if (isPlaceholder(pkg) || isOwn(pkg) || looksLikeProse(cmd)) { bad--; next }
     if (shown < 20) print f ":" ln ": «" pkg "» — " label(st) " · " cmd
     shown++
     next
