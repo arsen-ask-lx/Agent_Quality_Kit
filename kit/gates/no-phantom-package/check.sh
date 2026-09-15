@@ -122,6 +122,22 @@ printf '%s\n' "$OUT" | awk -v own="$OWN" '
     }
     return 0
   }
+  # ЗАКОММЕНТИРОВАННАЯ СТРОКА — НЕ КОМАНДА. Найдено 2026-09-15 на `aashaexo/soundshuman`: в их
+  # конвейере весь блок с `npx --yes soundshuman` закомментирован решёткой, шаг выключен целиком.
+  # Обвинить проект в том, что его конвейер ставит выдуманный пакет, — письмо с неправдой.
+  #
+  # Читаем исходную строку файла: slopcheck отдаёт команду уже без знака комментария, и по ней
+  # отличить выключенный шаг от живого нельзя.
+  function srcLine(f, n,   i, l, out) {
+    out = ""
+    for (i = 1; i <= n; i++) { if ((getline l < f) <= 0) break; if (i == n) out = l }
+    close(f)
+    return out
+  }
+  function isCommented(f, n,   l) {
+    l = srcLine(f, n)
+    return l ~ /^[[:space:]]*(#|\/\/|<!--|\*)/
+  }
   function isPlaceholder(p,   base) {
     base = p; sub(/^@[^\/]*\//, "", base)
     return base ~ /^(x+|y+|z+|foo|bar|baz|qux|name|package|pkg|lib|module|something|example|placeholder|your-package|my-package|my-lib|package-name|paket)$/
@@ -162,7 +178,7 @@ printf '%s\n' "$OUT" | awk -v own="$OWN" '
     # бывает, а угадывать заполнители по смыслу нельзя.
     # Счётчик slopcheck уменьшается вместе с показанным: иначе они разойдутся, и наша же
     # защита «счётчик есть, а находок нет» объявит, что сменился формат ответа.
-    if (isPlaceholder(pkg) || isOwn(pkg) || looksLikeProse(cmd)) { bad--; next }
+    if (isPlaceholder(pkg) || isOwn(pkg) || looksLikeProse(cmd) || isCommented(f, ln + 0)) { bad--; next }
     if (shown < 20) print f ":" ln ": «" pkg "» — " label(st) " · " cmd
     shown++
     next
