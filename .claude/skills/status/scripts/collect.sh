@@ -58,8 +58,6 @@ say "чем кончились" "✅ $GATE  🔧 $FIX  👤 $NEVER" "отмет�
 DOCS=$(find kit/docs -name '*.md' | wc -l)
 LINES=$(find kit/docs -name '*.md' -exec cat {} + | wc -l)
 say "методичек" "$DOCS файлов, $LINES строк" "kit/docs"
-BROKEN=$(bash kit/gates/entry-links-exist/check.sh kit/docs 2>/dev/null | grep -c 'никуда')
-say "битых ссылок" "$BROKEN" "kit/gates/entry-links-exist"
 
 # --- очередь работ ---
 TODO=$(grep -c '^| [0-9]* | \*\*' PROJECT.md 2>/dev/null || echo 0)

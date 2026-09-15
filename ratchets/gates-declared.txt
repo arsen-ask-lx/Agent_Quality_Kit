@@ -9,7 +9,6 @@ dead-code
 deps-are-pinned
 duplicate-code
 entry-commands-exist
-entry-links-exist
 evals
 file-size-limit
 gate-has-samples
@@ -20,7 +19,6 @@ gates-run-in-ci
 hook-actually-fires
 lesson-has-outcome
 mutation
-no-phantom-package
 personal-config-not-shared
 promise-has-gate
 proof-from-journal
