@@ -61,6 +61,7 @@ else
   NPM_BLIND=1
 fi
 HAS_PKG=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
+HAS_JUST=$(find "$DIR" $(skip_find) -type f \( -name justfile -o -name Justfile -o -name .justfile \) -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
 
 # Цели make: строка вне рецепта, слова до двоеточия; «VAR := x» — присваивание, не цель.
 TARGETS=$(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile -o -name GNUmakefile -o -name '*.mk' \) -print 2>/dev/null \
@@ -89,8 +90,14 @@ done
 # Рецепты just: «имя:», «@имя арг:», «alias имя := …».
 RECIPES=$(find "$DIR" $(skip_find) -type f \( -name justfile -o -name Justfile -o -name .justfile \) -print 2>/dev/null \
   | own_samples_filter "$DIR" | grep -v '^$' | while IFS= read -r J; do
+      # ПАРАМЕТР РЕЦЕПТА СОДЕРЖИТ ЗНАК РАВЕНСТВА. Найдено 2026-09-15 на `2mawi2/para`: их
+      # `release BUMP="patch":` — обычный рецепт со значением по умолчанию. Прежнее правило
+      # требовало `[^:=]*` до двоеточия и такой рецепт не видело: существующая команда
+      # объявлялась несуществующей. Присваивание (`version := "1.0"`) отсекается отдельно —
+      # у него двоеточие СРАЗУ перед равенством, а у рецепта равенство стоит до двоеточия.
       awk '/^alias[ \t]+/ { print $2; next }
-           /^@?[A-Za-z_][A-Za-z0-9_-]*([ \t][^:=]*)?:([^=]|$)/ { sub(/^@/, ""); sub(/[ \t:].*/, ""); print }' "$J"
+           /^@?[A-Za-z_][A-Za-z0-9_-]*[ \t]*:=/ { next }
+           /^@?[A-Za-z_][A-Za-z0-9_-]*([ \t][^:]*)?:/ { sub(/^@/, ""); sub(/[ \t:].*/, ""); print }' "$J"
     done)
 
 has() { printf '%s\n' "$2" | grep -qxF -- "$1"; }
@@ -130,7 +137,11 @@ while IFS= read -r E; do
     [ -n "$MK_BLIND" ] && continue
     has "$N" "$TARGETS" || report "$E" "make $N" "такой цели нет ни в одном Makefile"
   done
-  for N in $(printf '%s\n' "$CODE" | grep -oE '(^|[^A-Za-z0-9_-])just[[:space:]]+[A-Za-z][A-Za-z0-9_-]*' \
+  # «JUST» — ОБЫЧНОЕ АНГЛИЙСКОЕ СЛОВО, и в прозе оно стоит чаще, чем в роли запускалки. Найдено
+  # 2026-09-15: «I just uploaded a new video» и «fuzzy output (`just over`)» дали находки
+  # «рецепт uploaded» и «рецепт over» в репозиториях, где justfile нет вовсе. Без justfile
+  # сравнивать не с чем — обвинение без предмета.
+  [ -n "$HAS_JUST" ] && for N in $(printf '%s\n' "$CODE" | grep -oE '(^|[^A-Za-z0-9_-])just[[:space:]]+[A-Za-z][A-Za-z0-9_-]*' \
       | sed 's/.*[[:space:]]//' | sort -u); do
     has "$N" "$RECIPES" || report "$E" "just $N" "такого рецепта нет в justfile"
   done

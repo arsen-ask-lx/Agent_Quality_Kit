@@ -1,0 +1,12 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "Abilityai/agent-ruby и DobroslavRadosavljevic/hsize",
+    "checked": "в их CLAUDE.md «I just uploaded a new video» и «fuzzy output (`~`, `almost`, `just over`)»; justfile в обоих репозиториях отсутствует — raw отдаёт 404 на justfile и Justfile, 2026-09-15"
+  },
+  "why": "«just» — обычное английское слово, и в прозе оно стоит чаще, чем в роли запускалки. Без justfile сравнивать не с чем: «такого рецепта нет в justfile» — обвинение, у которого нет предмета.",
+  "files": {
+    "CLAUDE.md": "# свод\n\nUser: \"I just uploaded a new video about adoption barriers\"\n\nНечёткий вывод: `just over`, `almost`.\n"
+  }
+}
