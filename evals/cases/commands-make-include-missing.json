@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "exoscale/cli",
+    "checked": "их Makefile содержит «include go.mk/init.mk» и «include go.mk/public.mk»; go.mk — подмодуль git, в неглубоком клоне его нет (raw 404), 2026-09-15"
+  },
+  "why": "Цели make объявлены в подключаемом файле, которого мы не видим. Перечень целей неполон, и «такой цели нет» становится обвинением по догадке. Честный ответ — «не смогли проверить», а не находка.",
+  "files": {
+    "AGENTS.md": "# свод\n\nСобрать: `make build`.\n",
+    "Makefile": "include go.mk/init.mk\ninclude go.mk/public.mk\n\nclean:\n\trm -rf dist\n"
+  }
+}

@@ -54,6 +54,24 @@ TARGETS=$(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile -
       awk '/^[^\t#][^=]*:([^=]|$)/ { sub(/:.*/, ""); n = split($0, a, /[ \t]+/); for (i = 1; i <= n; i++) if (a[i] != "") print a[i] }' "$M"
     done)
 
+# ПОДКЛЮЧЁННЫЙ ФАЙЛ, КОТОРОГО У НАС НЕТ, ДЕЛАЕТ ПЕРЕЧЕНЬ ЦЕЛЕЙ НЕПОЛНЫМ. Найдено 2026-09-15 на
+# `exoscale/cli`: их Makefile начинается с `include go.mk/init.mk`, а `go.mk` — подмодуль git,
+# которого в клоне нет. Цели `build` и `test-verbose` объявлены там, и наше «такой цели нет» было
+# бы письмом с неправдой в живую компанию.
+#
+# Молчим ОБО ВСЕХ целях make, а не о конкретной: какая именно объявлена в неподключённом файле,
+# мы знать не можем. Это третий исход — «не смогли проверить», и он назван вслух, а не спрятан.
+MK_BLIND=""
+for M in $(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile -o -name GNUmakefile -o -name '*.mk' \) -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$'); do
+  for INC in $(sed -n 's/^[[:space:]]*-\{0,1\}include[[:space:]]\{1,\}//p' "$M" 2>/dev/null | tr ' ' '\n' | grep -v '^$'); do
+    case "$INC" in
+      *'$'*) continue ;;
+    esac
+    [ -e "$(dirname "$M")/$INC" ] || MK_BLIND="$MK_BLIND$INC
+"
+  done
+done
+
 # Рецепты just: «имя:», «@имя арг:», «alias имя := …».
 RECIPES=$(find "$DIR" $(skip_find) -type f \( -name justfile -o -name Justfile -o -name .justfile \) -print 2>/dev/null \
   | own_samples_filter "$DIR" | grep -v '^$' | while IFS= read -r J; do
@@ -93,6 +111,7 @@ while IFS= read -r E; do
   for N in $(printf '%s\n' "$CODE" | grep -E '(^|[^A-Za-z0-9_-])make[[:space:]]' | grep -vE -- '-C|--directory|-f[[:space:]]|--file' \
       | grep -oE '(^|[^A-Za-z0-9_-])make([[:space:]]+-[A-Za-z0-9]+)*[[:space:]]+[A-Za-z][A-Za-z0-9_.-]*=?' \
       | grep -v '=$' | sed 's/.*[[:space:]]//' | sort -u); do
+    [ -n "$MK_BLIND" ] && continue
     has "$N" "$TARGETS" || report "$E" "make $N" "такой цели нет ни в одном Makefile"
   done
   for N in $(printf '%s\n' "$CODE" | grep -oE '(^|[^A-Za-z0-9_-])just[[:space:]]+[A-Za-z][A-Za-z0-9_-]*' \
@@ -106,5 +125,12 @@ EOF
 if [ "$MISS" = 1 ]; then
   echo "  почини: верни команду в проект или исправь свод. Агент берёт команды из свода дословно:"
   echo "  несуществующая команда — это «Missing script» у агента и «проверил» про проверку, которой нет."
+fi
+# ЧТО МЫ НЕ СМОГЛИ ПОСМОТРЕТЬ — говорится вслух и при находках, и без них. Молчание здесь
+# означало бы «цели make проверены», а они не проверены вовсе.
+if [ -n "$MK_BLIND" ]; then
+  echo "  не проверено: цели make. Makefile подключает файлы, которых нет в этом каталоге:"
+  printf '%s' "$MK_BLIND" | sort -u | sed 's/^/    /'
+  echo "    обычно это подмодуль git — тогда проверять надо там, где он выгружен."
 fi
 exit "$MISS"
