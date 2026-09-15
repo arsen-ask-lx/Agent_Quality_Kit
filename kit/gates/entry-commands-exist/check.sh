@@ -62,6 +62,7 @@ else
 fi
 HAS_PKG=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
 HAS_JUST=$(find "$DIR" $(skip_find) -type f \( -name justfile -o -name Justfile -o -name .justfile \) -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
+HAS_MK=$(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile -o -name GNUmakefile -o -name '*.mk' \) -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
 
 # Цели make: строка вне рецепта, слова до двоеточия; «VAR := x» — присваивание, не цель.
 TARGETS=$(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile -o -name GNUmakefile -o -name '*.mk' \) -print 2>/dev/null \
@@ -121,17 +122,31 @@ while IFS= read -r E; do
   CODE=$(awk '/^[ \t]*(```|~~~)/ { f = !f; next }
     f { print; next }
     { while (match($0, /`[^`]+`/)) { print substr($0, RSTART + 1, RLENGTH - 2); $0 = substr($0, RSTART + RLENGTH) } }' "$E")
-  grep -oE '(npm|pnpm|yarn|bun)[[:space:]]+run[[:space:]]+[A-Za-z][A-Za-z0-9_:.-]*[*<{]?' "$E" \
-    | grep -v '[*<{:]$' | sed 's/\.$//; s/[[:space:]][[:space:]]*/ /g' | sort -u > "$TMP"
+  # «BUN RUN <ФАЙЛ>» — ЗАПУСК ФАЙЛА, А НЕ СКРИПТА. Найдено 2026-09-15 на `Gerstep/HumanCompiler`:
+  # `bun run scripts/generate-plugin.ts <profile>` — путь прочитался как имя скрипта «scripts».
+  # Отсекаем по признаку пути: косая черта или расширение исполняемого файла.
+  grep -oE '(npm|pnpm|yarn|bun)[[:space:]]+run[[:space:]]+[A-Za-z][A-Za-z0-9_:./-]*[*<{]?' "$E" \
+    | grep -v '[*<{:]$' | grep -vE '[[:space:]][A-Za-z0-9_.-]*/' \
+    | grep -vE '\.(ts|js|mjs|cjs|tsx|jsx|py|sh)$' \
+    | sed 's/\.$//; s/[[:space:]][[:space:]]*/ /g' | sort -u > "$TMP"
   while IFS= read -r CMD; do
     # Без разборщика JSON перечень скриптов неполон, и «такого скрипта нет» — догадка.
     [ -n "$NPM_BLIND" ] && continue
     N=${CMD##* }
     has "$N" "$SCRIPTS" && continue
-    if [ -n "$HAS_PKG" ]; then report "$E" "$CMD" "такого скрипта нет ни в одном package.json"
-    else report "$E" "$CMD" "package.json в репозитории нет вовсе"; fi
+    # СОБСТВЕННОЙ СБОРКИ У РЕПОЗИТОРИЯ НЕТ — значит свод, скорее всего, описывает ДРУГОЙ проект.
+    # Найдено 2026-09-15 на `Aurealibe/claude-config` и `Weaverse/.agents`: это сборники правил,
+    # которые ставят в проект-получатель, и своего package.json у них нет и не должно быть.
+    # Про какой проект написано «npm run build», снаружи не видно — обвинять нельзя.
+    [ -n "$HAS_PKG" ] || { NO_BUILD=1; continue; }
+    report "$E" "$CMD" "такого скрипта нет ни в одном package.json"
   done < "$TMP"
-  for N in $(printf '%s\n' "$CODE" | grep -E '(^|[^A-Za-z0-9_-])make[[:space:]]' | grep -vE -- '-C|--directory|-f[[:space:]]|--file' \
+  # «MAKE» — ОБЫЧНЫЙ АНГЛИЙСКИЙ ГЛАГОЛ, как и «just». Найдено 2026-09-15 на
+  # `andyhartzler/my-bluebubbles-web`: «make it go away», «make one of these go away» дали цели
+  # «it» и «one». У них выше по файлу незакрытый блок кода, и весь текст после него читается как
+  # команды — но чинить надо не разбор блоков, а предмет обвинения: Makefile в репозитории нет
+  # вовсе, сравнивать не с чем.
+  [ -n "$HAS_MK" ] && for N in $(printf '%s\n' "$CODE" | grep -E '(^|[^A-Za-z0-9_-])make[[:space:]]' | grep -vE -- '-C|--directory|-f[[:space:]]|--file' \
       | grep -oE '(^|[^A-Za-z0-9_-])make([[:space:]]+-[A-Za-z0-9]+)*[[:space:]]+[A-Za-z][A-Za-z0-9_.-]*=?' \
       | grep -v '=$' | sed 's/.*[[:space:]]//' | sort -u); do
     [ -n "$MK_BLIND" ] && continue
@@ -155,6 +170,10 @@ if [ "$MISS" = 1 ]; then
 fi
 # ЧТО МЫ НЕ СМОГЛИ ПОСМОТРЕТЬ — говорится вслух и при находках, и без них. Молчание здесь
 # означало бы «цели make проверены», а они не проверены вовсе.
+if [ -n "$NO_BUILD" ]; then
+  echo "  не проверено: команды npm. Своего package.json у репозитория нет — похоже, свод описывает"
+  echo "    другой проект, в который его ставят. Про какой именно, снаружи не видно."
+fi
 if [ -n "$NPM_BLIND" ]; then
   echo "  не проверено: скрипты npm. Разобрать package.json нечем — на этой машине нет node."
   echo "    почини: поставь node либо прогони проверку там, где он есть."
