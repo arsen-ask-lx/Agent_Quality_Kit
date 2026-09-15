@@ -1,0 +1,13 @@
+{
+  "gate": "no-phantom-package",
+  "expect": "green",
+  "source": {
+    "repo": "aashaexo/soundshuman",
+    "checked": "в .github/workflows/slop-check.yml весь блок с «npx --yes soundshuman» закомментирован решёткой; прочитан raw-файл 2026-09-15"
+  },
+  "why": "Закомментированная строка — не команда. Обвинить проект в том, что его конвейер ставит выдуманный пакет, когда шаг выключен целиком, — письмо с неправдой.",
+  "files": {
+    ".github/workflows/ci.yml": "name: ci\non: [push]\njobs:\n  scan:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo ok\n  # disabled:\n  #   steps:\n  #     - run: npx --yes soundshuman scan docs\n"
+  },
+  "requires": "slopcheck"
+}
