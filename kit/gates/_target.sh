@@ -28,7 +28,10 @@ classify_target() {
   T="$1"
   case "$T" in
     ""|\#*) echo "skip"; return ;;
-    *http://*|*https://*|mailto:*) echo "skip"; return ;;
+    # ЛЮБАЯ СХЕМА, В ЛЮБОМ РЕГИСТРЕ. Замер 2026-09-15: `file://Users/...` и
+    # `Https://conventionalcommits.org` с заглавной H объявлены битыми файлами. Раньше узнавались
+    # только `http://` и `https://` строчными — и это была догадка о том, как люди пишут.
+    *://*|mailto:*|MAILTO:*) echo "skip"; return ;;
     # Адрес почты целью ссылки без «mailto:». Замер: три таких объявлены битыми файлами.
     *@*.*) echo "skip"; return ;;
   esac
