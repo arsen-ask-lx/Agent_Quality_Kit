@@ -101,7 +101,7 @@ fi
 for f in .aqk.yml AGENTS.md CLAUDE.md; do
   [ -f "$f" ] || bad "не создан обязательный файл" "$f"
 done
-for n in general.md index.md project-baseline.md; do
+for n in general.md index.md project-baseline.md operational-gates.md; do
   find .aqk -type f -name "$n" | grep -q . || bad "не создан обязательный файл" "$n"
 done
 ok "обязательные файлы на месте"
