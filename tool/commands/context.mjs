@@ -24,7 +24,8 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists, commandRows, preCommitHook } from "../lib/core.mjs";
 import { maybeAsk } from "./feedback.mjs";
-import { readManifest, assessLevel, coversOf } from "../lib/manifest.mjs";
+import { readManifest, assessLevel } from "../lib/manifest.mjs";
+import { heldCovers, readLinterConfigs } from "../lib/covers.mjs";
 import { detectFacts, readCatalog } from "../lib/repo.mjs";
 import { catalogBuckets, startWith, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
@@ -256,7 +257,7 @@ async function installHook(full = false) {
 async function readAdvice(man, probe) {
   const facts = await detectFacts(man);
   const catalog = await readCatalog();
-  const { todo } = catalogBuckets(catalog, facts, coversOf(man).covered);
+  const { todo } = catalogBuckets(catalog, facts, heldCovers(man, catalog, await readLinterConfigs(CWD)));
   // Чужие проверки — и тогда, когда гейты уже объявлены: отсев идёт по КОМАНДЕ внутри
   // `proposeGates`, а не по факту «манифест не пуст» (замер 2026-09-16, см. doctor-catalog).
   const adopt = proposeGates(await readAdoptFiles(CWD), declaredGates(man).map(([, cmd]) => cmd));

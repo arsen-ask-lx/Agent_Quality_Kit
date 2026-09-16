@@ -139,6 +139,7 @@ export const en = {
     coversUnknown: (l) => `covers names a gate absent from gates: ${l} — those entries are held by nothing`,
     coversUnproven: (e, g, codes) =>
       `claim unverified: "${e}" is declared held by gate "${g}", but neither its command nor the\n  linter config names rules ${codes} — the entry may be held by nothing`,
+    coversDisabled: (e, g, codes) => `the claim "${g} holds ${e}" is wrong: rule ${codes} is DISABLED in the linter config — nothing holds this entry`,
     coversUnprovenHow: (cmd) => `settle it: add those rules to the linter, or install the entry — ${cmd}`,
     totalCovered: (n) => `held by another arbiter ${n}`,
     blindHeading: (behind) => `The probe${behind ? ` (${behind} commits ago)` : ""} planted defects in your files — your checks did NOT catch them:`,

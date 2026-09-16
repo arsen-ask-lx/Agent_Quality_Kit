@@ -10,7 +10,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
-import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines, gateRequires } from "../lib/manifest.mjs";
+import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, unparsedLines, gateRequires } from "../lib/manifest.mjs";
 import { pickLang, langFromText, langFromDocs } from "../i18n/index.mjs";
 import { progress, selectGates } from "../lib/run.mjs";
 
@@ -146,43 +146,6 @@ test("docs — известное поле манифеста", () => {
   assert.deepEqual(unknownKeys({ docs: ".aqk/docs" }), []);
 });
 
-// --- covers: запись закрыта другим арбитром -----------------------------------
-// Просьба первого чужого пользователя, 2026-09-08, названная им первой: «нельзя сказать, что
-// эта запись у нас закрыта другим гейтом. complexity-limit, no-print-in-prod, swallowed-error
-// держит biome — одним арбитром, точнее переносимого. doctor каждый прогон печатает
-// „применимо, но не поставлено: 5“ — неправду».
-//
-// Неправда в НАШЕМ выводе — самая дорогая из возможных: весь стандарт стоит на том, что вывод
-// не врёт. Поэтому поле есть, но оно не признание на слово: гейт, который «закрывает», обязан
-// быть объявлен в gates:. Иначе covers: становится способом объявить защиту, которой нет, —
-// то самое, против чего написан комплект.
-test("вложенный список в квадратных скобках разбирается как список", () => {
-  const man = parseManifest("covers:\n  lint: [no-print-in-prod, swallowed-error]\n");
-  assert.deepEqual(man.covers.lint, ["no-print-in-prod", "swallowed-error"]);
-});
-
-test("covers отдаёт связь «запись → чем закрыта»", () => {
-  const man = parseManifest("gates:\n  lint: \"biome ci .\"\ncovers:\n  lint: [no-print-in-prod, swallowed-error]\n");
-  const { covered } = coversOf(man);
-  assert.equal(covered.get("no-print-in-prod"), "lint");
-  assert.equal(covered.get("swallowed-error"), "lint");
-});
-
-// Гейт, которого нет в gates:, не закрывает ничего. Промолчать здесь значит выдать
-// несуществующего арбитра за существующего — ровно тот отказ, ради которого всё написано.
-test("закрывать может только объявленный гейт", () => {
-  const man = parseManifest("gates:\n  lint: \"biome ci .\"\ncovers:\n  biome: [complexity-limit]\n");
-  const { covered, unknownGates } = coversOf(man);
-  assert.equal(covered.size, 0, "необъявленный гейт не закрывает ничего");
-  assert.deepEqual(unknownGates, ["biome"]);
-});
-
-test("пустой covers ничего не ломает", () => {
-  const { covered, unknownGates } = coversOf(parseManifest("aqk: 1\n"));
-  assert.equal(covered.size, 0);
-  assert.deepEqual(unknownGates, []);
-});
-
 test("covers — известное поле манифеста", () => {
   assert.ok(KNOWN_KEYS.includes("covers"));
   assert.deepEqual(unknownKeys({ covers: {} }), []);
@@ -247,87 +210,6 @@ test("сокращённый разбор языка не расходится �
   ]) {
     assert.equal(langFromText(text), String(parseManifest(text).lang || ""), text);
   }
-});
-
-// --- заявка covers сверяется, а не принимается на слово -----------------------
-// Поле `covers:` я завёл этим же утром и сам записал в коммит: «снимает запись с долга по
-// СЛОВУ человека; проверить, что чужой гейт ловит то же самое, машина не может». К вечеру
-// выяснилось, что это не теория. Запуск на настоящем `ruff.toml` из живого проекта: девятнадцать
-// групп правил в `extend-select`, и `print()` не ловится — группы `T20` среди них нет.
-// То есть заявка «no-print-in-prod держит наш lint» была бы ЛОЖНОЙ, а запись ушла бы из долга.
-//
-// Проверяется ровно то, что можно: у записи каталога в рецепте стоят коды правил
-// (`ruff check --select T20`). Если ни команда закрывающего гейта, ни конфиг линтера этих кодов
-// не называют — заявка не подтверждена. Это не «ложь», а «не подтверждено»: правило могло
-// прийти из плагина или пресета, и объявлять такое ошибкой значит краснеть на нормальном укладе.
-test("заявка подтверждена, когда коды правил есть в команде гейта", () => {
-  const man = parseManifest('gates:\n  lint: "ruff check --select T20,BLE ."\ncovers:\n  lint: [no-print-in-prod]\n');
-  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
-  assert.deepEqual(coversUnproven(man, catalog, ""), []);
-});
-
-test("заявка не подтверждена, когда кодов нет нигде", () => {
-  const man = parseManifest('gates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n');
-  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
-  assert.deepEqual(coversUnproven(man, catalog, ""), [{ entry: "no-print-in-prod", gate: "lint", codes: ["T20"], linter: "ruff", kind: "unproven" }]);
-});
-
-// Правило может стоять не в команде, а в конфиге линтера — это нормальный уклад, и краснеть
-// на нём нельзя. Настоящий пример: extend-select в ruff.toml.
-test("коды правил в конфиге линтера тоже подтверждают заявку", () => {
-  const man = parseManifest('gates:\n  lint: "ruff check ."\ncovers:\n  lint: [no-print-in-prod]\n');
-  const catalog = [{ slug: "no-print-in-prod", recipes: { python: "ruff check --select T20 {dir}" } }];
-  assert.deepEqual(coversUnproven(man, catalog, 'extend-select = ["I", "T20", "B"]'), []);
-});
-
-// У записи без кодов правил в рецепте сверять нечего — молчим, а не выдумываем вердикт.
-test("запись без кодов правил в рецепте не порождает придирки", () => {
-  const man = parseManifest('gates:\n  lint: "true"\ncovers:\n  lint: [duplicate-code]\n');
-  const catalog = [{ slug: "duplicate-code", recipes: { any: "bash {gate}/check.sh {dir}" } }];
-  assert.deepEqual(coversUnproven(man, catalog, ""), []);
-});
-
-// --- заявка сверяется правилами ТОГО линтера, которым закрыт гейт --------------------
-// Отзыв с живого проекта 2026-09-11 (TypeScript на Biome): заявка «lint держит no-print-in-prod»
-// всегда была «не подтверждена» — комплект искал коды ruff (T20, C901, BLE), а у Biome это
-// noConsole, noExcessiveCognitiveComplexity, noEmptyBlockStatements, и они стояли. Поле, которое
-// должно снимать шум, само его производило и подталкивало ставить второй линтер.
-const NP = { slug: "no-print-in-prod", biome_rules: "noConsole",
-  recipes: { python: "ruff check --select T20 {dir}", javascript: `eslint --rule '{"no-console":"error"}' {dir}` } };
-const TODO = { slug: "todo-without-task", biome_rules: "none", recipes: { python: "ruff check --select FIX,TD {dir}" } };
-
-test("Biome: правило записи стоит в biome.json — заявка подтверждена", () => {
-  const man = parseManifest('gates:\n  lint: "npx biome check ."\ncovers:\n  lint: [no-print-in-prod]\n');
-  const biome = '{"linter":{"rules":{"suspicious":{"noConsole":"error"}}}}';
-  assert.deepEqual(coversUnproven(man, [NP], { biome }), []);
-  const miss = coversUnproven(man, [NP], { biome: '{"linter":{"enabled":true}}' });
-  assert.equal(miss[0].kind, "unproven");
-  assert.deepEqual(miss[0].codes, ["noConsole"], "человеку названо ПРАВИЛО BIOME, а не код ruff");
-});
-
-test("линтер гейта узнаётся и через npm-скрипт", () => {
-  const man = parseManifest('gates:\n  lint: "npm run lint"\ncovers:\n  lint: [no-print-in-prod]\n');
-  const scripts = { lint: "biome check ." };
-  const r = coversUnproven(man, [NP], { biome: '"noConsole": "error"', scripts });
-  assert.deepEqual(r, []);
-});
-
-test("eslint: правило берётся из рецепта записи и ищется в конфиге eslint", () => {
-  const man = parseManifest('gates:\n  lint: "eslint ."\ncovers:\n  lint: [no-print-in-prod]\n');
-  assert.deepEqual(coversUnproven(man, [NP], { eslint: "rules: { 'no-console': 'error' }" }), []);
-  assert.equal(coversUnproven(man, [NP], { eslint: "rules: {}" })[0].kind, "unproven");
-});
-
-test("у линтера нет такого правила вовсе — заявка заведомо неверна, а не «не подтверждена»", () => {
-  const man = parseManifest('gates:\n  lint: "biome check ."\ncovers:\n  lint: [todo-without-task]\n');
-  const r = coversUnproven(man, [TODO], { biome: "{}" });
-  assert.equal(r[0].kind, "impossible");
-});
-
-test("линтер не распознан — «не умею проверить», а не обвинение", () => {
-  const man = parseManifest('gates:\n  lint: "make lint"\ncovers:\n  lint: [no-print-in-prod]\n');
-  const r = coversUnproven(man, [NP], {});
-  assert.equal(r[0].kind, "unknown");
 });
 
 // --- строка манифеста, которую разбор не понял, не исчезает молча ---------------
