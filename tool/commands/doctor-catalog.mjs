@@ -66,7 +66,12 @@ async function reportBaseline(man, facts) {
 
   console.log(c.bold(`\n  ${L.baseline.heading}\n`));
   console.log(c.dim(`  ${L.baseline.intro(rows.length, BASELINE_TOTAL)}`));
-  console.log(c.dim(`  ${L.baseline.caveat}\n`));
+  console.log(c.dim(`  ${L.baseline.caveat}`));
+  // ЧЬЯ ЭТО МЕРКА — ПЕРЕД СПИСКОМ, а не после. Замер 2026-09-16 по пятнадцати чужим
+  // репозиториям: все получили 4–8 из 14, и кресты были честные. Человек, увидевший «6/14» без
+  // этой строки, читает приговор своему проекту, а речь о другом — о готовности отдать работу
+  // машине. Строка стоит до списка, потому что после него её уже не читают.
+  console.log(c.dim(`  ${L.baseline.scope}\n`));
   for (const r of rows) {
     const mark = r.ok ? c.green("✔") : c.yellow("✘");
     const title = L.baseline.titles[r.key] || r.key;
