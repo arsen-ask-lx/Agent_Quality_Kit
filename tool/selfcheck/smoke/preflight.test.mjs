@@ -23,13 +23,22 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const SMOKE = join(ROOT, "tool", "selfcheck", "smoke.sh");
 
+const WIN = process.platform === "win32";
+
 // Заглушка вместо настоящей программы: выходит кодом 126 — «найдено, но запустить нельзя».
 // Ровно то, чем для нас выглядел запрет песочницы.
+//
+// ДВА ФАЙЛА, А НЕ ОДИН. Поймано windows-заданием конвейера: скрипт без расширения там не
+// перехватывает ничего — CreateProcess ищет `.exe`/`.cmd` по PATHEXT, а Git Bash понимает
+// shebang. Значит нужны обе заглушки сразу, иначе проверка молча меряет настоящий git и
+// краснеет на исправной машине — то есть сама становится тем ложным красным, против которого
+// написан предполёт.
 function stubDir(t, name) {
   const dir = mkdtempSync(join(tmpdir(), "aqk-stub-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   writeFileSync(join(dir, name), "#!/bin/sh\nexit 126\n", "utf8");
   chmodSync(join(dir, name), 0o755);
+  if (WIN) writeFileSync(join(dir, `${name}.cmd`), "@echo off\r\nexit /b 126\r\n", "utf8");
   return dir;
 }
 
@@ -56,7 +65,11 @@ test("предполёт: недоступный git — это «не смог�
 // первое значило бы пройти предполёт и упасть пятнадцатью крестами следом.
 test("предполёт: git виден шеллу, но не подпроцессу Node — тоже отказ", (t) => {
   const dir = stubDir(t, "git");
-  const r = spawnSync("bash", ["-c", `PATH="${dir}:$PATH" node -e 'const r=require("node:child_process").spawnSync("git",["--version"]); process.exit(r.status===0?0:3)'`],
+  // `shell` — тот же, что в самом предполёте: на Windows без оболочки Node не видит ни `.cmd`
+  // заглушки, ни настоящего `npm`. Проверка обязана звать так же, как зовёт код, иначе она
+  // проверяет не его. Ровно на этом конвейер и поймал первую версию.
+  const probe = `const r=require("node:child_process").spawnSync("git",["--version"],{shell:${WIN}}); process.exit(r.status===0?0:3)`;
+  const r = spawnSync("bash", ["-c", `PATH="${dir}:$PATH" node -e '${probe}'`],
     { encoding: "utf8", timeout: 30000 });
   assert.equal(r.status, 3, "оснастка проверки неверна: заглушка не перехватывает git у Node");
 });
