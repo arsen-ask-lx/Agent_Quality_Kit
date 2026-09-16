@@ -211,11 +211,17 @@ export const en = {
   },
 
   baseline: {
-    heading: "The minimum a project needs",
+    heading: "The minimum a machine needs to work here",
     intro: (checked, total) =>
       `a machine confirms ${checked} of ${total} points; the rest are for your eyes, in the guide`,
     eyes: (n, path) => `${n} points a machine cannot check — they live in ${path}`,
     caveat: "presence is what gets checked, not whether it works: \"a linter is configured\" and \"a linter catches things\" are different claims",
+    // Measured 2026-09-16 across fifteen third-party repositories (requests, httpx, flask,
+    // express, gin, cobra, ripgrep, uv and others): every one scored four to eight out of
+    // fourteen, and the crosses were honest — they genuinely have no equivalents, verified by
+    // reading their own configs. Without this line the number reads as a verdict on a good
+    // project, while it is about something else: readiness to hand work to a machine.
+    scope: "one yardstick only: can work be handed to an agent. This is NOT a score for the project — a mature library without agent scaffolding will leave most points unconfirmed, and that is no verdict on it",
     by: (b) =>
       "proven by: " +
       ({ gate: `gate ${b.value}`, fact: `repository scan: ${b.value}`,

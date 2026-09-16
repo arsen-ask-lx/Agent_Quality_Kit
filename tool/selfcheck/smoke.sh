@@ -991,13 +991,20 @@ printf 'x\n' > "$BDIR2/Cargo.lock"; printf 'x\n' > "$BDIR2/ruff.toml"; printf 'x
 OUT_FULL="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
 BEFORE=$(printf '%s' "$OUT_EMPTY" | grep -c '✔' || true)
 AFTER=$(printf '%s' "$OUT_FULL" | grep -c '✔' || true)
+# ЧЬЯ ЭТО МЕРКА — СКАЗАНО ДО СПИСКА. Замер 2026-09-16 по пятнадцати чужим репозиториям
+# (requests, httpx, flask, express, gin, cobra, ripgrep, uv и другие): ВСЕ получили от четырёх
+# до восьми пунктов из четырнадцати, и кресты оказались честными — эквивалентов у них правда
+# нет, проверено чтением их же конфигов. Значит число само по себе читается как приговор
+# хорошему проекту, а оно про другое: про готовность отдать работу машине. Строка, которая это
+# называет, обязана быть — и обязана стоять ДО списка, после него её уже не читают.
 if printf '%s' "$OUT_FULL" | grep -qE 'cargo.lock' &&
    printf '%s' "$OUT_FULL" | grep -qE 'ruff.toml' &&
    printf '%s' "$OUT_FULL" | grep -qE 'dockerfile' &&
+   printf '%s' "$OUT_FULL" | grep -q "НЕ оценка проекта" &&
    [ "$AFTER" -gt "$BEFORE" ]; then
-  ok "doctor --baseline засчитывает признаки разных экосистем и называет, чем подтверждено"
+  ok "doctor --baseline засчитывает признаки разных экосистем, называет доказательство и чью мерку применяет"
 else
-  bad "baseline не видит признаков или не называет доказательство" "было ✔ $BEFORE, стало $AFTER"
+  bad "baseline не видит признаков, не называет доказательство либо молчит о том, чья это мерка" "было ✔ $BEFORE, стало $AFTER"
 fi
 rm -rf "$BDIR2"
 
