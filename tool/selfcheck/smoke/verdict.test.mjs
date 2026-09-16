@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, rmSync, chmodSync } from "node:fs";
 import { join } from "node:path";
-import { project, aqk, aqkEnv } from "./_fixture.mjs";
+import { project, aqk, aqkEnv, tail } from "./_fixture.mjs";
 
 const plainText = (s) => String(s).replace(/\x1b\[[0-9;]*m/g, "");
 
@@ -32,14 +32,14 @@ test("прогон называет свой вердикт словами в о
   const red = aqk(p, "doctor", "--run");
   // Сообщение утверждения обязано нести ВЕСЬ хвост: проверка, которая говорит только «не
   // совпало», отправляет читателя гадать — ровно то, за что мы ругаем чужие проверки.
-  const redTail = red.out.trimEnd().split("\n").slice(-6).join("\n");
+  const redTail = tail(red.out);
   assert.notEqual(red.code, 0, `прогон без .gitignore прошёл зелёным:\n${redTail}`);
   assert.match(redTail, /красн/, `вердикт не назван в конце вывода (код ${red.code}):\n${redTail}`);
 
   // Причина устранена — и «ничего не сказал» обязано отличаться от «всё проверено».
   writeFileSync(join(p.dir, ".gitignore"), "x\n", "utf8");
   const green = aqk(p, "doctor", "--run");
-  const greenTail = green.out.trimEnd().split("\n").slice(-6).join("\n");
+  const greenTail = tail(green.out);
   assert.equal(green.code, 0, `прогон остался красным:\n${greenTail}`);
   assert.match(greenTail, /зелён/, `успех не назван словами:\n${greenTail}`);
 });

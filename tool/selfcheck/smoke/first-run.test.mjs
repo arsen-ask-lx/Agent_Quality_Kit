@@ -9,7 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { project, aqk, run } from "./_fixture.mjs";
+import { project, aqk, run, tail } from "./_fixture.mjs";
 
 // Цвет снимается до разбора: заголовок жирный, значки цветные, и регулярка по сырому выводу
 // не узнаёт ни то, ни другое.
@@ -99,8 +99,8 @@ test("нет .aqk/docs и .aqk/rules — прогон всё равно зелё
   const man = join(p.dir, ".aqk.yml");
   writeFileSync(man, readFileSync(man, "utf8").replace(/^gates:\s*$/m, 'gates:\n  тихий: "true"'), "utf8");
   const r = aqk(p, "doctor", "--run");
-  const tail = plain(r.out).trimEnd().split("\n").slice(-4).join("\n");
-  assert.equal(r.code, 0, `прогон покраснел из-за методичек:\n${tail}`);
+  const last = tail(plain(r.out), 4);
+  assert.equal(r.code, 0, `прогон покраснел из-за методичек:\n${last}`);
   assert.match(plain(r.out), /\.aqk\/docs/, "отсутствие методичек не названо вовсе");
 });
 
