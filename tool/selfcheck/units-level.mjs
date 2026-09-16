@@ -10,7 +10,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commandFor, verdict } from "../lib/prove.mjs";
-import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines } from "../lib/manifest.mjs";
+import { assessLevel, layoutChecks, unknownKeys, KNOWN_KEYS, parseManifest, coversOf, coversUnproven, unparsedLines, gateRequires } from "../lib/manifest.mjs";
 import { pickLang, langFromText, langFromDocs } from "../i18n/index.mjs";
 import { progress, selectGates } from "../lib/run.mjs";
 
@@ -414,4 +414,44 @@ test("выбор гейтов: без флагов гоняется всё, ка
   const s = selectGates(Object.entries(man.gates), man, {});
   assert.equal(s.run.length, 2);
   assert.deepEqual(s.skipped, []);
+});
+
+// ЧЕМ ГЕЙТ РАБОТАЕТ — МОЖЕТ СКАЗАТЬ И САМ ПРОЕКТ, НЕ ТОЛЬКО ЗАПИСЬ КАТАЛОГА.
+//
+// Разбор чужой интеграции 2026-09-16: гейт объявлен как
+// `docker run --rm … promtool test rules …`. `vitals` смотрит ПЕРВОЕ СЛОВО, находит `docker` и
+// говорит «инструменты на месте». Поле `requires` для такого случая у нас уже есть — но
+// читалось оно только из `<samples>/<гейт>/gate.yml`, то есть было доступно нашим записям и
+// недоступно гейтам проекта. У проекта с чужими командами `samples` пуст по построению, и
+// сказать «этому гейту нужен docker» было нечем.
+//
+// СНАРУЖИ СОГЛАШЕНИЯ НЕТ — проверено 2026-09-16. У pre-commit ровно эта просьба (issue #2042:
+// трактовать `additional_dependencies` как список программ в $PATH и пропускать хук, если
+// программы нет) закрыта нерешённой: `system`-хуки окружения не ставят. У lefthook такого поля
+// нет вовсе. Поэтому мы не копируем чужую форму, а распространяем СВОЮ, уже существующую, —
+// и это сказано вслух, а не выдано за общепринятое.
+test("requires в манифесте проекта называет программу гейта", async () => {
+  const man = parseManifest('gates:\n  rules: "docker run x"\nrequires:\n  rules: docker\n');
+  assert.deepEqual(await gateRequires(man, "", "rules", () => false), ["docker"]);
+  assert.equal(await gateRequires(man, "", "rules", () => true), null, "программа на месте — жаловаться не на что");
+});
+
+test("requires принимает и список, и перечисление через запятую", async () => {
+  const list = parseManifest('gates:\n  g: "x"\nrequires:\n  g: [docker, jq]\n');
+  assert.deepEqual(await gateRequires(list, "", "g", () => false), ["docker", "jq"]);
+  const csv = parseManifest('gates:\n  g: "x"\nrequires:\n  g: docker, jq\n');
+  assert.deepEqual(await gateRequires(csv, "", "g", () => false), ["docker", "jq"]);
+});
+
+// Гейт, про который в манифесте ничего не сказано, остаётся как был: молчание — не требование.
+test("без requires поведение прежнее", async () => {
+  const man = parseManifest('gates:\n  g: "x"\n');
+  assert.equal(await gateRequires(man, "", "g", () => false), null);
+  assert.equal(await gateRequires(null, "", "g", () => false), null);
+});
+
+// Иначе `doctor` напечатает «неизвестное поле» на том, что сам же и читает.
+test("requires — известное поле манифеста", () => {
+  assert.ok(KNOWN_KEYS.includes("requires"));
+  assert.deepEqual(unknownKeys({ requires: { g: "docker" } }), []);
 });

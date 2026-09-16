@@ -229,6 +229,8 @@ gates:                     # что обязано пройти — команд
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
 covers:                    # что уже держит объявленный гейт — в долг не пишется
   lint: [no-print-in-prod, swallowed-error]
+requires:                  # чем гейт работает, если по команде этого не видно
+  secrets-not-in-code: gitleaks
 samples:  gates            # красный и зелёный образец каждой записи
 ratchets: ratchets         # реестры долга: список может только укорачиваться
 probe: 100                 # раз во столько коммитов проба делается сама; 0 — не делать

@@ -135,7 +135,7 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
     // Программы, без которой запись не работает, может не быть на машине — тогда доказывать
     // нечем, а не «гейт сломан». Проверяется ДО запуска: без неё обёртка краснеет на обоих
     // образцах, и вердикт вышел бы «краснеет на исправном коде».
-    const missing = await gateRequires(samplesDir, name, whichSync);
+    const missing = await gateRequires(man, samplesDir, name, whichSync);
     if (missing) {
       results.push({ name, state: "unprovable", why: "needs-program", missing });
       continue;

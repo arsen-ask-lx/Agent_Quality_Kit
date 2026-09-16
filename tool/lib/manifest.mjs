@@ -112,7 +112,7 @@ function unparsedLines(text) {
 // Список обязан совпадать с тем, что программа РЕАЛЬНО читает (`man?.<поле>` в tool/):
 // лишнее имя здесь молча узаконивает поле, которое ни на что не влияет, — та же тишина,
 // только с другой стороны. Сверено обходом: aqk, entry, rules, gates, samples, ratchets, lessons.
-const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "lang", "gates", "covers", "samples", "ratchets", "lessons", "advisory", "probe", "groups"];
+const KNOWN_KEYS = ["aqk", "entry", "rules", "docs", "lang", "gates", "covers", "requires", "samples", "ratchets", "lessons", "advisory", "probe", "groups"];
 
 // ГДЕ У ПРОЕКТА ЛЕЖИТ РАЗЛОЖЕННЫЙ КОМПЛЕКТ. Список для шапки `doctor`. До 2026-09-08 он был
 // литеральным: `.aqk/rules`, `.aqk/docs`, `AGENTS.md` — независимо от того, что написано в
@@ -306,19 +306,45 @@ function entryLifecycle(rec) {
 // `vitals` печатал «все инструменты на месте» ровно там, где прогон краснел.
 // `has` передаётся вызывающим, а не берётся отсюда: manifest.mjs не должен знать про осмотр
 // репозитория — импорт в обратную сторону завёл бы цикл. Заодно функция проверяема модульно.
-async function gateRequires(samplesDir, name, has) {
-  if (!samplesDir) return null;
-  const yml = join(CWD, samplesDir, name, "gate.yml");
-  if (!(await exists(yml))) return null;
-  try {
-    const rec = parseManifest(await readFile(yml, "utf8"));
-    const raw = typeof rec?.requires === "string" ? rec.requires.trim() : "";
-    if (!raw) return null;
-    const missing = raw.split(",").map((x) => x.trim()).filter(Boolean).filter((x) => !has(x));
-    return missing.length ? missing : null;
-  } catch {
-    return null;
+// ДВА ИСТОЧНИКА, А НЕ ОДИН. Поле читалось только из `<samples>/<гейт>/gate.yml`, то есть было
+// доступно НАШИМ записям и недоступно гейтам проекта. Разбор чужой интеграции 2026-09-16: гейт
+// объявлен как `docker run --rm … promtool test rules …`, `vitals` смотрит первое слово, видит
+// `docker` и говорит «инструменты на месте». У проекта с чужими командами `samples` пуст по
+// построению, и сказать «этому гейту нужен docker» было нечем.
+//
+// СНАРУЖИ СОГЛАШЕНИЯ НЕТ — проверено 2026-09-16, и это сказано вслух, а не выдано за
+// общепринятое. У pre-commit ровно эта просьба закрыта нерешённой (issue #2042: трактовать
+// `additional_dependencies` как список программ в $PATH и пропускать хук, если программы нет;
+// ответ — `system`-хуки окружения не ставят). У lefthook такого ключа нет вовсе. Поэтому мы не
+// копируем чужую форму, а распространяем свою: то же имя поля и та же форма «имя гейта →
+// значение», что у `covers:` и `groups:`. Новых понятий в манифесте не появляется.
+//
+// ГРАНИЦА НАЗЫВАЕТСЯ ВСЛУХ: «программа есть в PATH» и «программа сможет отработать» — разные
+// утверждения. `docker` в PATH при мёртвом демоне по-прежнему считается найденным; это не
+// ложь vitals, а предел того, что видно без запуска. Запускать чужой инструмент ради осмотра
+// мы не будем: осмотр обязан быть дешёвым и без побочных действий.
+function requiredBy(man, name) {
+  const r = man?.requires && typeof man.requires === "object" && !Array.isArray(man.requires) ? man.requires : null;
+  const v = r ? r[name] : null;
+  if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+  return typeof v === "string" ? v.split(",").map((x) => x.trim()).filter(Boolean) : [];
+}
+
+async function gateRequires(man, samplesDir, name, has) {
+  const names = [...requiredBy(man, name)];
+  if (samplesDir) {
+    const yml = join(CWD, samplesDir, name, "gate.yml");
+    if (await exists(yml)) {
+      try {
+        const rec = parseManifest(await readFile(yml, "utf8"));
+        const raw = typeof rec?.requires === "string" ? rec.requires.trim() : "";
+        for (const x of raw.split(",").map((s) => s.trim()).filter(Boolean)) names.push(x);
+      } catch { /* нечитаемая запись — не повод обвинять гейт */ }
+    }
   }
+  if (!names.length) return null;
+  const missing = [...new Set(names)].filter((x) => !has(x));
+  return missing.length ? missing : null;
 }
 
 // ПОЧЕМУ СПИСКОМ В МАНИФЕСТЕ, А НЕ ФЛАГОМ ПРОГОНА. Флаг «не роняй ничего» — это тот самый

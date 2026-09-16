@@ -226,6 +226,8 @@ gates:                     # what must pass — as commands, not as prose
   secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
 covers:                    # what a declared gate already holds — not counted as debt
   lint: [no-print-in-prod, swallowed-error]
+requires:                  # what a gate runs on, when the command does not show it
+  secrets-not-in-code: gitleaks
 samples:  gates            # a red and a green sample for every entry
 ratchets: ratchets         # debt registries: the list may only get shorter
 probe: 100                 # run the probe itself every N commits; 0 turns it off

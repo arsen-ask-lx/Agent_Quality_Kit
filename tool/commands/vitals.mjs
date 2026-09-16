@@ -116,7 +116,7 @@ async function cmdVitals() {
   // Найдено 2026-09-09 сверкой вывода двух команд на одном репозитории.
   const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
   for (const gate of Object.keys(gates)) {
-    const missing = await gateRequires(samplesDir, gate, whichSync);
+    const missing = await gateRequires(man, samplesDir, gate, whichSync);
     for (const prog of missing || []) {
       if (seen.has(prog)) continue;
       seen.set(prog, { gate, prog, found: false });
