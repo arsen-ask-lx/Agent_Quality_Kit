@@ -171,3 +171,38 @@ test("проверка, которую нельзя провалить, назв
   assert.match(ctx, /покраснеть не могут/,
     `блок для агента велит объявить проверки, которые не могут провалиться:\n${ctx.slice(0, 600)}`);
 });
+
+// ЗРЕЛЫЙ ПРОЕКТ НЕ ТЕРЯЕТ СВОИ ПРОВЕРКИ ИЗ ВИДА, КОГДА ОБЪЯВИЛ ГЕЙТ.
+//
+// Замер 2026-09-16 по двенадцати чужим репозиториям: у шести зрелых (requests, httpx, fastapi,
+// black, express, flask) блок «у вас уже есть» исчезал целиком, стоило объявить один гейт, —
+// и итог печатал «держит машина 0» проекту с настоящим pre-commit и Makefile. Чем больше
+// человек настроил, тем меньше мы о нём знали: условие показывало чужие проверки только тому,
+// у кого гейтов нет вовсе.
+test("объявленный гейт не прячет проверки, которые у проекта уже есть", (t) => {
+  const p = project(t, {
+    ...FILES,
+    Makefile: "test:\n\tpytest -q\n\nlint:\n\truff check .\n",
+    ".aqk.yml": 'aqk: 1\nentry: [AGENTS.md]\ngates:\n  project-verify: "bash scripts/verify.sh"\n',
+    "AGENTS.md": "# вход\n",
+  });
+  const out = plain(aqk(p, "doctor").out);
+  assert.match(out, /УЖЕ ЕСТЬ/,
+    `проект объявил один гейт — и его собственные проверки пропали из вывода:\n${out.slice(-1500)}`);
+  assert.match(out, /make test|npm test/, "найденная команда не названа человеку");
+});
+
+// И обратное: то, что УЖЕ объявлено, вторым списком не повторяется. Иначе вывод советует
+// поставить то, что стоит, — и человек перестаёт читать этот блок целиком.
+test("объявленная проверка не советуется второй раз", (t) => {
+  const p = project(t, {
+    ...FILES,
+    Makefile: "test:\n\tpytest -q\n",
+    ".aqk.yml": 'aqk: 1\nentry: [AGENTS.md]\ngates:\n  test: "make test"\n  lint: "npm run lint"\n',
+    "AGENTS.md": "# вход\n",
+  });
+  const out = plain(aqk(p, "doctor").out);
+  const block = out.includes("УЖЕ ЕСТЬ") ? out.slice(out.indexOf("УЖЕ ЕСТЬ")) : "";
+  assert.doesNotMatch(block.split("\n").slice(0, 6).join("\n"), /make test/,
+    `«make test» уже объявлен гейтом, а мы советуем его снова:\n${block.slice(0, 400)}`);
+});
