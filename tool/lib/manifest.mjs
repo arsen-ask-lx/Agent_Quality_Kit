@@ -145,119 +145,6 @@ function layoutChecks(man, inKit) {
   ];
 }
 
-// ЗАПИСЬ ЗАКРЫТА ДРУГИМ АРБИТРОМ. `covers: { lint: [no-print-in-prod, swallowed-error] }`
-// читается как «гейт lint держит эти записи каталога». Просьба первого чужого пользователя,
-// названная им первой: без этого `doctor` каждый прогон печатал «применимо, но не поставлено»
-// про то, что у него закрыто biome. Неправда в собственном выводе дороже всех остальных: весь
-// стандарт стоит на том, что вывод не врёт.
-//
-// НО ЭТО НЕ ПРИЗНАНИЕ НА СЛОВО. Закрывать может только гейт, ОБЪЯВЛЕННЫЙ в `gates:` непустой
-// командой. Иначе поле превращается в способ объявить защиту, которой нет, — ровно тот отказ,
-// против которого написан комплект. Необъявленные называются поимённо, а не отбрасываются молча.
-function coversOf(man) {
-  const covered = new Map();
-  const unknownGates = [];
-  const raw = man?.covers;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { covered, unknownGates };
-
-  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
-  const declared = new Set(Object.entries(gates).filter(([, cmd]) => String(cmd || "").trim()).map(([k]) => k));
-
-  for (const [gate, value] of Object.entries(raw)) {
-    const entries = Array.isArray(value)
-      ? value
-      : String(value || "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (!declared.has(gate)) { if (entries.length) unknownGates.push(gate); continue; }
-    for (const e of entries) if (!covered.has(e)) covered.set(e, gate);
-  }
-  return { covered, unknownGates };
-}
-
-// ЗАЯВКА `covers` СВЕРЯЕТСЯ, А НЕ ПРИНИМАЕТСЯ НА СЛОВО — насколько это вообще возможно.
-//
-// Поле `covers` заведено 2026-09-08 утром, и тогда же в коммите было записано честное: «снимает
-// запись с долга по СЛОВУ человека; проверить, что чужой гейт ловит то же самое, машина не
-// может». К вечеру выяснилось, что это не теория. Запуск на настоящем `ruff.toml` из живого
-// проекта: девятнадцать групп правил в `extend-select`, а `print()` не ловится — группы `T20`
-// среди них нет. Заявка «no-print-in-prod держит наш lint» была бы ложной, а запись ушла бы из
-// долга. То есть поле, снимающее неправду из вывода, само стало бы способом её произвести.
-//
-// ЧТО СВЕРЯЕТСЯ. У записи каталога в рецепте стоят коды правил: `ruff check --select T20 {dir}`.
-// Если ни команда закрывающего гейта, ни конфиг линтера этих кодов не называют — заявка не
-// подтверждена. Записи без кодов в рецепте (переносимые проверки) не сверяются вовсе: там
-// сверять нечего, и выдумывать вердикт нельзя.
-//
-// ПОЧЕМУ «НЕ ПОДТВЕРЖДЕНО», А НЕ «ЛОЖЬ». Правило могло прийти из плагина, пресета или общего
-// конфига этажом выше. Объявлять такое ошибкой значит краснеть на нормальном укладе — а такой
-// вывод перестают читать целиком, вместе с настоящими находками.
-const RULE_CODES = /--select[= ]([A-Za-z0-9,]+)/;
-
-// КАКИМ ЛИНТЕРОМ ЗАКРЫТ ГЕЙТ. Отзыв с живого проекта 2026-09-11 (TypeScript на Biome): заявка
-// «lint держит no-print-in-prod» всегда была «не подтверждена» — сверка искала коды ruff в
-// конфиге Biome, где их не бывает никогда. Поле, снимающее шум, само его производило.
-// Порядок: команда гейта; npm-скрипт, который она зовёт; единственный конфиг линтера в проекте.
-function linterOf(cmd, scripts = {}, present = []) {
-  let c = String(cmd || "");
-  const m = /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?([\w:-]+)/.exec(c);
-  if (m && typeof scripts[m[1]] === "string") c += ` ${scripts[m[1]]}`;
-  if (/\bbiome\b/.test(c)) return "biome";
-  if (/\beslint\b/.test(c)) return "eslint";
-  if (/\bruff\b/.test(c)) return "ruff";
-  return present.length === 1 ? present[0] : null;
-}
-
-// Правила записи на языке ЭТОГО линтера. ruff — коды из `--select` рецептов; eslint — имена из
-// `--rule '{…}'`; Biome рецептов не имеет, у записи для него поле `biome_rules` (сверено по схеме
-// конфигурации Biome 2.5.12). `none` — у линтера такого правила нет вовсе. `null` — не знаем.
-function rulesFor(rec, linter) {
-  const recipes = Object.values(rec?.recipes && typeof rec.recipes === "object" ? rec.recipes : {}).map(String);
-  if (linter === "ruff") {
-    const codes = new Set();
-    for (const cmd of recipes) { const m = RULE_CODES.exec(cmd); if (m) for (const x of m[1].split(",")) if (x.trim()) codes.add(x.trim()); }
-    return codes.size ? [...codes] : null;
-  }
-  if (linter === "eslint") {
-    const names = new Set();
-    for (const cmd of recipes) for (const m of cmd.matchAll(/"([@a-z0-9/_-]+)"\s*:\s*\[?\s*"(?:error|warn)"/g)) names.add(m[1]);
-    return names.size ? [...names] : null;
-  }
-  if (linter === "biome") {
-    const v = typeof rec?.biome_rules === "string" ? rec.biome_rules.trim() : "";
-    if (!v) return null;
-    // Поле хранит `группа/правило` — так его ждёт `biome lint --only`; в biome.json правило
-    // лежит внутри объекта группы, поэтому ищется по имени без группы.
-    return v === "none" ? [] : v.split(",").map((x) => x.trim().split("/").pop()).filter(Boolean);
-  }
-  return null;
-}
-
-// `configs` — тексты конфигов по линтерам: { ruff, eslint, biome, scripts }. Строка (прежний вид
-// вызова) — один общий текст для всех. Исходы: unproven (линтер известен, его правил нет ни в
-// команде, ни в конфиге) · impossible (у линтера такого правила нет) · unknown (линтер не
-// распознан или правил записи для него мы не знаем — «не умею проверить», не обвинение).
-function coversUnproven(man, catalog = [], configs = "") {
-  const { covered } = coversOf(man);
-  if (!covered.size) return [];
-  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
-  const cfg = typeof configs === "string" ? { ruff: configs, eslint: configs, biome: configs } : (configs || {});
-  const present = ["ruff", "eslint", "biome"].filter((k) => cfg[k] && String(cfg[k]).trim() && typeof configs !== "string");
-  const out = [];
-
-  for (const [entry, gate] of covered) {
-    const rec = catalog.find((r) => r.slug === entry);
-    // Запись, которая не выражается правилами НИ ОДНОГО линтера (переносимые проверки), не
-    // сверяется вовсе: сверять нечего, и выдумывать вердикт нельзя.
-    if (!["ruff", "eslint", "biome"].some((k) => rulesFor(rec, k) !== null)) continue;
-    const linter = linterOf(gates[gate], cfg.scripts || {}, present);
-    const rules = linter ? rulesFor(rec, linter) : null;
-    if (rules === null) { out.push({ entry, gate, codes: [], linter, kind: "unknown" }); continue; }
-    if (!rules.length) { out.push({ entry, gate, codes: [], linter, kind: "impossible" }); continue; }
-    const haystack = `${String(gates[gate] || "")}\n${String(cfg[linter] || "")}`;
-    if (rules.every((r) => !haystack.includes(r))) out.push({ entry, gate, codes: rules, linter, kind: "unproven" });
-  }
-  return out;
-}
-
 function unknownKeys(man) {
   if (!man || typeof man !== "object" || Array.isArray(man)) return [];
   return Object.keys(man).filter((k) => !KNOWN_KEYS.includes(k));
@@ -443,5 +330,5 @@ function manifestWithGate(text, slug, cmd) {
 
 export {
   parseManifest, readManifest, assessLevel, manifestWithGate, unknownKeys, KNOWN_KEYS,
-  entryLifecycle, advisorySet, gateRequires, layoutChecks, coversOf, coversUnproven, unparsedLines,
+  entryLifecycle, advisorySet, gateRequires, layoutChecks, unparsedLines,
 };

@@ -8,7 +8,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, SELF, c } from "../lib/core.mjs";
-import { coversOf, coversUnproven } from "../lib/manifest.mjs";
+import { coversOf, coversUnproven, heldCovers, readLinterConfigs } from "../lib/covers.mjs";
 import { readCatalog, browserServerAdvice } from "../lib/repo.mjs";
 import { startWith, catalogBuckets, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
@@ -91,8 +91,12 @@ async function reportCatalog(man, facts, probe = null, verbose = true) {
   // Четвёртая корзина, а не третья: «закрыто другим арбитром» — это НЕ «не поставлено».
   // Пока их считали вместе, вывод каждый прогон называл долгом то, что уже держит biome или
   // ruff. Просьба первого чужого пользователя; она же — наша собственная норма про вывод.
-  const { covered, unknownGates } = coversOf(man);
-  const { held, todo, skip, byOther } = catalogBuckets(catalog, facts, covered);
+  // Корзины — по тому, что закрыто НА ДЕЛЕ: заявка с выключенным правилом или правилом, которого
+  // у линтера нет, запись не держит. Иначе итог снимал её с долга, а строкой ниже та же запись
+  // называлась неверно закрытой.
+  const { unknownGates } = coversOf(man);
+  const configs = await readLinterConfigs(CWD);
+  const { held, todo, skip, byOther } = catalogBuckets(catalog, facts, heldCovers(man, catalog, configs));
 
   console.log(c.bold(`\n  ${L.doctor.gatesHeading}\n`));
   const marks = ["has_ci", "has_db", "has_docker", "has_tests", "has_deps"]
@@ -191,27 +195,15 @@ async function reportCatalog(man, facts, probe = null, verbose = true) {
   // сняла бы запись с долга, не закрыв её ничем.
   // Конфиги — ПО ЛИНТЕРАМ, а не одной склейкой: заявка сверяется правилами того линтера,
   // которым закрыт гейт (отзыв с живого проекта 2026-09-11 — коды ruff искались в biome.json).
-  const readAll = async (names) => {
-    let t = "";
-    for (const f of names) { try { t += await readFile(join(CWD, f), "utf8") + "\n"; } catch { /* нет файла */ } }
-    return t;
-  };
-  let scripts = {}, pkgText = "";
-  try { pkgText = await readFile(join(CWD, "package.json"), "utf8"); scripts = JSON.parse(pkgText)?.scripts || {}; } catch { /* нет или не JSON */ }
-  const configs = {
-    // ruff.toml и .ruff.toml — конфиг ruff целиком, слово «ruff» в них писать незачем (поймал наш же
-    // smoke: `extend-select = [..., "T20"]` выбрасывался). pyproject.toml — только если в нём есть
-    // раздел ruff: он есть почти у каждого python-проекта и без ruff.
-    ruff: (await readAll(["ruff.toml", ".ruff.toml"])) +
-      ((await readAll(["pyproject.toml"])).match(/^\[tool\.ruff[\s\S]*/m)?.[0] || ""),
-    eslint: (await readAll([".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yml", "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts"])) +
-      (/"eslintConfig"/.test(pkgText) ? pkgText : ""),
-    biome: await readAll(["biome.json", "biome.jsonc"]),
-    scripts,
-  };
   for (const u of coversUnproven(man, catalog, configs)) {
     if (u.kind === "unproven") {
       console.log(c.yellow(`\n  ${L.doctor.coversUnproven(u.entry, u.gate, u.codes.join(", "))}`));
+      console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
+    } else if (u.kind === "disabled") {
+      // ВЫКЛЮЧЕНО — НЕ «НЕ ПОДТВЕРЖДЕНО». Там правила нет нигде, здесь оно названо и выключено:
+      // человек его сам снял. Совет другой, значит и строка другая. Замер 2026-09-16: у fastapi
+      // C901 в `ignore`, и прежняя сверка эту заявку молча подтверждала.
+      console.log(c.yellow(`\n  ${L.doctor.coversDisabled(u.entry, u.gate, u.codes.join(", "))}`));
       console.log(c.dim(`  ${L.doctor.coversUnprovenHow(`${SELF} add ${u.entry}`)}`));
     } else if (u.kind === "impossible") {
       console.log(c.yellow(`\n  ${L.doctor.coversImpossible(u.entry, u.gate, u.linter)}`));
