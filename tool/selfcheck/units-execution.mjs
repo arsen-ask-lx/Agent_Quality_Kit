@@ -17,7 +17,7 @@
 // рядом с инструментом — нормализующим адаптером, а протокол остаётся простым.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classify, findingCodes, gitBash, launchable, gateCommand } from "../lib/execution.mjs";
+import { classify, findingCodes, gitBash, launchable, gateCommand, gateTimeout, GATE_TIMEOUT_DEFAULT } from "../lib/execution.mjs";
 
 // Вход — то, что отдаёт spawnSync: { status, signal, error }.
 const R = (over = {}) => ({ status: 0, signal: null, error: undefined, ...over });
@@ -162,4 +162,40 @@ test("Windows: команда гейта со словом bash отвечает
   const r = spawnSync(gateCommand('bash -c "uname -s"'), { shell: true, encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /MINGW|MSYS/, `ответил не Git Bash: ${r.stdout}`);
+});
+
+// СКОЛЬКО ЖДАТЬ ЧУЖУЮ КОМАНДУ — ОДНО ЗНАНИЕ, А НЕ ПЯТЬ КОПИЙ.
+//
+// До 2026-09-16 число 300000 было вписано в четырёх местах: run.mjs, prove.mjs и дважды в
+// gates.mjs. Это не похожие строки, а одно знание в четырёх файлах, и правится оно по одному.
+//
+// СПОСОБ РЕШИТЬ ИНАЧЕ ОБЯЗАН БЫТЬ. Он записан в соседнем файле про выбор bash: «у всего, что мы
+// решаем сами, обязан быть способ решить иначе». У таймаута его не было, и живой проект с
+// verify-прогоном длиннее пяти минут просто выкинул свою главную проверку из манифеста.
+//
+// ПЯТЬ МИНУТ ПО УМОЛЧАНИЮ НЕ ВЫДУМАНЫ: у SonarQube SONAR_QUALITY_GATE_TIMEOUT ровно 300 секунд.
+// Переопределение переменной среды — тоже их способ, и GitLab делает так же
+// (RUNNER_AFTER_SCRIPT_TIMEOUT). Поля «timeout» у команды нет ни у lefthook, ни у pre-commit,
+// поэтому в манифест мы его не заводим: соглашения нет, а просьба была одна.
+test("без переменной среды — прежние пять минут", () => {
+  assert.equal(gateTimeout({}).ms, GATE_TIMEOUT_DEFAULT);
+  assert.equal(GATE_TIMEOUT_DEFAULT, 300000);
+  assert.equal(gateTimeout({ AQK_GATE_TIMEOUT: "" }).ms, GATE_TIMEOUT_DEFAULT);
+});
+
+test("переменная задаёт срок в секундах", () => {
+  assert.equal(gateTimeout({ AQK_GATE_TIMEOUT: "900" }).ms, 900000);
+  assert.equal(gateTimeout({ AQK_GATE_TIMEOUT: " 60 " }).ms, 60000);
+});
+
+// МУСОР НЕ ПРЕВРАЩАЕТСЯ В «БЕЗ ПРЕДЕЛА». Ноль или буквы в NaN дали бы spawnSync поведение
+// «ждать вечно» — то есть висящий гейт вместо честного «не смогли проверить». И молчать об
+// этом нельзя: человек задал переменную и ждёт от неё действия.
+test("мусор в переменной — прежний срок и слово об этом, а не вечное ожидание", () => {
+  for (const bad of ["abc", "0", "-5", "NaN", "1e999"]) {
+    const t = gateTimeout({ AQK_GATE_TIMEOUT: bad });
+    assert.equal(t.ms, GATE_TIMEOUT_DEFAULT, `«${bad}» изменило срок`);
+    assert.equal(t.ok, false, `«${bad}» принято за исправное значение`);
+    assert.equal(t.raw, bad);
+  }
 });

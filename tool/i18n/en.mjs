@@ -179,6 +179,7 @@ export const en = {
       `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
       `either fix them and drop them from advisory, or admit the rule does not exist.`,
     runHeading: "Running the declared gates",
+    timeoutBadEnv: (raw, secs) => `AQK_GATE_TIMEOUT="${raw}" is not a number of seconds above zero; waiting ${secs}s as before. Zero and garbage mean "wait forever" to spawnSync, and a hung gate looks exactly like a working one.`,
     timeout: "did not finish within 5 minutes",
     cannotCheck: (why) => `could not check: ${why}`,
     whySpawn: (code) => `failed to start${code ? ` (${code})` : ""}`,

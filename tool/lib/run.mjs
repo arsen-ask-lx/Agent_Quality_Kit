@@ -17,7 +17,7 @@ import { scopeOutput, splitAdvice, changedFiles } from "./scope.mjs";
 import { CWD, TARGET_DIR, c, die, exists } from "./core.mjs";
 import { advisorySet } from "./manifest.mjs";
 import { L } from "../i18n/index.mjs";
-import { gateCommand, classify, findingCodes } from "./execution.mjs";
+import { gateCommand, classify, findingCodes, gateTimeout } from "./execution.mjs";
 import { annotations } from "./annotate.mjs";
 
 
@@ -103,11 +103,12 @@ function selectGates(gates, man, { only = [], skip = [] } = {}) {
   return { run, skipped: gates.map(([n]) => n).filter((n) => !kept.has(n)), unknown: [...new Set(unknown)] };
 }
 
-const GATE_TIMEOUT = 300000;
+// Сколько ждать — знает `execution.mjs`, там же, где всё остальное про запуск чужой команды.
+// Число жило здесь и ещё в трёх местах; переопределяется переменной AQK_GATE_TIMEOUT.
 
 // Один гейт в этом потоке — прежний путь, без `--jobs`.
 function spawnGate(cmd) {
-  return spawnSync(gateCommand(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: GATE_TIMEOUT });
+  return spawnSync(gateCommand(cmd), { shell: true, cwd: CWD, encoding: "utf8", timeout: gateTimeout().ms });
 }
 
 // ПАРАЛЛЕЛЬНО — ПО ФЛАГУ. Отзыв с живого проекта 2026-09-11: 34 независимых гейта шли друг за
@@ -125,7 +126,7 @@ function startPool(cmds, jobs) {
     const onErr = (e) => { results[id].res({ status: null, stdout: "", stderr: String(e?.message || e), error: { code: "WORKER" } }); };
     w.once("error", onErr);
     w.once("message", (m) => { w.off("error", onErr); results[id].res(m); feed(w); });
-    w.postMessage({ id, cmd: cmds[id], cwd: CWD, timeout: GATE_TIMEOUT });
+    w.postMessage({ id, cmd: cmds[id], cwd: CWD, timeout: gateTimeout().ms });
   };
   for (let i = 0; i < Math.min(jobs, cmds.length); i++) feed(new Worker(url));
   return results;
@@ -139,6 +140,12 @@ async function runGates(man, opts = {}) {
   const gates = sel.run;
   const advisory = advisorySet(man);
   const bar = progress();
+
+  // Мусор в AQK_GATE_TIMEOUT называется вслух ОДИН раз за прогон. Молча вернуть умолчание
+  // значило бы, что человек задал переменную, ничего не получил и об этом не узнал, — та же
+  // тишина, против которой написан комплект, только в его собственной настройке.
+  const t = gateTimeout();
+  if (!t.ok) console.log(c.yellow(`  ${L.doctor.timeoutBadEnv(t.raw, Math.round(t.ms / 1000))}`));
 
   // Сужение по дифу — договор с человеком, и он должен видеть, ЧТО именно сужено. Пустой диф
   // называется вслух: иначе «все гейты зелёные» означало бы «сравнили не с тем» и читалось бы

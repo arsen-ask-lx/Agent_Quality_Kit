@@ -634,6 +634,12 @@ aqk blob     # assembles GOD_AI.md out of kit/docs — to hand the guides to a c
 The file is **assembled, not stored**: edit the originals. A hand-edited copy drifts from its
 source within a week, and then nobody knows which one is real.
 
+A single gate is waited on for **five minutes**; past that it is "could not check", not
+"clean". Change it with `AQK_GATE_TIMEOUT` (seconds): `AQK_GATE_TIMEOUT=900 aqk doctor --run`.
+The default is not arbitrary — SonarQube waits exactly as long for its quality gate. There is
+deliberately no per-gate `timeout` field in the manifest: neither pre-commit nor lefthook has
+one, and a long check is more honestly declared as a separate command than allowed to hang.
+
 ## Contributing a gate
 
 The catalogue lives on other people's bruises. The procedure and the bar are in
