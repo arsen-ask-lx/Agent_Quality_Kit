@@ -69,10 +69,17 @@ preflight() {
     rm -rf "$PT"
   fi
   if [ -z "$WHY" ]; then
+    #
+    # ЧЕРЕЗ ОБОЛОЧКУ НА WINDOWS. Поймано конвейером в первый же прогон: `npm` там — это
+    # `npm.cmd`, и `spawnSync("npm")` без оболочки даёт ENOENT на исправной машине. Предполёт
+    # отказал на windows-задании, то есть сам стал тем ложным красным, против которого написан.
+    # Приём в комплекте уже дважды применён — `vitals.mjs` (shell при win32) и
+    # `smoke/version-sync.test.mjs` (`npm.cmd`); здесь он был потерян.
     ERR=$(node -e '
       const { spawnSync } = require("node:child_process");
+      const win = process.platform === "win32";
       for (const p of ["git", "npm"]) {
-        const r = spawnSync(p, ["--version"], { encoding: "utf8" });
+        const r = spawnSync(p, ["--version"], { encoding: "utf8", shell: win });
         if (r.error || r.status !== 0) {
           console.error(p + ": " + (r.error ? r.error.code : "код " + r.status));
           process.exit(1);
