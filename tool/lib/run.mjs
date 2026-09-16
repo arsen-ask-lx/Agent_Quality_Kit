@@ -357,9 +357,21 @@ async function writeRunReport({ version, reached, results, skipped = [] }) {
     L.report.summary(ok, results.length),
   ].filter((l) => l !== null);
 
+  // ЗАПИСЬ ОТЧЁТА НЕ РОНЯЕТ ПРОГОН. Тот же класс, что у `report` (разбор 2026-09-16): в рабочей
+  // области, где `.aqk/` не создать — read-only контейнер, чужой конвейер, каталог под
+  // ревью, — прогон падал уже ПОСЛЕ того, как все гейты отработали, и человек не получал ни
+  // вердикта, ни кода возврата. Побочное действие отменяло то, ради чего команду звали.
+  //
+  // Но молчать нельзя: отчёт читают `context` и `prompt`, и его отсутствие они прочтут как
+  // «прогона не было». Разница между «не было» и «был, записать не смогли» — ровно та, которую
+  // весь комплект и защищает, поэтому она называется вслух.
   const dst = join(CWD, TARGET_DIR, "last-run.md");
-  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-  await writeFile(dst, lines.join("\n") + "\n", "utf8");
+  try {
+    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+    await writeFile(dst, lines.join("\n") + "\n", "utf8");
+  } catch (e) {
+    console.log(c.yellow(`  ${L.report.notWritten(join(TARGET_DIR, "last-run.md"), e?.code || String(e?.message || e))}`));
+  }
 }
 
 // Разбор отчёта прошлого прогона. Формат кладёт сам `doctor` в .aqk/last-run.md; читаем его,

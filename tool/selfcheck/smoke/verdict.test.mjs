@@ -6,9 +6,11 @@
 // Обратная сторона нашего же принципа: молчание неотличимо не только от успеха, но и от отказа.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { project, aqk, aqkEnv } from "./_fixture.mjs";
+
+const plainText = (s) => String(s).replace(/\x1b\[[0-9;]*m/g, "");
 
 test("прогон называет свой вердикт словами в обоих исходах", (t) => {
   const p = project(t, { "src/a.py": "def s():\n    return 1\n" });
@@ -125,4 +127,36 @@ test("в GitHub Actions упавший гейт даёт пометку у ст�
   assert.match(gh.out, /^::error file=src\/a\.py,line=1,title=aqk%3A bad::x — плохо — почини: убери x$/m, gh.out);
   const local = aqkEnv(p, { GITHUB_ACTIONS: "" }, "doctor", "--run");
   assert.doesNotMatch(local.out, /^::error/m, "вне GitHub Actions пометок нет");
+});
+
+// ОТЧЁТ — ЭТО ЧТЕНИЕ, И ПАДАТЬ ЕМУ НЕ НА ЧЕМ.
+//
+// Разбор чужой интеграции 2026-09-16: `aqk report` в рабочей области, где `.aqk/` не создать,
+// упал с EROFS — не напечатав ничего. Команда, которая ТОЛЬКО рассказывает о состоянии,
+// перестала работать из-за побочного действия, о котором её не просили. Такие рабочие области
+// бывают не по недосмотру: read-only контейнер, чужой CI, каталог под ревью.
+//
+// Отчёт обязан уехать в stdout, а невозможность сохранить — быть названной, а не проглоченной:
+// человек, увидевший отчёт, вправе думать, что файл на диске, если ему не сказали иначе.
+test("report печатает отчёт и тогда, когда сохранить его некуда", (t) => {
+  const p = project(t, {
+    "AGENTS.md": "# вход\n",
+    ".aqk.yml": 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n',
+    "src/a.js": "export const a = 1;\n",
+  });
+  // Права возвращаются ЗДЕСЬ, а не через `t.after`: уборка фикстуры зарегистрирована раньше
+  // нашей и сносит каталог первой — на каталоге 0555 её `rmSync` падает сам, и проверка
+  // краснеет не тем, что проверяет. Поймано первым же прогоном.
+  let r;
+  chmodSync(p.dir, 0o555);
+  try { r = aqk(p, "report"); } finally { chmodSync(p.dir, 0o755); }
+  const out = plainText(r.out);
+  // Ищется НЕОБРАБОТАННОЕ падение — трассировка Node, — а не слово «EACCES»: код ошибки в
+  // сообщении «сохранить не смогли (EACCES)» стоит законно и человеку нужен. Первая версия
+  // этой проверки запрещала само слово и краснела на исправном выводе.
+  assert.doesNotMatch(out, /node:internal|\bat Object\.|\bthrow err\b/,
+    `команда упала вместо того, чтобы напечатать отчёт:\n${out.slice(0, 600)}`);
+  assert.match(out, /aqk report|Отчёт|отчёт/i, `отчёта в выводе нет:\n${out.slice(0, 600)}`);
+  assert.match(out, /сохранить|не записан|read-only|только для чтения/i,
+    `отчёт не сохранён, и об этом не сказано — человек решит, что файл на диске:\n${out.slice(-600)}`);
 });

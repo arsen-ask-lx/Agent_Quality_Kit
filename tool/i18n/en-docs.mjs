@@ -169,6 +169,7 @@ const enDocs = {
     whyTitle: "Why this matters — briefly",
     whyNothing: "nothing to add: everything applicable is in place",
     saved: (path) => `Saved: ${path}`,
+    notSaved: (f, why) => `could not save to ${f} (${why}) — the report is above, there is no file on disk. The command only reports state, so a failed write does not fail it.`,
     docs: {
       baseline: "the minimum a project needs, independent of language",
       readyMade: "the map of off-the-shelf rules: look for a ready one before writing your own",
@@ -232,6 +233,7 @@ const enDocs = {
   ],
   report: {
     skippedBySelect: "not run (by --only/--skip), state unknown",
+    notWritten: (f, why) => `could not write the run report to ${f} (${why}) — the gates did run, but the next session and the hook will read this as "no run happened".`,
     title: "aqk doctor --run",
     version: "version",
     level: "level",

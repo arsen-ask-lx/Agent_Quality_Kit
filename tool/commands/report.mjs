@@ -215,11 +215,27 @@ async function cmdReport() {
 
   const text = lines.join("\n") + "\n";
   const dst = join(CWD, TARGET_DIR, "report.md");
-  await mkdir(join(CWD, TARGET_DIR), { recursive: true });
-  await writeFile(dst, text, "utf8");
+
+  // ОТЧЁТ — ЭТО ЧТЕНИЕ, И ПАДАТЬ ЕМУ НЕ НА ЧЕМ. Разбор чужой интеграции 2026-09-16: в рабочей
+  // области, где `.aqk/` не создать, команда падала с EROFS, не напечатав ни строки. То есть
+  // побочное действие, о котором не просили, отменяло то, ради чего команду звали. Такие
+  // области бывают не по недосмотру: read-only контейнер, чужой конвейер, каталог под ревью.
+  //
+  // Молчать о несохранённом тоже нельзя: человек, увидевший отчёт, вправе считать, что файл
+  // лежит на диске, — если ему не сказали иначе. Тот же принцип, что и везде: не смогли —
+  // назови, а не выдавай за сделанное.
+  let saveError = null;
+  try {
+    await mkdir(join(CWD, TARGET_DIR), { recursive: true });
+    await writeFile(dst, text, "utf8");
+  } catch (e) {
+    saveError = e?.code || String(e?.message || e);
+  }
 
   console.log("\n" + text);
-  console.log(c.dim(`  ${L.report2.saved(join(TARGET_DIR, "report.md"))}\n`));
+  console.log(saveError
+    ? c.yellow(`  ${L.report2.notSaved(join(TARGET_DIR, "report.md"), saveError)}\n`)
+    : c.dim(`  ${L.report2.saved(join(TARGET_DIR, "report.md"))}\n`));
 
   // Код возврата — для конвейера и для агента: отчёт с красным гейтом не должен читаться
   // как «всё в порядке» только потому, что команда выполнилась.
