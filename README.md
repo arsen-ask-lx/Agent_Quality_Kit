@@ -179,7 +179,7 @@ $ npx agent-quality-kit doctor --run # runs them
         ./src/api/mailer.py:8:    print("sent", to)
   ✘  todo-without-task     exit 1
         ./src/web/app.js:1:// TODO: rewrite this
-  ✔  file-size-limit · entry-links-exist · complexity-limit
+  ✔  file-size-limit · deps-are-pinned · complexity-limit
 ```
 
 The failure text is written for an agent: it says **what exactly to do**. The exit code is for

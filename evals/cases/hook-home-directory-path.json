@@ -1,0 +1,12 @@
+{
+  "gate": "hook-actually-fires",
+  "expect": "green",
+  "source": {
+    "repo": "Dynokostya/just-works",
+    "checked": ".claude/settings.json:119 — команда хука «bash ~/.claude/statusline-command.sh»; тильда означает домашний каталог пользователя, а не репозиторий, 2026-09-15"
+  },
+  "why": "Хук пользовательского уровня живёт в домашнем каталоге, а не в проекте. Проверить его на диске проекта нельзя, и «файла нет» — обвинение по догадке.",
+  "files": {
+    ".claude/settings.json": "{\n  \"hooks\": {\n    \"Stop\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"bash ~/.claude/statusline-command.sh\"\n          }\n        ]\n      }\n    ]\n  }\n}\n"
+  }
+}

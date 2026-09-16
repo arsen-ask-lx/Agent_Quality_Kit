@@ -1,0 +1,12 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "andyhartzler/my-bluebubbles-web",
+    "checked": "в их AGENTS.md «make it go away» и «make one of these go away»; ни Makefile, ни package.json в репозитории нет — raw отдаёт 404 на оба, 2026-09-15"
+  },
+  "why": "«make» — обычный английский глагол. У них выше по файлу незакрытый блок кода, и весь текст после него читается как команды: «make it go away» стало целью make. Ни Makefile, ни package.json в репозитории нет — сравнивать не с чем, обвинение без предмета. Тот же довод, что у «just».",
+  "files": {
+    "AGENTS.md": "# свод\n\n```sh\nnpm ci\n\nДальше блок кода не закрыт, и это обычная проза:\nне меняй чтение, чтобы make it go away.\nmake one of these go away applies unchanged.\n"
+  }
+}

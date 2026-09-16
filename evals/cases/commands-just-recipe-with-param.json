@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "2mawi2/para",
+    "checked": "в их justfile строка 443 — «release BUMP=\"patch\":», рецепт с параметром; прочитан raw-файл 2026-09-15"
+  },
+  "why": "Рецепт just с параметром по умолчанию содержит знак равенства до двоеточия. Разбор требовал [^:=]* и такой рецепт не видел — существующая команда объявлялась несуществующей.",
+  "files": {
+    "AGENTS.md": "# свод\n\nВыпуск: `just release`.\n",
+    "justfile": "release BUMP=\"patch\":\n    echo {{BUMP}}\n\nversion := \"1.0\"\n"
+  }
+}

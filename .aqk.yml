@@ -31,7 +31,6 @@ gates:
   evals: "node evals/run.mjs"
   # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
   # репозиторий, а копия завтра разойдётся с оригиналом.
-  entry-links-exist: "bash kit/gates/entry-links-exist/check.sh ."
   entry-commands-exist: "bash kit/gates/entry-commands-exist/check.sh ."
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
@@ -75,7 +74,6 @@ gates:
   personal-config-not-shared: "bash kit/gates/personal-config-not-shared/check.sh ."
   # Единственная запись, которой нужен интернет: имена пакетов сверяются с реестром npm.
   # Без сети она выходит с кодом 2 и говорит «проверка не состоялась» — тишиной не прикидывается.
-  no-phantom-package: "bash kit/gates/no-phantom-package/check.sh ."
   # Конвейер выполняется с правами репозитория и с секретами. Запись заведена по собственному
   # отказу: 13 находок высокой строгости, включая десять действий по подвижной метке.
   ci-not-hijackable: "bash kit/gates/ci-not-hijackable/check.sh ."

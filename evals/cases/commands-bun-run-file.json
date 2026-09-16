@@ -1,0 +1,13 @@
+{
+  "gate": "entry-commands-exist",
+  "expect": "green",
+  "source": {
+    "repo": "Gerstep/HumanCompiler",
+    "checked": "их CLAUDE.md:16 — «bun run scripts/generate-plugin.ts <profile-path>»; bun умеет запускать файл напрямую, 2026-09-15"
+  },
+  "why": "«bun run <файл>» — запуск файла, а не именованного скрипта из package.json. Мы прочитали путь «scripts/generate-plugin.ts» как имя скрипта «scripts».",
+  "files": {
+    "CLAUDE.md": "# свод\n\n- `bun run scripts/generate-plugin.ts <profile>` — собрать плагин\n",
+    "package.json": "{\n  \"name\": \"x\",\n  \"scripts\": {\n    \"test\": \"bun test\"\n  }\n}\n"
+  }
+}

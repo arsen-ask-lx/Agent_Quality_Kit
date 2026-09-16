@@ -182,7 +182,7 @@ $ npx agent-quality-kit doctor --run # запускает их
         ./src/api/mailer.py:8:    print("sent", to)
   ✘  todo-without-task     код 1
         ./src/web/app.js:1:// TODO: переписать
-  ✔  file-size-limit · entry-links-exist · complexity-limit
+  ✔  file-size-limit · deps-are-pinned · complexity-limit
 ```
 
 Текст отказа написан для агента: в нём сказано, **что именно сделать**. Код возврата — для
