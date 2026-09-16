@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, chmodSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { join, dirname, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -42,9 +42,15 @@ function stubDir(t, name) {
   return dir;
 }
 
+// PATH СОБИРАЕТСЯ ЧЕРЕЗ `delimiter`, А НЕ ЧЕРЕЗ ДВОЕТОЧИЕ. На Windows разделитель — точка с
+// запятой, а сам путь вида `C:\Users\…` содержит двоеточие внутри: строка `"C:\...:" + PATH`
+// разваливается на первом же символе, заглушка в PATH не попадает, и проверка меряет настоящий
+// git. Поймано windows-заданием дважды подряд — первый раз я починил вызов, а не сборку пути.
+const withStub = (dir) => (dir ? `${dir}${delimiter}${process.env.PATH}` : process.env.PATH);
+
 const runPreflight = (extraPath) => spawnSync("bash", [SMOKE, "--preflight-only"], {
   encoding: "utf8", timeout: 60000,
-  env: { ...process.env, PATH: extraPath ? `${extraPath}:${process.env.PATH}` : process.env.PATH, AQK_LANG: "ru" },
+  env: { ...process.env, PATH: withStub(extraPath), AQK_LANG: "ru" },
 });
 
 test("предполёт: исправная машина проходит и ничего не ломает", () => {
@@ -68,8 +74,10 @@ test("предполёт: git виден шеллу, но не подпроце�
   // `shell` — тот же, что в самом предполёте: на Windows без оболочки Node не видит ни `.cmd`
   // заглушки, ни настоящего `npm`. Проверка обязана звать так же, как зовёт код, иначе она
   // проверяет не его. Ровно на этом конвейер и поймал первую версию.
+  // Node зовётся НАПРЯМУЮ, без оболочки-посредника: подстановка пути в строку `bash -c` — это
+  // ещё один способ потерять заглушку, и именно так эта проверка уже ошиблась.
   const probe = `const r=require("node:child_process").spawnSync("git",["--version"],{shell:${WIN}}); process.exit(r.status===0?0:3)`;
-  const r = spawnSync("bash", ["-c", `PATH="${dir}:$PATH" node -e '${probe}'`],
-    { encoding: "utf8", timeout: 30000 });
+  const r = spawnSync(process.execPath, ["-e", probe],
+    { encoding: "utf8", timeout: 30000, env: { ...process.env, PATH: withStub(dir) } });
   assert.equal(r.status, 3, "оснастка проверки неверна: заглушка не перехватывает git у Node");
 });
