@@ -161,7 +161,10 @@ export const en = {
     weakStub: (text) => `proves nothing: the whole script is a printout — «${text}»`,
     weakHow: (n) => `${n} of them cannot go red. Declaring a check that cannot fail only makes the ` +
       "silence machine-readable — fix the command first, then declare it.",
-    total: "Total:",
+    // Counted over the AQK CATALOGUE, and the line says so: a project gate named its own way
+    // closes none of our entries by name, and "held by a machine 0" read as a verdict on a
+    // repository with thirty checks of its own. Measured 2026-09-16 across twelve repositories.
+    total: "AQK catalogue totals:",
     totalHeld: (n) => `held by a machine ${n}`,
     totalTodo: (n) => `applicable but not installed ${n}`,
     totalSkip: (n) => `hidden ${n}`,
@@ -176,6 +179,7 @@ export const en = {
       `advisory and red: ${names.join(", ")}. These are switched-off checks: ` +
       `either fix them and drop them from advisory, or admit the rule does not exist.`,
     runHeading: "Running the declared gates",
+    timeoutBadEnv: (raw, secs) => `AQK_GATE_TIMEOUT="${raw}" is not a number of seconds above zero; waiting ${secs}s as before. Zero and garbage mean "wait forever" to spawnSync, and a hung gate looks exactly like a working one.`,
     timeout: "did not finish within 5 minutes",
     cannotCheck: (why) => `could not check: ${why}`,
     whySpawn: (code) => `failed to start${code ? ` (${code})` : ""}`,

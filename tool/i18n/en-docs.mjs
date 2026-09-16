@@ -26,6 +26,9 @@ const enDocs = {
     unknownHook: "could not look — unknown, not \"no\"",
     preCommitOk: "wired in .git/hooks",
     preCommitNo: "not in .git/hooks: a config entry is an intent, not a guard",
+    // A hook IS there, but not ours: nothing to install, something to add — a different
+    // remedy, hence a different line. Until 2026-09-16 this case printed as "wired".
+    preCommitOther: "a .git/hooks hook exists, but AQK is not called from it — check .pre-commit-config.yaml or the hook body",
     sessionOk: "the SessionStart hook hands the state to the agent",
     sessionNo: (cmd) => `the agent gets no state: ${cmd}`,
     versionOk: (v) => `${v}, current`,
@@ -102,7 +105,9 @@ const enDocs = {
     whenTitle: "When to do what:",
     whenCommit: (hook) => hook === true
       ? "Before a commit → the `.git/hooks/pre-commit` hook runs the checks itself; do not bypass it (`--no-verify`)."
-      : "Before a commit → `aqk doctor --run --since main`: there is no pre-commit hook, it will not happen by itself.",
+      : hook === "other"
+        ? "Before a commit → `aqk doctor --run --since main`: a hook is installed in `.git/hooks`, but AQK is not called from it — the run will not happen by itself."
+        : "Before a commit → `aqk doctor --run --since main`: there is no pre-commit hook, it will not happen by itself.",
     whenRules: [
       "Added or changed a check → `aqk prove`: the gate must go red on its own red sample, otherwise it checks nothing.",
       "Writing a rule into the rulebook → put the arbiter mark next to it, `<!-- aqk: gate-name -->`; no gate — `<!-- aqk: human -->`, which is an admission, not a check.",
@@ -164,6 +169,7 @@ const enDocs = {
     whyTitle: "Why this matters — briefly",
     whyNothing: "nothing to add: everything applicable is in place",
     saved: (path) => `Saved: ${path}`,
+    notSaved: (f, why) => `could not save to ${f} (${why}) — the report is above, there is no file on disk. The command only reports state, so a failed write does not fail it.`,
     docs: {
       baseline: "the minimum a project needs, independent of language",
       readyMade: "the map of off-the-shelf rules: look for a ready one before writing your own",
@@ -227,6 +233,7 @@ const enDocs = {
   ],
   report: {
     skippedBySelect: "not run (by --only/--skip), state unknown",
+    notWritten: (f, why) => `could not write the run report to ${f} (${why}) — the gates did run, but the next session and the hook will read this as "no run happened".`,
     title: "aqk doctor --run",
     version: "version",
     level: "level",

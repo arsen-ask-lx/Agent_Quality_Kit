@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { CWD, exists } from "./core.mjs";
 import { parseManifest, gateRequires } from "./manifest.mjs";
 import { whichSync } from "./repo.mjs";
-import { classify, findingCodes, gateCommand } from "./execution.mjs";
+import { classify, findingCodes, gateCommand, gateTimeout } from "./execution.mjs";
 
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
@@ -115,7 +115,7 @@ function run(cmd, timeoutMs, prog) {
 
 // Возвращает { proven, broken, unprovable, results } — числами и списком, чтобы вызывающий
 // сам решал, что печатать и чем краснеть.
-async function proveGates(man, { timeoutMs = 300000 } = {}) {
+async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
   const results = [];
@@ -135,7 +135,7 @@ async function proveGates(man, { timeoutMs = 300000 } = {}) {
     // Программы, без которой запись не работает, может не быть на машине — тогда доказывать
     // нечем, а не «гейт сломан». Проверяется ДО запуска: без неё обёртка краснеет на обоих
     // образцах, и вердикт вышел бы «краснеет на исправном коде».
-    const missing = await gateRequires(samplesDir, name, whichSync);
+    const missing = await gateRequires(man, samplesDir, name, whichSync);
     if (missing) {
       results.push({ name, state: "unprovable", why: "needs-program", missing });
       continue;

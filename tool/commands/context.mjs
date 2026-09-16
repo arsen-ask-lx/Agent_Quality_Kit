@@ -257,7 +257,9 @@ async function readAdvice(man, probe) {
   const facts = await detectFacts(man);
   const catalog = await readCatalog();
   const { todo } = catalogBuckets(catalog, facts, coversOf(man).covered);
-  const adopt = declaredGates(man).length ? [] : proposeGates(await readAdoptFiles(CWD));
+  // Чужие проверки — и тогда, когда гейты уже объявлены: отсев идёт по КОМАНДЕ внутри
+  // `proposeGates`, а не по факту «манифест не пуст» (замер 2026-09-16, см. doctor-catalog).
+  const adopt = proposeGates(await readAdoptFiles(CWD), declaredGates(man).map(([, cmd]) => cmd));
   const blind = (probe?.classes || [])
     .filter((b) => !facts.gateKeys.includes(b.slug))
     .map((b) => ({ ...b, command: blindAdvice(catalog.find((r) => r.slug === b.slug), facts, {}).command }));

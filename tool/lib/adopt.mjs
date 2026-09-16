@@ -52,14 +52,35 @@ function cannotFail(body) {
 // красный прогон на пустом месте. Имена сняты с живых tox-файлов (rich, click, flask).
 const TOX_CHECKS = new Set(["lint", "style", "typing", "types", "type", "mypy", "check", "typecheck"]);
 
+// ОДНА И ТА ЖЕ КОМАНДА, ЗАПИСАННАЯ ПО-РАЗНОМУ. Сравнивать надо КОМАНДЫ, а не имена: гейт в
+// чужом манифесте зовётся как хочет его владелец (`project-verify`), и по именам совпадения не
+// будет никогда. Обёртка снимается: `bash scripts/check` и `scripts/check` — это одно, и
+// советовать второе тому, у кого объявлено первое, значит советовать уже сделанное.
+//
+// Вхождение подстрокой здесь НЕ годится, хотя и соблазняет: `true` содержится в половине
+// команд, и любой гейт-заглушка съел бы весь список. Равенство после нормализации ошибается
+// в одну сторону — покажет лишнее, — и это дешевле молчания.
+const WRAPPER = /^(?:bash|sh)\s+/;
+
+function sameCommand(a, b) {
+  const norm = (s) => String(s || "").trim().replace(/\s+/g, " ");
+  const bare = (s) => norm(s).replace(WRAPPER, "");
+  return (norm(a) && norm(a) === norm(b)) || (bare(a) && bare(a) === bare(b));
+}
+
 // Источники в порядке доверия: при совпадении имени берётся первый. Замер 2026-09-11 на
 // восьми python-проектах: package.json нет ни у кого, Makefile у трёх, `.pre-commit-config.yaml`
 // у семи, tox у пяти, scripts/ у httpx. Шаги конвейера НЕ читаются: там `${{ matrix.x }}`,
 // `PYTHONPATH=…` и обёртки `uv run --locked --group …` — строка, которая работает только в
 // том конвейере, предложенная как локальный гейт, покраснела бы у человека в первую же минуту.
-function proposeGates(files = {}) {
+//
+// `declared` — команды, УЖЕ объявленные в манифесте. Приходят списком строк, а не манифестом:
+// иначе чтение чужих конфигов начало бы зависеть от нашего формата, и файл, заведённый ради
+// разбора ЧУЖИХ источников, получил бы вторую причину меняться.
+function proposeGates(files = {}, declared = []) {
   const out = [];
   const seen = new Set();
+  const already = (cmd) => (declared || []).some((d) => sameCommand(d, cmd));
   // ТЕЛО передаётся отдельно от команды: человеку показывается каноничная `npm test`, а судим
   // мы по тому, что за ней стоит. Где тела у нас нет (Makefile, tox, scripts/) — там и суждения
   // нет: молчание тут честнее догадки.
@@ -67,6 +88,7 @@ function proposeGates(files = {}) {
     const key = name === "tests" ? "test" : name.replace(/^type-?check$|^types$/, "typecheck");
     if (seen.has(key)) return;
     seen.add(key);
+    if (already(cmd)) return;
     const weak = cannotFail(body);
     out.push(weak ? { name: key, cmd, source, weak } : { name: key, cmd, source });
   };
