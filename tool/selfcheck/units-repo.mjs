@@ -402,3 +402,47 @@ test("без объявленных гейтов список тот же, чт�
   assert.deepEqual(proposeGates(files).map((g) => g.name), ["test"]);
   assert.deepEqual(proposeGates(files, []).map((g) => g.name), ["test"]);
 });
+
+// КОМАНДА — НА ЯЗЫКЕ ПРОЕКТА, А НЕ НА ЯЗЫКЕ ЕГО СЛУЖЕБНЫХ СКРИПТОВ.
+//
+// Замер 2026-09-16 по тридцати пяти чужим репозиториям. Язык считался «есть в репозитории», если
+// встретился хоть один файл, и перебирался в порядке обхода дерева. dotnet/aspire — C#: 62%
+// файлов кода csharp, 24% typescript, 3% python-скриптов. Рецепта под csharp у записи нет, и
+// первым языком с рецептом оказывался python: «начните с трёх» советовал ruff C#-проекту.
+//
+// Хуже совета — установка: `aqk add` выбирает рецепт тем же перебором. Гейт встал бы как ruff,
+// был бы зелёным и смотрел бы на три процента кода. Объявленная защита, которая не видит проект.
+//
+// ПОРОГ СНЯТ С ДАННЫХ. Шум — служебные скрипты: python 3% у aspire, shell 1–5% почти везде, по
+// 1% у aider. Настоящие второстепенные языки начинаются с 9%: rust у pydantic и next.js, python
+// у MCP servers, ruby у fzf. Между 5 и 9 процентами на тридцати пяти репозиториях — ни одного.
+const SH = "sh -c true {dir}", NODE = "node -e 0 {dir}";
+
+test("установка берёт рецепт основного языка, а не первого встреченного", () => {
+  const rec = { slug: "x", recipes: { python: SH, typescript: NODE } };
+  // Дословно уклад aspire: python встретился при обходе раньше, но это три процента кода.
+  const f = facts({ langs: new Set(["python", "csharp", "typescript"]), mainLangs: ["csharp", "typescript"] });
+  assert.equal(recipeFor(rec, f), "node -e 0 .", "C#-проекту поставлен рецепт его служебных python-скриптов");
+});
+
+test("совет берёт команду основного языка, а не первого встреченного", async () => {
+  const { blindAdvice } = await import("../lib/advice.mjs");
+  const entry = { slug: "x", recipes: { python: SH, typescript: NODE } };
+  const f = { langs: new Set(["python", "csharp", "typescript"]), mainLangs: ["csharp", "typescript"] };
+  assert.equal(blindAdvice(entry, f).command, "node -e 0 .", "совет дан на языке служебных скриптов");
+});
+
+// Нет рецепта ни под один основной язык — команды нет. Это честнее выдуманной: так уже записано
+// в самом `blindAdvice`, и здесь проверяется, что шум не протаскивает команду обратно.
+test("нет рецепта под основной язык — нет и команды на языке шума", async () => {
+  const { blindAdvice } = await import("../lib/advice.mjs");
+  const entry = { slug: "x", recipes: { python: SH } };
+  const f = { langs: new Set(["python", "csharp"]), mainLangs: ["csharp"] };
+  assert.equal(blindAdvice(entry, f).command, null, "C#-проекту выдуман совет на python");
+});
+
+// Прежний вызов без `mainLangs` (так факты собирают проверки и старые места) ведёт себя как раньше.
+test("без долей выбор прежний: по всем встреченным языкам", () => {
+  const rec = { slug: "x", recipes: { python: SH } };
+  assert.equal(recipeFor(rec, facts({ langs: new Set(["python"]) })), "sh -c true .");
+});

@@ -25,6 +25,23 @@ const EXT_LANG = {
   ".cs": "csharp", ".sh": "shell", ".kt": "kotlin", ".swift": "swift", ".scala": "scala",
 };
 
+// ОСНОВНОЙ ЯЗЫК — ДОЛЯ ФАЙЛОВ КОДА БОЛЬШЕ ПЯТИ ПРОЦЕНТОВ. Порог снят с данных, а не взят из
+// головы: замер 2026-09-16 по тридцати пяти чужим репозиториям. Шум — служебные скрипты:
+// python 3% у dotnet/aspire, shell 1–5% почти везде, по 1% у aider. Настоящие второстепенные
+// языки начинаются с 9%: rust у pydantic и next.js, python у MCP servers, ruby у fzf. Между 5 и 9
+// процентами — ни одного репозитория. Доля считается по ЧИСЛУ ФАЙЛОВ, а не строк: строки
+// пришлось бы читать, а осмотр обязан укладываться в доли секунды.
+const MAIN_LANG_SHARE = 0.05;
+
+// ЯЗЫКИ, ПО КОТОРЫМ ВЫБИРАЕТСЯ КОМАНДА. Одно место на троих: установку (`pickRecipe`), совет
+// (`blindAdvice`) и признак «закрывается одной командой» (`startWith`). До 2026-09-16 все трое
+// перебирали любой встреченный язык в порядке обхода, и C#-проекту с тремя процентами python-
+// скриптов ставился ruff: гейт зелёный и смотрит на три процента кода.
+// Без долей (факты собраны вручную, в проверках) — прежнее поведение, все встреченные языки.
+function langsForCommand(facts) {
+  return Array.isArray(facts?.mainLangs) ? facts.mainLangs : [...(facts?.langs || [])];
+}
+
 // Спецификация API — договор с чужим кодом. Опознаётся ПО ИМЕНИ ФАЙЛА, а не по расположению:
 // его кладут в корень, в `docs/`, рядом с приложением, — фиксированный список путей промахнулся
 // бы на большинстве проектов. Расширение обязательно разбираемое: `openapi.md` — это рассказ о
@@ -79,7 +96,7 @@ async function detectFacts(man) {
   // Считать их кодом проекта значит врать о репозитории — после установки сторожей пустой
   // проект «становился» проектом на Python, и ему показывались записи про мёртвый код.
   const samplesDir = man?.samples ? resolve(CWD, String(man.samples)) : null;
-  const langs = new Set();
+  const langCount = new Map();
   let files = 0;
   let hasDb = false;
   let hasTests = false;
@@ -117,16 +134,27 @@ async function detectFacts(man) {
         const dot = it.name.lastIndexOf(".");
         if (dot > 0) {
           const lang = EXT_LANG[it.name.slice(dot)];
-          if (lang) langs.add(lang);
+          if (lang) langCount.set(lang, (langCount.get(lang) || 0) + 1);
         }
       }
     }
   }
   await walk(CWD, 0);
 
+  // ЯЗЫКИ — ПО ДОЛЕ, А НЕ ПО ПОРЯДКУ ОБХОДА. Множество в порядке встречи ставило первым то, что
+  // лежит в корне: shell-скрипты сборки шли раньше основного кода у terraform, rails, phoenix.
+  // Состав `langs` не меняется — применимость записи по-прежнему решает любой встреченный язык,
+  // — меняется только порядок: главный первым. `mainLangs` — те, чья доля больше порога; ими
+  // выбирается КОМАНДА (см. langsForCommand).
+  const codeFiles = [...langCount.values()].reduce((a, b) => a + b, 0);
+  const byShare = [...langCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const langs = new Set(byShare.map(([l]) => l));
+  const mainLangs = byShare.filter(([, n]) => n / codeFiles > MAIN_LANG_SHARE).map(([l]) => l);
+
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   const facts = {
     langs,
+    mainLangs,
     files,
     has_db: hasDb,
     has_tests: hasTests,
@@ -270,7 +298,7 @@ function pickRecipe(rec, facts, missing) {
     return null;
   }
 
-  for (const lang of facts.langs) {
+  for (const lang of langsForCommand(facts)) {
     if (!recipes[lang]) continue;
     const prog = String(recipes[lang]).trim().split(/\s+/)[0];
     if (runnable(recipes[lang])) return recipes[lang];
@@ -425,5 +453,5 @@ async function matchCatalog(query) {
 // который никто не берёт, читается как часть договора и мешает менять внутренности.
 export {
   whichSync,
-  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS,
+  EXT_LANG, detectFacts, readCatalog, triggerVerdict, pickRecipe, recipeFor, browserServerAdvice, MARKS, langsForCommand,
   stems, overlap, matchCatalog, isApiSpec, claudeSeesRules, claudeShimFor };

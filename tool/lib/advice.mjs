@@ -5,7 +5,7 @@
 // решение, что из этого сказать человеку и агенту. Одно знание на `doctor`, `probe` и блок для
 // агента: жило в двух файлах и росло в обоих; шов вскрыл наш же file-size-limit — repo.mjs
 // дорос до 494 строк при пределе 500.
-import { triggerVerdict } from "./repo.mjs";
+import { triggerVerdict, langsForCommand } from "./repo.mjs";
 
 // Корзины каталога для ЭТОГО проекта: держит · к установке · закрыто другим арбитром ·
 // неприменимо. Одна раскладка на `doctor` и на блок для агента: жила внутри `doctor`, и блоку
@@ -35,7 +35,7 @@ function catalogBuckets(catalog, facts, covered = new Map()) {
 // При равенстве признаков — по имени: одинаковый ввод обязан давать одинаковый ответ, иначе
 // человек видит разный совет на двух прогонах подряд и перестаёт верить обоим.
 function startWith(entries, facts, n = 3) {
-  const langs = facts?.langs ? [...facts.langs] : [];
+  const langs = langsForCommand(facts);
   const cheap = (e) => {
     const r = e?.recipes && typeof e.recipes === "object" ? e.recipes : {};
     return [...langs, "native"].some((k) => r[k] && !/\{gate\}/.test(r[k])) ? 1 : 0;
@@ -73,7 +73,7 @@ function blindAdvice(entry, facts, hot = {}) {
   const recipes = entry?.recipes && typeof entry.recipes === "object" ? entry.recipes : {};
   // `langs` приходит МНОЖЕСТВОМ, а не массивом — `Array.isArray` тихо давал пустой список, и
   // совет не печатался вовсе. Поймано на живом `requests`: langs = Set(1) { python }.
-  const langs = facts?.langs ? [...facts.langs] : [];
+  const langs = langsForCommand(facts);
   // Тот же порядок, что у `pickRecipe`: свой язык → безъязыковой родной → ничего. Переносимый
   // (`any`) сюда не идёт никогда: он зовёт файл из комплекта, и человеку без комплекта вставить
   // его некуда.
