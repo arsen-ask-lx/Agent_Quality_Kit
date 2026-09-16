@@ -180,15 +180,42 @@ async function ensureIgnored(cwd = CWD) {
 }
 
 // Стоит ли хук pre-commit НА САМОМ ДЕЛЕ — в `.git/hooks`, а не в `.pre-commit-config.yaml`:
-// запись в конфиге — намерение, сработает только то, что лежит в гите. Три ответа: true — стоит,
-// false — нет, null — не git или файл не прочитать («не знаем» не сливается с «нет»).
-// Одна функция на `vitals` (подключено ли) и `context` (что сказать агенту перед коммитом).
+// запись в конфиге — намерение, сработает только то, что лежит в гите.
+//
+// ЧЕТЫРЕ ОТВЕТА, А НЕ ТРИ. Раньше тело хука проверялось регуляркой `/pre-commit|aqk/i`, то есть
+// ПО ИМЕНИ: у любого проекта с фреймворком pre-commit слово «pre-commit» в хуке есть всегда, и
+// `vitals` печатал «прописан в .git/hooks» репозиторию, где AQK не вызывался ни разу. Разбор
+// живой интеграции 2026-09-16: человек прочитал это как «обвязка на месте» и ушёл. Наш
+// собственный класс «объявлено ≠ работает», у нас самих.
+//
+//   null    — не git либо файл не прочитать («не знаем» не сливается с «нет»);
+//   false   — хука нет;
+//   "other" — хук есть, но AQK в нём не участвует: ставить не надо, надо дописать;
+//   true    — AQK участвует.
+//
+// КАК ЭТО ДЕЛАЮТ СНАРУЖИ. pre-commit узнаёт свой хук функцией `is_our_script()` — ищет в теле
+// собственный маркер (CURRENT_HASH плюс пять PRIOR_HASHES), а не имя. У них же есть режим
+// миграции: при установке поверх чужого хука запускаются оба, старый уезжает в `.legacy`. То
+// есть «в теле есть слово pre-commit» не доказывает даже, что хук ихний.
+//
+// ДВА ПУТИ ПОДКЛЮЧЕНИЯ, И СЧИТАТЬ НАДО ОБА. Прямой вызов в теле хука — и наш хук из
+// `.pre-commit-hooks.yaml`, поставленный через фреймворк: там в `.git/hooks/pre-commit` лежит
+// диспетчер, а что он запустит, написано в `.pre-commit-config.yaml` проекта. Смотреть только в
+// тело значило бы соврать в обратную сторону — сказать «AQK не подключён» тому, кто подключил.
+const AQK_IN_HOOK = /\baqk\b|agent[-_]quality[-_]kit/i;
+const AQK_IN_CONFIG = /agent[-_]quality[-_]kit|Agent_Quality_Kit|(?:^|\s)-\s*id:\s*["']?aqk\b/im;
+
 async function preCommitHook(cwd = CWD) {
   const { readFile } = await import("node:fs/promises");
   if (!(await exists(join(cwd, ".git")))) return null;
   const hook = join(cwd, ".git", "hooks", "pre-commit");
   if (!(await exists(hook))) return false;
-  try { return /pre-commit|aqk/i.test(await readFile(hook, "utf8")); } catch { return null; }
+  let body = "";
+  try { body = await readFile(hook, "utf8"); } catch { return null; }
+  if (AQK_IN_HOOK.test(body)) return true;
+  let config = "";
+  try { config = await readFile(join(cwd, ".pre-commit-config.yaml"), "utf8"); } catch { /* нет конфига — значит подключения через фреймворк нет */ }
+  return AQK_IN_CONFIG.test(config) ? true : "other";
 }
 
 export {

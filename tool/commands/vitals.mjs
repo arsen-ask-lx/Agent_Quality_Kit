@@ -45,10 +45,16 @@ function vitalsRows(f) {
       ok: f.unparsed > 0 ? false : true,
       detail: f.unparsed > 0 ? t.manifestBad(f.unparsed) : t.manifestOk,
     },
+    // ЧЕТЫРЕ ОТВЕТА ПРО ХУК. «Хук чужой» — не «хука нет»: в одном случае ставить нечего, в
+    // другом дописать строку в уже стоящий. Совет разный, значит и строка разная. Ни то ни
+    // другое не отказ: AQK могут сознательно гонять в конвейере.
     {
       key: "preCommit",
-      ok: f.preCommit === null ? null : f.preCommit ? true : "no",
-      detail: f.preCommit === null ? t.unknownHook : f.preCommit ? t.preCommitOk : t.preCommitNo,
+      ok: f.preCommit === null ? null : f.preCommit === true ? true : "no",
+      detail: f.preCommit === null ? t.unknownHook
+        : f.preCommit === true ? t.preCommitOk
+        : f.preCommit === "other" ? t.preCommitOther
+        : t.preCommitNo,
     },
     {
       key: "sessionHook",
