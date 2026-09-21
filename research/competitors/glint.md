@@ -11,9 +11,10 @@
 ## Вывод одной строкой
 
 **Не сосед по вопросу, а исполнитель для каталога.** glint не спрашивает «покраснеет ли ваша
-проверка» — он сам и есть проверка, причём для Go и TS с редким набором правил про тесты, которые
-не могут упасть, и про ошибку, превращённую в код 0. Брать его нужно как **родной рецепт** в
-записи каталога, а не как конкурента.
+проверка» — он сам и есть проверка. Из 129 правил: **6** — родной рецепт для Go в две наши
+записи (`test-has-assertion` Go сейчас не покрывает вовсе), **10** — заявки на новые классы,
+**36** уже закрыты готовым (golangci-lint, компилятор), **77** не берём: чужая предметная
+область, не наша тема или вкус автора. Разбор — ниже, в «Все 129 правил».
 
 ## Кто и как его пишет
 
@@ -95,28 +96,142 @@ fails if that code panics — and is not reported». Правило для TS р
 5. **Подавление без причины принимается.** `//nolint:main-return-after-error` без единого слова
    снимает находку. README: «Always add the reason after the marker» — требование написано и не
    проверяется. Голый `//nolint` не действует — это правильно.
+6. **`range-val-pointer` врёт на Go 1.22+.** Модуль с `go 1.22`, `ps = append(ps, &v)` в цикле —
+   «all iterations share same address». С Go 1.22 переменная цикла своя на каждой итерации для
+   модулей, объявивших `go 1.22` и новее (https://go.dev/blog/loopvar-preview); правило версию
+   из `go.mod` не читает вовсе.
 
-## Что берём
+## Все 129 правил
 
-- **Как родной рецепт.** Для Go glint закрывает три наших намерения лучше переносимого `check.sh`:
-  `test-has-assertion` (`test-without-assertion` + `tautological-assertion`),
-  `swallowed-error` (`error-masking`, `silent-error-handling`, `ignored-error`) и отдельный класс,
-  которого в каталоге нет, — `main-return-after-error`: ошибка обработана, процесс выходит с 0.
-  Это ровно «проверка не состоялась, а конвейер видит успех», только на стороне программы, а не
-  обвязки. Условие: заявка `covers` сверяется с командой, поэтому рецепт обязан называть правила
-  через `--rule`, иначе «не подтверждено».
-- **Их `tools/history/measure.py`** — кривая качества по истории: срез раз в две недели, каждый
-  прогоняется СЕГОДНЯШНИМ набором правил, настройки проекта игнорируются, чтобы прибор был один
-  на все срезы. Это готовая форма для нашего замера «стало ли лучше» (§9 п.1а) — не форма
-  отчёта, а принцип: прибор фиксирован, меняется только код.
+Разобраны 2026-09-21 по шапке каждого правила в коде (там автор пишет, из какой беды оно
+выросло), кандидаты — ещё и прогоном. Полнота сверена машиной: каждое из 129 имён из
+`glint rules` стоит ровно в одной группе ниже. Готовые аналоги сверены по списку линтеров
+golangci-lint из их JSON-схемы (115 имён), а не по памяти; где поведение аналога проверено
+отдельно — сказано.
 
-## Чего не берём
+**Прогон кандидатов.** Подопытный модуль `go 1.22` с посаженными дефектами: сработали
+`never-assigned-field`, `map-iteration-order` (отсортированная копия — молчит),
+`unchecked-len-division`, `test-external-service`, `migration-duplicate-version`,
+`unused-config-field`. Последнее — только на тегах `yaml`/`toml`/`env`/`mapstructure`/`ini`:
+`json` исключён намеренно, хотя шапка правила говорит «or from a payload».
 
-- **Правила про деньги, аудит и провайдеров платежей** (`financial-*`, `provider-command-*`,
-  `audit-actor-propagation`) — выросли из закрытых проектов автора, вне их предметной области
-  дадут шум. Их свод прямо говорит: проектно-специфичное живёт у проекта.
-- **Разбор TS регулярными выражениями** (`unfalsifiable-test-case` — семь регулярок на строку).
-  Это «запись понимает текст», а не «опознаёт конструкцию»: ложное на нашем зелёном — оттуда.
+**Голова к голове на проглоченной ошибке**, четыре формы в одном файле:
+
+| форма | nilerr (golangci-lint) | glint |
+|---|---|---|
+| `if err != nil { return nil }` | да | да (`silent-error-handling`) |
+| `if err != nil \|\| v == nil { return 0, nil }` | да | да (`masked-error-in-or-condition`) |
+| `log.Printf(err); return ""` | нет | **нет**: `log-and-return-zero` ждёт уровня Error/Warn |
+| `ValidatePermission() bool { … return false }` | нет | да (`error-masked-as-false-bool`) |
+
+### 1. Берём в существующую запись как родной рецепт для Go — 6
+
+Проверено на наших записях: **`test-has-assertion` Go не покрывает вообще** — её `check.sh`
+разбирает Python, JS и TS. `swallowed-error` зовёт для Go `errcheck -blank`, а тот видит только
+`_ = f()`, но не ветку, где ошибку проверили и выбросили.
+
+| правило | в какую запись | готовый аналог |
+|---|---|---|
+| `test-without-assertion` | `test-has-assertion` | поиск не нашёл. Тавтологии в Go закрывает `testifylint`, чекер `useless-assert` (README сверен) — он стандартнее, берём его, а не `tautological-assertion` |
+| `error-masking` | `swallowed-error` | ядро — `nilerr` (README сверен, прогон выше) |
+| `silent-error-handling` | `swallowed-error` | то же ядро, что `nilerr` |
+| `masked-error-in-or-condition` | `swallowed-error` | `nilerr` ловит ту же форму |
+| `error-masked-as-false-bool` | `swallowed-error` | не найден; `nilerr` пропустил |
+| `log-and-return-zero` | `swallowed-error` | не найден |
+
+Порядок по правилу «сперва готовое»: в рецепт идут `nilerr` и `testifylint`, glint — добавкой
+там, где он видит больше (`error-masked-as-false-bool`, `test-without-assertion`). Рецепт
+обязан называть правила через `--rule`: заявку `covers` мы сверяем с командой.
+
+### 2. Новые классы — заявки в каталог, каждой нужен замер частоты — 10
+
+Отобраны по одному признаку: **обещание или защита молча не действует** — наша тема, а не
+общее качество кода.
+
+| правило | что молча не работает | проверено прогоном |
+|---|---|---|
+| `main-return-after-error` | ошибка обработана, процесс выходит с 0, конвейер видит успех. Поиск аналога не нашёл | да, близнецы |
+| `unused-config-field` | настройку пишут в конфиг, она ни на что не влияет | да, `yaml` |
+| `never-assigned-field` | зависимость читают, никто не присваивает — паника на первом вызове | да |
+| `silently-optional-dependency` | сеттер зовут не везде, фича выключена без слова (у автора: алерты не ушли ни разу за всю историю) | нет |
+| `typed-nil-into-interface` | проверка `iface == nil` не срабатывает на nil-указателе | нет |
+| `test-external-service` | «пропустить, если нет ключа» — а ключ всегда есть в `.env`, тест ходит в живой сервис | да |
+| `stub-method` | метод возвращает `not implemented` — заглушка агента, доехавшая до кода | нет |
+| `mock-identifier` | `Mock`/`Fake`/`Stub` в прод-коде: подделка выглядит как настоящий путь | нет |
+| `tombstone-comment` | «// X удалён» — агентский след; но это чтение текста, запись второго рода (`SPEC.md` §6) | нет |
+| `migration-duplicate-version` | две миграции с одним номером, мигратор молча берёт одну | да |
+
+Приоритет внутри группы: `main-return-after-error` и `unused-config-field` — наш класс в чистом
+виде и оба проверены прогоном.
+
+### 3. Есть готовое — glint для этого не нужен — 36
+
+- **компилятор**: `append-assign` — неприсвоенный `append` Go не собирает (`go vet`: «is not
+  used»), правило пустое;
+- **поведение аналога сверено отдельно**: `tautological-assertion` → `testifylint`
+  `useless-assert`; `error-rebuilt-from-text` → `errorlint`, настройка `errorf` («Check whether
+  fmt.Errorf uses the %w verb»); `e2e-blind-wait` → `eslint-plugin-playwright`,
+  `no-networkidle` и `no-wait-for-timeout`; `range-val-pointer` → семантика Go 1.22 (и дефект 6);
+- **аналог в golangci-lint по имени, поведение не прогонялось**: `cyclomatic-complexity` →
+  `gocyclo`/`cyclop`; `deep-nesting` → `nestif`; `long-function` → `funlen`; `solid-isp` →
+  `interfacebloat`; `unused-param` → `unparam`; `unused-symbol` → `unused`; `doc-missing`,
+  `naming-convention` → `revive`; `cross-file-duplicate`, `duplicate-block` → `dupl`;
+  `bool-compare`, `deprecated-ioutil`, `empty-block` → `staticcheck`; `context-background` →
+  `contextcheck`; `defer-in-loop` → `gocritic`; `error-string` → `staticcheck`; `error-wrap` →
+  `wrapcheck`; `go-modern`, `interface-any` → `modernize`; `http-body-close` → `bodyclose`;
+  `ignored-error` → `errcheck`; `magic-number` → `mnd`; `return-nil-error`, `nil-return-stub` →
+  `nilnil`; `shadow-variable` → `govet`; `sql-rows-close` → `sqlclosecheck`/`rowserrcheck`;
+  `todo-comment` → `godox`; `hardcoded-secret`, `sql-injection` → `gosec`; `type-assertion` →
+  `forcetypeassert`; `scattered-construction` → `exhaustruct`.
+
+У нас эти намерения уже держат `complexity-limit`, `dead-code`, `duplicate-code`,
+`todo-without-task`, `secrets-not-in-code`.
+
+### 4. Не берём — 77
+
+**а) Предметная область автора — 27.** Деньги, платежи, аудит, БД, одна конкретная
+архитектура: `audit-actor-propagation`, `deterministic-uuid`, шесть `financial-*`,
+`frontend-money-arithmetic`, `frontend-env-fallback`, `idempotency-check-then-create`,
+`provider-command-before-intent-persist`, `provider-command-retry`,
+`pagination-boundary-truncation`, `terminal-after-failed-checkpoint`,
+`non-atomic-status-history`, `multi-write-no-transaction`, `select-then-write-race`,
+`select-star-struct-scan`, `query-in-loop`, `test-schema-mutation-without-cleanup`,
+`deprecated-nginx-http2-listen`, `react-remount-key`, `nullable-object-call`,
+`response-type-in-function`, `http-error-plaintext`, `token-pos-offset`. Их свод сам говорит:
+проектно-специфичное живёт у проекта. Многие — настоящие беды с настоящим случаем в шапке, но
+сторожат корректность программы, а не то, работает ли защита.
+
+**б) Настоящие ошибки программы, но не наша тема — 26.** Гонки, утечки, NaN, повторы запросов:
+`map-iteration-order`, `unchecked-len-division`, `unguarded-shared-field`, `mutex-lock`,
+`retry-drops-transport-failure`, `retry-request-reuse`, `server-error-hides-client-cancel`,
+`secret-in-query-url`, `sensitive-query-param`, `unbounded-response-read`,
+`unbounded-sync-map`, `sleep-without-context`, `context-first`, `quadratic-loop`,
+`string-concat`, `time-equal`, `nil-slice`, `nil-di`, `ignored-decision-result`,
+`reimplemented-stdlib`, `unused-field`, `unused-internal-export`, `orphaned-interface`,
+`error-string-compare`, `error-length-check`, `doc-wrong-subject`. Каталог AQK — про то, держит ли
+обещание машина, а не второй линтер Go (`PROJECT.md` §9а: расширение вширь заморожено).
+
+**в) Политика автора, вкус или шум — 24.** Правила его `CLAUDE.md` («no legacy», «no fallback»),
+у чужого проекта такой политики может не быть: `import-direction`, `layer-violation`,
+`solid-srp` (сам автор его у себя выключил), `deprecated-comment`, `legacy-comment-marker`,
+`legacy-identifier`, `redundant-compatibility`, `tech-debt`, `any-in-public-contract` (мы сами
+отказались от проверки `any`, `PROJECT.md` §9а), `constructor-nil-return`,
+`constructor-swallows-nil-dep`, `empty-struct-return`, `fallback-return`,
+`anon-interface-degradation`, `error-cause-dropped`, `silent-config-error`,
+`frontend-silent-catch`, `non-canonical-logger` (молчит только в `cmd/**/main.go` — та же стена,
+из-за которой наша `no-print-in-prod` Go не берёт). Оформление Markdown: `doc-links`,
+`md-broken-link` (6 из 6 на нас ложные), `md-frontmatter`, `md-line-break`,
+`md-list-after-label` (82 из 95 находок на нас). И `unfalsifiable-test-case` — семь регулярных
+выражений на строку, «запись понимает текст»; ложное на нашем зелёном — оттуда. Из него
+берём одну **идею для образца**: `expect([200, 404]).toContain(status)` — утверждение, которому
+подходит и рабочий, и удалённый адрес.
+
+### Кроме правил
+
+`tools/history/measure.py` — кривая качества по истории: срез раз в две недели, каждый
+прогоняется СЕГОДНЯШНИМ набором правил, настройки проекта игнорируются, чтобы прибор был один
+на все срезы. Готовый принцип для нашего замера «стало ли лучше» (§9 п.1а): прибор фиксирован,
+меняется только код.
 
 ## Письмо
 
@@ -156,6 +271,22 @@ abort or finish with a failed status»; падение даёт только п�
 
 **Что это значит для каталога.** Запись опознаёт конструкцию: в скрипте есть `check(` из `k6`, а
 в `options.thresholds` нет ключа `checks`. Красный и зелёный образцы — два файла выше.
-Ограничение, названное вслух: порог можно передать `--config` или переменной `K6_THRESHOLDS`,
-тогда запись соврёт; такое надо искать в команде запуска, а не в скрипте. Частота низкая: 1 живой
-случай на 87 скриптов. Для сравнения, «свод велит команду, которой нет» — 9 из 99.
+Ограничение, названное вслух: порог можно вынести в JSON-файл и передать `--config`
+(https://grafana.com/docs/k6/latest/using-k6/k6-options/reference/ — флага и переменной окружения
+для порогов нет), тогда запись соврёт; значит, смотреть надо и команду запуска: есть ли в ней
+`-c`/`--config`. Частота низкая: 1 живой случай на 87 скриптов. Для сравнения, «свод велит
+команду, которой нет» — 9 из 99.
+
+**Советовать или ставить k6 — ответ.** Советуем уже: `kit/docs/ai/operational-gates.md`, раздел
+«Нагрузочный гейт и soak». Ставить сами — нет, по трём причинам:
+
+1. AQK не ставит инструменты в чужой проект, он ставит гейты, которые зовут то, что у проекта
+   уже есть. k6 — отдельный бинарник, а не пакет проекта;
+2. нагрузочный прогон требует поднятого сервера. Условие «запустить k6» по одному репозиторию не
+   вычисляется, а триггер обязан быть запросом к репозиторию (`PROJECT.md` §5);
+3. голый k6 без порогов — ровно тот прибор, что мы ловим: он выходит с 0 при 100 % проваленных
+   проверок. Поставить такой — значит добавить ещё одну зелёную галочку, которая ничего не держит.
+
+Что в нашей теме: запись «у проверок k6 есть порог» — сторож для тех, у кого k6 УЖЕ есть. Она
+дешёвая и опознаёт конструкцию, но класс редкий. По правилу выбора из `growth/SKILL.md` сперва
+идёт письмо (`go-sigma/sigma`), потом замер на большей выборке, и только потом запись.
