@@ -1,0 +1,10 @@
+# Труба прячет код проверки: шаг без `shell:` идёт как `bash -e`, без pipefail, и выходит
+# кодом `tee` — нулём, даже когда тесты упали.
+name: piped
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: тесты с журналом
+        run: pytest | tee test.log

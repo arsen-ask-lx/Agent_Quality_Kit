@@ -38,3 +38,9 @@ jobs:
         run: |
           pnpm eslint src > /tmp/lint-output.txt || true
           diff lint-snapshot.txt /tmp/lint-output.txt
+
+      # Труба после проверки законна, когда код трубы не теряется: явный `shell: bash` идёт
+      # как `bash -eo pipefail`, и упавший pytest роняет шаг, хотя последним стоит `tee`.
+      - name: тесты с журналом
+        run: pytest | tee test.log
+        shell: bash
