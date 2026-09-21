@@ -61,7 +61,8 @@ for F in $CI; do
   #
   # Шаг начинается элементом списка («- ») или ключом верхнего уровня: так устроен и github,
   # и gitlab, где `allow_failure` живёт на уровне задачи.
-  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" -v redeemed="$REDEEMED" '
+  case "$F" in */.github/workflows/*) GHA=1 ;; *) GHA=0 ;; esac
+  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" -v redeemed="$REDEEMED" -v gha="$GHA" '
     function isComment(l) { return l ~ /^[[:space:]]*#/ }
     function looksLikeCheck(l,   j, nk) {
       if (isComment(l)) return 0
@@ -82,6 +83,31 @@ for F in $CI; do
     function isMask(l) {
       return !isComment(l) && l ~ /^[[:space:]]*(continue-on-error|allow_failure|ignore_failure)[[:space:]]*:[[:space:]]*(true|yes)/
     }
+    # Команда до первой трубы — запускалка проверки. Узко по замеру 2026-09-21 на 49 чужих
+    # конвейерах: первая версия искала имя инструмента где угодно в строке и дала шесть ложных
+    # из семи — `gitleaks` в адресе `curl … | tar`, `Trivy` в markdown-таблице внутри JS,
+    # у playwright — «-g 5368|6428» в кавычках. Поэтому: труба только вне кавычек, `||` — не труба, и
+    # перед ней на месте КОМАНДЫ стоит запускалка, а не её имя внутри адреса или строки.
+    function pipedCheck(l,   i, c, q, p, seg, n, parts, cmd, bare) {
+      if (isComment(l)) return 0
+      sub(/^[[:space:]]*(-[[:space:]]+)?run[[:space:]]*:[[:space:]]*/, "", l)
+      q = ""; p = 0
+      for (i = 1; i <= length(l); i++) {
+        c = substr(l, i, 1)
+        if (q != "") { if (c == q) q = ""; continue }
+        if (c == "\"" || c == "'"'"'" || c == "`") { q = c; continue }
+        if (c == "|") { if (substr(l, i + 1, 1) == "|") { i++; continue } p = i; break }
+      }
+      if (!p) return 0
+      seg = substr(l, 1, p - 1)
+      # `cd web && npm test | tee …` — вердикт выносит последняя команда перед трубой.
+      n = split(seg, parts, /&&|;/); cmd = parts[n]
+      sub(/^[[:space:]]+/, "", cmd)
+      sub(/^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)+/, "", cmd)
+      bare = cmd
+      sub(/^((sudo|time|npx|bunx|uvx)[[:space:]]+|(pnpm|yarn|bun)[[:space:]]+(exec[[:space:]]+|dlx[[:space:]]+|run[[:space:]]+)?|(uv|poetry|pipenv|hatch)[[:space:]]+run[[:space:]]+|python3?[[:space:]]+-m[[:space:]]+)+/, "", bare)
+      return (cmd ~ ("^(" runners ")([^A-Za-z0-9_]|$)") || bare ~ ("^(" runners ")([^A-Za-z0-9_]|$)"))
+    }
     function isBoundary(l) { return l ~ /^[[:space:]]*-[[:space:]]/ || l ~ /^[A-Za-z_.-]+[[:space:]]*:/ }
     # Исход этого шага переспрашивают ниже — маска на нём законна.
     function isRedeemed(id,   j, nr) {
@@ -99,7 +125,12 @@ for F in $CI; do
     function flush(   ) {
       if (blockStart && blockCheck && blockMask && !isRedeemed(blockId))
         printf "%s:%d: проверка не может провалиться — шаг под %s\n", file, blockCheckLine, blockMaskText
+      # Труба решает по оболочке шага: своя `shell:` важнее всего, без неё на Windows это pwsh,
+      # который выходит по коду нативной команды, а не последней в трубе.
+      if (pipeLine && !fileSafe && !blockPipestatus && !(blockShellSeen ? blockShellSafe : curWin))
+        printf "%s:%d: провал погашен трубой — без pipefail код шага равен коду последней команды: %s\n", file, pipeLine, substr(pipeText, 1, 90)
       blockStart = 0; blockCheck = 0; blockMask = 0; blockId = ""
+      pipeLine = 0; blockPipefail = 0; blockPipestatus = 0; blockShellSeen = 0; blockShellSafe = 0
     }
     {
       # Гашение прямо в команде красится только для ЗАКРЫТОГО списка запускалок: «|| true» на
@@ -120,6 +151,32 @@ for F in $CI; do
       }
       if (isBoundary($0)) flush()
       if (!blockStart) blockStart = NR
+      # ТРУБА ПОСЛЕ ПРОВЕРКИ — третья форма гашения. Документация GitHub Actions: шаг без
+      # `shell:` на Linux идёт как `bash -e {0}`, без pipefail, а явный `shell: bash` — как
+      # `bash --noprofile --norc -eo pipefail {0}`. Без pipefail `pytest | tee log` выходит
+      # кодом `tee`, то есть нулём. Найдено 2026-09-21: правило «пайп запрещён» из доклада
+      # С. Шимы — у него так красный тест уехал на прод, а эта проверка на той же строке
+      # молчала. Только для GitHub: оболочку по умолчанию других конвейеров мы не сверяли, и
+      # молчать там честнее, чем гадать.
+      if (gha && !isComment($0)) {
+        if ($0 ~ /^[[:space:]]*defaults[[:space:]]*:/) defLine = NR
+        if ($0 ~ /^[[:space:]]*runs-on[[:space:]]*:/) curWin = ($0 ~ /windows/ && $0 !~ /\$\{\{/)
+        if ($0 ~ /^[[:space:]]*(-[[:space:]]+)?shell[[:space:]]*:/) {
+          sh = $0; sub(/^[^:]*:[[:space:]]*/, "", sh); gsub(/["'"'"']/, "", sh); sub(/[[:space:]]+$/, "", sh)
+          safe = (sh ~ /pipefail/ || sh == "bash" || sh ~ /^(pwsh|powershell|python|cmd)/)
+          # `defaults: run: shell:` действует на все шаги ниже — считаем его на весь файл.
+          # Если defaults стоит у одной задачи, соседние задачи мы тоже простим: молчание
+          # здесь дешевле напрасного красного.
+          if (defLine && NR - defLine <= 3) { if (safe) fileSafe = 1 }
+          else { blockShellSeen = 1; blockShellSafe = safe }
+        }
+        if ($0 ~ /pipefail/) blockPipefail = 1
+        # Код трубы переспросили: `exit ${PIPESTATUS[0]}` возвращает шагу код проверки.
+        if ($0 ~ /PIPESTATUS/) blockPipestatus = 1
+        if (!pipeLine && !blockPipefail && $0 !~ /^[[:space:]]*(-[[:space:]]+)?name[[:space:]]*:/ && pipedCheck($0)) {
+          pipeLine = NR; pipeText = $0; sub(/^[[:space:]]+/, "", pipeText)
+        }
+      }
       if (!blockCheck && looksLikeCheck($0)) { blockCheck = 1; blockCheckLine = NR }
       if (isMask($0)) { blockMask = 1; blockMaskText = $0; sub(/^[[:space:]]+/, "", blockMaskText) }
       if (!isComment($0) && $0 ~ /^[[:space:]]*(-[[:space:]]+)?id[[:space:]]*:/) {
@@ -135,5 +192,6 @@ LEFT="$(printf '%s' "$BAD" | grep -v '^$')"
 [ -z "$LEFT" ] && exit 0
 printf '%s\n' "$LEFT"
 echo "  почини: убери «|| true» и «continue-on-error» с шага, который выносит вердикт."
+echo "  труба после проверки: дай шагу «shell: bash» или начни команду с «set -o pipefail»."
 echo "  шаг, который не может провалиться, — это не проверка, а строка в логе."
 exit 1
