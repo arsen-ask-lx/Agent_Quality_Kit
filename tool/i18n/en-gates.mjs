@@ -71,6 +71,10 @@ export const enGates = {
       `# paid off; on reaching it the ratchet tells you to remove the wrapper. The deadline is\n` +
       `# optional, but if set, debt still open past that date turns the gate red — a deadline\n` +
       `# without a consequence is not a deadline.\n` +
+      `#\n` +
+      `# A finding that does not show up on every run (a race, third-party code, the network)\n` +
+      `# would be struck out on a quiet run and come back as new. Mark it with «~ » at the start\n` +
+      `# of the line and write «# permanent: <why>» on the line above — absence does not strike it.\n` +
       `# aqk-goal: 0\n` +
       `# aqk-deadline:\n`,
     recorded: (n) => `${n} violations recorded as debt`,
