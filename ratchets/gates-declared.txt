@@ -9,6 +9,7 @@ dead-code
 deps-are-pinned
 duplicate-code
 entry-commands-exist
+entry-docs-agree
 evals
 file-size-limit
 gate-has-samples
