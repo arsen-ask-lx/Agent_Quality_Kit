@@ -1,0 +1,13 @@
+{
+  "gate": "entry-docs-agree",
+  "expect": "green",
+  "source": {
+    "repo": "Jahia/tomcat-log-provider",
+    "checked": "скачаны оба файла из HEAD, 2026-09-23; CLAUDE.md — 65 байт со строкой @./AGENTS.md"
+  },
+  "why": "CLAUDE.md называет AGENTS.md источником: расходиться нечему. Это та самая раскладка, которую ошибочно обвинили в modelcontextprotocol/inspector#2427 и которую обвиняет AGL019 у duke5am/agents-md-check.",
+  "files": {
+    "AGENTS.md": "# tomcat-log-provider\n\nJahia OSGi module that mounts Tomcat log files as a JCR virtual filesystem via an `ExternalContentStoreProvider` (VFS2 over the local filesystem). Provides a live log viewer for `jahia.log`. Admin UI at `/jahia/administration/tomcatLogProvider` and `/jahia/administration/tomcatLogViewer`.\n\n## Key Facts\n\n- **artifactId**: `tomcat-log-provider` (module key: `tomcatLogProvider`)\n- **Java package**: `org.jahia.community.external.tomcat.log` (GraphQL extensions in `.graphql` sub-package)\n- **jahia-depends**: `default,external-provider,graphql-dxm-provider` (defined in `pom.xml` properties)\n- **OSGi config PID**: `org.jahia.modules.tomcatlogprovider` (set via `@Component property = SERVICE_PID + \"=...\"`)\n- **OSGi DS annotations scan**: `_dsannotations = org.jahia.community.external.tomcat.log.*` (in pom.xml maven-bundle-plugin)\n- `logPath` — resolved from `${catalina.base}/logs` at runtime (read-only)\n- `mountPath` — configurable; default: `/sites/systemsite/files/tomcat-logs`\n\n## Architecture\n\n| Class | Role |\n|-------|------|\n| `TomcatLogMountPointService` | Merged `ManagedService` + mount lifecycle; `updated()`, `remount()`, `@Deactivate` |\n| `TomcatLogDataSource` | `ExternalDataSource`; maps VFS2 `FileObject` → `ExternalData` for log files/folders |\n| `TomcatLogBinaryImpl` | JCR `Binary` impl over VFS2 `FileContent` for streaming log file bytes |\n| `TomcatLogProviderGraphQLExtensionsProvider` | Registers GraphQL extensions |\n| `TomcatLogProviderQueryExtension` | GraphQL settings query + log tail query |\n| `TomcatLogProviderMutationExtension` | GraphQL save mutation |\n\n`TomcatLogMountPointService` creates `new ExternalContentStoreProvider()`, sets `dynamicallyMounted = false`.\n\nVFS2 root: `StandardFileSystemManager.resolveFile(\"file:\" + logPath)`.\n\n## GraphQL API\n",
+    "CLAUDE.md": "# tomcat-log-provider\n\nFor AI assistant context, see @./AGENTS.md\n"
+  }
+}

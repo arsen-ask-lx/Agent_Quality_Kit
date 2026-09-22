@@ -32,6 +32,10 @@ gates:
   # Комплект сторожит сам себя собственными записями. Копий не делаем: здесь каталог и есть
   # репозиторий, а копия завтра разойдётся с оригиналом.
   entry-commands-exist: "bash kit/gates/entry-commands-exist/check.sh ."
+  # У нас в корне два свода, и это ровно тот случай, который запись сторожит: `CLAUDE.md`
+  # подключает `AGENTS.md` строкой, а не пересказывает его. Объявлено, чтобы пересказ не завёлся
+  # незаметно — решение из CLAUDE.md держала до сих пор только добрая воля.
+  entry-docs-agree: "bash kit/gates/entry-docs-agree/check.sh ."
   secrets-not-in-code: "bash kit/gates/secrets-not-in-code/check.sh ."
   gates-are-runnable: "bash kit/gates/gates-are-runnable/check.sh ."
   gates-run-in-ci: "bash kit/gates/gates-run-in-ci/check.sh ."

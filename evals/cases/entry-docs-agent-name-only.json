@@ -1,0 +1,13 @@
+{
+  "gate": "entry-docs-agree",
+  "expect": "green",
+  "source": {
+    "repo": "cocosip/FastDFS-dotnet",
+    "checked": "скачаны оба файла из HEAD, взяты первые 26 строк каждого, 2026-09-23"
+  },
+  "why": "Два свода отличаются заголовком и именем агента: «guidance to Codex» против «guidance to Claude Code». Это один и тот же свод для двух читателей, а не расхождение. Без схлопывания имени агента таких ложных в выборке из 85 было бы четыре.",
+  "files": {
+    "AGENTS.md": "# AGENTS.md\n\nThis file provides guidance to Codex (Codex.ai/code) when working with code in this repository.\n\n## Project Overview\n\nThis is a FastDFS .NET client library targeting netstandard2.0 with built-in connection pooling support. FastDFS is a distributed file system designed for high-capacity storage and load balancing.\n\n**Key Features:**\n- Multi-cluster support (named clients)\n- Connection pooling for optimal performance\n- Async/await support\n- Dependency injection (DI) integration with IOptions pattern\n- Non-DI factory pattern support\n\n## Building and Testing\n\n```bash\n# Restore dependencies\ndotnet restore\n\n# Build the solution\ndotnet build\n\n# Run tests\ndotnet test\n",
+    "CLAUDE.md": "# CLAUDE.md\n\nThis file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n## Project Overview\n\nThis is a FastDFS .NET client library targeting netstandard2.0 with built-in connection pooling support. FastDFS is a distributed file system designed for high-capacity storage and load balancing.\n\n**Key Features:**\n- Multi-cluster support (named clients)\n- Connection pooling for optimal performance\n- Async/await support\n- Dependency injection (DI) integration with IOptions pattern\n- Non-DI factory pattern support\n\n## Building and Testing\n\n```bash\n# Restore dependencies\ndotnet restore\n\n# Build the solution\ndotnet build\n\n# Run tests\ndotnet test\n"
+  }
+}
