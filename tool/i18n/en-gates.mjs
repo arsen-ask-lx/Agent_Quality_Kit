@@ -238,6 +238,8 @@ export const enGates = {
     projectField: "Project",
     pushed: (title) => `Recorded and pushed: ${title}`,
     localOnly: (cmd) => `Recorded locally, the push failed. Push it: ${cmd}`,
+    committed: (title, cmd) => `Recorded and committed: ${title}. Pushing is your call: ${cmd}`,
+    fileOnly: (path) => `Written to the file, the commit failed — commit it yourself: ${path}`,
   },
 
   blob: {

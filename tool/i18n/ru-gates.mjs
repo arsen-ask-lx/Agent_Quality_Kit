@@ -241,6 +241,8 @@ export const ruGates = {
     projectField: "Проект",
     pushed: (title) => `Записано и отправлено: ${title}`,
     localOnly: (cmd) => `Записано локально, push не прошёл. Отправить: ${cmd}`,
+    committed: (title, cmd) => `Записано и закоммичено: ${title}. Отправить — решение за тобой: ${cmd}`,
+    fileOnly: (path) => `Записано в файл, закоммитить не удалось — сделай это сам: ${path}`,
   },
 
   blob: {
