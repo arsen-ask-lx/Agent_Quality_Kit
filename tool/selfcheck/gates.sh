@@ -253,6 +253,28 @@ fi
 [ "$UNVERIFIED" -gt 0 ] && printf '  \033[33m(не проверено здесь: %s)\033[0m' "$UNVERIFIED"
 printf '\n\n'
 
+# РЕЦЕПТЫ БЕЗ ДОКАЗАТЕЛЬСТВА. Образцы записи написаны под один рецепт — `any`, а без него тот, что
+# назван в `samples_for`, — и выше гоняется только он. Остальные строки `recipes` образцами не
+# проверены никогда: у `dead-code` доказан один рецепт из пяти, а запись числится зрелой. Не
+# отказ — иначе встанет весь каталог, — но и не молчание: недоказанное называется поимённо.
+# Найдено 2026-09-22 при попытке добавить Go-рецепты. Прибор раньше улучшений.
+UNPROVEN=""; UCOUNT=0
+for YML in "$CAT"/*/gate.yml; do
+  SLUG="$(basename "$(dirname "$YML")")"
+  KEYS="$(tr -d '\r' < "$YML" | awk '/^recipes:/{r=1;next} r && /^[^[:space:]#]/{r=0} r && /^  [a-z_]+:/{sub(/^  /,""); sub(/:.*/,""); print}')"
+  PROVEN="any"
+  printf '%s\n' "$KEYS" | grep -qx 'any' || PROVEN="$(sed -n 's/^samples_for:[[:space:]]*\(.*\)$/\1/p' "$YML" | head -1)"
+  REST="$(printf '%s\n' "$KEYS" | grep -vx "$PROVEN" | grep -v '^$' | tr '\n' ' ' | sed 's/ $//; s/ /, /g')"
+  [ -z "$REST" ] && continue
+  UCOUNT=$((UCOUNT + $(printf '%s' "$REST" | tr ',' '\n' | grep -c .)))
+  UNPROVEN="$UNPROVEN    $SLUG: $REST
+"
+done
+if [ "$UCOUNT" -gt 0 ]; then
+  printf '  \033[33mрецептов без доказательства образцами: %s\033[0m — образцы записей написаны под один рецепт:\n' "$UCOUNT"
+  printf '%s\n' "$UNPROVEN"
+fi
+
 if [ "$STRICT" = "1" ] && [ "$UNVERIFIED" -gt 0 ]; then
   printf '  \033[31mстрогий режим: %s записей не проверено, а здесь это обязано быть ошибкой\033[0m\n' "$UNVERIFIED"
   printf '  почини: поставь названные инструменты и убедись, что они видны в PATH этого шага.\n\n'
