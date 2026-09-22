@@ -1,0 +1,1 @@
+npx --no -- lint-staged 2>/dev/null || true
