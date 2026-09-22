@@ -89,7 +89,8 @@ GATE PASS, код 0. Ни одно из четырёх отличий не на�
 
 ## Письма
 
-Два кандидата, решение отправлять — за владельцем (канон `research/outreach/LETTER.md`):
+Отправлены 2026-09-22 по канону `research/outreach/LETTER.md` — `smixs/code-quality-skill#12` и
+`taipei49314/checkwash#164` (перепроверено на 0.4.0):
 1. `smixs/code-quality-skill` — «docs-only» пропускает выключение тестов в `package.json` и в
    конвейере; воспроизведение — один коммит.
 2. `checkwash` — ослабление `assert.equal`/`assert.strictEqual` → `assert.ok` не опознаётся;
