@@ -67,6 +67,10 @@ its own way.
 A type at the start of the message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`). One
 changeset, one task: a mixed changeset can neither be reviewed nor rolled back.
 
+In a repository where several sessions work, a commit takes an **explicit list of paths**
+(`git commit -- <paths>`), never "whatever is staged": the index is shared, and someone else's
+prepared work would ride along in your commit. A new file is `git add`-ed by name first.
+
 ## Explain the diff before merging
 
 "An agent wrote it" is not an answer. Before merging, the agent explains the control flow, the
@@ -75,6 +79,13 @@ split it, or explain it in parts.
 
 **WHY.** Code now appears faster than a human can understand it. Gates catch mechanics; they do
 not catch "approved a design nobody understood".
+
+## A check must be able to say "no"
+
+A one-off check the agent uses to confirm "done" (a search in output, a comparison, a measurement)
+also looks for a control object that is CERTAINLY there or CERTAINLY absent, and prints both
+answers. A pattern that never matches anything answers "verified" to everything; being absent
+from a report does not mean "verified".
 
 ## Done
 
