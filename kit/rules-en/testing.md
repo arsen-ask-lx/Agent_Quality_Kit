@@ -23,7 +23,9 @@ edit and proves nothing.
 - the assertion compares against an exact value, not "not empty"; several conditions are not
   glued into one;
 - three or more tests of the same shape — fold them into one with a table of inputs;
-- a defect in production — first a failing test that reproduces it, then the fix.
+- a defect in production — first a failing test that reproduces it, then the fix;
+- a list is checked on **two rows with different relations**, not on one: a query repeated "for
+  every row" is invisible on one row, and an empty list passes any response schema.
 
 ## The arbiter must not be adjusted to fit
 
@@ -40,6 +42,15 @@ Models do edit and delete tests that are in their way — that is measured behav
 - asserting that something was logged instead of asserting the behaviour;
 - names based on ticket numbers — extend the file that owns the subject;
 - more than ten fakes in one file: that many fakes means the test is checking itself.
+
+## Timing tests and changes that keep behaviour
+
+- "grows linearly" is measured in **CPU** time, not wall-clock time: under neighbours' load the
+  wall clock shows ×10 on linear code. One ratio over a wide span of input, a threshold between
+  the "good" and the "bad" growth, and **the old slow version must fail the same check**: a timing
+  test without a red sample proves nothing;
+- an optimisation or refactoring "without a change in behaviour" is proven by comparing the live
+  response before and after byte for byte, not only by green tests.
 
 ## A live run before handing over
 

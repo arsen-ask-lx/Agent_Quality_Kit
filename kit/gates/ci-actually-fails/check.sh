@@ -9,6 +9,17 @@ DIR="${1:-.}"
 
 CI=$(find "$DIR/.github/workflows" "$DIR/.gitlab-ci.yml" "$DIR/.circleci" "$DIR/Jenkinsfile" \
      -type f 2>/dev/null)
+# ХУКИ HUSKY — тот же вердикт, вынесенный раньше конвейера. Замер 2026-09-22: поиск GitHub
+# `"|| true" path:.husky` — 4416 файлов; из 97 хуков проверку гасили 7 у пяти авторов
+# (`pnpm lint-staged || true`, `commitlint --edit … || true`, `npm run lint:… || true`). Только
+# блокирующие хуки: код выхода `post-merge`, `post-checkout` и прочих `post-*` git не читает, там
+# гасить нечего. Внутренности `.husky/_/` — не хуки проекта.
+HOOKS=$(find "$DIR/.husky" -maxdepth 1 -type f \( -name pre-commit -o -name pre-push \
+        -o -name commit-msg -o -name prepare-commit-msg -o -name pre-merge-commit \
+        -o -name pre-rebase -o -name applypatch-msg -o -name pre-applypatch \) 2>/dev/null)
+CI="$CI${HOOKS:+
+$HOOKS}"
+CI="$(printf '%s\n' "$CI" | grep -v '^$')"
 [ -z "$CI" ] && { echo "конвейера нет — эта проверка не про тебя"; exit 0; }
 
 # Что считается ПРОВЕРКОЙ. Список намеренно закрытый: маскировка бывает законной — необязательная
@@ -22,7 +33,7 @@ CI=$(find "$DIR/.github/workflows" "$DIR/.gitlab-ci.yml" "$DIR/.circleci" "$DIR/
 # Имена сокращены до подкоманды там, где слово обиходное: `vacuum` без `lint` совпадает с
 # обслуживанием базы (`psql -c 'VACUUM ANALYZE'`), а шаг обслуживания имеет полное право быть
 # прощающим. Ложный красный дороже пропуска: гейт, который врёт, выключают целиком.
-RUNNERS='aqk|doctor --run|pytest|tox|nox|unittest|jest|vitest|mocha|jasmine|karma|playwright|cypress|eslint|tsc|ruff|flake8|pylint|mypy|pyright|bandit|semgrep|gitleaks|trivy|rubocop|golangci-lint|golint|govet|go vet|go test|staticcheck|shellcheck|hadolint|actionlint|codespell|reviewdog|cargo test|cargo clippy|mvn|gradle|phpstan|psalm|npm test|npm run (test|lint|check|typecheck)|yarn (test|lint)|pnpm (test|lint)|make (test|lint|check)|schemathesis|dredd|oasdiff|spectral lint|redocly (lint|bundle)|vacuum (lint|report|html-report)|pact-broker|pact-verifier|can-i-deploy|portman|newman run|manage.py spectacular'
+RUNNERS='aqk|doctor --run|lint-staged|commitlint|pytest|tox|nox|unittest|jest|vitest|mocha|jasmine|karma|playwright|cypress|eslint|tsc|ruff|flake8|pylint|mypy|pyright|bandit|semgrep|gitleaks|trivy|rubocop|golangci-lint|golint|govet|go vet|go test|staticcheck|shellcheck|hadolint|actionlint|codespell|reviewdog|cargo test|cargo clippy|mvn|gradle|phpstan|psalm|npm test|npm run (test|lint|check|typecheck)|yarn (test|lint)|pnpm (test|lint)|make (test|lint|check)|schemathesis|dredd|oasdiff|spectral lint|redocly (lint|bundle)|vacuum (lint|report|html-report)|pact-broker|pact-verifier|can-i-deploy|portman|newman run|manage.py spectacular'
 
 # Закрытый список не поспевает: замер по чужим репозиториям нашёл шаг «Run reviewdog
 # (github-pr-check)» под `continue-on-error: true`, и ни одно имя из списка в нём не звучало.
@@ -62,7 +73,8 @@ for F in $CI; do
   # Шаг начинается элементом списка («- ») или ключом верхнего уровня: так устроен и github,
   # и gitlab, где `allow_failure` живёт на уровне задачи.
   case "$F" in */.github/workflows/*) GHA=1 ;; *) GHA=0 ;; esac
-  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" -v redeemed="$REDEEMED" -v gha="$GHA" '
+  case "$F" in */.husky/*) HOOK=1 ;; *) HOOK=0 ;; esac
+  RES=$(tr -d '\r' < "$F" | awk -v runners="$RUNNERS" -v words="$WORDS" -v keys="$KEYS" -v file="$F" -v redeemed="$REDEEMED" -v gha="$GHA" -v hook="$HOOK" '
     function isComment(l) { return l ~ /^[[:space:]]*#/ }
     function looksLikeCheck(l,   j, nk) {
       if (isComment(l)) return 0
@@ -101,12 +113,32 @@ for F in $CI; do
       if (!p) return 0
       seg = substr(l, 1, p - 1)
       # `cd web && npm test | tee …` — вердикт выносит последняя команда перед трубой.
-      n = split(seg, parts, /&&|;/); cmd = parts[n]
+      n = split(seg, parts, /&&|;/)
+      return startsWithRunner(parts[n])
+    }
+    # Команда начинается с запускалки — а не содержит её имя где-то в адресе, строке или имени
+    # переменной. Одно знание на трубу и на хуки: у хуков первая версия, искавшая имя где угодно,
+    # покрасила `head -30 "$eslint_out" … || true` и шаблон `\.gitleaks\.toml$` внутри `grep`.
+    function startsWithRunner(cmd,   bare) {
       sub(/^[[:space:]]+/, "", cmd)
       sub(/^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)+/, "", cmd)
       bare = cmd
-      sub(/^((sudo|time|npx|bunx|uvx)[[:space:]]+|(pnpm|yarn|bun)[[:space:]]+(exec[[:space:]]+|dlx[[:space:]]+|run[[:space:]]+)?|(uv|poetry|pipenv|hatch)[[:space:]]+run[[:space:]]+|python3?[[:space:]]+-m[[:space:]]+)+/, "", bare)
+      sub(/^((sudo|time|npx|bunx|uvx)[[:space:]]+(--no[[:space:]]+)?(--[[:space:]]+)?|(pnpm|yarn|bun)[[:space:]]+(exec[[:space:]]+|dlx[[:space:]]+|run[[:space:]]+)?|(uv|poetry|pipenv|hatch)[[:space:]]+run[[:space:]]+|python3?[[:space:]]+-m[[:space:]]+)+/, "", bare)
       return (cmd ~ ("^(" runners ")([^A-Za-z0-9_]|$)") || bare ~ ("^(" runners ")([^A-Za-z0-9_]|$)"))
+    }
+    # `|| true` гасит ВСЮ цепочку `&&` перед собой: в `yarn lint:fix && git add -A || true`
+    # провал первой команды пропускает вторую и уходит в `true`. Поэтому запускалкой может быть
+    # любое звено цепочки, но только на месте команды. Одно правило на конвейер и на хуки: в
+    # конвейере ветка искала имя где угодно и красила `ls "${PLAYWRIGHT_BROWSERS_PATH…}" || true`
+    # (замер 2026-09-22, 64 чужих конвейера).
+    function maskedCheck(l,   seg, n, st, m, parts, j) {
+      if (isComment(l) || l !~ /\|\|[[:space:]]*(true|:|exit[[:space:]]+0)/) return 0
+      seg = l; sub(/\|\|[[:space:]]*(true|:|exit[[:space:]]+0).*$/, "", seg)
+      sub(/^[[:space:]]*(-[[:space:]]+)?run[[:space:]]*:[[:space:]]*/, "", seg)
+      n = split(seg, st, /;/)
+      m = split(st[n], parts, /&&/)
+      for (j = 1; j <= m; j++) if (startsWithRunner(parts[j])) return 1
+      return 0
     }
     function isBoundary(l) { return l ~ /^[[:space:]]*-[[:space:]]/ || l ~ /^[A-Za-z_.-]+[[:space:]]*:/ }
     # Исход этого шага переспрашивают ниже — маска на нём законна.
@@ -136,7 +168,7 @@ for F in $CI; do
       # Гашение прямо в команде красится только для ЗАКРЫТОГО списка запускалок: «|| true» на
       # вспомогательной команде внутри скрипта (`docker network create … || true`) — это
       # идемпотентность, а не выключенная проверка.
-      if (!isComment($0) && $0 ~ runners && $0 ~ /\|\|[[:space:]]*(true|:|exit[[:space:]]+0)/) {
+      if (maskedCheck($0)) {
         # ОБВИНЯЕМ, ТОЛЬКО ЕСЛИ ПОГАШЕННАЯ КОМАНДА — ПОСЛЕДНЯЯ В БЛОКЕ. Замер 2026-09-14 по
         # семидесяти чужим конвейерам дал одно-единственное срабатывание, и оно было ЛОЖНЫМ:
         # `pnpm eslint src > out.txt || true` строкой ниже сверяется `diff` с эталоном —
@@ -144,6 +176,11 @@ for F in $CI; do
         # проваливается прекрасно. Инструмент, который обвиняет напрасно, выключают целиком,
         # поэтому здесь молчание честнее догадки.
         maskLine = NR; maskText = $0; sub(/^[[:space:]]+/, "", maskText)
+        # В хуке правило «прощается, если дальше в блоке вердикт» не годится: блок — весь файл, и
+        # любая следующая команда снимала бы обвинение. Прощается только вывод В ФАЙЛ — без
+        # перенаправления следующей команде нечего сверять; `>/dev/null` и `2>&1` — не файл.
+        redir = maskText; gsub(/[0-9]*>[[:space:]]*\/dev\/null/, "", redir); gsub(/[0-9]*>&[0-9]+/, "", redir)
+        if (hook && redir !~ />/) reportMask()
       } else if (maskLine && !isComment($0) && $0 !~ /^[[:space:]]*$/) {
         # Печать вердикта не выносит: `echo` после гашения ничего не меняет.
         if ($0 ~ /^[[:space:]]*(-[[:space:]]+)?[A-Za-z0-9_.-]+[[:space:]]*:/) reportMask()

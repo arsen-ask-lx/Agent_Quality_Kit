@@ -63,6 +63,10 @@ test("законные трубы не красятся", (t) => {
       ["      - run: |\n          comment += `| Filesystem (Trivy) | ok |`\n"],
     "путь с именем инструмента в echo | grep":
       ["      - run: |\n          if echo \"$FILES\" | grep -qE '^(packages/website/tests/)'; then echo hit; fi\n"],
+    // Замер 2026-09-22 по 64 чужим конвейерам: `|| true` на диагностике, где имя инструмента —
+    // часть пути. Ветка `|| true` искала имя где угодно в строке, как первая версия трубы.
+    "|| true на ls пути с именем инструмента":
+      ["      - name: Container facts\n        run: |\n          ls \"${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}\" || true\n"],
     "труба внутри кавычек":
       ["      - run: npx playwright test -g '5368|6428'\n"],
   };

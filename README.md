@@ -611,7 +611,7 @@ switched off, which is what a coding agent does when the task is phrased as "mak
 | Entry | What it catches |
 |---|---|
 | `gate-not-weakened` | the fix was a suppression, not a fix: bare `# noqa`, `eslint-disable` with no rule named, `@ts-ignore`, `--no-verify` |
-| `ci-actually-fails` | a pipeline step that renders a verdict but cannot fail — `run: pytest \|\| true`, `continue-on-error: true` |
+| `ci-actually-fails` | a pipeline step or git hook that renders a verdict but cannot fail — `run: pytest \|\| true`, `continue-on-error: true`, `pytest \| tee` without `pipefail`, `lint-staged \|\| true` in a husky hook |
 | `test-has-assertion` | a test that cannot fail: empty body, `assert True`, a skip with no reason given |
 | `promise-has-gate` | a rule in `AGENTS.md` with no enforcer named — neither a gate nor, honestly, a human |
 | `protection-not-removed` | **the instrument itself was switched off**: a gate vanished from the manifest. The declared set may only grow; removing one is allowed, but must be named |

@@ -1,5 +1,5 @@
-intent: шаг конвейера, выносящий вердикт, может провалиться — а не только выполниться
-intent_en: a pipeline step that renders a verdict can actually fail, not merely run
+intent: шаг конвейера или git-хука, выносящий вердикт, может провалиться — а не только выполниться
+intent_en: a pipeline step or git hook that renders a verdict can actually fail, not merely run
 
 # Только там, где конвейер есть. Проверять его отсутствие — дело другой записи.
 trigger:

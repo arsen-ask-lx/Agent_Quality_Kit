@@ -191,9 +191,25 @@ async function cmdNote(args) {
   const prev = await readFile(journal, "utf8");
   await writeFile(journal, prev + entry, "utf8");
 
+  // В коммит идёт РОВНО записанный файл, а наружу — только по просьбе. Раньше здесь стояли
+  // `git add incidents/README.md` (путь журнала комплекта — при своём `lessons:` его в проекте
+  // нет), голый `git commit` всего индекса и `git push`. Шишка 2026-09-21 из audit_project:
+  // застейдженная работа соседней сессии уехала в коммит урока, сам урок остался
+  // неотслеженным, и только отсутствие сервера спасло прод-ветку от пуша. `commit -- <путь>`
+  // коммитит один путь и не трогает чужой индекс; новый файл его не принимает, поэтому сперва
+  // `add` именно его.
+  const rel = relative(home, journal);
   const run = (...a) => spawnSync("git", ["-C", home, ...a], { stdio: "inherit" });
-  run("add", "incidents/README.md");
-  run("commit", "-q", "-m", `lesson(${project}): ${title}`);
+  run("add", "--", rel);
+  const committed = run("commit", "-q", "-m", `lesson(${project}): ${title}`, "--", rel);
+  if (committed.status !== 0) {
+    console.log(c.yellow(L.note.fileOnly(journal)));
+    return;
+  }
+  if (!args.includes("--push")) {
+    console.log(c.green(L.note.committed(title, `git -C ${home} push`)));
+    return;
+  }
   const pushed = run("push", "-q");
   console.log(
     pushed.status === 0

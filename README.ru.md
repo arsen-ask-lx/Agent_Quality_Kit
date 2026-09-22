@@ -611,7 +611,7 @@ Ruff, ESLint и gitleaks и так находят плохой код — AQK з
 | Запись | Что ловит |
 |---|---|
 | `gate-not-weakened` | починкой было подавление: голый `# noqa`, `eslint-disable` без имени правила, `@ts-ignore`, `--no-verify` |
-| `ci-actually-fails` | шаг конвейера, который выносит вердикт, но не может провалиться — `run: pytest \|\| true`, `continue-on-error: true` |
+| `ci-actually-fails` | шаг конвейера или git-хука, который выносит вердикт, но не может провалиться — `run: pytest \|\| true`, `continue-on-error: true`, `pytest \| tee` без `pipefail`, `lint-staged \|\| true` в хуке husky |
 | `test-has-assertion` | тест, который не может провалиться: пустое тело, `assert True`, пропуск без причины |
 | `promise-has-gate` | правило в `AGENTS.md`, у которого не назван сторож — ни гейт, ни, честно, человек |
 | `protection-not-removed` | **сам прибор выключили**: гейт исчез из манифеста. Набор объявленной защиты может только расти; снять можно, но названно |
