@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-23",
+  "aqk_base_commit": "82a14a5827af09d5e747755a22a9ae8e7ff6653b",
+  "node": "v22.23.0",
+  "git": "git version 2.43.0",
+  "platform": "Linux/WSL; Windows not run in this session",
+  "full_acceptance": {
+    "command": "AQK_UPDATE=0 node tool/program.mjs doctor --run --min 1",
+    "exit_code": 0,
+    "gates_passed": 31,
+    "log": "cycle-01-doctor.log",
+    "run_snapshot": "cycle-01-last-run.md"
+  },
+  "targeted_evidence": {
+    "first_packet": {
+      "tests": 22,
+      "red_failures": 10,
+      "green_failures": 0
+    },
+    "error_pipeline": {
+      "final_tests": 17,
+      "final_failures": 0,
+      "shell_node_cases": 1280
+    },
+    "vulture_live": "cycle-01-vulture-live.json"
+  },
+  "runtime_dependencies_added": false,
+  "scope": "Hashes of changed implementation, tests and project docs; not a fingerprint of every dependency or machine setting. No commits or publication.",
+  "changed_file_sha256": {
+    "MAP.md": "ef9740983d384f2106da16d6044276d0c2ea1204bfdc54b26a2d0c03ef7f5acd",
+    "PROJECT.md": "4008ba5d6508e68f49baa6456f5fe3f5571e96921b1da39bbd9141f70c0c33e8",
+    "incidents/README.md": "33bf9dca4c6ea2b78d550d95fa097e0d9274b62aee3c0966ee6cad9ed43ae086",
+    "kit/gates/_exit.sh": "cda959296944fc9eb922753a90487453c68e4a99afc3c00aed7b8eee1c264d1e",
+    "kit/gates/_native.sh": "37383dfe2d84d868ce9909b9372570f194395dab8775ec2c41ef833ff1900f9c",
+    "kit/gates/test-not-adjusted/check.sh": "40f4126d74f3fb13ed4924fef29a1da9987e91c3560b1fe9dda46431abb7bd35",
+    "kit/ratchet/ratchet.sh": "cd9d9593871f56436a80db32c7bed7e74f1003547ca7ce3e256037b229e8a357",
+    "tool/commands/gates.mjs": "cc8cb7a531aebc9ac9f17c4e968a5c768c7ba249e3dbcbe4fd22facb4860d98e",
+    "tool/i18n/en-docs.mjs": "340e2d0cbb17ad8c47d46f488b58a2f66d33ecf16de559197a53dcac2b3c3cfa",
+    "tool/i18n/en-gates.mjs": "3038d3be9e39e5a9cd06b04c7482e531856914ede7ae0b677bce127ded9ff717",
+    "tool/i18n/ru-docs.mjs": "8ad6f850519ec7cc8aa268276ec2a9eb50594428dced26141d1edc42922b1109",
+    "tool/i18n/ru-gates.mjs": "28fe0981c2cd475170a690e347fd3ff7664e29919496ab1a64e86ad795cb563e",
+    "tool/lib/core.mjs": "686f6c2d5bfb7bbc3648f44ec01a1ee798a2c50553d1dfb625343e86e2774093",
+    "tool/lib/evidence.mjs": "cacccba5cd0bd05211b3e496a8bfd4dfeb1db386072ed75cf0610931e65abc06",
+    "tool/lib/execution.mjs": "8f0736cb26a75c318274bbad3bd474ae3c875bb0bee798539fbccb31e7774848",
+    "tool/selfcheck/smoke/gate-errors.test.mjs": "c9292cd4d4f689a77f99228e3e33ab36cb126e337c3e9a051bd8c5c6e140c91d",
+    "tool/selfcheck/smoke/history-range.test.mjs": "3760a309a5ce5597ee36a4211e7855f75bfa69284ffac8decf5618808e808479",
+    "tool/selfcheck/smoke/hooks-path.test.mjs": "20f42bbe5ecf86c82108f525ba1b5e566b2d761e5ef8897f215049ea6b703b43",
+    "tool/selfcheck/units-evidence.mjs": "be58f9d167e15306732ccf056fc65b770e4b8494904498da958bb1efae7fb5b9",
+    "tool/selfcheck/units-execution.mjs": "2c739773a4cc4914cf76d627df1a0ff51981cf4883c9d8f317df4fd4f16224e3"
+  }
+}

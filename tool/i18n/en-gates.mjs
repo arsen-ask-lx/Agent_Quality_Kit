@@ -59,8 +59,8 @@ export const enGates = {
     notDeclared: (slug, cmd) => `Gate "${slug}" is not declared in .aqk.yml. First: ${cmd}`,
     already: (slug) => `Gate "${slug}" already has a ratchet.`,
     notRunnable: (slug, cmd) =>
-      `Gate "${slug}" does not run: ${cmd}\n` +
-      `You cannot capture debt from a guard that does not exist — its own error messages\n` +
+      `Gate "${slug}" could not complete the check: ${cmd}\n` +
+      `You cannot capture debt from an incomplete check — its own error messages\n` +
       `would land in the registry and become a permission. Fix the command first.`,
     registryHead: (slug, stamp) =>
       `# Debt registry: ${slug}\n` +

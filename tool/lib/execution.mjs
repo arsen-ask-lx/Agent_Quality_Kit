@@ -40,8 +40,8 @@ const ADAPTERS = {
   bash: DEFAULT,
   sh: DEFAULT,
   vulture: (code) => code === 3,
-  // Битовая маска: любое ненулевое БЕЗ бита 32 — находка; бит 32 — ошибка вызова.
-  pylint: (code) => code > 0 && (code & 32) === 0,
+  // Только документированные биты 1..16; 32 и неизвестные биты — ошибка вызова.
+  pylint: (code) => code > 0 && code < 32,
 };
 
 function findingCodes(prog) {

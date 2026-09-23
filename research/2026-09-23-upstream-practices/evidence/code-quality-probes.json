@@ -1,0 +1,113 @@
+{
+  "date": "2026-09-23",
+  "node": "v22.23.0",
+  "upstreamCommit": "407501608b1ffe8ab0e236b742513592fca9ed60",
+  "scope": "Real exported functions under Node type stripping. Fake bun protocol subprocess and synthetic LCOV writer; not a Bun suite or agent integration run.",
+  "results": [
+    {
+      "id": "adapter-valid-allow",
+      "response": {
+        "code": 0,
+        "output": {},
+        "error": ""
+      },
+      "deniedReturn": "",
+      "wouldBlockViaTruthyReason": false
+    },
+    {
+      "id": "adapter-malformed-json",
+      "response": {
+        "code": 0,
+        "output": null,
+        "error": "invalid guard-bash JSON: not json"
+      },
+      "deniedReturn": "",
+      "wouldBlockViaTruthyReason": false
+    },
+    {
+      "id": "adapter-json-null",
+      "response": {
+        "code": 0,
+        "output": null,
+        "error": "invalid guard-bash JSON: null"
+      },
+      "deniedReturn": "",
+      "wouldBlockViaTruthyReason": false
+    },
+    {
+      "id": "adapter-valid-deny",
+      "response": {
+        "code": 0,
+        "output": {
+          "hookSpecificOutput": {
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "fixture denial"
+          }
+        },
+        "error": ""
+      },
+      "deniedReturn": "fixture denial",
+      "wouldBlockViaTruthyReason": true
+    },
+    {
+      "id": "adapter-deny-without-reason",
+      "response": {
+        "code": 0,
+        "output": {
+          "hookSpecificOutput": {
+            "permissionDecision": "deny"
+          }
+        },
+        "error": ""
+      },
+      "deniedReturn": null,
+      "wouldBlockViaTruthyReason": false
+    },
+    {
+      "id": "adapter-crash",
+      "response": {
+        "code": 2,
+        "output": null,
+        "error": "invalid guard-bash JSON: not json"
+      },
+      "deniedReturn": "code-quality guard failed: invalid guard-bash JSON: not json",
+      "wouldBlockViaTruthyReason": true
+    },
+    {
+      "id": "coverage-unchanged",
+      "used": true,
+      "red": false
+    },
+    {
+      "id": "coverage-test-outside-src-changed",
+      "used": true,
+      "red": false
+    },
+    {
+      "id": "coverage-package-outside-src-changed",
+      "used": true,
+      "red": false
+    },
+    {
+      "id": "coverage-test-command-changed",
+      "used": true,
+      "red": false
+    },
+    {
+      "id": "coverage-source-changed",
+      "used": false,
+      "red": false
+    },
+    {
+      "id": "invalid-cli-threshold",
+      "maxCc": "NaN",
+      "acceptedWithoutError": true,
+      "cc100ExceedsThreshold": false
+    },
+    {
+      "id": "tool-cache-version",
+      "requested": "9.9.9",
+      "retained": "1.0.0"
+    }
+  ]
+}

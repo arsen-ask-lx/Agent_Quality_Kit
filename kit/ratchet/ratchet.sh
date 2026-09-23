@@ -35,7 +35,17 @@ keys() { grep -E '^[^[:space:]].*:' | sed -E 's/:[0-9]+:/:/g; s/:[0-9]+( |$)/:\1
 # Строки живут в шапке реестра и переживают затягивание: шапка переписывается целиком.
 directive() { sed -n "s/^[[:space:]]*#[[:space:]]*$1:[[:space:]]*\([^[:space:]]*\).*/\1/p" "$REG" | head -1; }
 
+. "$(dirname "$0")/../gates/_exit.sh" 2>/dev/null && command -v aqk_exit_verdict >/dev/null 2>&1 || {
+  echo "не работает gates/_exit.sh — реестр не изменён"; exit 2;
+}
 OUT="$("$@" 2>&1)"; CODE=$?
+aqk_exit_verdict "$1" "$CODE"; VERDICT=$?
+# До сравнения с долгом: частичный вывод аварийного процесса не разрешает удалять записи.
+if [ "$VERDICT" -eq 2 ]; then
+  printf '%s\n' "$OUT"
+  echo "гейт завершился с кодом $CODE — проверка НЕ СОСТОЯЛАСЬ, реестр $REG не тронут"
+  exit 2
+fi
 NOW="$(printf '%s\n' "$OUT" | keys)"
 
 if [ ! -f "$REG" ]; then

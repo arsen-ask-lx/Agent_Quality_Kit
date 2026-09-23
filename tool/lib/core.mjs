@@ -11,6 +11,7 @@ import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
+import { spawnSync } from "node:child_process";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // Два уровня вверх: файл лежит в tool/lib/. Ошибка здесь тихая — программа стала бы искать
@@ -179,7 +180,7 @@ async function ensureIgnored(cwd = CWD) {
   return add;
 }
 
-// Стоит ли хук pre-commit НА САМОМ ДЕЛЕ — в `.git/hooks`, а не в `.pre-commit-config.yaml`:
+// Стоит ли хук pre-commit по действительному пути Git, а не только в конфигурации:
 // запись в конфиге — намерение, сработает только то, что лежит в гите.
 //
 // ЧЕТЫРЕ ОТВЕТА, А НЕ ТРИ. Раньше тело хука проверялось регуляркой `/pre-commit|aqk/i`, то есть
@@ -208,7 +209,11 @@ const AQK_IN_CONFIG = /agent[-_]quality[-_]kit|Agent_Quality_Kit|(?:^|\s)-\s*id:
 async function preCommitHook(cwd = CWD) {
   const { readFile } = await import("node:fs/promises");
   if (!(await exists(join(cwd, ".git")))) return null;
-  const hook = join(cwd, ".git", "hooks", "pre-commit");
+  // Git учитывает общий каталог worktree и core.hooksPath (включая абсолютный путь).
+  const path = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-commit"],
+    { cwd, encoding: "utf8", timeout: 3000, windowsHide: true });
+  if (path.error || path.status !== 0 || !path.stdout.trim()) return null;
+  const hook = path.stdout.trim();
   if (!(await exists(hook))) return false;
   let body = "";
   try { body = await readFile(hook, "utf8"); } catch { return null; }

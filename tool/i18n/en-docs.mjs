@@ -24,11 +24,11 @@ const enDocs = {
     manifestOk: "parsed in full",
     manifestBad: (n) => `${n} lines were not parsed and HAVE NO EFFECT — details in doctor`,
     unknownHook: "could not look — unknown, not \"no\"",
-    preCommitOk: "wired in .git/hooks",
-    preCommitNo: "not in .git/hooks: a config entry is an intent, not a guard",
+    preCommitOk: "wired into the active Git hook",
+    preCommitNo: "absent from the active Git hook path: a config entry is an intent, not a guard",
     // A hook IS there, but not ours: nothing to install, something to add — a different
     // remedy, hence a different line. Until 2026-09-16 this case printed as "wired".
-    preCommitOther: "a .git/hooks hook exists, but AQK is not called from it — check .pre-commit-config.yaml or the hook body",
+    preCommitOther: "an active Git hook exists, but AQK is not called from it — check .pre-commit-config.yaml or the hook body",
     sessionOk: "the SessionStart hook hands the state to the agent",
     sessionNo: (cmd) => `the agent gets no state: ${cmd}`,
     versionOk: (v) => `${v}, current`,
@@ -104,9 +104,9 @@ const enDocs = {
     nextMore: (n) => `And ${n} more — the full list: \`aqk doctor\`.`,
     whenTitle: "When to do what:",
     whenCommit: (hook) => hook === true
-      ? "Before a commit → the `.git/hooks/pre-commit` hook runs the checks itself; do not bypass it (`--no-verify`)."
+      ? "Before a commit → the active `pre-commit` hook runs the checks itself; do not bypass it (`--no-verify`)."
       : hook === "other"
-        ? "Before a commit → `aqk doctor --run --since main`: a hook is installed in `.git/hooks`, but AQK is not called from it — the run will not happen by itself."
+        ? "Before a commit → `aqk doctor --run --since main`: an active Git hook is installed, but AQK is not called from it — the run will not happen by itself."
         : "Before a commit → `aqk doctor --run --since main`: there is no pre-commit hook, it will not happen by itself.",
     whenRules: [
       "Added or changed a check → `aqk prove`: the gate must go red on its own red sample, otherwise it checks nothing.",

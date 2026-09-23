@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-23",
+  "tool": "/home/ser/.local/bin/vulture",
+  "version": "vulture 2.16",
+  "scope": "Installed Vulture, three real input files; no shim, no network. Other analyzers are not covered by this probe.",
+  "cases": [
+    {
+      "file": "clean.py",
+      "raw_exit": 0,
+      "wrapped_exit": 0,
+      "raw_output": "",
+      "wrapped_output": ""
+    },
+    {
+      "file": "dead.py",
+      "raw_exit": 3,
+      "wrapped_exit": 1,
+      "raw_output": "dead.py:1: unused function 'never_called' (60% confidence)\n",
+      "wrapped_output": "dead.py:1: unused function 'never_called' (60% confidence)\n"
+    },
+    {
+      "file": "invalid.py",
+      "raw_exit": 1,
+      "wrapped_exit": 2,
+      "raw_output": "invalid.py:1: invalid syntax at \"def (\"\n",
+      "wrapped_output": "invalid.py:1: invalid syntax at \"def (\"\nинструмент завершился с кодом 1 — проверка НЕ СОСТОЯЛАСЬ\n"
+    }
+  ]
+}

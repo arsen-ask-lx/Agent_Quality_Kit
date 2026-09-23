@@ -15,7 +15,7 @@ import {
 } from "../lib/repo.mjs";
 import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/templates.mjs";
 import { L } from "../i18n/index.mjs";
-import { gateCommand, gateTimeout } from "../lib/execution.mjs";
+import { classify, findingCodes, gateCommand, gateTimeout } from "../lib/execution.mjs";
 
 // Ставит гейт из каталога в проект. Проверка КОПИРУЕТСЯ в репозиторий, а не остаётся
 // ссылкой в пакет: при установке через npx пакет временный, и завтра команда в манифесте
@@ -47,7 +47,7 @@ async function installGate(slug, man, facts) {
   // Без него скопированный гейт выходит с кодом 2 — это честно, но у человека он не работает.
   // Поймано нашим же смоуком в день правки: список помощников тут — единственное место, и
   // забыть его значит выпустить гейт, который у чужого проекта не запускается вовсе.
-  for (const helper of ["_skip.sh", "_native.sh", "_target.sh"]) {
+  for (const helper of ["_skip.sh", "_native.sh", "_target.sh", "_exit.sh"]) {
     const from = join(GATES_SRC, helper);
     if (await exists(from)) await copyFile(from, join(CWD, PROJECT_GATES, helper));
   }
@@ -227,18 +227,11 @@ async function cmdRatchet(args) {
   const prefix = `bash ${lib} ${RATCHET_DIR}/${slug}.txt `;
   const inner = wrapped0 && cmd.startsWith(prefix) ? cmd.slice(prefix.length) : cmd;
 
-  // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда. Исключение —
-  // сам комплект: здесь оригинал уже лежит рядом, и копия завтра разошлась бы с ним. Ровно то
-  // правило, по которому здесь не копируются и гейты.
-  if (!inKit) {
-    await mkdir(dirname(join(CWD, lib)), { recursive: true });
-    await copyFile(join(PKG_ROOT, "kit", "ratchet", "ratchet.sh"), join(CWD, lib));
-  }
-
   // Снимок текущих нарушений — это и есть долг. Ключ без номера строки: правка соседней
   // строки не должна читаться как новое нарушение.
   const r = spawnSync(gateCommand(inner), { shell: true, cwd: CWD, encoding: "utf8", timeout: gateTimeout().ms });
-  if (r.status === 127 || (r.error && r.error.code === "ENOENT")) {
+  const verdict = classify(r, findingCodes(inner.trim().split(/\s+/)[0]));
+  if (verdict.state === "infra_error") {
     die(L.ratchet.notRunnable(slug, inner));
   }
   const keys = [...new Set(
@@ -247,6 +240,16 @@ async function cmdRatchet(args) {
       .filter((l) => l && !/^\s/.test(l) && l.includes(":"))
       .map((l) => l.replace(/:\d+:/, ":"))
   )].sort();
+
+  // Обёртка копируется в репозиторий: ссылка на пакет завтра указывала бы в никуда. Исключение —
+  // сам комплект: здесь оригинал уже лежит рядом, и копия завтра разошлась бы с ним. Ровно то
+  // правило, по которому здесь не копируются и гейты.
+  if (!inKit) {
+    await mkdir(dirname(join(CWD, lib)), { recursive: true });
+    await copyFile(join(PKG_ROOT, "kit", "ratchet", "ratchet.sh"), join(CWD, lib));
+    await mkdir(join(CWD, PROJECT_GATES), { recursive: true });
+    await copyFile(join(GATES_SRC, "_exit.sh"), join(CWD, PROJECT_GATES, "_exit.sh"));
+  }
 
   await mkdir(join(CWD, RATCHET_DIR), { recursive: true });
   const stamp = new Date().toISOString().slice(0, 10);

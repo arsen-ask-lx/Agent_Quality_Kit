@@ -115,3 +115,19 @@ test("напечатанный путь по-прежнему означает �
   const r = coverage(["src/a.js"], results, () => false);
   assert.deepEqual([...r.covered.keys()], ["src/a.js"]);
 });
+
+// Разбор code-quality выявил слабую связь свидетельства со входом. У нас другая граница:
+// служебное обозначение отсутствия файла не должно совпадать с настоящим текстом файла.
+test("расписка различает удалённый файл и буквальное содержимое <missing>", async () => {
+  const { evidenceHash } = await import("../lib/evidence.mjs");
+  assert.notEqual(evidenceHash("base", [], [["value.txt", null]]),
+    evidenceHash("base", [], [["value.txt", "<missing>"]]));
+});
+
+test("границы записей отпечатка нельзя подделать нулевым байтом в содержимом", async () => {
+  const { evidenceHash } = await import("../lib/evidence.mjs");
+  assert.notEqual(evidenceHash("base", [], [["a", "x\0path:b\0y"]]),
+    evidenceHash("base", [], [["a", "x"], ["b", "y"]]));
+  assert.equal(evidenceHash("base", [], [["b", "y"], ["a", "x"]]),
+    evidenceHash("base", [], [["a", "x"], ["b", "y"]]));
+});

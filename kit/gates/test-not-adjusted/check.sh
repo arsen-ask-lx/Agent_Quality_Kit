@@ -72,11 +72,11 @@ else
   # `AQK_TEST_RANGE=origin/main..HEAD`, получал бы «меньше двух коммитов» на клоне без `HEAD~1`,
   # хотя его диапазон полностью разрешим. Найдено код-ревью 2026-09-07.
   BASE="${RANGE%%..*}"
-  if ! (cd "$DIR" && git rev-parse -q --verify "$BASE" >/dev/null 2>&1); then
-    echo "$BASE не разрешается — сравнивать не с чем, проверка пропущена"
+  if ! (cd "$DIR" && git rev-parse -q --verify --end-of-options "$BASE^{commit}" >/dev/null 2>&1); then
+    echo "$BASE не разрешается в коммит — сравнивать не с чем, проверка НЕ СОСТОЯЛАСЬ"
     echo "  почини: дай конвейеру историю глубже одного коммита —"
     echo "  actions/checkout@v4 с fetch-depth: 2, либо назови свой диапазон в AQK_TEST_RANGE."
-    exit 0
+    exit 2
   fi
   REPO="$DIR"
 fi

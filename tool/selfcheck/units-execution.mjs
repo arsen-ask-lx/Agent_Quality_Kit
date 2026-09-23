@@ -199,3 +199,9 @@ test("мусор в переменной — прежний срок и слов
     assert.equal(t.raw, bad);
   }
 });
+
+test("pylint: неизвестные биты кода возврата не превращаются в находку", () => {
+  for (const code of [64, 128, 143]) {
+    assert.equal(classify(R({ status: code }), findingCodes("pylint")).state, "infra_error");
+  }
+});

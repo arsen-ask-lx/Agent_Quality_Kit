@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-23",
+  "scope": "Inventory hashes, pinned HEADs, coverage counters, note coverage, local Markdown links, attachment copy and probe metadata. Does not validate the truth of every research claim or execute product tests.",
+  "tracked_entries": 2075,
+  "code_quality_entries_with_notes": 105,
+  "review_status_counts": {
+    "queued": 1862,
+    "read": 127,
+    "symlink-inventoried": 18,
+    "partial": 13,
+    "asset-reviewed": 3,
+    "equivalent-verified": 11,
+    "binary-inventoried": 41
+  },
+  "local_links_checked": 68,
+  "attachment_sha256": "8846e3642218036eaaaabab6cf932daf2460d91fdeefc379f2fd7130de554834",
+  "probe_observations": {
+    "code-quality-probes": 13,
+    "adapter-failure-probes": 7
+  },
+  "errors": []
+}

@@ -1,0 +1,7 @@
+{
+  "case": "30 sequential if statements; one indentation level",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "interpretation": "portable nesting gate does not enforce CC <= 10; by documented design, not a new implementation defect"
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "name": "syntax",
+    "command": [
+      "bash",
+      "tool/selfcheck/syntax.sh"
+    ],
+    "exit_code": 0,
+    "seconds": 2.06
+  },
+  {
+    "name": "units",
+    "command": [
+      "node",
+      "--test",
+      "tool/selfcheck/units-annotate.mjs",
+      "tool/selfcheck/units-ask.mjs",
+      "tool/selfcheck/units-banner.mjs",
+      "tool/selfcheck/units-brief.mjs",
+      "tool/selfcheck/units-cadence.mjs",
+      "tool/selfcheck/units-context.mjs",
+      "tool/selfcheck/units-covers.mjs",
+      "tool/selfcheck/units-evidence.mjs",
+      "tool/selfcheck/units-execution.mjs",
+      "tool/selfcheck/units-feedback.mjs",
+      "tool/selfcheck/units-learn.mjs",
+      "tool/selfcheck/units-level.mjs",
+      "tool/selfcheck/units-probe.mjs",
+      "tool/selfcheck/units-prompt.mjs",
+      "tool/selfcheck/units-repo.mjs",
+      "tool/selfcheck/units-verdict.mjs",
+      "tool/selfcheck/units-vitals.mjs",
+      "tool/selfcheck/units.mjs"
+    ],
+    "exit_code": 0,
+    "seconds": 0.87
+  },
+  {
+    "name": "evals",
+    "command": [
+      "node",
+      "evals/run.mjs"
+    ],
+    "exit_code": 0,
+    "seconds": 0.95
+  }
+]

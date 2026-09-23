@@ -1,0 +1,183 @@
+{
+  "date": "2026-09-23",
+  "node": "v22.23.0",
+  "upstreamCommit": "407501608b1ffe8ab0e236b742513592fca9ed60",
+  "scope": "Real upstream adapter and ratchet functions; synthetic analyzer process results. Not a live Ruff/OSV integration or full gate run.",
+  "results": [
+    {
+      "id": "clean",
+      "checks": [
+        {
+          "name": "py/form",
+          "findings": [],
+          "error": "",
+          "note": "",
+          "notices": [],
+          "adapter": "py",
+          "kind": "form"
+        }
+      ]
+    },
+    {
+      "id": "failedEmpty",
+      "checks": [
+        {
+          "name": "py/form",
+          "findings": [],
+          "error": "fixture-analyzer exit 2: fixture analyzer crashed",
+          "note": "",
+          "notices": [],
+          "adapter": "py",
+          "kind": "form"
+        }
+      ]
+    },
+    {
+      "id": "successfulFinding",
+      "checks": [
+        {
+          "name": "py/form",
+          "findings": [
+            {
+              "rule": "form/F1",
+              "file": "value.py",
+              "line": 1,
+              "msg": "known style finding"
+            }
+          ],
+          "error": "",
+          "note": "",
+          "notices": [],
+          "adapter": "py",
+          "kind": "form"
+        }
+      ]
+    },
+    {
+      "id": "crashedFinding",
+      "checks": [
+        {
+          "name": "py/form",
+          "findings": [
+            {
+              "rule": "form/F1",
+              "file": "value.py",
+              "line": 1,
+              "msg": "known style finding"
+            }
+          ],
+          "error": "",
+          "note": "",
+          "notices": [],
+          "adapter": "py",
+          "kind": "form"
+        }
+      ]
+    },
+    {
+      "id": "afterBaseline",
+      "checks": [
+        {
+          "name": "py/form",
+          "findings": [],
+          "error": "",
+          "note": "",
+          "notices": [],
+          "adapter": "py",
+          "kind": "form"
+        }
+      ]
+    },
+    {
+      "id": "auditBothCompleted",
+      "calls": [
+        {
+          "cmd": "osv-scanner",
+          "args": [
+            "scan",
+            "source",
+            "--format",
+            "json",
+            "-L",
+            "package-lock.json"
+          ],
+          "cwdRelative": "."
+        },
+        {
+          "cmd": "osv-scanner",
+          "args": [
+            "scan",
+            "source",
+            "--format",
+            "json",
+            "-L",
+            "Cargo.lock"
+          ],
+          "cwdRelative": "z"
+        }
+      ],
+      "checks": [
+        {
+          "name": "deps/audit",
+          "findings": [
+            {
+              "rule": "deps/audit",
+              "file": "package-lock.json",
+              "line": 0,
+              "msg": "fixture@1.0.0: FIXTURE-ONLY-001"
+            }
+          ],
+          "error": "",
+          "note": "",
+          "notices": [
+            "deps/audit: 1 finding(s) (2 packages, osv-scanner)"
+          ],
+          "adapter": "osv",
+          "kind": "audit"
+        }
+      ]
+    },
+    {
+      "id": "auditLaterOffline",
+      "calls": [
+        {
+          "cmd": "osv-scanner",
+          "args": [
+            "scan",
+            "source",
+            "--format",
+            "json",
+            "-L",
+            "package-lock.json"
+          ],
+          "cwdRelative": "."
+        },
+        {
+          "cmd": "osv-scanner",
+          "args": [
+            "scan",
+            "source",
+            "--format",
+            "json",
+            "-L",
+            "Cargo.lock"
+          ],
+          "cwdRelative": "z"
+        }
+      ],
+      "checks": [
+        {
+          "name": "deps/audit",
+          "findings": [],
+          "error": "",
+          "note": "",
+          "notices": [
+            "not run: deps/audit (OSV database unavailable)"
+          ],
+          "adapter": "osv",
+          "kind": "audit"
+        }
+      ]
+    }
+  ]
+}

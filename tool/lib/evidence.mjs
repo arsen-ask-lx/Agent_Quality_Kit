@@ -117,12 +117,11 @@ function coverage(files, results, isDir = () => false) {
 // держит файлы в руках, а функция без ввода-вывода проверяется модульно.
 function evidenceHash(base, commands, files) {
   const h = createHash("sha256");
-  h.update(`base:${base || ""}\0`);
-  for (const c of commands) h.update(`cmd:${c?.cmd ?? c}\0`);
+  // Типизированные JSON-записи: служебные границы и отсутствие не могут стать текстом файла.
+  h.update(JSON.stringify(["evidence-v2", base || ""]));
+  for (const c of commands) h.update(JSON.stringify(["cmd", c?.cmd ?? c]));
   for (const [p, body] of [...files].sort((a, b) => String(a[0]).localeCompare(String(b[0])))) {
-    h.update(`path:${normPath(p)}\0`);
-    h.update(body === null || body === undefined ? "<missing>" : String(body));
-    h.update("\0");
+    h.update(JSON.stringify(["file", normPath(p), body == null ? null : String(body)]));
   }
   return h.digest("hex");
 }

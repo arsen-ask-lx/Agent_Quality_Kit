@@ -1,0 +1,533 @@
+{
+  "date": "2026-09-23",
+  "repository": "smixs/code-quality",
+  "commit": "407501608b1ffe8ab0e236b742513592fca9ed60",
+  "meaning": "read: полное чтение текста, не успешный запуск; equivalent-verified: побайтовое равенство прочитанному; asset-reviewed: визуальная или структурная проверка графического ресурса.",
+  "files": [
+    {
+      "file": ".agents/plugins/marketplace.json",
+      "status": "read",
+      "observation": "Каталог локального плагина: объявляет доступность/установку. Сам по себе не включает гейты в AQK; проверка синтаксиса JSON не доказывает совместимость клиента."
+    },
+    {
+      "file": ".claude-plugin/marketplace.json",
+      "status": "read",
+      "observation": "Метаданные каталога Claude. Нужны для обнаружения плагина, а не для оценки качества исходников."
+    },
+    {
+      "file": ".claude-plugin/plugin.json",
+      "status": "read",
+      "observation": "Манифест Claude, версия 1.0.0. Согласованность версий поддерживает bump-version.ts; установки в настоящем клиенте не было."
+    },
+    {
+      "file": ".codex-plugin/plugin.json",
+      "status": "read",
+      "observation": "Манифест Codex, ссылки на skills/hooks. Наличие файла не является доказательством работы хуков в установленной версии клиента."
+    },
+    {
+      "file": ".gitignore",
+      "status": "read",
+      "observation": "Исключает scratch, node_modules, логи и служебные результаты. Для AQK важна отдельная политика: воспроизводимые итоговые свидетельства сохранять, временные артефакты исключать."
+    },
+    {
+      "file": "LICENSE",
+      "status": "read",
+      "observation": "MIT: разрешение использовать, изменять и распространять с сохранением уведомления об авторстве и лицензии. Это основание рассматривать перенос, а не доказательство полезности или отсутствия ошибок."
+    },
+    {
+      "file": "README.md",
+      "status": "read",
+      "observation": "Прочитан целиком. Описывает full/check/pre-push и 12 языков, но поддержка языка неоднородна. Число тестов на значке и заявления о скорости требуют прогона; GATE PASS явно отделён от запуска тестов."
+    },
+    {
+      "file": "adapters/invoke.ts",
+      "status": "read",
+      "observation": "Строки 6–19: bun-процесс, сбор stdout/stderr, JSON.parse, код процесса. Строки 23–26: denied учитывает deny и ненулевой код, но не output=null при code=0. Кандидат на пропуск неисправного протокола; нужен отдельный запуск. Собственного таймаута/лимита буфера нет. Последующая независимая проба подтвердила аварийные сценарии: см. CQ-01 в CODE-QUALITY-DEEP.md."
+    },
+    {
+      "file": "adapters/omp.ts",
+      "status": "read",
+      "observation": "Общий invoke/denied на вызове bash; session_stop отдельно проверяет отсутствие output. Поэтому аварийная семантика guard и stop различается. Реальная интеграция OMP не запускалась."
+    },
+    {
+      "file": "adapters/opencode.js",
+      "status": "read",
+      "observation": "Отдельная реализация invoke отклоняет невалидный JSON. V1 через session.idle пишет noReply, V2 подписывается на события и возобновляет агент. Ошибка подписки завершает цикл после console.error; автоматического восстановления не видно. Не считать одинаковые названия событий одинаковой гарантией."
+    },
+    {
+      "file": "adapters/pi.ts",
+      "status": "read",
+      "observation": "tool_call использует общий guard; agent_before_settle возвращает continue при блокировке, ненулевом коде либо отсутствии output. Текстовая документация конфигурации упоминает другое событие agent_settled — сверять с фактическим API при переносе."
+    },
+    {
+      "file": "assets/hero.webp",
+      "status": "asset-reviewed",
+      "observation": "Визуально просмотрен: декоративная иллюстрация шлагбаума с красным и зелёным сигналами. Не содержит схемы алгоритма, инструкций, метрик или скрытого текстового источника для исследования. Размер 15124 байта, hash в описи; не засчитывается как чтение кода."
+    },
+    {
+      "file": "assets/logo-dark.svg",
+      "status": "asset-reviewed",
+      "observation": "Проверен XML целиком: svg 880×420, viewBox 440 150 880 420, 19 path, 2 linearGradient, 4 stop; внешних изображений, scripts и текстовых узлов нет. Ресурс брендинга. Координаты кривых не трактуются как инженерные рекомендации."
+    },
+    {
+      "file": "assets/logo-light.svg",
+      "status": "asset-reviewed",
+      "observation": "XML разобран целиком; побайтово доказано, что это logo-dark.svg с заменой #E2F6FD на #0C212B. Та же геометрия и только смена цвета для темы. Отдельный asset-review, не второй прочитанный алгоритм."
+    },
+    {
+      "file": "examples/python.quality.toml",
+      "status": "read",
+      "observation": "Python-профиль с pytest/pytest-cov через uv, те же пороги, pre-push и Jev=true. Часть общих настроек не означает одинаковую поддержку языка. Использование --with без pins в test_cmd оставляет версии тестового инструментария внешнему окружению."
+    },
+    {
+      "file": "examples/typescript.quality.toml",
+      "status": "read",
+      "observation": "Полный пример. test_cmd пишет LCOV в QG_LCOV, явные пороги, слои и glossary. В отличие от defaults включает review.jev=true: копирование примера при наличии ключа может включить отправку diff во внешний сервис. Нельзя считать пример безусловно безопасной конфигурацией по умолчанию."
+    },
+    {
+      "file": "git-hooks/_chain",
+      "status": "read",
+      "observation": "Разрешает прежний local hooksPath, затем global/system, затем hooks общего git-dir. Относительные пути от корня дерева, защита от рекурсии, exec прежнего исполняемого хука. Стоит адаптировать идею сохранения инфраструктуры, предварительно проверить собственный установщик AQK."
+    },
+    {
+      "file": "git-hooks/applypatch-msg",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/commit-msg",
+      "status": "read",
+      "observation": "Та же последовательность для сообщения коммита. Политика содержания сообщения — выбор автора, не универсальный признак качества кода."
+    },
+    {
+      "file": "git-hooks/post-applypatch",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/post-checkout",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/post-commit",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/post-merge",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/post-rewrite",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/pre-applypatch",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/pre-auto-gc",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/pre-commit",
+      "status": "read",
+      "observation": "Находит текущий корень плагина через стабильный pointer, запускает bun hook pre-commit; при ошибке останавливается, затем передаёт управление старому хуку."
+    },
+    {
+      "file": "git-hooks/pre-merge-commit",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/pre-push",
+      "status": "read",
+      "observation": "Сохраняет stdin с refs во временный файл и подаёт одинаковые данные своей проверке и старому хуку. trap удаляет файл; код прежнего хука сохраняется. Полезный конкретный образец совместимости."
+    },
+    {
+      "file": "git-hooks/pre-rebase",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "git-hooks/prepare-commit-msg",
+      "status": "equivalent-verified",
+      "observation": "Байт-в-байт совпадает с прочитанным git-hooks/_chain; сверено SHA-256. Логика передаёт имя вызванного хука через basename, поэтому имена требуют интеграционных проверок, даже при одинаковом тексте."
+    },
+    {
+      "file": "hooks/hooks.json",
+      "status": "read",
+      "observation": "Stop с timeout 300 и PreToolUse/Bash с timeout 30. Строки команд используют CLAUDE_PLUGIN_ROOT; совместимость и пути с пробелами не проверены живым клиентом. Не переносить такой файл как доказательство исполнения."
+    },
+    {
+      "file": "package.json",
+      "status": "read",
+      "observation": "Манифест плагина и команды Bun test/typecheck; CLI опирается на Bun и внешние анализаторы. Для беззависимого CLI AQK это кандидат на внешний гейт/профиль, не библиотека для импорта внутрь раннера. Полный авторский набор в этом исследовании не запускался."
+    },
+    {
+      "file": "rules/semgrep.yml",
+      "status": "read",
+      "observation": "Generic-правило eval/exec. Узкий эвристический сигнал, не доказательство эксплуатации; в описанном процессе advisory."
+    },
+    {
+      "file": "rules/sg/catch-only-logs.yml",
+      "status": "read",
+      "observation": "AST catch_clause TypeScript + regex тела с единственным логированием. Не анализирует полный эффект обработчика, исключения требуют предметного разбора."
+    },
+    {
+      "file": "rules/sg/empty-catch.yml",
+      "status": "read",
+      "observation": "AST пустого catch, допускающий пробелы/комментарии. Важны lawful исключения с явной причиной и тестом поведения."
+    },
+    {
+      "file": "rules/sg/textual-test.yml",
+      "status": "read",
+      "observation": "Ищет чтение исходника readFileSync и строковые утверждения о нём. Для AQK, который анализирует файлы, строка может быть законным наблюдаемым результатом; нельзя автоматически запретить все такие тесты."
+    },
+    {
+      "file": "rules/sgconfig.yml",
+      "status": "read",
+      "observation": "Каталог AST-правил и разбор JavaScript через TypeScript-парсер. Это влияет на фактический охват, а не только на упаковку."
+    },
+    {
+      "file": "scripts/bump-version.ts",
+      "status": "read",
+      "observation": "Записывает новую версию в четыре манифеста последовательно. Простая semver-проверка; общей атомарной транзакции нет. Инструмент выпуска, не гейт проекта-получателя."
+    },
+    {
+      "file": "scripts/fixtures/evidence-eslint-disable-codex.ts",
+      "status": "read",
+      "observation": "Небольшая TypeScript-функция с CC 13 и директивой отключения ESLint. Контроль того, что собственный config анализатора игнорирует inline bypass; сама фикстура без теста не доказывает срабатывание."
+    },
+    {
+      "file": "scripts/fixtures/evidence-eslint-disable-next-line.ts",
+      "status": "read",
+      "observation": "Небольшая TypeScript-функция с CC 13 и директивой отключения ESLint. Контроль того, что собственный config анализатора игнорирует inline bypass; сама фикстура без теста не доказывает срабатывание."
+    },
+    {
+      "file": "scripts/fixtures/lang/go/a.go",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/go/a_test.go",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/go/b.go",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/go/go.mod",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/java/pom.xml",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/java/src/main/java/A.java",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/java/src/main/java/B.java",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/java/src/test/java/ATest.java",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/php/composer.json",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/php/src/a.php",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/php/src/b.php",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/php/tests/ValueTest.php",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/ruby/Gemfile",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/ruby/lib/a.rb",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/ruby/lib/b.rb",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/ruby/spec/value_spec.rb",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/rust/Cargo.toml",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/rust/src/copy.rs",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/rust/src/lib.rs",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/fixtures/lang/rust/tests/risky.rs",
+      "status": "read",
+      "observation": "Фикстура адаптера языка: ветвления/дублирование/псевдосекрет либо выключенный тест; манифест обозначает корень. Прочитана целиком. Это вход для анализатора, не полноценное компилируемое приложение: например Go-тест не импортирует testing, Java-тест не содержит импортов аннотаций. Проверку интеграции искать в lang-fixtures.test.ts."
+    },
+    {
+      "file": "scripts/lib/adapter-tools.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 198 строк. Протоколы Go/Rust/PMD/Ruff/Vulture проверяются фиктивными исполняемыми файлами; SARIF и относительные пути, восстановление gocyclo suppression, дедупликация notices, legacy baseline. Lockfiles обнаруживаются на реальном временном дереве, результаты OSV подставлены. Есть отличение no packages от недоступной БД и продолжение после пустого lockfile. Сценарии «вывел известную находку и аварийно завершился» и «первый lockfile уязвим, второй offline» не найдены в прочитанных тестах; добавлены независимые исследовательские пробы, исходный репозиторий не менялся."
+    },
+    {
+      "file": "scripts/lib/adapter-tools.ts",
+      "status": "read",
+      "observation": "Прочитаны все 474 строки. Команды адаптеров дедуплицируются по root/kind/command, запускаются через shell с timeout 600s. Есть SARIF, generic JSON/JSONL/text и специальные Go/Rust-парсеры. Generic parser ищет знакомые поля и не проверяет полную схему произвольного анализатора. Аудит OSV обнаруживает lockfiles и сканирует каждый; ранний return при поздней недоступной БД теряет ранее собранные находки — воспроизведено CQ-06. acceptedResult принимает любой exit при наличии findings; после baseline может исчезнуть и находка, и свидетельство аварии — CQ-05. gocyclo-ignore перепроверяется на временной копии без директивы, с hardcoded -over 10. SARIF-файл читается при пустом stdout; очистку старого файла этот модуль не обеспечивает (гипотеза для отдельного опыта, не доказанный дефект всех адаптеров). Ключ baseline включает строку и текст: перенос строк способен создавать новый долг. Legacy baseline без tools намеренно снимает все findings с notice. Обычные tool.command не переписываются целиком через [tools]; отдельно применяется выбор OSV binary. Нужны реальные интеграционные контроли поддерживаемых анализаторов."
+    },
+    {
+      "file": "scripts/lib/astgrep.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Java empty catch; матрица десяти catch-языков + две явные not-run записи; jscpd Go clone; missing Semgrep через fake run. Тест документации проверяет исчезновение старого rule-id, что уместно для договора документации, хотя сам продукт предостерегает от textual tests."
+    },
+    {
+      "file": "scripts/lib/astgrep.ts",
+      "status": "read",
+      "observation": "Прочитаны все 161 строка. TS использует YAML-правила, прочие языки inline AST+regex; Go/Rust не имеют catch-rules. Директива ast-grep-ignore нейтрализуется в временной копии с alias обратно к исходнику и cleanup finally. sgCommand сверяет строку версии; astGroup принимает распарсенный JSON-массив, ошибки формата дают error. code -1 смешивает timeout/отсутствие инструмента и становится notice. Semgrep всегда advisory. SUPPRESSION — текстовая замена, семантическую сохранность строковых литералов надо испытать."
+    },
+    {
+      "file": "scripts/lib/config.ts",
+      "status": "read",
+      "observation": "Прочитаны все 187 строк порциями. Приоритет CLI → TOML → defaults, worktree ищет конфиг основного checkout; baseline общий, отчёт локальный. Проверяются имена секций/ключей, но общей проверки типов и диапазонов порогов нет; Number(flag) может дать NaN. Не объявлять подтверждённым дефектом до пробы. Приоритет scope all > staged > since > base."
+    },
+    {
+      "file": "scripts/lib/crap.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Проверяет Lizard CSV, LCOV без FN, Radon closures, Go/Rust, forgiveness comments, native ESLint vs Lizard, non-ASCII пути и per-file fallback. Часть проверок реально запускает инструменты, часть использует внедрённые зависимости. Этот Bun-набор нами не запускался."
+    },
+    {
+      "file": "scripts/lib/crap.ts",
+      "status": "read",
+      "observation": "Полностью прочитаны 416 строк. runFresh удаляет прежний LCOV, вызывает test_cmd и сохраняет код/число падений; fingerprint только diff+untracked под dirs. parseLcov суммирует DA дублей SF, score исключает вложенные функции. ESLint/Radon первичны, Lizard fallback; отсутствие данных даёт riskCrap с cov=0, но при отсутствии свежего отчёта CRAP-гейт не судится. ensureTools проверяет наличие package.json без version. Пробы CQ-02/CQ-04 подтвердили границы. Каталоги инструментов не устанавливались."
+    },
+    {
+      "file": "scripts/lib/deps.ts",
+      "status": "read",
+      "observation": "dependency-cruiser строит временную конфигурацию циклов/слоёв; Knip получает entry/project из src и тестов. Перед depcruise удаляется старый JSON. Результат принимается по JSON, а не только по exit; схемы полного ответа не валидируются. Циклы дедуплицируются по отсортированному набору участников, разные пути внутри набора могут схлопнуться."
+    },
+    {
+      "file": "scripts/lib/diff.ts",
+      "status": "read",
+      "observation": "Разбор unified diff -U0, карта добавленных строк и удалённых фрагментов. Staged без HEAD использует пустое дерево — прежний тезис из limits.md о невозможности первого коммита устарел относительно кода. Удалённый hunk затрагивает соседние строки. wholeFile пропускает файл >2 MB; all только tracked, base добавляет untracked."
+    },
+    {
+      "file": "scripts/lib/diffcov.ts",
+      "status": "read",
+      "observation": "Добавленные исполняемые строки определяются пересечением diff и LCOV DA. Нет свежего отчёта → notices, не нарушение. Отсутствующий файл и низкое покрытие разделены политикой; pre-push выключает missingFiles. 0 исполняемых строк представляется как 100% 0/0: отчёт обязан сохранять знаменатель."
+    },
+    {
+      "file": "scripts/lib/dup.ts",
+      "status": "read",
+      "observation": "jscpd запускается только на изменённых исходных файлах; затем пересечение клона с changed lines. Поэтому копия из НЕизменённого файла в изменённый не гарантированно обнаруживается. Удаляет старый отчёт. code -1 подписан npx not found, хотя утилита run объединяет отсутствие процесса и timeout. Это кандидат на потерю причины ошибки."
+    },
+    {
+      "file": "scripts/lib/form.ts",
+      "status": "read",
+      "observation": "ESLint API с собственным in-memory config, noInlineConfig=true; Sonar cognitive, depth, params, length. Находит владельца сообщения и проверяет изменение функции. Ошибка парсинга даёт finding. Защита от eslint-disable реализована, а не только обещана."
+    },
+    {
+      "file": "scripts/lib/gate.ts",
+      "status": "read",
+      "observation": "Оркестрация full/check/baseline: сбор структурных и текстовых проверок, запуск адаптеров, отсеивание существующего долга, отчёт. Проверка f.cc > o.maxCc чувствительна к NaN (CQ-03). Актуальный аудит зависимостей идёт через adapterChecks из adapter-tools.ts; старый экспорт auditCheck из security.ts здесь не используется. Чтение одного модуля без проверки импортов дало бы неверный вывод о поведении аудита."
+    },
+    {
+      "file": "scripts/lib/grok-hooks.test.ts",
+      "status": "read",
+      "observation": "Проверяет повторную установку/удаление, сохранность other.json, override и default home. Это проверка файлов установки, не исполнения событий настоящим Grok-клиентом."
+    },
+    {
+      "file": "scripts/lib/grok-hooks.ts",
+      "status": "read",
+      "observation": "Отдельная установка только своего JSON в GROK_HOME, shellQuote корректно экранирует одинарные кавычки. Повторная установка не пишет одинаковый файл; удаление точечное."
+    },
+    {
+      "file": "scripts/lib/guard-bash.test.ts",
+      "status": "read",
+      "observation": "Красные/зелёные строки команд, комбинированные флаги, camelCase JSON, отключение настройки и отсутствие configured repo. Есть реальные CLI-подпроцессы в временной папке. Нет теста неверного JSON ответа общего adapters/invoke.ts в этом файле."
+    },
+    {
+      "file": "scripts/lib/guard-bash.ts",
+      "status": "read",
+      "observation": "Свой токенизатор shell, намеренно только прямые git-команды, не полный интерпретатор. Блокирует no-verify/-n и изменение hooksPath; уважает строковые сообщения/--. Включён только для git-repo с .quality.toml и block_bypass. Это удобная защита от случайного обхода, не граница безопасности от произвольного shell-кода."
+    },
+    {
+      "file": "scripts/lib/hooks.ts",
+      "status": "read",
+      "observation": "Прочитаны все 445 строк. Подробная трасса: partlyStaged 58–64; push ranges 74–85; отбор тестов 91–151; prePush 160–176; проверки каждого first-parent коммита 221–236; сохранение/восстановление hooksPath 269–329; stop 332–445. Stop допускает первый чистый checkout без проверки и после одного повторного красного вердикта выдаёт systemMessage без decision:block. Это задокументированная политика против зацикливания, не строгая приёмка. Тесты выбираются по имени/прямому TS-импорту, ограничены 40 с явным omitted; транзитивный граф не строится."
+    },
+    {
+      "file": "scripts/lib/inline-config.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Реальные CLI-контроли ESLint disable на CC и max-params, ast-grep-ignore, Python noqa, запрет нового suppression даже при простой функции. Эти тесты подтверждают намеренный контракт; лог исполнения в нашей среде отсутствует."
+    },
+    {
+      "file": "scripts/lib/jev.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 128 строк. Проверяет конфигурацию ключей/endpoint/model, структуру POST, разбор ответа, отсутствие ключа и HTTP 401/429/529 через подставной fetch. Это проверка интеграционного договора, а не способности модели замечать плохие тесты. Таймаут/неблокирование проверяются также в pipeline.test.ts. Собственного полного Bun-прогона нет."
+    },
+    {
+      "file": "scripts/lib/jev.ts",
+      "status": "read",
+      "observation": "Прочитаны все 391 строка. Пять фиксированных вопросов по тестам: textual_test, error_path_tested, assertion_weakened, mock_hides_behavior, property_is_tautology. Формируются добавленные строки и по три контекстные строки; error-path контекст — эвристика по diff, для mock передаются пути изменённых исходников, не полная семантика функций. По ключам выбирается TypeSafe/OpenRouter/custom endpoint. Уходят текст hunks и пути; предварительного redaction этих текстов в этом модуле нет. Есть общий 5s AbortSignal, ограничение числа hunks, общий бюджет 40k символов; это не точный токенизатор. Ответ проверяет числовой тип вероятности, но не диапазон 0..1. JSONL содержит модель, вопрос, файл/hunk, scope, HEAD, но не отпечаток всего diff; HEAD до коммита — родитель. Калибровка модели здесь не доказана. Ни одного реального LLM-запроса в исследовании не было; пригодна только явно включаемая консультативная часть с отдельной оценкой качества."
+    },
+    {
+      "file": "scripts/lib/lang-fixtures.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Пять фикстур go/rust/java/php/ruby проходят через analyze+gate и обязаны дать complexity/dup/skipped/token. Отдельный тест с бедным PATH требует exit 0 и notices not run при отсутствующих анализаторах. Поэтому missing tool = green здесь осознанная политика, а не догадка аудитора."
+    },
+    {
+      "file": "scripts/lib/lang.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Матрица непустых полей, monorepo root routing, inference без manifest, explicit selection, skip patterns, Go hunks для Jev, синтетические ответы десяти registries и mirror/disabled. Это проверка адаптера данных, не живых API registry и не настоящих test runners всех языков."
+    },
+    {
+      "file": "scripts/lib/lang.ts",
+      "status": "read",
+      "observation": "Полностью прочитаны 351 строка. Данные 12 языков, registry URL/date adapters, рекурсивное обнаружение корней по manifests+extensions, выбор самого глубокого подходящего корня, glob test names и regex test/assert/skip/mock. Некоторые coverage-команды только конвертируют готовый отчёт (Java/Kotlin/PHP), а не запускают тесты. Для всех языков, кроме TS/Python, prePushTest пуст и fallback=node --test. Поэтому без project-specific команды нельзя обещать полноценный multilang test-run. defaultTestCommand определяет vitest по строковому вхождению в package.json; это ограниченная эвристика."
+    },
+    {
+      "file": "scripts/lib/paths.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 125 строк. out_dir, origin/HEAD и fallback branches, explicit base, relocated install+root pointer, hooks после обновления копии. Последний тест явно приравнивает Java pre-push к node --test; показывает фактическую границу multilang-поддержки, а не полноценную Java-приёмку."
+    },
+    {
+      "file": "scripts/lib/pipeline.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 626 строк порциями: diff+unicode; commit-msg; config/worktree; mean CRAP advisory; первый commit/push; docs vs ADR; stop однократный retry; реальный Git chain/local/global hooks; docs-only; baseline old/new debt; сумма failed counts; red/green complexity+doc; обходы в отчёте; full all; защита baseline от нуля функций; missing security; Jev injected post без сети. Это существенно глубже значка с числом тестов. Собственный запуск Bun-набора не выполнен."
+    },
+    {
+      "file": "scripts/lib/report.ts",
+      "status": "read",
+      "observation": "Полностью прочитаны 126 строк. Churn за 12 месяцев умножается на сумму riskCrap; top/worklist — эвристическая приоритизация. failCount = findings + error, notices не блокируют. Markdown включает область/base/config, JSON writeReport хранит только checks/bypasses/escalate, не весь provenance Markdown. check.json/md перезаписываются. testsLine отличает not run от failed, GATE PASS не равен полному покрытию проверками."
+    },
+    {
+      "file": "scripts/lib/security.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 286 строк. Gitleaks подставляется через runner: отсутствующий binary, находки, redaction, reasoned allow, удаление отчёта. Возраст пакета — подставное время/реестры, warm cache без сети, слишком новый release, workspace после npm entry, mirror, virtual uv packages и отсутствие registry. Новая dependency проверяется на временном Git-репозитории. Последние тесты проверяют старый security.auditCheck (кэш npm audit, high finding, malformed JSON, offline), а не текущий multi-lock OSV path; это существенно для оценки реального покрытия."
+    },
+    {
+      "file": "scripts/lib/security.ts",
+      "status": "read",
+      "observation": "Прочитаны все 514 строк. Gitleaks: version check, удаление старого отчёта, диапазон base..HEAD, --redact, допустимы exit 0/1, остальные ошибки сохраняются; JSON parse error блокирует. Исключения могут сверяться с текущей строкой worktree, хотя находка историческая — требуется отдельная проверка соответствия версии. Lock-age разбирает конечный набор lock-форматов regex, проверяет изменённые registry-пакеты через curl и кэширует дату публикации; age — политика снижения риска, не гарантия безопасности. Offline оставляет notice, уже собранные age-findings сохраняются. newPackageCheck для package.json/pyproject — notice с ожиданием qg:dep, а не строгий валидатор обоснования. Экспортированный auditCheck использует кэш lockhash+tool без срока, но поиск вызовов показывает только security.test.ts; актуальный gate вызывает аудит adapter-tools.ts. Поэтому риск старого audit-кэша НЕ объявлен дефектом действующего full gate. securityChangeChecks подключает только age/new-package."
+    },
+    {
+      "file": "scripts/lib/tamper.test.ts",
+      "status": "read",
+      "observation": "Прочитаны все 619 строк. Есть красные и зелёные контроли: ESLint/ast-grep/noqa/gocyclo suppression против строк, docstring и unrelated rules; старые директивы против добавленных. Удаление/переименование/skip тестов, пустые и объяснённые bypass, изоляция bypass от ослабления другого assertion. Assert equality→truthy, multiline deepEqual→ok, Python-пары, законная замена/rename, специальный перенос textual-test в behavioral. Mock-заметки по изменённому модулю и shadowing — эвристики. Baseline/config меняется отдельно (notice) или вместе с source (finding), перечислены protected keys. Pre-push проверяет отсутствие тестов, commit reason, импортёров/aliases, разные коммиты в push. Diff coverage проверяет долю, непокрытые строки, отсутствующий LCOV и различие full/pre-push. Это содержательный корпус, но не доказательство полноты всех синтаксисов и не наш успешный прогон Bun."
+    },
+    {
+      "file": "scripts/lib/tamper.ts",
+      "status": "read",
+      "observation": "Прочитаны все 587 строк. Удаление теста определяется hunk-заголовками и эвристикой похожих названий; weakening — числом строк assertions/заменой семейств с совпадающим первым аргументом; не полноценный AST и не доказательство логической силы теста. Есть локальные stub-notes, per-commit context, разрешение удаления с причиной, отдельная защита набора TOML-полей. PROTECTED_CONFIG не покрывает все project/tools/hooks поля. Перенос требует корпуса законных изменений AQK. Большой tamper.test.ts ещё не прочитан целиком."
+    },
+    {
+      "file": "scripts/lib/text.ts",
+      "status": "read",
+      "observation": "Прочитаны все 251 строка. Doc-links узнаёт пути в backticks по существующему первому сегменту; игнорирует ограждённые блоки, исторические docs и некоторые runtime/ignored paths. Это конечная эвристика, не проверка всех Markdown-ссылок. knownSymbols ищет вхождение через git grep, не определение символа. Сопоставление glossary зависит от свободного текста и контекста. secretCheck использует конечный набор паттернов, исключает lockfiles, допускает qg:allow с причиной и записывает bypass; не заменяет полный scanner истории. Redaction используется для вывода сканера. Запрет AI attribution/emoji в сообщениях коммита — политика автора, не доказанная характеристика качества кода. Для AQK нужны отдельные корпуса положительных/ложных срабатываний каждого правила."
+    },
+    {
+      "file": "scripts/lib/tools.test.ts",
+      "status": "read",
+      "observation": "Прочитан целиком. Проверяет наличие platform hints, override npm/PyPI версии/пути, неизвестный id и приоритет QG_TOOLS. Теста ensureTools с неверной уже установленной версией здесь нет; этот пробел проверен независимой CQ-04."
+    },
+    {
+      "file": "scripts/lib/tools.ts",
+      "status": "read",
+      "observation": "Центральный каталог npm/PyPI pins, названий native binaries и подсказок установки. Не все native tools закреплены по версии; некоторые hints используют latest. Override версией влияет на packageSpec, путь — на toolBinary. Каталог инструментов полезнее рассыпанных строк, но pin верхнего пакета не lock всей транзитивной цепочки."
+    },
+    {
+      "file": "scripts/lib/util.ts",
+      "status": "read",
+      "observation": "Синхронный запуск с maxBuffer 1 GiB, timeout только если передан вызывающим кодом, status=null преобразуется в -1. git-ошибка бросается; Check различает error/findings/note/notices. gitPaths выключает quoting, но разделение путей по newline не поддерживает newline внутри имени."
+    },
+    {
+      "file": "scripts/quality.ts",
+      "status": "read",
+      "observation": "Вход CLI. До разбора команд вызывает updatePluginRoot, то есть даже чтение через CLI имеет запись в пользовательский каталог. full принудительно берёт all; --if-configured явно допускает успешный пропуск; outer exception даёт exit 2. Все опыты проводить с CODE_QUALITY_HOME внутри sandbox."
+    },
+    {
+      "file": "skills/code-quality/SKILL.md",
+      "status": "read",
+      "observation": "Полностью прочитан как объект исследования, не установлен и не активирован. Связывает fast/full/hooks, признаёт отсутствие тестов в fast и однократный stop retry. Содержит также авторские правила коммитов; их универсальность не доказана."
+    },
+    {
+      "file": "skills/code-quality/references/checks.md",
+      "status": "read",
+      "observation": "Описание детерминированных правил и формулы CRAP; coverage собственных строк функции без вложенных. Наличие LCOV и отсутствие покрытия отдельной функции — разные состояния. Документ даёт карту, но каждую гарантию нужно сверить с кодом и пробой."
+    },
+    {
+      "file": "skills/code-quality/references/config.md",
+      "status": "read",
+      "observation": "Настройки, CLI и providers. Заявляет неизвестные ключи ошибкой; это не эквивалент валидации значений. LLM reviewer указан как ещё не подключённый. Событие pi в тексте расходится с именем в adapter."
+    },
+    {
+      "file": "skills/code-quality/references/hook-chain.md",
+      "status": "read",
+      "observation": "Объясняет сохранение предыдущих хуков, stdin pre-push, worktree и первый коммит. Утверждение про собственный опыт с LFS — свидетельство автора; в нашем окружении LFS не запускался. Про первый коммит совпадает с diff.ts, расходится с limits.md."
+    },
+    {
+      "file": "skills/code-quality/references/jev.md",
+      "status": "read",
+      "observation": "Вероятностные замечания по тестовым hunks, opt-in, несколько вопросов, общий budget, модели/провайдеры. Не влияет на детерминированный verdict. Claims калибровки пока только авторские; внешняя модель не проверяет сама исполнение теста."
+    },
+    {
+      "file": "skills/code-quality/references/languages.md",
+      "status": "read",
+      "observation": "Таблица 12 языков. Dart без CC, часть инструментов optional/not run. Язык в списке не означает полноту и успешный запуск всех анализаторов."
+    },
+    {
+      "file": "skills/code-quality/references/limits.md",
+      "status": "read",
+      "observation": "Описывает ограничения и обходы. Утверждение о первом коммите расходится с headOrEmpty в diff.ts и тестом pipeline.test.ts, который требует находку на первом staged commit. Документ нельзя использовать как единственный источник текущего поведения. Full coverage всё ещё отдельно требует HEAD; без Bun-прогона не обещаем все режимы первого коммита."
+    },
+    {
+      "file": "skills/code-quality/references/report.md",
+      "status": "read",
+      "observation": "Отчёты Markdown/JSON, notices/bypass и worklist. Имена check/report перезаписываются: для идеи исторических отчётов пользователя нужен отдельный неизменяемый run-id и provenance."
+    }
+  ]
+}
