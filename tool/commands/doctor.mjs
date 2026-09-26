@@ -14,6 +14,7 @@ import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree } from "../lib/run.mjs";
+import { splitByAge, readHistory } from "../lib/red-age.mjs";
 import { writeHtmlReport, writeStepSummary } from "./report-page.mjs";
 import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
 
@@ -312,7 +313,16 @@ async function cmdDoctor() {
       if (missing) why.push(L.doctor.whyMissing);
       if (reached < 0) why.push(L.doctor.whyLevel);
       if (gateFailed) why.push(L.doctor.whyGates(gateFailed, failedNames.join(", ")));
-      console.log(c.red(`  ${L.doctor.runVerdictFail(why.join(", "))}\n`));
+      console.log(c.red(`  ${L.doctor.runVerdictFail(why.join(", "))}`));
+      // Новое отдельно от давнего: давний долг иначе прячет только что сломанное (отзыв владельца
+      // 2026-09-26, см. lib/red-age.mjs). История к этому месту уже дописана текущим прогоном.
+      if (failedNames.length) {
+        const age = splitByAge(await readHistory(), failedNames);
+        if (age.fresh.length) console.log(c.red(`  ${L.doctor.redFresh(age.fresh.join(", "))}`));
+        if (age.old.length) console.log(c.yellow(`  ${L.doctor.redOld(age.old)}`));
+        if (age.unknown.length) console.log(c.dim(`  ${L.doctor.redUnknown(age.unknown.join(", "))}`));
+      }
+      console.log("");
     }
   }
   await finishBrief(buf, { held: cat.held, todo: cat.todo, level: reached, red: [] }, cat.todoRecs, ok);

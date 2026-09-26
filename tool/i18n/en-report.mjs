@@ -35,6 +35,8 @@ export const enReport = {
       gone: "left the run",
       broke: "broke",
       fixed: "fixed",
+      lingering: "long-standing",
+      since: (day, runs) => `since ${day}, runs in a row: ${runs}`,
     },
     s1: "What is protected",
     s2: "Does the protection really catch defects",

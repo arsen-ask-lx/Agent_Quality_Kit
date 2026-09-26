@@ -214,6 +214,11 @@ export const ru = {
     whyMissing: "не хватает файлов из шапки",
     whyLevel: "ступень не взята",
     whyGates: (n, names) => `красных гейтов ${n}${names ? ` (${names})` : ""}`,
+    // Новое и давнее — разными строками: иначе давний долг прячет только что сломанное.
+    redFresh: (names) => `новое с прошлого зелёного: ${names}`,
+    redOld: (list) => `висит давно: ${list.map((o) => `${o.name} — красный с ${o.day}, ${o.runs} ${
+      o.runs % 10 === 1 && o.runs % 100 !== 11 ? "прогон" : [2, 3, 4].includes(o.runs % 10) && ![12, 13, 14].includes(o.runs % 100) ? "прогона" : "прогонов"} подряд`).join("; ")}`,
+    redUnknown: (names) => `возраст неизвестен — в истории прогонов их нет: ${names}`,
     stagedDiffers: (files) =>
       `ИНДЕКС И РАБОЧАЯ КОПИЯ РАСХОДЯТСЯ: ${files.join(", ")}`,
     stagedDiffersWhy:

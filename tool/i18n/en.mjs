@@ -207,6 +207,9 @@ export const en = {
     whyMissing: "files from the header are missing",
     whyLevel: "the level was not reached",
     whyGates: (n, names) => `${n} red gate(s)${names ? ` (${names})` : ""}`,
+    redFresh: (names) => `new since the last green: ${names}`,
+    redOld: (list) => `long-standing: ${list.map((o) => `${o.name} — red since ${o.day}, ${o.runs} run${o.runs === 1 ? "" : "s"} in a row`).join("; ")}`,
+    redUnknown: (names) => `age unknown — not in the run history: ${names}`,
     stagedDiffers: (files) =>
       `INDEX AND WORKING TREE DISAGREE: ${files.join(", ")}`,
     stagedDiffersWhy:

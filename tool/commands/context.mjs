@@ -30,6 +30,7 @@ import { detectFacts, readCatalog } from "../lib/repo.mjs";
 import { catalogBuckets, startWith, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
 import { declaredGates, readRun } from "../lib/run.mjs";
+import { splitByAge, readHistory } from "../lib/red-age.mjs";
 import { probeStatus } from "./probe.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -79,6 +80,11 @@ function contextBlock(state, T = L.context) {
       ? `${list.slice(0, MAX_RED).join(", ")} — ${T.andMore(list.length - MAX_RED)}`
       : list.join(", "));
     if (red.length) out.push(T.runRed(state.run.when, short(red)));
+    // Давнее отдельной строкой с датой: список без возраста делает долг с 13.09 и только что
+    // сломанное одинаковыми, и глаз перестаёт читать весь список.
+    const age = state.run.age;
+    if (age?.old?.length) out.push(T.runRedOld(age.old));
+    if (age?.fresh?.length && age.old?.length) out.push(T.runRedFresh(short(age.fresh)));
     // «НЕ СМОГЛИ ПРОВЕРИТЬ» — ОТДЕЛЬНОЙ СТРОКОЙ, И ЧИСТО ТОЛЬКО КОГДА ОБА СПИСКА ПУСТЫ.
     // Гейт, который не сумел отработать, не находка о коде: агент, прочитавший его как находку,
     // пойдёт чинить исправный файл. А если бы он не попал НИКУДА, прогон, где всё сломалось,
@@ -303,6 +309,13 @@ async function gatherState({ full = false } = {}) {
   }
 
   const run = await readRun();
+  // Возраст красного — из истории прогонов, чтобы агент видел, что давно висит, а что сломано
+  // только что (отзыв владельца 2026-09-26). Файл маленький, чтение укладывается в бюджет хука.
+  // «Не смогли проверить» тоже не зелёное и тоже может висеть неделями — как ослепший сторож из того же отзыва.
+  const notGreen = [...(run?.red || []), ...(run?.cannot || [])];
+  if (notGreen.length) {
+    try { run.age = splitByAge(await readHistory(), notGreen); } catch { /* нет истории — строка без возраста */ }
+  }
 
   // Проба: сколько классов не ловит никто и насколько отметка отстала. Читается из файла,
   // ничего не запускает — блок обязан укладываться в секунду.

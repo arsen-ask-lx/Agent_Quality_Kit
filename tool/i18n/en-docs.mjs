@@ -70,6 +70,8 @@ const enDocs = {
     runCannot: (names) => `COULD NOT CHECK (the checks themselves failed — not findings about the code): ${names}`,
     runClean: (when) => `Last run ${when} — nothing red.`,
     runRed: (when, names) => `Last run ${when} — RED: ${names}.`,
+    runRedOld: (list) => `Long-standing among them: ${list.map((o) => `${o.name} — since ${o.day}, ${o.runs} run(s) in a row`).join("; ")}. This is debt, not news.`,
+    runRedFresh: (names) => `Broken just now, since the last green: ${names} — start with these.`,
     andMore: (n) => `and ${n} more`,
     skipped: (n) => `Not run: ${n} — skipped by --only/--skip or the tool is absent on this machine; their state is unknown.`,
     probeNever: "No coverage probe has run — what is covered by nothing here is UNKNOWN. That is not \"covered\": `aqk probe`.",

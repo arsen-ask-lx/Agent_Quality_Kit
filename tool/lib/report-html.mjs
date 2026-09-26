@@ -10,6 +10,7 @@
 //
 // ОДИН ФАЙЛ БЕЗ СЕТИ. Ни шрифтов, ни скриптов, ни картинок снаружи: отчёт открывают без интернета,
 // в закрытом контуре и из архива конвейера. Графики — встроенный SVG. Зависимостей нет и не будет.
+import { local, splitByAge } from "./red-age.mjs";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 // Команды в текстах каталога набраны в обратных кавычках — те же строки идут в терминал. Здесь
@@ -17,15 +18,6 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", 
 const rich = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 
 const fullRuns = (history) => history.filter((h) => h && !h.partial);
-// Время — местное: в истории оно по Гринвичу (так сравнимо между машинами), а человек читает
-// по своим часам. «13:47» там, где у него было 18:47, выглядит как чужой прогон.
-const p2 = (n) => String(n).padStart(2, "0");
-const local = (at) => {
-  const d = new Date(at);
-  if (Number.isNaN(d.getTime())) return { day: "", full: "" };
-  const day = `${p2(d.getDate())}.${p2(d.getMonth() + 1)}`;
-  return { day, full: `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}` };
-};
 const count = (h, st) => Object.values(h?.gates || {}).filter((v) => v === st).length;
 
 // Было → стало по ДВУМ ПОСЛЕДНИМ ПОЛНЫМ прогонам. Урезанный в сравнение не идёт: «красных стало
@@ -119,8 +111,17 @@ function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
   const counts = pr.counts ? `<p class="muted">${esc(T.probe.counts(pr.counts.caught, pr.counts.unknown))}</p>` : "";
   const human = state.rules?.human ? `<p>${esc(T.humanRules(state.rules.human, state.rules.total, state.entry || "AGENTS.md"))}</p>` : "";
 
-  const changes = cmp && (cmp.broke.length || cmp.fixed.length || cmp.gone.length)
-    ? `<ul class="plain">${cmp.gone.length ? `<li><span class="state s-unk">${esc(T.trend.gone)}:</span> ${cmp.gone.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.broke.length ? `<li><span class="state s-fail">${esc(T.trend.broke)}:</span> ${cmp.broke.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.fixed.length ? `<li><span class="state s-ok">${esc(T.trend.fixed)}:</span> ${cmp.fixed.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}</ul>` : "";
+  // Давно висящее — отдельной строкой с датой: иначе долг с 13.09 и только что сломанное выглядят
+  // одинаково (отзыв владельца 2026-09-26, см. lib/red-age.mjs).
+  const lingering = splitByAge(history, gates.filter(([, v]) => v !== "ok").map(([g]) => g)).old;
+  const lingerLi = lingering.length
+    ? `<li><span class="state s-fail">${esc(T.trend.lingering)}:</span> ${lingering.map((o) => `<code>${esc(o.name)}</code> — ${esc(T.trend.since(o.day, o.runs))}`).join("; ")}</li>` : "";
+  const li = (kind, label, list) => (list.length
+    ? `<li><span class="state s-${kind}">${esc(label)}:</span> ${list.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : "");
+  const items = lingerLi + (cmp
+    ? li("unk", T.trend.gone, cmp.gone) + li("fail", T.trend.broke, cmp.broke) + li("ok", T.trend.fixed, cmp.fixed)
+    : "");
+  const changes = items ? `<ul class="plain">${items}</ul>` : "";
 
   const steps = state.next?.steps || [];
   const todo = steps.length
@@ -165,6 +166,8 @@ function renderSummary(state, history, { T, C, self = "aqk", name = "" }) {
   if (by("fail").length) out.push("", `${T.gateState.fail}: ${by("fail").join(", ")}`);
   if (by("cannot").length) out.push("", `${T.gateState.cannot}: ${by("cannot").join(", ")}`);
   if ((pr.classes || []).length) out.push("", `${T.probeBlindList} ${pr.classes.map((b) => `${mdName(b.slug)} (${mdName(b.file)})`).join(", ")}`);
+  const lingering = splitByAge(history, gates.filter(([, v]) => v !== "ok").map(([g]) => g)).old;
+  if (lingering.length) out.push("", `${T.trend.lingering}: ${lingering.map((o) => `${mdName(o.name)} — ${T.trend.since(o.day, o.runs)}`).join("; ")}`);
   if (cmp?.gone.length) out.push("", `${T.trend.gone}: ${cmp.gone.map(mdName).join(", ")}`);
   if (cmp?.broke.length) out.push("", `${T.trend.broke}: ${cmp.broke.map(mdName).join(", ")}`);
   if (cmp?.fixed.length) out.push("", `${T.trend.fixed}: ${cmp.fixed.map(mdName).join(", ")}`);

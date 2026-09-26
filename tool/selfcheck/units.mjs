@@ -455,3 +455,23 @@ test("рецепт: безъязыковой без программы усту�
   const rec = { recipes: { native: "aqk-nesuschestvuyuschiy --scan", any: "bash {gate}/check.sh {dir}" } };
   assert.equal(pickRecipe(rec, { langs: new Set(["python"]) }), "bash {gate}/check.sh {dir}");
 });
+
+// Новое и давнее — разные сообщения. Отзыв с проекта владельца 2026-09-26: девять красных гейтов
+// висели с 13.09, и три свежие ошибки чуть не прошли незамеченными среди них; сам AQK поймал
+// ослепшего сторожа, но и это никто не увидел. Возраст красного считается по истории прогонов.
+test("возраст красного: новый отделён от давнего, частичный прогон без гейта серию не рвёт", async () => {
+  const { redAges } = await import("../lib/red-age.mjs");
+  const h = [
+    { at: "2026-09-13T08:00:00Z", gates: { a: "fail", b: "ok", c: "ok" } },
+    { at: "2026-09-14T08:00:00Z", gates: { a: "fail", b: "ok", c: "cannot" } },
+    { at: "2026-09-15T08:00:00Z", partial: true, gates: { b: "ok" } },
+    { at: "2026-09-16T08:00:00Z", gates: { a: "fail", b: "fail", c: "ok" } },
+  ];
+  const r = redAges(h, ["a", "b"]);
+  assert.equal(r.a.runs, 3);
+  assert.equal(r.a.since, "2026-09-13T08:00:00Z");
+  assert.equal(r.b.runs, 1, "b покраснел только в последнем прогоне — это новое");
+  // Гейта нет ни в одной записи — возраст неизвестен, и это не «новый».
+  assert.equal(redAges(h, ["z"]).z, null);
+  assert.deepEqual(redAges([], ["a"]), { a: null });
+});
