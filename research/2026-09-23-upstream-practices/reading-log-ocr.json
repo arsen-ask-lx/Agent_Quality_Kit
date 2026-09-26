@@ -3026,7 +3026,8 @@
   {
    "path": "internal/session/manifest.go",
    "bytes": 36609,
-   "status": "unread"
+   "status": "read",
+   "observation": "Учёт покрытия прогона, прочитан целиком. Запечатанный знаменатель, один итог на файл, сброс неучтённых в failed, инвариант разбиения, терминальное состояние только из покрытия. Образец для учёта гейтов AQK."
   },
   {
    "path": "internal/session/manifest_guards_test.go",
