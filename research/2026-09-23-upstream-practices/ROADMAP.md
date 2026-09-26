@@ -20,29 +20,74 @@
 
 ## Очередь
 
+Решение владельца 2026-09-26: проходим **каждый** источник, но порядок задаётся приоритетом,
+а не числом файлов. Приоритет предложен агентом по одному признаку — **может ли источник
+изменить поведение AQK**, то есть его способ выносить вердикт, доказывать проверку или
+принимать изменение. Признак назван заранее, чтобы порядок можно было оспорить.
+
+- **A — ядро вердикта.** Арбитраж, доказательство, приёмка, обработка аварий проверок.
+  Ожидаем правки продукта.
+- **B — процесс агента.** Своды, скиллы, подготовка задачи, ревью, оценка результата.
+  Ожидаем правки методичек, правил и `growth`; правки продукта возможны.
+- **C — предметные и попутные.** Прямой связи с вердиктом не видно. Читаем целиком по договору
+  цикла, но вывод чаще всего — отказ с названной причиной. Отказ по итогу чтения, а не вместо него.
+
+Приоритет — не разрешение пропустить. Группа C проходит тот же договор цикла; она стоит позже,
+потому что цена ожидания там ниже.
+
+### Группа A
+
 | № | Репозиторий | Файлов | Состояние |
 |---|---|---:|---|
-| 1 | [smixs/code-quality](https://github.com/smixs/code-quality) | 105 | полное чтение завершено; внедрение идёт |
-| 2 | [mattpocock/skills](https://github.com/mattpocock/skills) | 169 | в очереди; предыдущий обзор не равен полному циклу |
-| 3 | [jakubkrehel/skills](https://github.com/jakubkrehel/skills) | 65 | в очереди; предыдущий обзор не равен полному циклу |
-| 4 | [emilkowalski/skills](https://github.com/emilkowalski/skills) | 26 | в очереди; предыдущий обзор не равен полному циклу |
-| 5 | [mattpocock/evalite](https://github.com/mattpocock/evalite) | 247 | в очереди; предыдущий обзор не равен полному циклу |
-| 6 | [mattpocock/sandcastle](https://github.com/mattpocock/sandcastle) | 258 | в очереди; предыдущий обзор не равен полному циклу |
-| 7 | [mattpocock/ts-error-translator](https://github.com/mattpocock/ts-error-translator) | 178 | в очереди; предыдущий обзор не равен полному циклу |
-| 8 | [mattpocock/ts-reset](https://github.com/mattpocock/ts-reset) | 59 | в очереди; предыдущий обзор не равен полному циклу |
-| 9 | [mattpocock/dictionary-of-ai-coding](https://github.com/mattpocock/dictionary-of-ai-coding) | 88 | в очереди; предыдущий обзор не равен полному циклу |
-| 10 | [mattpocock/ai-hero-cli](https://github.com/mattpocock/ai-hero-cli) | 112 | в очереди; предыдущий обзор не равен полному циклу |
-| 11 | [mattpocock/graph-docs-cli](https://github.com/mattpocock/graph-docs-cli) | 27 | в очереди; предыдущий обзор не равен полному циклу |
-| 12 | [mattpocock/agent-rules-books](https://github.com/mattpocock/agent-rules-books) | 201 | в очереди; предыдущий обзор не равен полному циклу |
-| 13 | [mattpocock/ai-engineer-workshop-2026-project](https://github.com/mattpocock/ai-engineer-workshop-2026-project) | 121 | в очереди; предыдущий обзор не равен полному циклу |
-| 14 | [mattpocock/ai-hero-cli-archived](https://github.com/mattpocock/ai-hero-cli-archived) | 152 | в очереди; предыдущий обзор не равен полному циклу |
-| 15 | [mattpocock/ai-interviewer](https://github.com/mattpocock/ai-interviewer) | 71 | в очереди; предыдущий обзор не равен полному циклу |
-| 16 | [mattpocock/ai-sdk-cache](https://github.com/mattpocock/ai-sdk-cache) | 0 | в очереди; предыдущий обзор не равен полному циклу |
-| 17 | [mattpocock/ai-sdk-tips](https://github.com/mattpocock/ai-sdk-tips) | 81 | в очереди; предыдущий обзор не равен полному циклу |
-| 18 | [mattpocock/harness-claude-code-usage-repro](https://github.com/mattpocock/harness-claude-code-usage-repro) | 5 | в очереди; предыдущий обзор не равен полному циклу |
-| 19 | [mattpocock/mcp-server-from-prompts](https://github.com/mattpocock/mcp-server-from-prompts) | 21 | в очереди; предыдущий обзор не равен полному циклу |
-| 20 | [mattpocock/poland-ai-talk](https://github.com/mattpocock/poland-ai-talk) | 83 | в очереди; предыдущий обзор не равен полному циклу |
-| 21 | [mattpocock/xstate-test-playwright](https://github.com/mattpocock/xstate-test-playwright) | 6 | в очереди; предыдущий обзор не равен полному циклу |
+| A1 | [smixs/code-quality](https://github.com/smixs/code-quality) | 105 | полное чтение завершено; внедрены пакеты 1–2, остаток в [CYCLE-01.md](CYCLE-01.md) |
+| A2 | [mattpocock/evalite](https://github.com/mattpocock/evalite) | 247 | в очереди; как учитываются неуспешные, отсутствующие и повторные оценки |
+| A3 | [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | не снято | в очереди; ревью как арбитр: что считается находкой и кто отвечает за отказ инструмента |
+| A4 | [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | не снято | в очереди; аудит как скилл с проверяемым выводом — ближайший чужой аналог `probe` |
+| A5 | [kirder24-code/ai-agent-manager](https://github.com/kirder24-code/ai-agent-manager) | не снято | в очереди; политика и проверяльщик из базового коммита — `protection-not-removed` с другой стороны |
+
+`ai-agent-manager` и `exadel-inc/agentic-readiness-assessment` уже разобраны как соседи
+(`research/competitors/`), но полного цикла по договору не проходили. Exadel разобран подробнее
+и стоит в B, потому что его вердикт выносит модель, а не программа.
+
+### Группа B
+
+| № | Репозиторий | Файлов | Состояние |
+|---|---|---:|---|
+| B1 | [mattpocock/skills](https://github.com/mattpocock/skills) | 169 | в очереди; подготовка задачи, спецификация, TDD, ревью, диагностика |
+| B2 | [obra/superpowers](https://github.com/obra/superpowers) | не снято | в очереди; упоминался в обзорах, полного цикла не было |
+| B3 | [agent-substrate/substrate](https://github.com/agent-substrate/substrate) | не снято | в очереди; общий слой под агентами |
+| B4 | [google/ax](https://github.com/google/ax) | не снято | в очереди; заявленный подход к сборке агентов от крупного автора |
+| B5 | [mattpocock/agent-rules-books](https://github.com/mattpocock/agent-rules-books) | 201 | в очереди; конфликтующие книжные рекомендации против задачи малого CLI |
+| B6 | [mattpocock/sandcastle](https://github.com/mattpocock/sandcastle) | 258 | в очереди; что переносится из изолированной среды и что считается завершением |
+| B7 | [tt-a1i/archify](https://github.com/tt-a1i/archify) | не снято | в очереди; архитектурные ограничения как проверяемое свойство |
+| B8 | [jakubkrehel/skills](https://github.com/jakubkrehel/skills) | 65 | в очереди; доступность и состояния интерфейса — профиль для проекта-получателя |
+| B9 | [emilkowalski/skills](https://github.com/emilkowalski/skills) | 26 | в очереди; взаимодействие и анимация — тот же профиль |
+| B10 | [mattpocock/dictionary-of-ai-coding](https://github.com/mattpocock/dictionary-of-ai-coding) | 88 | в очереди; словарь понятий против нашего словаря |
+| B11 | [mattpocock/graph-docs-cli](https://github.com/mattpocock/graph-docs-cli) | 27 | в очереди; связность документации машиной |
+| B12 | [mattpocock/ai-hero-cli](https://github.com/mattpocock/ai-hero-cli) | 112 | в очереди; устройство CLI без зависимостей и его границы |
+| B13 | [aitmpl.com](https://aitmpl.com/) | не репозиторий | в очереди; каталог чужих шаблонов — сверить с нашим каталогом по намерению |
+
+### Группа C
+
+| № | Репозиторий | Файлов | Состояние |
+|---|---|---:|---|
+| C1 | [mattpocock/ai-engineer-workshop-2026-project](https://github.com/mattpocock/ai-engineer-workshop-2026-project) | 121 | в очереди |
+| C2 | [mattpocock/ai-hero-cli-archived](https://github.com/mattpocock/ai-hero-cli-archived) | 152 | в очереди; сверить с живым B12, а не читать как отдельный источник |
+| C3 | [mattpocock/ts-error-translator](https://github.com/mattpocock/ts-error-translator) | 178 | в очереди; сохраняется ли первичная ошибка при переводе в понятное сообщение |
+| C4 | [mattpocock/ts-reset](https://github.com/mattpocock/ts-reset) | 59 | в очереди; где типизация кончается и нужна проверка данных в рантайме |
+| C5 | [mattpocock/ai-interviewer](https://github.com/mattpocock/ai-interviewer) | 71 | в очереди |
+| C6 | [mattpocock/ai-sdk-tips](https://github.com/mattpocock/ai-sdk-tips) | 81 | в очереди |
+| C7 | [mattpocock/mcp-server-from-prompts](https://github.com/mattpocock/mcp-server-from-prompts) | 21 | в очереди; сверить с записью `mcp-server-resolves` |
+| C8 | [mattpocock/harness-claude-code-usage-repro](https://github.com/mattpocock/harness-claude-code-usage-repro) | 5 | в очереди |
+| C9 | [mattpocock/xstate-test-playwright](https://github.com/mattpocock/xstate-test-playwright) | 6 | в очереди |
+| C10 | [mattpocock/poland-ai-talk](https://github.com/mattpocock/poland-ai-talk) | 83 | в очереди |
+| C11 | [Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill) | не снято | в очереди |
+| C12 | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | не снято | в очереди |
+| C13 | [melgarafael/DeskcommCRM](https://github.com/melgarafael/DeskcommCRM) | не снято | в очереди; проект-получатель, а не инструмент |
+| C14 | [mattpocock/ai-sdk-cache](https://github.com/mattpocock/ai-sdk-cache) | 0 | закрыт как отсутствие содержимого, без выдуманных рекомендаций |
+
+Числа файлов групп A3–A5, B2–B4, B7, B13 и C11–C13 **не снимались**: эти источники добавлены
+2026-09-26 и ещё не клонировались. Писать сюда число по памяти нельзя.
 
 Коммиты, хеши и лицензии — в [SOURCES.md](SOURCES.md) и [files.tsv](files.tsv).
 Пустой ai-sdk-cache закрывается как отсутствие содержимого, без выдуманных рекомендаций.
@@ -75,3 +120,28 @@
   переносимый shell-классификатор и сверка с Node. Итоговая общая приёмка пройдена: 31/31 гейтов.
 - Дальше в этом же источнике: независимость конфигурации анализатора и сравнительный корпус
   изменения тестов; затем измерительные пилоты. До закрытия остатка следующий источник не открываем.
+
+## Пакет 3 цикла 1 — план до кода
+
+Вопрос пакета: **можно ли незаметно выключить объявленную проверку, не тронув манифест.**
+Храповик `protection-not-removed` сторожит набор гейтов в `.aqk.yml`; конфигурацию инструмента,
+которую гейт вызывает, не сторожит никто. Это тот же класс, что закрытые пакеты 1–2: прибор
+показывает зелёное там, где проверять было нечем.
+
+Два опыта, один корпус:
+
+1. **Подавление в конфигурации анализатора.** Взять действующие native-рецепты AQK и для каждого
+   выяснить: можно ли правкой конфигурации инструмента (не манифеста) снять находку так, чтобы
+   `doctor --run` и `prove` остались зелёными. Отдельно учесть **законные** подавления с кодом
+   правила и причиной — они не должны становиться находкой.
+2. **Изменение тестов.** Корпус по таблице §3 [PLAN.md](PLAN.md): ослабление `assert`, `skip`,
+   удаление единственного проверяющего сценария, обесцененный запуск — против законных изменений
+   (перенос, переименование, усиление утверждения). Мерить три числа раздельно: пойманные,
+   пропущенные, ложные обвинения.
+
+Порядок: корпус → замер существующими гейтами (`checkwash`, `test-has-assertion`,
+`gate-not-weakened`, `deps-are-pinned`) → и только по результату решение, нужен ли новый гейт.
+Новый regex-анализатор рядом с существующими не заводим.
+
+Арбитр пакета: адресные проверки на корпусе плюс общая приёмка `doctor --run --min 1`.
+Замер без находок — тоже результат: он закрывает механизм отказом с числом, а не догадкой.
