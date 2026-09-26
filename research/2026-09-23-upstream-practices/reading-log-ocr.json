@@ -1736,7 +1736,8 @@
   {
    "path": "internal/agent/agent.go",
    "bytes": 85258,
-   "status": "unread"
+   "status": "read",
+   "observation": "Ядро прогона, прочитано целиком (2210 строк). Отбор → учёт покрытия (register+seal до resume) → группировка → подагенты с планом и раундами → фильтр замечаний моделью → манифест. Всё отсеянное по размеру → skipped без run_failure (находка 3). Группа, не дошедшая до task_done, но оставившая ≥1 замечание по файлу, засчитывает файл как completed — незаконченное ревью считается покрытием, и чекпойнт может сдвинуться за него. Сбой плана — только строка в stdout. Фильтр замечаний: модель удаляет «доказуемо неверные», при ошибке оставляет всё."
   },
   {
    "path": "internal/agent/agent_test.go",
@@ -1756,7 +1757,8 @@
   {
    "path": "internal/agent/estimate.go",
    "bytes": 4457,
-   "status": "unread"
+   "status": "read",
+   "observation": "Грубая оценка стоимости; константы дублируют scan/estimate.go, синхронность держится комментарием KEEP IN SYNC."
   },
   {
    "path": "internal/agent/estimate_test.go",
@@ -1771,7 +1773,8 @@
   {
    "path": "internal/agent/grouping.go",
    "bytes": 14011,
-   "status": "unread"
+   "status": "read",
+   "observation": "Смысловая группировка: <4 файлов — без модели (всё вместе при churn<200, иначе по файлу); модель отвечает индексами; неприписанный файл получает свою группу; ошибка — откат к группе на файл."
   },
   {
    "path": "internal/agent/grouping_test.go",
@@ -1781,7 +1784,8 @@
   {
    "path": "internal/agent/identity.go",
    "bytes": 4438,
-   "status": "unread"
+   "status": "read",
+   "observation": "Замороженный вход прогона для resume: ссылки сводятся к SHA до загрузки диффа, чтобы допуск и прогон видели одно и то же."
   },
   {
    "path": "internal/agent/identity_test.go",
@@ -1806,7 +1810,8 @@
   {
    "path": "internal/agent/preview.go",
    "bytes": 5166,
-   "status": "unread"
+   "status": "read",
+   "observation": "--preview на том же selectFiles; каталоги поставщиков (vendor/, node_modules/) отсеиваются раньше и в include не возвращаются."
   },
   {
    "path": "internal/agent/preview_run_test.go",
@@ -1831,7 +1836,8 @@
   {
    "path": "internal/agent/selection.go",
    "bytes": 4403,
-   "status": "unread"
+   "status": "read",
+   "observation": "Единственный чистый отбор файлов для прогона и --preview — «чтобы две версии не разъехались (#782)». Ворота: бинарный → секретный путь (до правил пользователя) → exclude → include → расширение → путь по умолчанию (тесты) → удалён → слишком большой."
   },
   {
    "path": "internal/agent/test_home_test.go",
@@ -1846,7 +1852,8 @@
   {
    "path": "internal/agent/util.go",
    "bytes": 5399,
-   "status": "unread"
+   "status": "read",
+   "observation": "Сборка промптов: вырезание пустых блоков плана/подтверждённых находок, сжатие подтверждённых (≤30, обрезка), определение ветки."
   },
   {
    "path": "internal/agent/util_test.go",
@@ -2696,7 +2703,8 @@
   {
    "path": "internal/llmloop/loop.go",
    "bytes": 36645,
-   "status": "unread"
+   "status": "read",
+   "observation": "Цикл инструментов: task_done DONE → завершено, FAILED → ошибка задачи (документация tools.md говорит обратное — отстала). Пустые раунды ×3, сжатие, бюджет — остановки с именованной причиной; после исчерпания раундов — «последний раунд» только с code_comment/task_done."
   },
   {
    "path": "internal/llmloop/loop_execute_more_test.go",
@@ -2716,7 +2724,8 @@
   {
    "path": "internal/llmloop/pool.go",
    "bytes": 5587,
-   "status": "unread"
+   "status": "read",
+   "observation": "Пул асинхронной обработки замечаний; паника в обработке неотличима от «замечаний нет» — признано в комментарии."
   },
   {
    "path": "internal/llmloop/pool_test.go",
@@ -2751,7 +2760,8 @@
   {
    "path": "internal/llmloop/tool_args_json.go",
    "bytes": 2577,
-   "status": "unread"
+   "status": "read",
+   "observation": "Спасение аргументов инструмента: первый сбалансированный JSON, если модель дописала мусор."
   },
   {
    "path": "internal/llmloop/tool_args_json_test.go",
@@ -2761,7 +2771,8 @@
   {
    "path": "internal/llmloop/tool_failure_streak.go",
    "bytes": 3740,
-   "status": "unread"
+   "status": "read",
+   "observation": "Третий подряд сбой одного инструмента: модели отвечают «пропущено, не повторяй» — одна находка теряется, но видна в tool_calls.failure_details."
   },
   {
    "path": "internal/llmloop/tool_failure_streak_test.go",
