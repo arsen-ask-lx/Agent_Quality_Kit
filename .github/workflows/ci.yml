@@ -109,8 +109,18 @@ jobs:
   # ЧЕГО ЗДЕСЬ НЕТ НАМЕРЕННО. Полного `doctor --run`: он тянет knip и vulture, и красный от
   # недоступного инструмента читался бы как красный от непереносимости. Смешивать два разных
   # утверждения в одном сигнале — тот самый дефект, против которого весь проект.
+  # ТРИ ЧАСТИ НА ТРЁХ МАШИНАХ. Одно задание шло 11 минут (замер 2026-09-27: `smoke.sh` — 516 с
+  # из 677) и было самым длинным во всём конвейере: пуш и выпуск ждали именно его. Шаги те же и
+  # в том же составе, только разложены: каталог с мутациями, bash-часть `smoke.sh`, node-часть.
+  # `fail-fast: false` — упавшая часть не отменяет остальные: иначе вторая поломка пряталась бы
+  # за первой до следующего круга.
   windows:
+    name: windows (${{ matrix.part }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [catalog, smoke-shell, smoke-node]
     defaults:
       run:
         shell: bash
@@ -128,6 +138,7 @@ jobs:
         run: bash tool/selfcheck/syntax.sh
 
       - name: функции программы
+        if: matrix.part == 'catalog'
         # Оба файла: проверки уровня и доказательства живут отдельно, и на Windows они не
         # гонялись вовсе — а именно эта платформа спрятала у нас самый тяжёлый дефект.
         # units-execution — ради живой проверки, что `bash` в команде гейта отвечает из Git Bash,
@@ -137,15 +148,27 @@ jobs:
       # --user везде, где контейнер пишет во временные файлы рабочей папки: без него они
       # остаются root-овыми и ломают следующие шаги. Та же причина, что в документации образа.
       - name: записи каталога краснеют на красном и молчат на зелёном
+        if: matrix.part == 'catalog'
         run: bash tool/selfcheck/gates.sh
 
       - name: вердикт переживает мутации образца
+        if: matrix.part == 'catalog'
         run: bash tool/selfcheck/mutation.sh
 
-      - name: комплект поднимается на чистой папке
+      - name: комплект поднимается на чистой папке — проверки smoke.sh
+        if: matrix.part == 'smoke-shell'
+        env:
+          AQK_SMOKE_PART: shell
+        run: bash tool/selfcheck/smoke.sh
+
+      - name: комплект поднимается на чистой папке — проверки node --test
+        if: matrix.part == 'smoke-node'
+        env:
+          AQK_SMOKE_PART: node
         run: bash tool/selfcheck/smoke.sh
 
       - name: программа запускается и считает уровень
+        if: matrix.part == 'catalog'
         run: node tool/program.mjs doctor
 
   # Действие для чужого конвейера (`uses: arsen-ask-lx/Agent_Quality_Kit@v…`) — файл action.yml

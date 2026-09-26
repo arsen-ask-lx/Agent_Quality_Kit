@@ -1,13 +1,14 @@
-// Конвейер выпуска обязан ставить всё, что нужно ОБЪЯВЛЕННЫМ гейтам.
+// Выпуск публикует только то, что прошло полный конвейер, — и конвейер ставит всё, что нужно
+// ОБЪЯВЛЕННЫМ гейтам.
 //
-// ЗАЧЕМ. Шаг выпуска гоняет `doctor --run --min 1`. Гейт, чьей программы нет, выходит с кодом
-// 2 «не найден инструмент» — и выпуск встаёт на ровном месте, уже после метки. Так и вышло
-// 2026-09-10: объявили `test-not-adjusted`, его арбитр `checkwash` в publish.yml не ставился,
-// и выпуск 0.10.1 упал между меткой и публикацией.
+// ИСТОРИЯ. До 2026-09-27 выпуск сам гонял `doctor --run --min 1` и потому обязан был ставить
+// программы всех объявленных гейтов. 2026-09-10 он их не поставил (`checkwash` для
+// `test-not-adjusted`), и выпуск 0.10.1 упал между меткой и публикацией.
 //
-// В самом publish.yml написано: «этот файл однажды уже разошёлся с ci.yml». Разошёлся второй
-// раз — значит нужен сторож, а не третья правка руками. Список выводится из МАНИФЕСТА: какие
-// программы объявленные записи называют полем `requires`, те и обязаны ставиться.
+// 2026-09-27 выпуск перестал повторять прогон: тот же коммит уже прошёл конвейер `ci.yml`, и
+// прошёл полнее — со строгим режимом, Windows и образом. Выпуск теперь требует, чтобы конвейер
+// на ЭТОМ коммите был зелёным. Требование «ставь инструменты объявленных гейтов» переехало туда,
+// где гейты гоняются, — в задание `check` конвейера. Здесь оба правила сторожатся машиной.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -37,19 +38,42 @@ function requiredProgram(slug) {
   return m ? m[1] : null;
 }
 
-test("конвейер выпуска ставит программы всех объявленных записей", () => {
-  // ЧИТАЮТСЯ ТОЛЬКО СТРОКИ УСТАНОВКИ, а не файл целиком. Первая редакция искала имя по всему
-  // тексту — и нашла `checkwash` В КОММЕНТАРИИ, объявив сторожа зелёным ровно тогда, когда
-  // выпуск падал. Тот же грех, что ловим весь день, в проверке, написанной против него.
-  const wf = readFileSync(join(ROOT, ".github", "workflows", "publish.yml"), "utf8");
-  const installed = wf
+// ЧИТАЮТСЯ ТОЛЬКО СТРОКИ УСТАНОВКИ, а не файл целиком. Первая редакция искала имя по всему
+// тексту — и нашла `checkwash` В КОММЕНТАРИИ, объявив сторожа зелёным ровно тогда, когда
+// выпуск падал.
+function installedIn(file) {
+  return readFileSync(join(ROOT, ".github", "workflows", file), "utf8")
     .split("\n")
     .filter((l) => /^\s*(pipx install|npm i -g|uv tool install)\s/.test(l))
     .join("\n");
+}
+// Строки команд без комментариев: слово в комментарии — не шаг.
+const steps = (file) => readFileSync(join(ROOT, ".github", "workflows", file), "utf8")
+  .split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+
+test("конвейер ставит программы всех объявленных записей", () => {
+  const installed = installedIn("ci.yml");
   const missing = declaredGates()
     .map((g) => requiredProgram(g))
     .filter(Boolean)
     .filter((prog) => !installed.includes(prog));
   assert.deepEqual(missing, [],
-    `publish.yml не ставит: ${missing.join(", ")} — выпуск встанет после метки`);
+    `ci.yml не ставит: ${missing.join(", ")} — гейт выйдет с кодом 2 «нет инструмента»`);
+});
+
+test("выпуск публикует только коммит, на котором конвейер зелёный", () => {
+  const wf = steps("publish.yml");
+  const gate = wf.search(/actions\/workflows\/ci\.yml\/runs\?head_sha=/);
+  const publish = wf.search(/npm publish/);
+  assert.ok(gate >= 0, "publish.yml не сверяется с конвейером на этом коммите — выйдет непроверенное");
+  assert.ok(publish > gate, "публикация стоит раньше сверки с конвейером");
+  assert.match(wf, /conclusion/, "сверка не смотрит на итог прогона — «был прогон» не значит «зелёный»");
+});
+
+test("выпуск либо не гоняет гейты сам, либо ставит их программы", () => {
+  const wf = steps("publish.yml");
+  if (!/doctor\s+--run/.test(wf)) return;
+  const installed = installedIn("publish.yml");
+  const missing = declaredGates().map(requiredProgram).filter(Boolean).filter((p) => !installed.includes(p));
+  assert.deepEqual(missing, [], `publish.yml гоняет гейты и не ставит: ${missing.join(", ")}`);
 });
