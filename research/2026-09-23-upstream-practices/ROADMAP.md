@@ -41,7 +41,7 @@
 |---|---|---:|---|
 | A1 | [smixs/code-quality](https://github.com/smixs/code-quality) | 105 | **цикл закрыт 2026-09-26**: пакеты 1–4, по каждой строке решение и арбитр — [CYCLE-01.md](CYCLE-01.md) |
 | A2 | [mattpocock/evalite](https://github.com/mattpocock/evalite) | 247 | **цикл закрыт 2026-09-26**: четыре правки с арбитрами, три кандидата отклонены замером, одна развилка за владельцем — [CYCLE-02.md](CYCLE-02.md) |
-| A3 | [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | 945 | **чтение закончено, 9 находок; ждёт решения по письмам** — [CYCLE-03.md](CYCLE-03.md); ревью как арбитр: что считается находкой и кто отвечает за отказ инструмента |
+| A3 | [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | 945 | **чтение закончено, 9 находок; писем не будет (решение владельца); идёт перенос** — [CYCLE-03.md](CYCLE-03.md); ревью как арбитр: что считается находкой и кто отвечает за отказ инструмента |
 | A4 | [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | не снято | в очереди; аудит как скилл с проверяемым выводом — ближайший чужой аналог `probe` |
 | A5 | [kirder24-code/ai-agent-manager](https://github.com/kirder24-code/ai-agent-manager) | не снято | в очереди; политика и проверяльщик из базового коммита — `protection-not-removed` с другой стороны |
 
