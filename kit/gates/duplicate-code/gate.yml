@@ -9,6 +9,9 @@ trigger:
 # репозиториев — записанная шишка комплекта.
 tool: https://github.com/kucherenko/jscpd · https://github.com/pylint-dev/pylint
 
+# Флаги против исключения пути из конфигурации инструмента (`--isolated`, `--ignore=`,
+# непустой `--exclude`) обязательны: без них одна строка в конфиге проекта снимает находку,
+# а нарушение остаётся в коде. Замер и цена — в шапке `kit/gates/_native.sh`.
 recipes:
   any: bash {gate}/check.sh {dir}
   # jscpd умеет и Python, и TypeScript одним прогоном и считает похожесть, а не совпадение.
@@ -34,6 +37,6 @@ recipes:
   # образцы в проект, и они по построению дублируют друг друга: без исключения pylint
   # предъявлял пользователю НАШИ ЖЕ файлы как его дубликаты. Найдено 2026-09-10 табличной
   # проверкой own-samples в тот час, когда pylint появился на машине.
-  python: pylint --disable=all --enable=R0801 --min-similarity-lines=8 --ignore-paths='.*gates/[^/]+/(red|green)(/|$).*' {dir}
+  python: pylint --disable=all --enable=R0801 --min-similarity-lines=8 --ignore= --ignore-patterns= --ignore-paths='.*gates/[^/]+/(red|green)(/|$).*' {dir}
 
 proof: incidents/README.md — «2026-08-25 разбор 1069 коммитов»: число моделей захардкожено в четырёх местах четырьмя разными значениями

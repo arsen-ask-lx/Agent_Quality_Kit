@@ -15,8 +15,11 @@ trigger:
 # репозиториев — записанная шишка комплекта.
 tool: https://github.com/jendrikseipp/vulture · https://github.com/webpro-nl/knip
 
+# Флаги против исключения пути из конфигурации инструмента (`--isolated`, `--ignore=`,
+# непустой `--exclude`) обязательны: без них одна строка в конфиге проекта снимает находку,
+# а нарушение остаётся в коде. Замер и цена — в шапке `kit/gates/_native.sh`.
 recipes:
-  python: vulture --min-confidence 60 {dir}
+  python: vulture --min-confidence 60 --exclude aqk-no-config-exclude {dir}
   typescript: npx --yes knip@6 --directory {dir}
   javascript: npx --yes knip@6 --directory {dir}
   go: staticcheck -checks U1000 {dir}/...
