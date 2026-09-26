@@ -124,6 +124,29 @@ selected.» (та же ветка `post-review-comments.js:297-304`, что в �
 предупреждение и есть способ проверить (`rules check`, поле `source`); но никто его не вызывает сам. Класс AQK —
 «проверили не то, что человек велел, и не сказали» (как наш мусорный предел гейта).
 
+### Находка 5 — изменённый файл под `.gitignore` исчезает бесследно, `--preview` говорит «No files changed» (подтверждено прогоном и замером)
+
+`internal/diff/git.go`, `partitionDiffs`: изменение тянется из git (`git diff`/`git show`), а затем каждый файл
+сверяется с корневым `.gitignore` их собственным разбором; подходящий файл не попадает ни в `Included`, ни в
+`Excluded` — комментарий к `ForEachInOrder` прямо говорит «Files dropped by .gitignore are not visited». Но
+`.gitignore` действует только на неотслеживаемые файлы: файл, добавленный через `git add -f` или закоммиченный
+до появления правила, git отслеживает и показывает в дифе.
+
+Прогон `ocr` v1.12.9: `.gitignore` = `*.sql`, `config/local/`; в git лежат `db/001_init.sql` и
+`config/local/app.yaml`; коммит дописывает `DROP TABLE users` и `password: hunter2`. `git show --stat` — 2 файла.
+`ocr review --commit HEAD --preview` → **«No files changed.»**; `ocr review` → `status: skipped`,
+«Review skipped: no items were selected.», код **0**; в их действии — «✅ Review skipped». Их же диагностика
+говорит, что изменений нет.
+
+Замер, 2026-09-26: `git ls-files -ci --exclude-from=.gitignore` (отслеживаемые файлы, подходящие под корневой
+`.gitignore`) на 36 локальных клонах открытых репозиториев — **у 8 из 36 такие файлы есть** (1–35 штук): среди
+них `.claude/settings.json`, `.vscode/launch.json`, `scripts/report-editor-latest-json-hits.sh`,
+`package-lock.json`, `packages/devtools/.env`, `testdata/*.json`. Любая правка этих файлов для OCR не
+существует. Замер — по правилам git, а не по их разбору (он ещё и читает только корневой `.gitignore`), так что
+это оценка, а не точное число.
+
+Отличие от находок 1–3: здесь не «пропустили с пометкой skipped», а «изменений нет» — и в предпросмотре тоже.
+
 ### Образец для AQK — учёт покрытия (`internal/session/manifest.go`, прочитан целиком)
 
 - знаменатель запечатывается до начала работы: после `SealSelected` добавить файл в «выбранные» нельзя;

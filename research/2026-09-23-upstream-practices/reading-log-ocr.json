@@ -2451,7 +2451,8 @@
   {
    "path": "internal/diff/git.go",
    "bytes": 29353,
-   "status": "unread"
+   "status": "read",
+   "observation": "Поставщик диффа. Свой разбор корневого .gitignore применяется к ОТСЛЕЖИВАЕМЫМ изменениям: подходящий файл пропадает без следа, даже из --preview (находка 5, проверено, замер 8/36). Хорошо: ошибка git несёт stderr, а не только код; diff/show с --no-ext-diff --no-textconv --end-of-options; merge-коммит против первого родителя (иначе diff --cc давал ноль файлов); неотслеживаемые файлы >64 МБ считаются бинарными."
   },
   {
    "path": "internal/diff/git_cquoted_test.go",
@@ -2476,7 +2477,8 @@
   {
    "path": "internal/diff/gitignore.go",
    "bytes": 1826,
-   "status": "unread"
+   "status": "read",
+   "observation": "Экспорт общих исключений каталогов и сопоставления .gitignore для scan."
   },
   {
    "path": "internal/diff/gitignore_test.go",
@@ -2486,7 +2488,8 @@
   {
    "path": "internal/diff/hunk.go",
    "bytes": 2905,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разбор ханков unified diff."
   },
   {
    "path": "internal/diff/hunk_test.go",
@@ -2521,7 +2524,8 @@
   {
    "path": "internal/diff/relocation.go",
    "bytes": 3678,
-   "status": "unread"
+   "status": "read",
+   "observation": "Перепривязка замечания моделью: промпт отдельно от запроса, чтобы запись сессии создавалась до HTTP."
   },
   {
    "path": "internal/diff/relocation_test.go",
@@ -2541,7 +2545,8 @@
   {
    "path": "internal/diff/workspace_file.go",
    "bytes": 2164,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чтение неотслеживаемого файла с защитой от выхода за корень (симлинки), предел размера."
   },
   {
    "path": "internal/diff/workspace_file_test.go",
