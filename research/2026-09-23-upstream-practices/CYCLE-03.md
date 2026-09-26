@@ -223,3 +223,13 @@ selected.» (та же ветка `post-review-comments.js:297-304`, что в �
   встроенным списком. Тест без проверки, подогнанный тест — у AQK `test-has-assertion`, `test-not-adjusted`.
 - `.md` не в списке разрешённых расширений: правка `AGENTS.md`/`CLAUDE.md` не ревьюится никогда. У AQK на свод
   есть `entry-commands-exist`, `entry-docs-agree`, `promise-has-gate`.
+
+### Мелкие «объявлено, но не действует» (чтение, без прогона)
+
+- `internal/config/template/scan_template.json`: у шести задач ключ `"timeout"` (180/90/120), а в структуре
+  `LlmConversation` поля нет — `json.Unmarshal` молча его выбрасывает. Тесты шаблона этого не видят.
+- `tools.md` расходится с кодом дважды: «FAILED не сохраняется и не влияет на код возврата» (на деле — файл в
+  failed), «обязательны content и existing_code» (в `tools.json` обязательны ещё category/severity/path).
+- Их собственный тест `TestSystemRulesIntegrity/extensions_are_allowlisted` — ровно наш класс: правило для
+  расширения вне списка разрешённых «никогда не сработает», тест красный. Для правил о тестах (тесты исключены
+  по умолчанию) и для мёртвых ключей шаблона такого инварианта у них нет.

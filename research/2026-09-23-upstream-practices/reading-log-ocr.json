@@ -1905,12 +1905,14 @@
   {
    "path": "internal/config/rules/canonical_config_test.go",
    "bytes": 3104,
-   "status": "unread"
+   "status": "read",
+   "observation": "Отпечаток правил детерминирован и меняется при смене правила проекта."
   },
   {
    "path": "internal/config/rules/resolve_github_test.go",
    "bytes": 956,
-   "status": "unread"
+   "status": "read",
+   "observation": "Правило для .github/workflows и .github/*.yml выбирается верно."
   },
   {
    "path": "internal/config/rules/rule_docs/arkts.md",
@@ -2239,7 +2241,8 @@
   {
    "path": "internal/config/rules/sniffer_test.go",
    "bytes": 11492,
-   "status": "unread"
+   "status": "read",
+   "observation": "Различение .m, чтение по ref без рабочей копии, слой пользователя старше. Устаревший комментарий: «objc.md — заглушка-копия default.md» (сейчас это 19 КБ отдельных правил)."
   },
   {
    "path": "internal/config/rules/system_rules.go",
@@ -2256,17 +2259,20 @@
   {
    "path": "internal/config/rules/system_rules_test.go",
    "bytes": 65707,
-   "status": "unread"
+   "status": "read",
+   "observation": "76 тестов слоёв правил. TestResolveRuleEntries_MissingFile закрепляет находку 4 как задуманное: «отсутствующий файл обнуляет правило» — проверяют обнуление, не проверяют, что человек узнал. TestSystemRulesIntegrity — образец инварианта «объявлено, но не действует»: правило для расширения вне списка разрешённых «никогда не сработает» → тест красный. Для тестовых путей (исключены по умолчанию) и для ключей timeout в scan_template такого инварианта нет."
   },
   {
    "path": "internal/config/rules/system_rules_unmarshal_test.go",
    "bytes": 2323,
-   "status": "unread"
+   "status": "read",
+   "observation": "Порядок ключей path_rule_map сохраняется; ошибки разбора названы."
   },
   {
    "path": "internal/config/rules/test_home_test.go",
    "bytes": 572,
-   "status": "unread"
+   "status": "read",
+   "observation": "Тестовый HOME и USERPROFILE (Windows) — чтобы тесты не трогали настоящий ~/.opencodereview."
   },
   {
    "path": "internal/config/template/effort.go",
@@ -2277,7 +2283,8 @@
   {
    "path": "internal/config/template/effort_test.go",
    "bytes": 1738,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разбор effort, регистр, неизвестное → ошибка."
   },
   {
    "path": "internal/config/template/prompts/grouping_task_system.md",
@@ -2354,7 +2361,8 @@
   {
    "path": "internal/config/template/scan_template.json",
    "bytes": 9604,
-   "status": "unread"
+   "status": "read",
+   "observation": "Шаблон полного сканирования (без фильтра замечаний и без манифеста покрытия). У каждой задачи ключ \"timeout\" (180/90/120), которого нет в структуре LlmConversation — json.Unmarshal молча его выбрасывает: настройка объявлена и не действует."
   },
   {
    "path": "internal/config/template/task_template.json",
@@ -2371,37 +2379,44 @@
   {
    "path": "internal/config/template/template_test.go",
    "bytes": 15118,
-   "status": "unread"
+   "status": "read",
+   "observation": "Числа шаблона, заполнители, Validate, язык, пороги плана и группировки по краям. Нет проверки, что ключ timeout в scan_template действует (не действует)."
   },
   {
    "path": "internal/config/testconnection/task.json",
    "bytes": 1053,
-   "status": "unread"
+   "status": "read",
+   "observation": "Задание проверки связи с инструментом ocr_selftest."
   },
   {
    "path": "internal/config/testconnection/testconnection.go",
    "bytes": 2136,
-   "status": "unread"
+   "status": "read",
+   "observation": "Проверка связи с моделью включает круг «вызов инструмента → ответ»: «один запрос не ловит поставщиков, отвергающих ход после вызова инструмента — так #1357 прошёл проверку и падал на каждом ревью». Урок AQK: проверка подключения должна проходить настоящий путь, а не пинг."
   },
   {
    "path": "internal/config/testconnection/testconnection_test.go",
    "bytes": 2949,
-   "status": "unread"
+   "status": "read",
+   "observation": "Задание проверки связи обязано предлагать инструмент (#1357)."
   },
   {
    "path": "internal/config/toolsconfig/tools.json",
    "bytes": 10628,
-   "status": "unread"
+   "status": "read",
+   "observation": "Схемы шести инструментов. category/severity/path в code_comment обязательны — tools.md пишет, что обязательны только content и existing_code (документация отстала)."
   },
   {
    "path": "internal/config/toolsconfig/toolsconfig.go",
    "bytes": 1556,
-   "status": "unread"
+   "status": "read",
+   "observation": "Загрузка tools.json / --tools, фильтр по фазе."
   },
   {
    "path": "internal/config/toolsconfig/toolsconfig_test.go",
    "bytes": 3175,
-   "status": "unread"
+   "status": "read",
+   "observation": "Загрузка tools.json и фильтр по фазе."
   },
   {
    "path": "internal/delegate/format.go",
