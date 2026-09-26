@@ -1,33 +1,65 @@
 # Снимок объявленной защиты. Набор может только РАСТИ.
 # Убрал гейт — напиши причину после # в его строке, иначе проверка краснеет.
+# Строка «# run имя: команда» — не комментарий: смена команды без её правки краснеет.
 api-contract-has-arbiter
+# run api-contract-has-arbiter: bash kit/gates/api-contract-has-arbiter/check.sh .
 ci-actually-fails
+# run ci-actually-fails: bash kit/gates/ci-actually-fails/check.sh .
 ci-not-hijackable
+# run ci-not-hijackable: bash kit/gates/ci-not-hijackable/check.sh .
 commit-explains-itself
+# run commit-explains-itself: bash kit/gates/commit-explains-itself/check.sh .
 complexity-limit
+# run complexity-limit: bash kit/gates/complexity-limit/check.sh .
 dead-code
+# run dead-code: npx --yes knip@6 --directory .
 deps-are-pinned
+# run deps-are-pinned: bash kit/gates/deps-are-pinned/check.sh .
 duplicate-code
+# run duplicate-code: bash kit/gates/duplicate-code/check.sh .
 entry-commands-exist
+# run entry-commands-exist: bash kit/gates/entry-commands-exist/check.sh .
 entry-docs-agree
+# run entry-docs-agree: bash kit/gates/entry-docs-agree/check.sh .
 evals
+# run evals: node evals/run.mjs
 file-size-limit
+# run file-size-limit: bash kit/gates/file-size-limit/check.sh .
 gate-has-samples
+# run gate-has-samples: bash kit/gates/gate-has-samples/check.sh .
 gate-not-weakened
+# run gate-not-weakened: bash kit/gates/gate-not-weakened/check.sh .
 gates
+# run gates: bash tool/selfcheck/gates.sh
 gates-are-runnable
+# run gates-are-runnable: bash kit/gates/gates-are-runnable/check.sh .
 gates-run-in-ci
+# run gates-run-in-ci: bash kit/gates/gates-run-in-ci/check.sh .
 hook-actually-fires
+# run hook-actually-fires: bash kit/gates/hook-actually-fires/check.sh .
 lesson-has-outcome
+# run lesson-has-outcome: bash kit/gates/lesson-has-outcome/check.sh .
 mutation
+# run mutation: bash tool/selfcheck/mutation.sh
 personal-config-not-shared
+# run personal-config-not-shared: bash kit/gates/personal-config-not-shared/check.sh .
 promise-has-gate
+# run promise-has-gate: bash kit/gates/promise-has-gate/check.sh .
 proof-from-journal
+# run proof-from-journal: bash kit/ratchet/ratchet.sh ratchets/proof-from-journal.txt bash tool/selfcheck/conditional.sh
 protection-not-removed
+# run protection-not-removed: bash kit/gates/protection-not-removed/check.sh .
 secrets-not-in-code
+# run secrets-not-in-code: bash kit/gates/secrets-not-in-code/check.sh .
 smoke
+# run smoke: bash tool/selfcheck/smoke.sh
 syntax
+# run syntax: bash tool/selfcheck/syntax.sh
 test-has-assertion
+# run test-has-assertion: bash kit/gates/test-has-assertion/check.sh .
 test-not-adjusted
+# run test-not-adjusted: bash kit/gates/test-not-adjusted/check.sh .
 todo-without-task
+# run todo-without-task: bash kit/gates/todo-without-task/check.sh .
 units
+# run units: node --test tool/selfcheck/units*.mjs

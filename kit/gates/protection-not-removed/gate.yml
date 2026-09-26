@@ -1,5 +1,5 @@
-intent: объявленная защита не исчезает молча — набор гейтов в манифесте может только расти
-intent_en: declared protection does not vanish silently — the set of gates in the manifest may only grow
+intent: объявленная защита не исчезает молча — набор гейтов в манифесте может только расти, а команда гейта не меняется без названной правки
+intent_en: declared protection does not vanish silently — the set of gates in the manifest may only grow, and a gate's command does not change without a named edit
 
 trigger:
   has_gates: true

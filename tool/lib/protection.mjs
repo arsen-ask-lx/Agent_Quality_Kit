@@ -8,10 +8,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CWD, RATCHET_DIR, MANIFEST } from "./core.mjs";
+import { parseManifest } from "./manifest.mjs";
 
 const HEADER =
   "# Снимок объявленной защиты. Набор может только РАСТИ.\n" +
-  "# Убрал гейт — напиши причину после # в его строке, иначе проверка краснеет.\n";
+  "# Убрал гейт — напиши причину после # в его строке, иначе проверка краснеет.\n" +
+  "# Строка «# run имя: команда» — не комментарий: смена команды без её правки краснеет.\n";
 
 // СНИМОК ОБЪЯВЛЕННОЙ ЗАЩИТЫ ПИШЕТ УСТАНОВКА, А НЕ ПРОВЕРКА.
 //
@@ -40,11 +42,34 @@ async function recordProtection(man, slug) {
   const file = join(CWD, rdir, "gates-declared.txt");
   let body = "";
   try { body = await readFile(file, "utf8"); } catch { /* снимка ещё нет — заведём */ }
-  const names = body.split("\n").map((l) => l.replace(/\s*#.*$/, "").trim()).filter(Boolean);
-  if (names.includes(slug)) return;
-  const head = body ? body.replace(/\n?$/, "\n") : HEADER;
+
+  // КОМАНДЫ — ИЗ МАНИФЕСТА НА ДИСКЕ, а не из рецепта: одобряется то, что будет запускаться, и
+  // разобранное тем же `parseManifest`, которым программа гейт и запускает.
+  let gates = {};
+  try { gates = parseManifest(await readFile(manPath, "utf8")).gates || {}; } catch { /* нечем дополнить */ }
+  if (!Object.prototype.hasOwnProperty.call(gates, slug)) return;
+
+  const lines = body ? body.replace(/\r/g, "").replace(/\n?$/, "").split("\n") : HEADER.replace(/\n$/, "").split("\n");
+  const nameOf = (l) => (l.startsWith("#") ? "" : l.replace(/\s*#.*$/, "").trim());
+  const hasRun = (n) => lines.some((l) => l.startsWith(`# run ${n}:`));
+  if (!lines.some((l) => nameOf(l) === slug)) lines.push(slug);
+
+  // Строки команд дописываются ВСЕМ гейтам из снимка, у которых их нет, — за один раз. Иначе
+  // снимок, где команда записана у одного гейта, проверка читает как новый формат, и все
+  // остальные краснели бы «строку стёрли» сразу после обновления комплекта.
+  // ЗАПИСАННУЮ СТРОКУ НЕ ПЕРЕПИСЫВАЕМ: иначе подмену команды «лечил» бы любой следующий add.
+  // Гейт, объявленный в манифесте, но не записанный в снимок, тоже не трогаем: его имя обязан
+  // вписать человек — проверка это требует.
+  const out = [];
+  for (const l of lines) {
+    out.push(l);
+    const n = nameOf(l);
+    if (n && Object.prototype.hasOwnProperty.call(gates, n) && !hasRun(n)) {
+      out.push(`# run ${n}: ${String(gates[n])}`);
+    }
+  }
   await mkdir(join(CWD, rdir), { recursive: true });
-  await writeFile(file, `${head}${slug}\n`, "utf8");
+  await writeFile(file, `${out.join("\n")}\n`, "utf8");
 }
 
 // Наружу — только запись. `HEADER` остаётся внутри: экспорт, который никто не берёт, читается

@@ -81,7 +81,10 @@ async function installGate(slug, man, facts) {
   const manPath = join(CWD, MANIFEST);
   const { text, why } = manifestWithGate(await readFile(manPath, "utf8"), slug, cmd);
   if (text) await writeFile(manPath, text, "utf8");
-  if (text) await recordProtection(man, slug);
+  // Снимок дописывается и когда гейт уже объявлен: так старый снимок, где записаны только
+  // имена, получает строки команд одним явным действием человека. Запись сама не пишет гейт,
+  // которого в манифесте нет, и не переписывает уже одобренную команду.
+  if (text || why === L.manifest.alreadyDeclared) await recordProtection(man, slug);
   return { rec, cmd, copied, declared: Boolean(text), why };
 }
 
