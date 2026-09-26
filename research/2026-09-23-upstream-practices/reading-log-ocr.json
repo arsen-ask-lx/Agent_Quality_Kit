@@ -248,7 +248,8 @@
   {
    "path": "bin/ocr.test.js",
    "bytes": 8510,
-   "status": "unread"
+   "status": "read",
+   "observation": "код выхода при смерти от сигнала — не 0; update.js выключен OCR_NO_UPDATE и не тестируется нигде"
   },
   {
    "path": "cmd/opencodereview/apply_provider_field_test.go",
@@ -1764,17 +1765,20 @@
   {
    "path": "internal/agent/agent_test.go",
    "bytes": 38598,
-   "status": "unread"
+   "status": "read",
+   "observation": "чекпойнт не переиспользуется, если main task закончился без task_done или по порогу токенов — образец"
   },
   {
    "path": "internal/agent/budget_test.go",
    "bytes": 17466,
-   "status": "unread"
+   "status": "read",
+   "observation": "бюджет токенов до первого файла — failed, после — partial; перерасход ограничен числом параллельных"
   },
   {
    "path": "internal/agent/coverage_test.go",
    "bytes": 33411,
-   "status": "unread"
+   "status": "read",
+   "observation": "фильтр замечаний при отсутствии вызова инструмента fails open — замечания остаются (правильная сторона для фильтра)"
   },
   {
    "path": "internal/agent/estimate.go",
@@ -1785,12 +1789,14 @@
   {
    "path": "internal/agent/estimate_test.go",
    "bytes": 4173,
-   "status": "unread"
+   "status": "read",
+   "observation": "оценка стоимости"
   },
   {
    "path": "internal/agent/getters_test.go",
    "bytes": 822,
-   "status": "unread"
+   "status": "read",
+   "observation": "служебные"
   },
   {
    "path": "internal/agent/grouping.go",
@@ -1801,7 +1807,8 @@
   {
    "path": "internal/agent/grouping_test.go",
    "bytes": 26797,
-   "status": "unread"
+   "status": "read",
+   "observation": "ответ группировки с дублем/пропуском/чужим файлом отвергается; сбой LLM → по одному файлу"
   },
   {
    "path": "internal/agent/identity.go",
@@ -1812,22 +1819,26 @@
   {
    "path": "internal/agent/identity_test.go",
    "bytes": 7436,
-   "status": "unread"
+   "status": "read",
+   "observation": "идентичность входа, вычисленная до прогона, совпадает с той, что запишет прогон"
   },
   {
    "path": "internal/agent/init_test.go",
    "bytes": 216,
-   "status": "unread"
+   "status": "read",
+   "observation": "служебные"
   },
   {
    "path": "internal/agent/manifest_hash_test.go",
    "bytes": 5406,
-   "status": "unread"
+   "status": "read",
+   "observation": "хэш полей с префиксом длины — без склеек"
   },
   {
    "path": "internal/agent/manifest_integration_test.go",
    "bytes": 33375,
-   "status": "unread"
+   "status": "read",
+   "observation": "решение: застрявшая группа — файл с хотя бы одним замечанием считается Completed, хотя разговор оборван на лимите раундов (регрессия bitcoin). «Есть вывод = просмотрен» — спорная сторона; изолированный провал одного файла = partial"
   },
   {
    "path": "internal/agent/preview.go",
@@ -1838,22 +1849,26 @@
   {
    "path": "internal/agent/preview_run_test.go",
    "bytes": 13850,
-   "status": "unread"
+   "status": "read",
+   "observation": "TestPreviewMatchesRunSelectedCoverage: предпросмотр и прогон обязаны выбрать одно и то же (#782) — образец для AQK: doctor без --run и с --run обязаны называть один набор гейтов"
   },
   {
    "path": "internal/agent/preview_test.go",
    "bytes": 14768,
-   "status": "unread"
+   "status": "read",
+   "observation": "whyExcluded: причина исключения для каждого фильтра; порядок приоритетов закреплён"
   },
   {
    "path": "internal/agent/retry_identity_test.go",
    "bytes": 6311,
-   "status": "unread"
+   "status": "read",
+   "observation": "провайдер и модель из одного источника"
   },
   {
    "path": "internal/agent/sealed_input_test.go",
    "bytes": 3979,
-   "status": "unread"
+   "status": "read",
+   "observation": "прогон приколот к коммитам, допущенным при проверке продолжения"
   },
   {
    "path": "internal/agent/selection.go",
@@ -1864,12 +1879,14 @@
   {
    "path": "internal/agent/test_home_test.go",
    "bytes": 572,
-   "status": "unread"
+   "status": "read",
+   "observation": "служебные"
   },
   {
    "path": "internal/agent/testmain_test.go",
    "bytes": 369,
-   "status": "unread"
+   "status": "read",
+   "observation": "служебные"
   },
   {
    "path": "internal/agent/util.go",
@@ -1880,7 +1897,8 @@
   {
    "path": "internal/agent/util_test.go",
    "bytes": 4834,
-   "status": "unread"
+   "status": "read",
+   "observation": "мелкие функции"
   },
   {
    "path": "internal/config/allowlist/allowed_ext.go",
@@ -2443,22 +2461,26 @@
   {
    "path": "internal/delegate/format.go",
    "bytes": 646,
-   "status": "unread"
+   "status": "read",
+   "observation": "группы правил в markdown"
   },
   {
    "path": "internal/delegate/format_test.go",
    "bytes": 1320,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/delegate/rulegroup.go",
    "bytes": 1910,
-   "status": "unread"
+   "status": "read",
+   "observation": "группа = источник+шаблон+текст, иначе метаданные группы врали бы"
   },
   {
    "path": "internal/delegate/rulegroup_test.go",
    "bytes": 4578,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/diff/crlf_test.go",
@@ -2595,22 +2617,26 @@
   {
    "path": "internal/gitcmd/runner.go",
    "bytes": 3275,
-   "status": "unread"
+   "status": "read",
+   "observation": "семафор на git-процессы; Stream возвращает stderr в ошибке"
   },
   {
    "path": "internal/gitcmd/runner_test.go",
    "bytes": 3390,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/gitcmd/version.go",
    "bytes": 1971,
-   "status": "unread"
+   "status": "read",
+   "observation": "минимум git 2.41 — отказ с понятной ошибкой"
   },
   {
    "path": "internal/gitcmd/version_test.go",
    "bytes": 4263,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/llm/bedrock_test.go",
@@ -2831,12 +2857,14 @@
   {
    "path": "internal/llmloop/compression_test.go",
    "bytes": 7180,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/init_test.go",
    "bytes": 218,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/loop.go",
@@ -2847,17 +2875,20 @@
   {
    "path": "internal/llmloop/loop_execute_more_test.go",
    "bytes": 14299,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/loop_execute_test.go",
    "bytes": 7899,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/loop_test.go",
    "bytes": 33858,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/pool.go",
@@ -2868,32 +2899,38 @@
   {
    "path": "internal/llmloop/pool_test.go",
    "bytes": 6456,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/retry_background_test.go",
    "bytes": 4548,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/retry_identity_test.go",
    "bytes": 15219,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/runner_test.go",
    "bytes": 22815,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/test_home_test.go",
    "bytes": 574,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/testmain_test.go",
    "bytes": 371,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/tool_args_json.go",
@@ -2904,7 +2941,8 @@
   {
    "path": "internal/llmloop/tool_args_json_test.go",
    "bytes": 3466,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/llmloop/tool_failure_streak.go",
@@ -2915,197 +2953,236 @@
   {
    "path": "internal/llmloop/tool_failure_streak_test.go",
    "bytes": 6288,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам и обоснованиям: max-раунды без task_done не завершают; паника в пуле изолирована; grace round для последнего замечания; нулевой бюджет — без ограничения"
   },
   {
    "path": "internal/mcp/client.go",
    "bytes": 7514,
-   "status": "unread"
+   "status": "read",
+   "observation": "заголовок, раскрывшийся в пустое значение — отказ соединения, а не пустой заголовок (образец); 401/403 с понятным текстом"
   },
   {
    "path": "internal/mcp/client_test.go",
    "bytes": 10348,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/closeall_stress_test.go",
    "bytes": 5360,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/closeall_test.go",
    "bytes": 6259,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/norace_test.go",
    "bytes": 239,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/provider.go",
    "bytes": 3278,
-   "status": "unread"
+   "status": "read",
+   "observation": "инструмент из allowlist, которого нет на сервере, — предупреждение; конфликт имён — пропуск с предупреждением"
   },
   {
    "path": "internal/mcp/provider_test.go",
    "bytes": 5958,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/race_test.go",
    "bytes": 237,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/mcp/stdio_test.go",
    "bytes": 5256,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/model/diff.go",
    "bytes": 607,
-   "status": "unread"
+   "status": "read",
+   "observation": "модель"
   },
   {
    "path": "internal/model/model_test.go",
    "bytes": 4459,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/model/preview.go",
    "bytes": 2013,
-   "status": "unread"
+   "status": "read",
+   "observation": "причины исключения — одна таблица на review и scan"
   },
   {
    "path": "internal/model/review.go",
    "bytes": 1166,
-   "status": "unread"
+   "status": "read",
+   "observation": "категории и важности названы в комментарии"
   },
   {
    "path": "internal/model/scan.go",
    "bytes": 1099,
-   "status": "unread"
+   "status": "read",
+   "observation": "ScanItem.AsDiff"
   },
   {
    "path": "internal/pathutil/path.go",
    "bytes": 1134,
-   "status": "unread"
+   "status": "read",
+   "observation": "WithinBase с запасным сравнением SameFile"
   },
   {
    "path": "internal/pathutil/path_test.go",
    "bytes": 5854,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/release/asset_naming_test.go",
    "bytes": 5388,
-   "status": "unread"
+   "status": "read",
+   "observation": "ДОГОВОР МЕЖДУ ФАЙЛАМИ под тестом: urlPattern в package.json ↔ имена в release.yml ↔ Makefile. Образец (у AQK похожее — entry-docs-agree)"
   },
   {
    "path": "internal/scan/agent.go",
    "bytes": 44259,
-   "status": "unread"
+   "status": "read",
+   "observation": "ошибка — только если упали ВСЕ файлы; частичный провал → код 0, status completed_with_errors (честно), но «Summary: N file(s) reviewed» считает и упавшие (проверено прогоном). Превышение порога токенов после плана → ни failed, ни done, только предупреждение. Дедуп отвергает группы, не покрывающие каждое замечание ровно раз — образец"
   },
   {
    "path": "internal/scan/agent_test.go",
    "bytes": 17624,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/batch.go",
    "bytes": 3290,
-   "status": "unread"
+   "status": "read",
+   "observation": "неизвестная стратегия пакетов молча → none"
   },
   {
    "path": "internal/scan/batch_test.go",
    "bytes": 3816,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/budget_exceeded_test.go",
    "bytes": 2032,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/budget_test.go",
    "bytes": 4577,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/coverage_test.go",
    "bytes": 43470,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/dedup_test.go",
    "bytes": 3642,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/estimate.go",
    "bytes": 4483,
-   "status": "unread"
+   "status": "read",
+   "observation": "оценка грубая и так и названа: деньги не печатаются намеренно"
   },
   {
    "path": "internal/scan/estimate_test.go",
    "bytes": 4884,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/getters_more_test.go",
    "bytes": 3112,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/getters_test.go",
    "bytes": 1066,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/init_test.go",
    "bytes": 215,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/preview.go",
    "bytes": 2251,
-   "status": "unread"
+   "status": "read",
+   "observation": "предпросмотр не открывает сессию; не мутирует агента"
   },
   {
    "path": "internal/scan/provider.go",
    "bytes": 10266,
-   "status": "unread"
+   "status": "read",
+   "observation": "файл >2 МиБ, нечитаемый, неразобранный — выпадает из списка целиком со строкой в stderr; отслеживаемый под .gitignore — молча. -z без обрезки пробелов в именах — с объяснением"
   },
   {
    "path": "internal/scan/provider_more_test.go",
    "bytes": 4781,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/provider_paths_test.go",
    "bytes": 4657,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/provider_test.go",
    "bytes": 7240,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/retry_identity_test.go",
    "bytes": 5022,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/test_home_test.go",
    "bytes": 571,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/scan/testmain_test.go",
    "bytes": 368,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: TestProvider_Enumerate_OversizeSkip закрепляет выпадение большого файла; TestDispatchSubtasks_WithoutTaskDoneIsAllFailed"
   },
   {
    "path": "internal/session/comments.go",
@@ -3284,97 +3361,116 @@
   {
    "path": "internal/stdout/stdout.go",
    "bytes": 1596,
-   "status": "unread"
+   "status": "read",
+   "observation": "глушение stdout в машинном выводе"
   },
   {
    "path": "internal/stdout/stdout_test.go",
    "bytes": 1452,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/suggestdiff/diff.go",
    "bytes": 2266,
-   "status": "unread"
+   "status": "read",
+   "observation": "LCS-дифф для показа предложений"
   },
   {
    "path": "internal/suggestdiff/diff_test.go",
    "bytes": 4072,
-   "status": "unread"
+   "status": "read",
+   "observation": "тест"
   },
   {
    "path": "internal/telemetry/config.go",
    "bytes": 3693,
-   "status": "unread"
+   "status": "read",
+   "observation": "по умолчанию выключена; битый config.json молча пропускается"
   },
   {
    "path": "internal/telemetry/config_test.go",
    "bytes": 7274,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/events.go",
    "bytes": 5073,
-   "status": "unread"
+   "status": "read",
+   "observation": "события"
   },
   {
    "path": "internal/telemetry/events_test.go",
    "bytes": 7911,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/exporter.go",
    "bytes": 8387,
-   "status": "unread"
+   "status": "read",
+   "observation": "неизвестный протокол OTLP → gRPC с предупреждением; консольный экспортёр пишет в os.Stdout напрямую, мимо глушения"
   },
   {
    "path": "internal/telemetry/exporter_test.go",
    "bytes": 9198,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/metrics.go",
    "bytes": 4046,
-   "status": "unread"
+   "status": "read",
+   "observation": "checkMetricErr(err) {} — пустая функция, глотает ошибки создания метрик (класс swallowed-error)"
   },
   {
    "path": "internal/telemetry/metrics_test.go",
    "bytes": 1678,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/provider.go",
    "bytes": 2075,
-   "status": "unread"
+   "status": "read",
+   "observation": "ContentLogging() читает только окружение, но флаг и так объявлен в документации зарезервированным — честно"
   },
   {
    "path": "internal/telemetry/provider_test.go",
    "bytes": 3659,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/shutdown.go",
    "bytes": 958,
-   "status": "unread"
+   "status": "read",
+   "observation": "сброс с таймаутом"
   },
   {
    "path": "internal/telemetry/shutdown_test.go",
    "bytes": 1995,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/span.go",
    "bytes": 4350,
-   "status": "unread"
+   "status": "read",
+   "observation": "спаны"
   },
   {
    "path": "internal/telemetry/span_test.go",
    "bytes": 7333,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/telemetry/traceid_test.go",
    "bytes": 999,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/tool/code_comment.go",
@@ -4967,7 +5063,8 @@
   {
    "path": "scripts/github-actions/check-plugin-contract.test.js",
    "bytes": 33268,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам: извлечение ссылок, фронтматтер, разрешение путей"
   },
   {
    "path": "scripts/github-actions/check-translation-sync.js",
@@ -4978,7 +5075,8 @@
   {
    "path": "scripts/github-actions/check-translation-sync.test.js",
    "bytes": 10444,
-   "status": "unread"
+   "status": "read",
+   "observation": "testGetChangedFilesGitFailureIsNonFatal закрепляет «сбой git → пустой список» для необязательной проверки"
   },
   {
    "path": "scripts/github-actions/post-review-comments.js",
@@ -5007,22 +5105,26 @@
   {
    "path": "scripts/publish/.env.example",
    "bytes": 576,
-   "status": "unread"
+   "status": "unread-denied",
+   "observation": "не прочитан: чтение .env* запрещено правилом доступа; 576 байт, пример переменных выпуска"
   },
   {
    "path": "scripts/publish/_common.sh",
    "bytes": 2778,
-   "status": "unread"
+   "status": "read",
+   "observation": "общие функции; run_step через eval"
   },
   {
    "path": "scripts/publish/publish-platform.sh",
    "bytes": 3934,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенные пакеты: сначала проверка всех бинарей, потом публикация; уже опубликованное пропускается"
   },
   {
    "path": "scripts/publish/publish.sh",
    "bytes": 11653,
-   "status": "unread"
+   "status": "read",
+   "observation": "внутренний выпуск; при провале npm publish package.json не восстанавливается (нет trap); со всеми SKIP печатает «PUBLISH COMPLETE»"
   },
   {
    "path": "scripts/update.js",
@@ -5057,7 +5159,8 @@
   {
    "path": "scripts/version.test.js",
    "bytes": 1494,
-   "status": "unread"
+   "status": "read",
+   "observation": "semver"
   },
   {
    "path": "skills/open-code-review-delegate/SKILL.md",
