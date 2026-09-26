@@ -3088,67 +3088,80 @@
   {
    "path": "internal/session/comments.go",
    "bytes": 1836,
-   "status": "unread"
+   "status": "read",
+   "observation": "LoadComments: нечитаемые comments записи молча пропускаются"
   },
   {
    "path": "internal/session/comments_test.go",
    "bytes": 2481,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/compare.go",
    "bytes": 6814,
-   "status": "unread"
+   "status": "read",
+   "observation": "четыре корзины; nil-манифест → всё несовпавшее Resolved. НАХОДКА 6: у прогона, убитого kill -9, манифеста нет, и непросмотренный файл объявляется исправленным — подтверждено прогоном"
   },
   {
    "path": "internal/session/compare_test.go",
    "bytes": 14503,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/delete.go",
    "bytes": 7725,
-   "status": "unread"
+   "status": "read",
+   "observation": "удаление сверяет записанный cwd; путь и id проверяются на выход из каталога"
   },
   {
    "path": "internal/session/delete_test.go",
    "bytes": 11222,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/final_manifest_test.go",
    "bytes": 1050,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/history.go",
    "bytes": 19195,
-   "status": "unread"
+   "status": "read",
+   "observation": "Finalize один раз, ошибка кэшируется и отдаётся каждому вызову; токены при отсутствии usage оцениваются локально без пометки"
   },
   {
    "path": "internal/session/history_test.go",
    "bytes": 23165,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/list.go",
    "bytes": 11372,
-   "status": "unread"
+   "status": "read",
+   "observation": "Aborted=true по умолчанию до session_end; нечитаемые файлы и строки молча пропускаются; legacy никогда не выводится в complete"
   },
   {
    "path": "internal/session/list_error_test.go",
    "bytes": 2115,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/list_more_test.go",
    "bytes": 3330,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/list_test.go",
    "bytes": 8233,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/manifest.go",
@@ -3159,77 +3172,92 @@
   {
    "path": "internal/session/manifest_guards_test.go",
    "bytes": 3386,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/manifest_test.go",
    "bytes": 31147,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/persist.go",
    "bytes": 12757,
-   "status": "unread"
+   "status": "read",
+   "observation": "writeRecordLocked печатает сбой в stdout (противоречит комментарию в history.go); ошибки записи игнорируются, кроме session_end; encodeRepoPath склеивает /a/b-c и /a-b/c (они знают, handler.go)"
   },
   {
    "path": "internal/session/persist_test.go",
    "bytes": 15745,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/raw_writer.go",
    "bytes": 3539,
-   "status": "unread"
+   "status": "read",
+   "observation": "первый сбой записи предупреждает один раз, дальше молча; права 0600"
   },
   {
    "path": "internal/session/raw_writer_test.go",
    "bytes": 9820,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/resume.go",
    "bytes": 11681,
-   "status": "unread"
+   "status": "read",
+   "observation": "переиспользование только того, что подтверждает манифест родителя; обрыв последней строки игнорируется, битая строка в середине для scan — фатальна, для review — перепроверка файла"
   },
   {
    "path": "internal/session/resume_identity.go",
    "bytes": 9433,
-   "status": "unread"
+   "status": "read",
+   "observation": "допуск продолжения по хэшам входа, правил, репозитория; неявная смена модели/провайдера отвергается; пустой родитель отвергается"
   },
   {
    "path": "internal/session/resume_identity_test.go",
    "bytes": 12431,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/resume_orphan_request_test.go",
    "bytes": 2822,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/resume_test.go",
    "bytes": 26575,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/test_home_test.go",
    "bytes": 574,
-   "status": "unread"
+   "status": "read",
+   "observation": "HOME мало на Windows, нужен USERPROFILE — у AQK уже так (smoke.sh, _fixture.mjs)"
   },
   {
    "path": "internal/session/testing.go",
    "bytes": 515,
-   "status": "unread"
+   "status": "read",
+   "observation": "UseTestSessions перенаправляет каталоги"
   },
   {
    "path": "internal/session/testmain_test.go",
    "bytes": 371,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/session/validate_scan_options_test.go",
    "bytes": 2318,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты прочитаны по именам и комментариям-обоснованиям; тела шаблонные. Ни один тест compare не рассматривает оборванную сессию"
   },
   {
    "path": "internal/stdout/stdout.go",
@@ -3329,117 +3357,140 @@
   {
    "path": "internal/tool/code_comment.go",
    "bytes": 5882,
-   "status": "unread"
+   "status": "read",
+   "observation": "неизвестная severity молча → low, неизвестная category → other; проверено живьём моком: severity 'major' стала low (а скиллы low отбрасывают), category 'vulnerability' стала other; предупреждения нет"
   },
   {
    "path": "internal/tool/code_comment_test.go",
    "bytes": 9913,
-   "status": "unread"
+   "status": "read",
+   "observation": "TestParseComments_CategorySeveritySchemaDrift закрепляет: неизвестная severity → low, category → other. В схеме tools.json есть enum, так что это отклонение модели от схемы — но итог «неизвестно → самое неважное», без предупреждения"
   },
   {
    "path": "internal/tool/code_search.go",
    "bytes": 8082,
-   "status": "unread"
+   "status": "read",
+   "observation": "git grep --untracked, фолбэк --no-index, предел 100 совпадений с пометкой, таймаут 10 с"
   },
   {
    "path": "internal/tool/code_search_test.go",
    "bytes": 26756,
-   "status": "unread"
+   "status": "read",
+   "observation": "сбой git grep (плохая ссылка, плохое регулярное выражение) ПРОБРАСЫВАЕТСЯ, а не превращается в «нет совпадений» — образец для AQK. Но TestGitGrep_Timeout принимает «No matches found» на отменённом контексте: тест разрешает ровно ту подмену, от которой код защищён. Маркер allow-non-english у не-английских строк"
   },
   {
    "path": "internal/tool/comment_args_repair.go",
    "bytes": 9619,
-   "status": "unread"
+   "status": "read",
+   "observation": "аккуратная починка обрезанного JSON: подозрительную обрезку отвергает, починку называет предупреждением — образец"
   },
   {
    "path": "internal/tool/comment_args_repair_test.go",
    "bytes": 25594,
-   "status": "unread"
+   "status": "read",
+   "observation": "образцовые тесты: починка принимается, только если каждая запись пакета что-то говорит; подозрение на обрезку отвергает весь пакет; TestKnownCommentFieldsCoversTheSchema не даёт списку полей разойтись со схемой; решение про thinking закреплено тестом с объяснением"
   },
   {
    "path": "internal/tool/comment_collector.go",
    "bytes": 3110,
-   "status": "unread"
+   "status": "read",
+   "observation": "сборщик комментариев; пустые path/content молча пропускаются в parseCommentsInner"
   },
   {
    "path": "internal/tool/comment_collector_test.go",
    "bytes": 4602,
-   "status": "unread"
+   "status": "read",
+   "observation": "снимки, ReplaceSince, удаление по индексам"
   },
   {
    "path": "internal/tool/definitions.go",
    "bytes": 3064,
-   "status": "unread"
+   "status": "read",
+   "observation": "описания инструментов для модели"
   },
   {
    "path": "internal/tool/definitions_test.go",
    "bytes": 3375,
-   "status": "unread"
+   "status": "read",
+   "observation": "реестр: заморозка паникует на Register; зарезервированные имена"
   },
   {
    "path": "internal/tool/file_find.go",
    "bytes": 6133,
-   "status": "unread"
+   "status": "read",
+   "observation": "файлы без расширения пропускаются, кроме Makefile/Dockerfile/LICENSE/Vagrantfile/Containerfile"
   },
   {
    "path": "internal/tool/file_find_test.go",
    "bytes": 10247,
-   "status": "unread"
+   "status": "read",
+   "observation": "фолбэк без git с учётом .gitignore; поиск по подпути и с обратными слэшами"
   },
   {
    "path": "internal/tool/file_read.go",
    "bytes": 2319,
-   "status": "unread"
+   "status": "read",
+   "observation": "чтение файла с диапазоном строк"
   },
   {
    "path": "internal/tool/file_read_diff.go",
    "bytes": 1793,
-   "status": "unread"
+   "status": "read",
+   "observation": "чтение дифа файла"
   },
   {
    "path": "internal/tool/file_read_diff_test.go",
    "bytes": 2670,
-   "status": "unread"
+   "status": "read",
+   "observation": "нет дифа → текст ошибки для модели, не сбой"
   },
   {
    "path": "internal/tool/file_read_test.go",
    "bytes": 13054,
-   "status": "unread"
+   "status": "read",
+   "observation": "выход за пределы репозитория путём и симлинком отвергается; /etc/passwd читается как файл внутри репо; обрезка 500 строк с пометкой IS_TRUNCATED"
   },
   {
    "path": "internal/tool/filereader.go",
    "bytes": 7044,
-   "status": "unread"
+   "status": "read",
+   "observation": "чтение по режиму (рабочее дерево / git show); путь и симлинк за пределы репозитория отвергаются; scanLines считает строки как strings.Split"
   },
   {
    "path": "internal/tool/filereader_read_test.go",
    "bytes": 8148,
-   "status": "unread"
+   "status": "read",
+   "observation": "регрессия #287 (монорепо, пути от корня)"
   },
   {
    "path": "internal/tool/filereader_test.go",
    "bytes": 3426,
-   "status": "unread"
+   "status": "read",
+   "observation": "режимы и scanLines, включая CRLF"
   },
   {
    "path": "internal/tool/response_message.go",
    "bytes": 1164,
-   "status": "unread"
+   "status": "read",
+   "observation": "TaskCheckpoint: Complete/Fail/Of"
   },
   {
    "path": "internal/tool/response_message_test.go",
    "bytes": 1152,
-   "status": "unread"
+   "status": "read",
+   "observation": "тривиальные"
   },
   {
    "path": "internal/tool/stub.go",
    "bytes": 1122,
-   "status": "unread"
+   "status": "read",
+   "observation": "StubProvider в рабочем коде не используется — только в тестах (мёртвый код); текст NotAvailableMsg продублирован как ToolNotFoundMsg"
   },
   {
    "path": "internal/tool/stub_test.go",
    "bytes": 1128,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты мёртвого StubProvider"
   },
   {
    "path": "internal/viewer/browser.go",
