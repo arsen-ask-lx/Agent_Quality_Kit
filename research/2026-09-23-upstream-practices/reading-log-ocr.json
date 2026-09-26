@@ -2441,12 +2441,14 @@
   {
    "path": "internal/diff/crlf_test.go",
    "bytes": 4833,
-   "status": "unread"
+   "status": "read",
+   "observation": "CRLF не попадает в пути и не съедает признаки нового/удалённого файла."
   },
   {
    "path": "internal/diff/first_line_test.go",
    "bytes": 851,
-   "status": "unread"
+   "status": "read",
+   "observation": "firstLine."
   },
   {
    "path": "internal/diff/git.go",
@@ -2457,22 +2459,26 @@
   {
    "path": "internal/diff/git_cquoted_test.go",
    "bytes": 4323,
-   "status": "unread"
+   "status": "read",
+   "observation": "Пути с кавычкой и обратной косой через настоящий git во всех трёх режимах."
   },
   {
    "path": "internal/diff/git_error_test.go",
    "bytes": 10628,
-   "status": "unread"
+   "status": "read",
+   "observation": "Ошибки git несут stderr, но не stdout (там может быть код и секреты); отмена сообщается как отмена. «Неотслеживаемые молча пропадали при ошибке git ls-files — вызывающий не мог заметить» — исправлено, наш класс."
   },
   {
    "path": "internal/diff/git_resolve_test.go",
    "bytes": 8132,
-   "status": "unread"
+   "status": "read",
+   "observation": "Заморозка входа: range/commit/merge/root/workspace/unborn; канонический origin без учётных данных."
   },
   {
    "path": "internal/diff/git_test.go",
    "bytes": 27685,
-   "status": "unread"
+   "status": "read",
+   "observation": "Тесты поставщика: внешний diff-инструмент давал «молчаливое No files changed» (#82) — исправлено --no-ext-diff; merge-коммит давал «No supported files changed» (diff --cc) — исправлено. TestGetDiffSetWalksChangesetOrderAcrossGitignoreDrop ЗАКРЕПЛЯЕТ находку 5: отслеживаемый изменённый skip.log отбрасывается и не показывается — задумано."
   },
   {
    "path": "internal/diff/gitignore.go",
@@ -2483,7 +2489,8 @@
   {
    "path": "internal/diff/gitignore_test.go",
    "bytes": 8463,
-   "status": "unread"
+   "status": "read",
+   "observation": "Тесты своего разбора .gitignore. Allow-list идиома: отслеживаемый internal/testdata/fixture.yaml требуется ИСКЛЮЧИТЬ — закрепляет находку 5; отслеживаемое/неотслеживаемое не различается ни одним тестом."
   },
   {
    "path": "internal/diff/hunk.go",
@@ -2494,32 +2501,38 @@
   {
    "path": "internal/diff/hunk_test.go",
    "bytes": 3087,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разбор ханков."
   },
   {
    "path": "internal/diff/parser.go",
    "bytes": 6609,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разбор unified diff: CRLF, кавычки в путях, переименования, бинарные; счёт вставок только внутри ханка. Нечитаемый файл на ref — строка в stderr, ревью с пустым содержимым."
   },
   {
    "path": "internal/diff/parser_test.go",
    "bytes": 7984,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разбор: index-заголовки, переименования, удаления, бинарный маркер только в начале строки (иначе текст про «Binary files» выкидывал файл), счёт +++/--- внутри ханка."
   },
   {
    "path": "internal/diff/quotedpath.go",
    "bytes": 4996,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раскодирование путей git в C-кавычках; непонятная экранировка — отказ, а не выдуманный путь."
   },
   {
    "path": "internal/diff/quotedpath_test.go",
    "bytes": 10012,
-   "status": "unread"
+   "status": "read",
+   "observation": "Кавычки в путях; утверждение «a changed file must never be silently omitted» — их собственное правило, которое нарушает находка 5."
   },
   {
    "path": "internal/diff/relocate_across_files_test.go",
    "bytes": 4155,
-   "status": "unread"
+   "status": "read",
+   "observation": "Перенос замечания в другой файл только при единственном совпадении."
   },
   {
    "path": "internal/diff/relocation.go",
@@ -2530,17 +2543,20 @@
   {
    "path": "internal/diff/relocation_test.go",
    "bytes": 8410,
-   "status": "unread"
+   "status": "read",
+   "observation": "Перепривязка моделью: откат ExistingCode при неудаче, без сообщений — без запроса."
   },
   {
    "path": "internal/diff/resolver.go",
    "bytes": 8766,
-   "status": "unread"
+   "status": "read",
+   "observation": "Привязка замечания к строкам: новая сторона ханка → старая сторона (номера СТАРОГО файла, а публикация идёт на RIGHT — возможен не тот ряд; не проверено) → весь файл (первое совпадение, без требования единственности — в отличие от RelocateAcrossFiles, где неоднозначность = отказ)."
   },
   {
    "path": "internal/diff/resolver_test.go",
    "bytes": 25820,
-   "status": "unread"
+   "status": "read",
+   "observation": "Привязка к строкам: новая сторона раньше старой, «первое совпадение побеждает» закреплено тестом (FirstMatchWins)."
   },
   {
    "path": "internal/diff/workspace_file.go",
@@ -2551,7 +2567,8 @@
   {
    "path": "internal/diff/workspace_file_test.go",
    "bytes": 4903,
-   "status": "unread"
+   "status": "read",
+   "observation": "Защита чтения неотслеживаемых файлов: абсолютные пути, выход за корень, симлинки (читается путь цели, а не содержимое)."
   },
   {
    "path": "internal/gitcmd/runner.go",

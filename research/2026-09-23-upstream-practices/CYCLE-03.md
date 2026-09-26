@@ -147,6 +147,22 @@ selected.» (та же ветка `post-review-comments.js:297-304`, что в �
 
 Отличие от находок 1–3: здесь не «пропустили с пометкой skipped», а «изменений нет» — и в предпросмотре тоже.
 
+Их тесты это закрепляют, а не ловят: `internal/diff/gitignore_test.go` (`TestIsPathExcluded_AllowListGitignore`)
+на идиоме `github/gitignore` Go.AllowList (`*`, затем `!*.go`, `!go.mod`…) требует исключить
+`internal/testdata/fixture.yaml` — то есть в таких репозиториях правки `Dockerfile`, `Makefile`, YAML-конфигов,
+лежащих в git, для OCR не существуют. Ни один тест не различает «отслеживается git» и «не отслеживается». При этом их же правило сформулировано дословно в
+`internal/diff/quotedpath_test.go`: «a changed file must never be silently omitted» — и за ним история починок того
+же класса (пути в C-кавычках, имена с пробелами, сбой `git ls-files`, маркер `Binary files` в тексте, allow-list
+`.gitignore`, при котором «a review silently covered nothing»). Находка 5 — ещё один случай их собственного
+класса; для письма это лучшая опора.
+
+**Уточнение после чтения `git_test.go`: это задумано.** `TestGetDiffSetWalksChangesetOrderAcrossGitignoreDrop`
+прямо пишет «skip.log is tracked so git diff still emits it; partitionDiffs then drops it» и требует, чтобы
+отброшенный файл не был показан вовсе — в отличие от `vendor/`, который они показывают как `provider_directory`.
+Значит, подача для письма — не «у вас баг», а «вы уже показываете исключённое по каталогам с причиной; покажите
+так же отслеживаемые файлы, отброшенные по `.gitignore` (причина `gitignore`), и не пишите "No files changed",
+когда git видит изменения».
+
 ### Образец для AQK — учёт покрытия (`internal/session/manifest.go`, прочитан целиком)
 
 - знаменатель запечатывается до начала работы: после `SealSelected` добавить файл в «выбранные» нельзя;
