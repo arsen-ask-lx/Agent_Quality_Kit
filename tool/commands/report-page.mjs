@@ -8,7 +8,8 @@ import { basename, join } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
 import { renderReport, renderSummary } from "../lib/report-html.mjs";
 import { gatherState, portableSelf } from "./context.mjs";
-import { L } from "../i18n/index.mjs";
+import { L, LANG } from "../i18n/index.mjs";
+import { readCatalog } from "../lib/repo.mjs";
 
 async function readHistory() {
   const file = join(CWD, TARGET_DIR, "history.jsonl");
@@ -22,11 +23,19 @@ async function readHistory() {
 
 // Запись не роняет вызывающего: отчёт — побочный продукт прогона, и в каталоге, где `.aqk/` не
 // создать, прогон обязан отдать свой вердикт. Но молчать нельзя — сказано, что не записан.
+// Слова для чек-листов — намерения записей каталога на языке вывода: человек читает «ошибка не
+// глушится молча», а не `swallowed-error`. Своих проверок проекта в каталоге нет — остаётся имя.
+async function intents() {
+  try {
+    return Object.fromEntries((await readCatalog()).map((e) => [e.slug, (LANG === "en" && e.intent_en) || e.intent || ""]).filter(([, t]) => t));
+  } catch { return {}; }
+}
+
 async function writeHtmlReport() {
   const rel = join(TARGET_DIR, "report.html");
   try {
     const state = await gatherState();
-    const html = renderReport(state, await readHistory(), { T: L.html, C: L.context, self: portableSelf(SELF), name: basename(CWD) });
+    const html = renderReport(state, await readHistory(), { T: L.html, C: L.context, self: portableSelf(SELF), name: basename(CWD), intents: await intents() });
     await mkdir(join(CWD, TARGET_DIR), { recursive: true });
     await writeFile(join(CWD, rel), html, "utf8");
     console.log(c.dim(`  ${L.html.written(rel)}`));
@@ -44,7 +53,7 @@ async function writeStepSummary(env = process.env) {
   const file = env.GITHUB_STEP_SUMMARY;
   if (!file) return false;
   try {
-    const md = renderSummary(await gatherState(), await readHistory(), { T: L.html, C: L.context, self: portableSelf(SELF), name: basename(CWD) });
+    const md = renderSummary(await gatherState(), await readHistory(), { T: L.html, C: L.context, self: portableSelf(SELF), name: basename(CWD), intents: await intents() });
     await appendFile(file, md, "utf8");
     return true;
   } catch (e) {
