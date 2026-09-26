@@ -215,7 +215,8 @@
   {
    "path": "action.yml",
    "bytes": 55520,
-   "status": "unread"
+   "status": "read",
+   "observation": "Составное действие GitHub, прочитано целиком. База — доверенный checkout, голова PR только fetch; строгая проверка входов (таймаут, effort, бюджет, протокол — ошибка, а не подмена), кроме review_comment_batch_size (мусор → молча 50). Отпечаток настроек для чекпойнта по JSON-массиву, а не склейке строк. НАХОДКА: строка 433  + строка 432  → при неудаче общего предка ревью идёт по диапазону HEAD..HEAD, ocr отвечает status skipped exit 0 (проверено живым прогоном v1.12.9), а post-review-comments.js:297-299 публикует «✅ OpenCodeReview: Review skipped: no items were selected.»; задание зелёное при непросмотренном PR. Чекпойнт при этом не двигается (terminal_state не complete)."
   },
   {
    "path": "bin/ocr.js",
