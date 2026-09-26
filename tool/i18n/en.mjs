@@ -205,6 +205,10 @@ export const en = {
     whyMissing: "files from the header are missing",
     whyLevel: "the level was not reached",
     whyGates: (n, names) => `${n} red gate(s)${names ? ` (${names})` : ""}`,
+    stagedDiffers: (files) =>
+      `INDEX AND WORKING TREE DISAGREE: ${files.join(", ")}`,
+    stagedDiffersWhy:
+      "the gates looked at the working tree, but the index is what gets committed. This run said\n  nothing about that commit. Check what will land: git stash -k, then run again — or install the\n  hook through the pre-commit framework, which stashes unstaged changes itself.",
     thresholdPass: (min) => `Threshold AQK-${min} passed.`,
     thresholdFail: (min, now) => `Threshold AQK-${min} NOT passed: currently AQK-${now}.`,
     thresholdGateFail: (min, now, names) =>

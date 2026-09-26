@@ -13,7 +13,7 @@ import { reportBaseline, reportCatalog } from "./doctor-catalog.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree } from "../lib/run.mjs";
 import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
 
 // ПРОБА ЗАПУСКАЕТСЯ САМА, раз в сто коммитов, — кроме конвейера (там это минуты сюрпризом в
@@ -251,6 +251,21 @@ async function cmdDoctor() {
   if (askText) {
     for (const l of askText.split("\n")) console.log(c.dim(`  ${l}`));
     console.log("");
+  }
+
+  // ЧТО ИМЕННО ПРОВЕРИЛИ — до вердикта, а не после. Гейты читают рабочую копию; там, где индекс
+  // от неё отличается, в коммит уйдёт другое содержимое, и зелёный прогон про этот коммит не
+  // говорит ничего. Замер 2026-09-26: файл с печатью добавлен в индекс, в рабочей копии печать
+  // убрана — `doctor --run --min 1` дал exit 0, а `git diff --cached` показывал печать. Ронять
+  // тут нечего: частичная индексация — обычная работа, `git add -p` ровно за этим и существует.
+  // Фреймворк pre-commit стэшит неиндексированное сам, и проекту с ним ничего делать не надо;
+  // строка адресована прогону руками и простому хуку в `.git/hooks`.
+  if (wantRun) {
+    const diverged = stagedDiffersFromWorktree();
+    if (diverged.length) {
+      console.log(c.yellow(`  ${L.doctor.stagedDiffers(diverged.slice(0, 5))}`));
+      console.log(c.dim(`  ${L.doctor.stagedDiffersWhy}\n`));
+    }
   }
 
   // Код возврата — для конвейера. Порог задаётся так: aqk doctor --min 1

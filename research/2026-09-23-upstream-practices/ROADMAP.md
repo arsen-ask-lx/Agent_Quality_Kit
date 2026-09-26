@@ -66,6 +66,7 @@
 | B11 | [mattpocock/graph-docs-cli](https://github.com/mattpocock/graph-docs-cli) | 27 | в очереди; связность документации машиной |
 | B12 | [mattpocock/ai-hero-cli](https://github.com/mattpocock/ai-hero-cli) | 112 | в очереди; устройство CLI без зависимостей и его границы |
 | B13 | [aitmpl.com](https://aitmpl.com/) | не репозиторий | в очереди; каталог чужих шаблонов — сверить с нашим каталогом по намерению |
+| B14 | [docker/skills](https://github.com/docker/skills) | не снято | добавлен владельцем 2026-09-26; скиллы от Docker — смотреть на изолированный запуск проверок и на то, чем у них доказан результат |
 
 ### Группа C
 

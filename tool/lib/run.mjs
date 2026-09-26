@@ -402,6 +402,30 @@ function runIsStale(when) {
   return Number.isFinite(commit) && Number.isFinite(run) && run < commit;
 }
 
+// Файлы, у которых ИНДЕКС и рабочая копия расходятся. Гейты читают рабочую копию, а в коммит
+// уходит индекс: там, где они разные, вердикт прогона относится не к тому коду, который будет
+// зафиксирован. Тот же класс, что `runIsStale`, только по оси содержимого, а не времени.
+//
+// БЕРЁТСЯ ТОЛЬКО ОПАСНАЯ СТОРОНА. В `git status --porcelain` первый знак — индекс, второй —
+// рабочая копия. Нужны строки, где ОБА не пробел: файл и добавлен, и изменён после добавления.
+// Только неиндексированная правка (` M`) — не этот случай: она в коммит не уйдёт, и прогон тогда
+// СТРОЖЕ коммита, а не мягче. Пугать строгостью нельзя: строка, которая появляется всегда,
+// перестаёт читаться, и вместе с ней перестаёт читаться настоящая.
+//
+// Пути читаются с `-z`: имя с пробелом или кириллицей в обычном выводе неотличимо от двух имён.
+function stagedDiffersFromWorktree(cwd = CWD) {
+  const r = spawnSync("git", ["status", "--porcelain", "-z", "--untracked-files=no"],
+    { cwd, encoding: "utf8" });
+  if (r.status !== 0 || !r.stdout) return [];
+  const out = [];
+  for (const rec of r.stdout.split("\0")) {
+    if (rec.length < 4) continue;
+    const [x, y] = [rec[0], rec[1]];
+    if (x !== " " && x !== "?" && y !== " " && y !== "?") out.push(rec.slice(3));
+  }
+  return out;
+}
+
 // Прошлый прогон — из отчёта, который кладёт `doctor --run`. Отдельной функцией: его читают и
 // `context`, и `prompt`, и два разбора одного файла разошлись бы.
 async function readRun() {
@@ -412,4 +436,4 @@ async function readRun() {
   return run;
 }
 
-export { declaredGates, sinceRef, runGates, progress, selectGates, listArg, writeRunReport, parseLastRun, readRun };
+export { declaredGates, sinceRef, runGates, progress, selectGates, listArg, writeRunReport, parseLastRun, readRun, stagedDiffersFromWorktree };
