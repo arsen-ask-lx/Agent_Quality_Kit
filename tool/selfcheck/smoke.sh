@@ -1317,7 +1317,7 @@ VERS_BAD=""
 # отставание на два и на три выпуска. Проверка его не смотрела, и русский читатель ставил
 # прошлогодний комплект молча. Ровно та же дыра, ради которой проверку и заводили, — просто
 # в файле, который забыли перечислить.
-for VF in README.md README.ru.md llms.txt; do
+for VF in README.md README.ru.md docs/guide.md docs/guide.ru.md llms.txt; do
   [ -f "$ROOT/$VF" ] || continue
   # Берём только версии AQK — «v1.2.3» в примерах чужих действий (actions/checkout@v4) не наши.
   for V in $(grep -oE '(rev:[[:space:]]*|Agent_Quality_Kit@)v[0-9]+\.[0-9]+\.[0-9]+' "$ROOT/$VF" \

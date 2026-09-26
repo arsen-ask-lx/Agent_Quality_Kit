@@ -1,0 +1,703 @@
+# AQK — the full guide
+
+**English** · [Русский](guide.ru.md) · short version: [README](../README.md)
+
+[![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
+[![checks](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![MIT licence](https://img.shields.io/npm/l/agent-quality-kit)](../LICENSE)
+
+**A check that cannot fail looks exactly like a check that passes.**
+
+`|| true`, `continue-on-error: true`, a linter pointed at an empty directory, a test with no
+assertion, a hook nobody ever installed, a command your `AGENTS.md` names that no longer exists —
+every one of them prints a green tick. AQK plants a known defect into a **copy** of your code,
+runs the checks your repository **declares**, and says which of them noticed and which stayed
+silent.
+
+It never reads "nothing printed" as "nothing wrong". Three outcomes, never two:
+
+| `✔` | `✘` | `?` |
+|---|---|---|
+| ran and found nothing | a finding about the code | **the check itself failed** — fix the tooling, not the file it named while dying |
+
+The third one is the whole point. Counting it as either of the other two is how a repository ends
+up protected by checks that cannot go red.
+
+```bash
+npx agent-quality-kit doctor    # code already exists: what it declares, what nothing is watching
+npx agent-quality-kit start     # no code yet: day-zero guards, right away
+```
+
+Here is the first run on a repository whose pipeline is green and whose checks cannot go red.
+Nothing declared, nothing installed, no config written — it read the project's own `package.json`:
+
+```text
+Checks you ALREADY have (3) — found in your own files, not invented:
+✘  test         npm test   ← package.json
+   cannot fail: the verdict is swallowed right in the script — «|| true»
+✔  lint         npm run lint   ← package.json
+✘  typecheck    npm run typecheck   ← package.json
+   proves nothing: the whole script is a printout — «echo 'todo: turn this on'»
+
+2 of them cannot go red. Declaring a check that cannot fail only makes the silence
+machine-readable — fix the command first, then declare it.
+```
+
+`doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
+you have decided nothing about yet. Nothing to install: `npx` fetches the package — **≈0.8 MB**,
+a number a machine re-checks on every run rather than our memory.
+
+For Claude Code there is a plugin: the repository's real state reaches the agent's context before
+its first action, plus two skills — whether the declared checks can actually fail, and what to fix
+first. Installable from our own marketplace, with nobody's approval to wait for:
+
+```bash
+/plugin marketplace add arsen-ask-lx/Agent_Quality_Kit
+/plugin install aqk@agent-quality-kit
+```
+
+The one exception, named here because it is the only one: with `--brief` (how the hooks run it)
+`doctor` asks the npm registry for its own latest version — **at most once a day, never in CI**,
+with a 3-second timeout, silent on any failure, and never affecting the exit code. Turn it off
+with `AQK_UPDATE=0`. There is no auto-update: a tool that silently replaces itself while
+standing on the commit gate is exactly the door this kit teaches you to close.
+
+### Works with any agent, any language
+
+**Any agent.** Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Windsurf, Aider, OpenCode
+— and with no AI at all. AQK reads and writes plain files (`AGENTS.md`, `.aqk.yml`); it calls no
+vendor API, needs no key, and is tied to no model. A promise only one tool can keep is not a
+promise.
+
+**Any language.** The portable checks are plain `sh` and work on any stack — Python, TypeScript,
+Go, Rust, Java, Ruby, PHP, C#, Kotlin, Swift, Scala. Where the project already has a native tool
+(`ruff`, `eslint`, `knip`, `jscpd`), the check uses it instead, because it is more precise — and
+says so out loud when it falls back.
+
+**Requirements:** Node 18+ and an `sh` shell. Present on macOS, Linux and WSL; Git Bash on Windows.
+On Windows the gates run through Git Bash even when `bash` on your PATH is the WSL stub in
+`System32` — it is found next to `git.exe`; set `AQK_BASH` to point elsewhere.
+
+### One movement, and everything follows from it
+
+```mermaid
+flowchart LR
+    A["<b>AGENTS.md</b><br/>“never commit secrets”<br/><br/><i>a human reads it<br/>and may ignore it</i>"]
+    B["<b>.aqk.yml</b><br/>secrets-not-in-code:<br/>bash gates/…/check.sh<br/><br/><i>a machine holds it<br/>and cannot forget</i>"]
+    C["<b>exit code</b><br/>0 or 1<br/><br/><i>CI acts on it<br/>and cannot argue</i>"]
+    A -- "declare" --> B
+    B -- "run" --> C
+```
+
+A promise the project makes turns into a command with an exit code. From then on a machine holds
+it, not somebody's attention.
+
+What a project needs before that is even possible, in plain words, independent of language and
+tooling: [the dark factory and the minimum that isn't optional](../kit/docs/ai/project-baseline.md).
+
+```
+ █████╗   ██████╗ ██╗  ██╗
+██╔══██╗ ██╔═══██╗██║ ██╔╝
+███████║ ██║   ██║█████╔╝
+██╔══██║ ██║▄▄ ██║██╔═██╗
+██║  ██║ ╚██████╔╝██║  ██╗
+╚═╝  ╚═╝  ╚══▀▀═╝ ╚═╝  ╚═╝
+   a promise without an exit code is just a sentence
+```
+
+## Every command
+
+```
+aqk doctor              what this repository is at, and what is missing
+aqk doctor --run        run every gate the manifest declares
+aqk doctor --run --since main    only what the diff introduced
+aqk doctor --run --min 1         fail a pipeline below a level
+aqk doctor --baseline   the minimum a project needs, confirmed by a run
+
+aqk init                lay the kit into an existing repository
+aqk start               start a new project from the kit
+aqk add <name>          install one guard from the catalogue
+aqk new <name>          scaffold a guard of your own
+aqk find <text>         find a guard by intent
+aqk why <name>          what failure this guard was written for
+
+aqk prove               run every declared gate against its own samples:
+                        red on the red one, quiet on the green one
+aqk probe               what the declared checks CANNOT see: plant a defect
+                        into files the fix history calls hot
+aqk report              the report form, assembled by a run
+aqk report --since main  ...plus what proves this diff, file by file
+aqk badge               write the level badge into the README
+aqk badge --check       fail if the badge disagrees with a run
+
+aqk context             the repository state in one block, for an agent's context:
+                        level, what is red now, rules nobody enforces, ratchets,
+                        the next three steps with commands, and when to run what
+aqk prompt              one task to paste into an agent: what to fix, in order, and the
+                        command that proves each item done
+aqk vitals              is what the kit runs on wired up: gate tools, hooks, freshness
+aqk feedback            feedback to the author: a report from the last run and probe,
+                        plus a prefilled link. No paths, no code; nothing is sent for you
+aqk feedback --send     send it in one command — with your own gh account, as a comment
+                        in an open discussion. Without the flag nothing ever leaves
+aqk doctor --run --brief  one line on success, the whole run on failure — for hooks
+aqk context --full      the same plus the command map and the rulebook verbatim (~7000
+                        tokens against ~500: the price of an agent that does not guess)
+aqk context --install   put a SessionStart hook into .claude/settings.json
+                        (add --full to install the full block)
+
+aqk learn               rule candidates from local transcripts: said out loud, never
+                        written down — and what you had to repeat ("I told you",
+                        "again"), first of all a written rule the agent still breaks
+aqk note "..."          write a bruise into the journal
+aqk ratchet <name>      a debt registry for a declared gate: may only get shorter
+aqk blob                every guide as a single file
+```
+
+Exit codes: `0` pass, `1` below the level or a gate failed. Two exceptions, both deliberate:
+`learn` never fails a build — it reads transcripts and prints to the terminal only, writing
+nothing. And `--baseline` is an inspection, not a run: it always exits `0`, so combining it with
+`--run` or `--min` is refused outright rather than handing you a pipeline that cannot go red.
+
+## What this looks like
+
+Someone else's project, three files, nothing configured:
+
+```console
+$ npx agent-quality-kit start        # installs the guards and declares them in the manifest
+$ npx agent-quality-kit doctor --run # runs them
+
+  ✘  secrets-not-in-code   exit 1
+        ./src/api/mailer.py:1:API_KEY = "sk_live_51Hxx…"
+          fix: take the value out of the file, put it in an environment variable
+          and revoke the old key. it cannot be scrubbed from history any more.
+  ✘  swallowed-error       exit 1
+        ./src/api/mailer.py:7: caught and dropped — except Exception:
+          fix: either handle it and log it, or re-raise.
+  ✘  no-print-in-prod      exit 1
+        ./src/web/app.js:3:  console.log("debug", x);
+        ./src/api/mailer.py:8:    print("sent", to)
+  ✘  todo-without-task     exit 1
+        ./src/web/app.js:1:// TODO: rewrite this
+  ✔  file-size-limit · deps-are-pinned · complexity-limit
+```
+
+The failure text is written for an agent: it says **what exactly to do**. The exit code is for
+your pipeline. Not one finding inside the kit's own samples: the native tool runs through the
+same filter as the portable check.
+
+**Requirements.** Node 18+ and an `sh` shell — present on macOS, Linux and WSL; Git Bash works on
+Windows. The portable checks are written in `sh` on purpose: it exists everywhere code is built.
+
+**Tool-agnostic:** Claude Code, Codex, Cursor — and without AI at all.
+
+The first time you run `init`/`start` on a machine, it prints a link to star the repo and to open
+an issue, once. Nothing is posted anywhere — it is text for a human, and it never repeats.
+
+**Off-the-shelf rules are optional and installed separately.** The portable check always works
+without them; if the project already has `ruff`, `eslint` or `vulture`, the entry will use the
+native rule instead — it is more precise. One entry, `dead-code`, does not work at all without a
+real tool and honestly hides itself: you cannot build a call graph with a text search.
+
+## What this is not
+
+| Looks like | The difference |
+|---|---|
+| **a linter** (`ruff`, `eslint`) | AQK does not replace them, it **uses** them: if the tool is on the system, the entry takes its rule — it is more precise. A linter answers "this code is clean"; AQK answers "in this repository, this particular promise is held by a machine, and here is the proof" |
+| **`pre-commit` and hooks** | they run checks. AQK answers a different question: which checks exist here at all, whether they work, and what this project has already been burned by — machine-readably, for an agent, a pipeline and a newcomer |
+| **a checklist or an awesome list** | an entry is accepted only if it names a **real failure** it caught, and its arbiter goes red on the red sample and stays quiet on the green one. A machine checks that, not a reviewer |
+| **a repository scorecard** (compliance badges) | they measure maturity and hand out a grade. The AQK level measures how **machine-readable** your practice is, and says outright that it is not a verdict on the project: a hundred working checks with no manifest is AQK-0 |
+
+In one sentence: **a promise the project makes turns into a command with an exit code, and from
+then on a machine holds it, not somebody's attention.**
+
+## How it works
+
+The whole standard is one `.aqk.yml` file in the repository root:
+
+```yaml
+aqk: 1
+entry:  [AGENTS.md]        # what the agent reads first
+rules:  .aqk/rules         # where the standards live
+docs:   .aqk/docs          # where the guides live (optional; this is the default)
+lang:   en                 # output language; without it — the language of AGENTS.md/README
+gates:                     # what must pass — as commands, not as prose
+  lint: "npm run lint"
+  secrets-not-in-code: "bash gates/secrets-not-in-code/check.sh ."
+covers:                    # what a declared gate already holds — not counted as debt
+  lint: [no-print-in-prod, swallowed-error]
+requires:                  # what a gate runs on, when the command does not show it
+  secrets-not-in-code: gitleaks
+samples:  gates            # a red and a green sample for every entry
+ratchets: ratchets         # debt registries: the list may only get shorter
+probe: 100                 # run the probe itself every N commits; 0 turns it off
+lessons:  incidents        # where lessons accumulate
+```
+
+An empty field is not a placeholder — it is an honest "this level is not reached". `init` writes
+them empty, and they fill in as there becomes something real to put in them.
+
+**If a claim cannot be checked by a machine, it is not in this standard.** Otherwise the badge
+would mean trust in the author rather than a fact.
+
+### The minimum a project needs
+
+```bash
+aqk doctor --baseline   # ✔/✘ over the points a machine can confirm
+```
+
+The guide [project-baseline.md](../kit/docs/ai/project-baseline.md) lists 50 points a project needs
+before the work can be handed to agents. Fourteen of them a machine can confirm from the
+repository — a lockfile of any ecosystem, a linter config of any language, an error tracker in
+the dependencies, a pipeline, tests. It says what proved each one. The remaining 36 are named as
+a number rather than hidden: they are for your eyes.
+
+Presence is what gets checked, not whether it works: "a linter is configured" and "a linter
+catches things" are different claims, and the output says so out loud.
+
+## Four levels
+
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
+
+**A level measures equipment, not quality.** It says which guards a repository has and has proven
+on samples — not that the code is good, and not that the guards caught anything in *your* files.
+That is what `probe` is for, and `doctor` prints what the level does **not** prove right under it.
+The badge above is this repository's own, kept honest by `aqk badge --check` in its pipeline.
+
+| Level | Required | What it proves |
+|---|---|---|
+| **AQK-0** | a manifest and an entry point | the tooling knows what to read |
+| **AQK-1** | rules exist, gates declared as commands | the checks are executable |
+| **AQK-2** | gates have red and green samples, debt under a ratchet | the gate catches defects and stays quiet on correct code |
+| **AQK-3** | a lesson journal with conclusions | the same bruise is not collected twice |
+
+```mermaid
+flowchart LR
+    L0["<b>AQK-0</b><br/>a manifest<br/>and an entry point"]
+    L1["<b>AQK-1</b><br/>rules exist,<br/>gates are commands"]
+    L2["<b>AQK-2</b><br/>red and green samples,<br/>debt under a ratchet"]
+    L3["<b>AQK-3</b><br/>a lesson journal<br/>with conclusions"]
+    L0 --> L1 --> L2 --> L3
+```
+
+A level is not a verdict on the project — it measures how **machine-readable** the practice is.
+A hundred working checks with no manifest is AQK-0, and that is honest: nothing can read them.
+
+```bash
+aqk doctor --run --min 1   # in CI: fails below AQK-1 OR if any gate failed
+```
+
+### How a gate is proven — what `prove` actually does
+
+Level AQK-2 and the badge rest on one command, so here it is in full: the first outside user
+tripped over it three times, and all three times this page was to blame.
+
+```bash
+aqk prove
+```
+
+For every gate in `gates:` its samples are taken — `<samples>/<name>/red` and `/green` — and the
+gate is run against each. **The directory is substituted for the LAST word of the command:**
+catalogue recipes are written as `… {dir}`, and on install `{dir}` becomes `.`. Wrappers are
+stripped first: `ratchet.sh` (otherwise the debt registry is rewritten with findings from the
+sample) and `_native.sh` (otherwise the filter hides exactly what the sample must show).
+
+Each entry gets one of three verdicts:
+
+| Verdict | What it means |
+|---|---|
+| **proven** | exit ≠ 0 on `red/` and exit 0 on `green/` |
+| **does not catch** | stayed quiet on the red one, or went red on the green one |
+| **nothing to prove with** | four different reasons, and each is named out loud |
+
+The four reasons: no samples · samples written for another recipe (`samples_for`) while a
+different one is installed · the command does not end in a directory, so it was written by hand
+and there is nowhere to substitute · **the program named in `requires:` is not on the machine.**
+
+That last reason was added 2026-09-09 and deserves a word. A portable recipe is sometimes a
+wrapper around a ready-made tool: the first word of the command is then `bash`, and nothing in it
+shows what is missing. Without the program the wrapper goes red on **both** samples — and `prove`
+declared a working gate broken, taking a level away from a project because somebody else's tool
+was not installed. An accusation instead of a diagnosis; the same class as the Windows paths.
+
+The level is granted when **no provable gate is broken AND at least one is proven**. The second
+condition is not optional: a project where everything is unprovable has proven nothing — that is
+exactly what the forgery with three `true` gates looks like.
+
+### What your checks cannot see — `probe`
+
+`doctor` says "held by a machine 21". **Twenty-one out of what?** There is no denominator: 21 is
+what we happened to write into the catalogue, not what matters in your project. `prove` shows a
+gate catches a defect **on its own** sample. Neither answers the owner's question: what here is
+covered by nothing.
+
+```bash
+aqk probe
+```
+
+Two sources, both facts rather than our taste: **your repository's history** (where defects come
+back — fix commits) and the **red samples of the catalogue** (each one proven by a run). The
+sample is placed in a temporary directory at the hot file's path, and **your declared** gates are
+run against it.
+
+```
+src/mailer.py  fixes in history: 3
+  ✘  keys and passwords do not end up in the code   NOTHING CATCHES IT
+       close it: aqk add secrets-not-in-code
+  ✘  an error is not silently swallowed             NOTHING CATCHES IT
+       close it: aqk add swallowed-error
+  ✔  no "fix later" markers in finished code        caught by: todo-without-task
+```
+
+**Coverage is not declared, it is proven by planting.** This is the kit's own principle turned on
+the whole repository: a check that cannot go red is indistinguishable from an absent one. We
+demand that of every catalogue entry — and until `probe` never demanded it of a project.
+
+The measurement the command grew from, taken on the kit itself: a real source file, a swallowed
+error and a debug print planted into a copy, 21 declared gates. **Red: none.**
+
+Three states, and they do not merge: caught · **nothing catches it** · nothing to check with (the
+gate did not run, or the catalogue has no sample for that extension). The working tree is not
+touched and the exit code is always 0 — this is a look, not a threshold.
+
+**The command does not need to be remembered — that is half the design.** Once every hundred
+commits — or whatever `probe:` in the manifest says, `0` turning it off — `doctor --run` runs the
+probe **itself**, unprompted. A command you have to remember is
+the same class as a file you can fail to read: the agent will not recall it, and the human will
+never learn it exists. The unit is commits, not days: a repository nobody touched for a month
+needs no re-probe, a hundred commits in a day does. Turn it off with `AQK_PROBE=0`.
+
+The result also lands in the state block the agent reads by construction, without knowing the
+command. If no probe has ever run, it says **UNKNOWN** rather than staying silent: silence would
+read as "everything is covered".
+
+Your code is not touched — the sample lives in a temporary directory. The probe's own mark goes
+to `.aqk/last-probe.md`, next to the run report; it is ephemeral, keep it in your `.gitignore`.
+
+## The badge
+
+```bash
+aqk badge          # runs the declared gates, prints the markdown — only if every one is green
+aqk badge --check  # in CI: exit 1 the day the badge in your README stops matching the run
+```
+
+A badge nobody re-computes is a claim, not a fact — which is the very thing this project
+replaces. So `aqk badge` prints nothing over a red gate, and `aqk badge --check` fails your
+pipeline on the day the README and the repository part ways. The badge at the top of this file
+is checked that way on every push.
+
+## As a pre-commit hook
+
+Already using [pre-commit](https://pre-commit.com)? Three lines in the file you already have:
+
+```yaml
+repos:
+  - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
+    rev: v0.18.0
+    hooks:
+      - id: aqk            # runs what the repository declares; blocks below AQK-1
+      # - id: aqk-doctor   # read-only: the level and what is missing, blocks nothing
+      # - id: aqk-baseline # the minimum a project needs, confirmed by a run
+```
+
+`pre-commit` installs the package itself — there is nothing else to set up, and the package has
+no dependencies.
+
+**This does not replace pre-commit, it sits on top of it.** pre-commit runs checks; it says
+nothing about *which* checks exist here, whether they work, and what this project has already
+been burned by. Its own documentation is explicit about both gaps: no built-in compliance levels,
+scoring or reporting — and it does not verify that a hook catches what it claims. That is the
+layer AQK adds.
+
+## In your pipeline
+
+[![on the GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Agent%20Quality%20Kit-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
+
+```yaml
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.18.0
+  with:
+    min: 1   # the build fails below AQK-1, or if any declared gate failed
+```
+
+The action is a thin wrapper around one command and holds no logic of its own — without it,
+the same thing in a single line:
+
+```yaml
+- run: npx agent-quality-kit doctor --run --min 1
+```
+
+**Findings show up in the pull request itself.** Inside GitHub Actions a failed gate's finding
+that names a file — `src/a.py:12: …` — becomes a red annotation on that line of the diff, with the
+gate's "fix:" advice attached; an advisory gate gives a yellow one. At most ten of each per run
+(the limit GitHub is reported to take per step); the rest are counted in the log. The verdict
+does not change — annotations print what the run already decided.
+
+**A report for a human, on the run page.** Inside GitHub Actions `doctor --run` appends a job
+summary by itself: what is protected, whether the protection catches defects, what failed and
+what to hand the agent. It needs no permissions. The full page with charts is `.aqk/report.html`;
+to download it from the run, keep it as an artifact:
+
+```yaml
+- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # upload-artifact 7.0.1
+  if: always()
+  with: { name: aqk-report, path: .aqk/report.html }
+```
+
+## Without Node at all
+
+A Python, Go or Rust project where nobody installed Node and nobody will:
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/arsen-ask-lx/aqk doctor
+```
+
+The image is pushed to the registry by the same run, from the same tag, that publishes the
+package — there is nothing to build. You can still build it yourself: `docker build -t aqk .`
+from this repository.
+
+**The `--user` flag is not decoration.** Without it the container runs as root and the files
+`init` writes end up owned by root — you cannot edit your own manifest. Measured 2026-09-09:
+`.aqk.yml` and `AGENTS.md` came out `root:root`.
+
+Debian-slim on purpose, not alpine: the gates are `sh`, `grep`, `awk`, `find`, and in alpine
+those are busybox, whose `awk` differs. An image where the gates behave differently from the
+machine the person is on is worse than no image: it hands out a green that means nothing.
+
+## Installing a gate
+
+```bash
+aqk find "print statements in production"   # is there already such a gate — matched by intent
+aqk doctor                                  # what applies to this repository and what is missing
+aqk add secrets-not-in-code                 # copies the check and its samples in, declares it
+aqk doctor --run                            # runs the declared gates and shows the result
+aqk doctor --run --since main               # ... but only what the diff introduced
+aqk ratchet no-print-in-prod                # existing violations become debt, new ones are blocked
+```
+
+### The first run on a real project
+
+An established repository carries years of debt. Run every gate over all of it and you get a wall
+of red that nobody reads — so the tool gets switched off. `--since <ref>` narrows the output to
+files the diff touched:
+
+```bash
+aqk doctor --run --since main    # only what this branch introduced
+```
+
+Four outcomes, all of them said out loud. Findings inside the diff — red, as usual. Findings only
+outside it — green, with the number that was hidden, never a silent "all clear". A gate whose
+output carries no paths at all (a commit-message check, a CI-config check) **cannot** be narrowed:
+it stays red, and says why. And a gate that **could not run at all** — no tool, an unexpected exit
+code, killed by a signal — is never narrowed by the diff: a failure has no place in the code, only
+itself. Calling either of the last two green because there was nothing to narrow would be exactly
+the silence this tool exists to remove.
+
+### The only payment: one answer
+
+The kit is free and collects nothing about you: it makes exactly one outgoing request — asking the
+npm registry whether a newer version exists. The payment is different: **one answer to the author**.
+So once per project, and only when there is something to tell, `doctor` or the agent block prints a
+line like "AQK could not check `smoke`; that is the most valuable thing to tell the author". Then:
+
+```bash
+aqk feedback     # builds the message and hands you a prefilled link — you send it, not us
+```
+
+The message carries: version, level, stack, what went red, what the kit could not check, which
+defect classes nobody catches here. **No paths, no code, no repository name** — you see every
+character you send. No GitHub? Forward the text as is. Not interested at all? `AQK_FEEDBACK=0`.
+
+Somewhere to say it in your own words:
+[where the kit was wrong](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/90) ·
+[what check is missing](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/91) ·
+[show your manifest](https://github.com/arsen-ask-lx/Agent_Quality_Kit/discussions/92).
+
+Every `doctor --run` rewrites `.aqk/last-run.md` — a short report of what actually ran and how
+long it took. The list of gates in the manifest says nothing about how many of them are alive
+right now; the report does. The file is ephemeral — keep it in your own `.gitignore`.
+
+### Introducing a rule into a live project
+
+Three ways, and each has a price. A big clean-up is put off forever because it is big. The
+ratchet turns existing violations into debt and blocks new ones — right once the rule is agreed.
+And while it is still being argued about, an advisory gate shows findings without failing the run:
+
+```yaml
+advisory:
+  - complexity-limit
+```
+
+Declared in the manifest, not passed as a flag. A flag that says "fail nothing" downgrades every
+check at once, is invisible in the diff, and is never named in the summary — that is
+`continue-on-error`, which this tool marks red elsewhere.
+
+**An advisory gate is marked on EVERY run, including when it is green:**
+
+```
+✔  complexity-limit  (advisory — cannot fail the run)  0.4s · …
+```
+
+Otherwise a gate that cannot fail the build looks exactly like one that can, and you learn what
+is in `advisory:` only on the day it goes red. Red ones are additionally named by name in the
+summary: an advisory gate everyone forgot about is a switched-off check.
+
+**A gate that needs a live stack** (a cost check against a seeded database, e2e) goes into a group,
+and a fast run skips the group:
+
+```yaml
+groups:
+  stack: [cost, e2e]
+```
+
+```bash
+aqk doctor --run --skip stack     # everything except the stack
+aqk doctor --run --only stack     # only the stack, on the stand
+```
+
+Skipped gates are named in the output and written to the run report as "not run" — not as green.
+An unknown name after `--skip` is a refusal: a typo must not quietly mean "skipped nothing".
+
+**Independent gates can run in parallel:** `aqk doctor --run --jobs 4`. Off by default, on
+purpose: two gates writing into the same folder (`npm run build` twice into `dist/`) would fail
+at random when run together, and a flaky red is worse than a slow one. Output keeps the declared
+order. On this repository, 30 gates: about 110 s one by one, 68 s with `--jobs 3`.
+
+**Output is short by default.** A passed gate, an entry the machine already holds and an entry that
+does not apply fold into one counted line each; a failed gate, an advisory one, advice and "what to
+add" always print in full. `aqk doctor --verbose` lists everything by name; in a pipeline whose log
+is read later, set `AQK_VERBOSE=1`.
+
+## When a bug slips past the guards
+
+```bash
+aqk why "a file grew to nine thousand lines"
+```
+
+The answer is one of three, and it is chosen by an actual run rather than by memory: **there was
+no guard** · **the guard exists but does not see this failure** · **the guard exists and catches
+it — so it was bypassed**. The difference decides what to fix: the check itself, or its place in
+the pipeline. Without a run those two are indistinguishable, and people usually fix the wrong
+one. On an uncertain match the command asks instead of choosing for you.
+
+**The ratchet** is for introducing a rule into a project whose existing code violates it. The
+violations are captured into a registry; the gate lets that list get **shorter** and refuses to
+let it grow. The rule applies from the day it is installed — the old code stays untouched.
+
+`add` **copies the check into your repository** rather than referencing the package: installed
+via `npx` the package is temporary, and tomorrow the command in your manifest would point at
+nothing.
+
+## Third-party code inside the repository
+
+A reference copy, vendored code, generated clients — code that lives here but was not written
+here. The scanning checks will skip it if you add `.aqkignore` in the root: one pattern per line,
+`#` starts a comment, and `*` does not cross `/`.
+
+```
+# brought in from another repository
+third-party/
+vendor/
+*.generated.js
+```
+
+`aqk report` prints the contents of this file as its own section. Hiding things silently is the
+same class as a silent gate: a line here means there is no protection along that path, and will
+not be.
+
+## The catalogue of promises
+
+`doctor` inspects the repository — languages, existing gates — and shows **only what applies**:
+what a machine already holds, what applies but is not installed, and what is hidden and why. The
+catalogue may grow to hundreds of entries; a given project still sees about a dozen.
+
+An entry is accepted only if its arbiter goes red on the red sample, stays quiet on the green
+one, and names a real failure it caught. A machine checks this: `bash tool/selfcheck/gates.sh`.
+
+### Five entries that watch the agent, not the code
+
+Ruff, ESLint and gitleaks already find bad code, and AQK calls them where it can rather than
+reinventing them. These five look elsewhere — at the moment the **signal** about bad code is
+switched off, which is what a coding agent does when the task is phrased as "make it pass":
+
+| Entry | What it catches |
+|---|---|
+| `gate-not-weakened` | the fix was a suppression, not a fix: bare `# noqa`, `eslint-disable` with no rule named, `@ts-ignore`, `--no-verify` |
+| `ci-actually-fails` | a pipeline step or git hook that renders a verdict but cannot fail — `run: pytest \|\| true`, `continue-on-error: true`, `pytest \| tee` without `pipefail`, `lint-staged \|\| true` in a husky hook |
+| `test-has-assertion` | a test that cannot fail: empty body, `assert True`, a skip with no reason given |
+| `promise-has-gate` | a rule in `AGENTS.md` with no enforcer named — neither a gate nor, honestly, a human |
+| `protection-not-removed` | **the instrument itself was switched off**: a gate vanished from the manifest. The declared set may only grow; removing one is allowed, but must be named |
+
+The fifth was added later, and from a bruise of our own. The first four catch the agent switching
+off a **signal**. The master switch — the manifest itself — was guarded by nothing: a measurement
+on 2026-09-09 showed that deleting one line from `.aqk.yml` turns the run green while a real
+secret sits in the code, and neither `doctor`, `report --since`, `vitals` nor the state block the
+agent reads noticed anything.
+
+The first four were measured on nineteen third-party repositories (~25 000 files) before entering the
+catalogue, and two further entries were **cancelled by that measurement**: one because
+[`agents-lint`](https://github.com/giacomo/agents-lint) already does it better, one because
+91 of its 120 findings turned out to be a legitimate pattern.
+
+## The guides as a single file
+
+```bash
+aqk blob     # assembles GOD_AI.md out of kit/docs — to hand the guides to a chat in one go
+```
+
+The file is **assembled, not stored**: edit the originals. A hand-edited copy drifts from its
+source within a week, and then nobody knows which one is real.
+
+A single gate is waited on for **five minutes**; past that it is "could not check", not
+"clean". Change it with `AQK_GATE_TIMEOUT` (seconds): `AQK_GATE_TIMEOUT=900 aqk doctor --run`.
+The default is not arbitrary — SonarQube waits exactly as long for its quality gate. There is
+deliberately no per-gate `timeout` field in the manifest: neither pre-commit nor lefthook has
+one, and a long check is more honestly declared as a separate command than allowed to hang.
+
+## Contributing a gate
+
+The catalogue lives on other people's bruises. The procedure and the bar are in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md): check for duplicates with `aqk find`, scaffold with
+`aqk new`, add two samples, fill in four fields, run the machine. The filtering is done by
+`tool/selfcheck/gates.sh`, not by a reviewer.
+
+## The bruise journal
+
+```bash
+aqk note "the gate went red on correct code"   # an entry without a conclusion is rejected
+```
+
+## Honestly, where this stands
+
+The full brief is in [`PROJECT.md`](../PROJECT.md) (in Russian): what is being built, the four
+scenarios, the success criterion, and what is left.
+
+Version 1, one author. The kit holds **AQK-3** on itself: everything declared is executed by CI
+on every push, two debt registries under a ratchet — `node tool/program.mjs doctor --run --min 1`.
+
+**The first outside user arrived on 2026-09-08** — ran the kit on their own project (28 gates,
+AQK-1) and sent back a review. That review found two defects ninety-odd checks of our own had
+missed: both live only on Windows, or only on somebody else's directory layout (bruise journal,
+entry of 2026-09-08). That is exactly what an outsider is for — but it is one review, not settled
+use. Until somebody comes back to the tool a second time, the standard is unproven on foreign
+projects.
+
+**A standard cannot be shipped first.** A specification ahead of practice is the thirty-first
+abandoned repository with a manifest and zero users. The order is the other way round:
+
+| # | Step | State |
+|---|---|---|
+| 1 | live by this on our own projects | ⬜ measured: three of our own projects have no manifest |
+| 2 | `doctor` computes the level | ✅ done |
+| 3 | what settled is written up as a short spec | ✅ [`SPEC.md`](../SPEC.md) |
+| 4 | a third project — **someone else's** | 🟡 one outside run and review, 2026-09-08; no repeat use yet |
+| 5 | badge, site, talking to people | ❌ only after step four |
+
+## The work queue
+
+Lives in one place — [`PROJECT.md` §9](../PROJECT.md). It is not repeated here: two lists drift
+apart within a month, and then nobody knows which is real.
+
+What is missing: a user who came back a second time; per-command coverage of the commands that
+write to disk (they are exercised by a clean-folder run, but not individually).
+
+MIT.

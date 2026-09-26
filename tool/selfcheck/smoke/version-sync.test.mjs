@@ -30,6 +30,10 @@ const VERSION = JSON.parse(read("package.json")).version;
 const PLACES = [
   { file: "README.md", why: "закрепление pre-commit и действия в примере установки" },
   { file: "README.ru.md", why: "то же по-русски" },
+  // Полное руководство вынесено из README 2026-09-26 целиком, вместе с примерами установки:
+  // файл, который перестали перечислять здесь, — ровно та дыра, из-за которой проверку завели.
+  { file: "docs/guide.md", why: "полное руководство: те же примеры установки" },
+  { file: "docs/guide.ru.md", why: "то же по-русски" },
   { file: "llms.txt", why: "выжимка для агента: `uses: …@vX.Y.Z`" },
 ];
 
@@ -86,7 +90,8 @@ test("обещанный в README размер пакета совпадает 
     { cwd: ROOT, encoding: "utf8", shell: win });
   const bytes = JSON.parse(out)[0].size;
   const real = (Math.round(bytes / 1024 / 1024 * 10) / 10).toFixed(1);
-  for (const [file, re] of [["README.md", /≈([\d.]+) MB/], ["README.ru.md", /≈([\d,]+) МБ/]]) {
+  for (const [file, re] of [["README.md", /≈([\d.]+) MB/], ["README.ru.md", /≈([\d,]+) МБ/],
+    ["docs/guide.md", /≈([\d.]+) MB/], ["docs/guide.ru.md", /≈([\d,]+) МБ/]]) {
     const m = re.exec(read(file));
     assert.ok(m, `в ${file} нет обещания размера пакета — строка «≈… МБ» пропала`);
     const said = m[1].replace(",", ".");
