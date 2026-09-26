@@ -17,13 +17,14 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", 
 const rich = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 
 const fullRuns = (history) => history.filter((h) => h && !h.partial);
-// Время прогона — по часам машины, где собран отчёт, и одним способом везде: в шапке стояло время
-// по Гринвичу, а в сетке — местное, и один прогон читался как два разных (найдено глазами 2026-09-26).
+// Время — местное: в истории оно по Гринвичу (так сравнимо между машинами), а человек читает
+// по своим часам. «13:47» там, где у него было 18:47, выглядит как чужой прогон.
+const p2 = (n) => String(n).padStart(2, "0");
 const local = (at) => {
   const d = new Date(at);
-  if (Number.isNaN(d.getTime())) return { day: "", hm: "" };
-  const p = (n) => String(n).padStart(2, "0");
-  return { day: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`, hm: `${p(d.getHours())}:${p(d.getMinutes())}` };
+  if (Number.isNaN(d.getTime())) return { day: "", full: "" };
+  const day = `${p2(d.getDate())}.${p2(d.getMonth() + 1)}`;
+  return { day, full: `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}` };
 };
 const count = (h, st) => Object.values(h?.gates || {}).filter((v) => v === st).length;
 
@@ -47,43 +48,37 @@ function compare(history) {
   };
 }
 
-// СЕТКА «ПРОВЕРКИ × ПРОГОНЫ». Одна клетка — одна проверка в одном прогоне: так видно не «сколько
-// красных», а ЧТО и КОГДА покраснело. Идея «одна единица = один объект» взята из разбора
-// lieflat-charts (2026-09-26); код свой — лицензия того скилла некоммерческая, а отчёт обязан
-// открываться без сети. Проблемные строки наверху: их и читают.
-function grid(history, T) {
+function trendChart(history, T) {
   const runs = history.slice(-20);
-  if (!runs.length) return `<p class="muted">${esc(T.grid.empty)}</p>`;
-  const names = [...new Set(runs.flatMap((h) => Object.keys(h.gates || {})))];
-  const trouble = (g) => runs.some((h) => h.gates?.[g] === "fail" || h.gates?.[g] === "cannot");
-  names.sort((a, b) => (trouble(b) - trouble(a)) || a.localeCompare(b));
-  const red = runs.reduce((n, h) => n + count(h, "fail") + count(h, "cannot"), 0);
-  const C = 14, G = 3, LW = 190, TOP = 34, W = LW + runs.length * (C + G) + 10, H = TOP + names.length * (C + G) + 10;
-  const hhmm = (at) => local(at).hm;
-  const cols = runs.map((h, j) => `<text x="${LW + j * (C + G) + C / 2}" y="${TOP - 8}" text-anchor="end" transform="rotate(-50 ${LW + j * (C + G) + C / 2} ${TOP - 8})">${esc(hhmm(h.at))}${h.partial ? "*" : ""}</text>`).join("");
-  const rows = names.map((g, i) => {
-    const y = TOP + i * (C + G);
-    const cells = runs.map((h, j) => {
-      const v = h.gates?.[g] || "none";
-      const x = LW + j * (C + G);
-      const shape = v === "ok" ? `<rect x="${x + 3}" y="${y + 3}" width="${C - 6}" height="${C - 6}" rx="2" fill="var(--ok)"/>`
-        : v === "fail" ? `<rect x="${x}" y="${y}" width="${C}" height="${C}" rx="3" fill="var(--fail)"/>`
-        : v === "cannot" ? `<rect x="${x + 1}" y="${y + 1}" width="${C - 2}" height="${C - 2}" rx="3" fill="none" stroke="var(--unk)" stroke-width="2"/>`
-        : `<line x1="${x + 3}" y1="${y + C / 2}" x2="${x + C - 3}" y2="${y + C / 2}" stroke="var(--line)" stroke-width="1.5"/>`;
-      return `<g data-cell="${v}"><title>${esc(`${g} · ${hhmm(h.at)} · ${T.grid[v]}`)}</title>${shape}</g>`;
-    }).join("");
-    const nm = g.length > 26 ? `${g.slice(0, 25)}…` : g;
-    return `<text x="${LW - 8}" y="${y + C - 3}" text-anchor="end"${trouble(g) ? ' class="hot"' : ""}>${esc(nm)}</text>${cells}`;
+  if (runs.length < 2) return `<p class="muted">${esc(T.chartEmpty)}</p>`;
+  const top = Math.max(4, ...runs.map((h) => count(h, "fail") + count(h, "cannot")));
+  const W = 640, H = 170, x0 = 40, y0 = 20, y1 = 120, step = (W - x0 - 20) / runs.length, bw = Math.min(40, step * 0.6);
+  const y = (v) => y1 - (v / top) * (y1 - y0);
+  const grid = [0, Math.round(top / 2), top].map((v) =>
+    `<line x1="${x0}" y1="${y(v)}" x2="${W - 20}" y2="${y(v)}" stroke="var(--line)"/><text x="${x0 - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join("");
+  const bars = runs.map((h, i) => {
+    const cx = x0 + step * i + step / 2, f = count(h, "fail"), u = count(h, "cannot");
+    const fill = (k) => (h.partial ? `url(#hatch-${k})` : `var(--${k})`);
+    const day = esc(local(h.at).day);
+    const parts = f + u === 0
+      ? `<rect x="${cx - bw / 2}" y="${y1 - 4}" width="${bw}" height="4" rx="2" fill="${fill("ok")}"/>`
+      : `<rect x="${cx - bw / 2}" y="${y(f + u)}" width="${bw}" height="${y1 - y(f)}" rx="3" fill="${fill("fail")}"/>` +
+        (u ? `<rect x="${cx - bw / 2}" y="${y(u)}" width="${bw}" height="${y1 - y(u)}" rx="3" fill="${fill("unk")}"/>` : "");
+    return `${parts}<text x="${cx}" y="${y1 + 20}" text-anchor="middle">${day}</text>`;
   }).join("");
-  return `<h3>${esc(T.grid.title(runs.length, names.length, red))}</h3><p class="muted">${esc(T.grid.sub)}</p>
-<div class="chart"><svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${esc(T.grid.label)}">${cols}${rows}</svg></div>
-<div class="legend"><span><i style="background:var(--ok)"></i>${esc(T.grid.ok)}</span><span><i style="background:var(--fail)"></i>${esc(T.grid.fail)}</span><span><i style="border:2px solid var(--unk)"></i>${esc(T.grid.cannot)}</span><span><i style="background:var(--line)"></i>${esc(T.grid.none)}</span></div>`;
+  const hatch = ["ok", "fail", "unk"].map((k) =>
+    `<pattern id="hatch-${k}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--card)"/><rect width="3" height="6" fill="var(--${k})"/></pattern>`).join("");
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(T.chartLabel)}"><defs>${hatch}</defs>${grid}${bars}</svg></div>
+<div class="legend"><span><i style="background:var(--fail)"></i>${esc(T.legend.fail)}</span><span><i style="background:var(--unk)"></i>${esc(T.legend.cannot)}</span><span><i style="background:var(--ok)"></i>${esc(T.legend.ok)}</span><span>${esc(T.legend.partial)}</span></div>`;
 }
 
-// ОДИН РАСЧЁТ НА ДВЕ РАСКЛАДКИ: страница и сводка для GitHub отвечают теми же разделами, и
-// посчитанное дважды разошлось бы — на странице одно, в конвейере другое. Порядок и смысл
-// разделов — решение владельца 2026-09-26: этот шаг, сделано, долг, впереди.
-function sections(state, history, { T, C, self, intents = {} }) {
+function answer(q, big, small, pill, kind) {
+  return `<div class="answer"><span class="q">${esc(q)}</span><span class="a">${esc(big)} <small>${esc(small)}</small></span><span class="state s-${kind}">● ${esc(pill)}</span></div>`;
+}
+
+// ОДИН РАСЧЁТ НА ДВЕ РАСКЛАДКИ: страница и сводка для GitHub отвечают на одни вопросы, и
+// посчитанное дважды разошлось бы — на странице одно, в конвейере другое.
+function summarize(state, history, T) {
   const last = history[history.length - 1] || null;
   const full = fullRuns(history);
   const lastFull = full[full.length - 1] || null;
@@ -93,85 +88,64 @@ function sections(state, history, { T, C, self, intents = {} }) {
   const cannot = gates.filter(([, v]) => v === "cannot").length;
   const secs = Object.values(last?.secs || {}).reduce((a, b) => a + (Number(b) || 0), 0);
   const level = lastFull ? lastFull.level : state.level?.reached ?? -1;
-  const label = (g) => intents[g] || g;
-  const when = last ? `${local(last.at).day} ${local(last.at).hm}` : "";
+
   const headline = !last ? T.headline.none
     : [red && T.headline.red(red), cannot && T.headline.cannot(cannot)].filter(Boolean).join(" · ") || T.headline.clean;
+  const when = last ? local(last.at).full : "";
   const meta = last ? T.meta(when, String(last.head || "").slice(0, 7), last.version, gates.length, secs.toFixed(0)) : [];
 
-  const cmp = compare(history);
-  const changes = cmp ? [["gone", cmp.gone], ["broke", cmp.broke], ["fixed", cmp.fixed]].filter(([, l]) => l.length) : [];
-  const steps = state.next?.steps || [];
-  const step = {
-    made: last ? T.step.run(when, ok, gates.length) : T.noRunHint(self),
-    changes, change: !last ? "" : !cmp ? T.step.first : changes.length ? "" : T.step.same,
-    bad: !last ? "" : red || cannot ? T.step.bad1(red, cannot) : T.step.nothingBad,
-    next: steps.length ? C.nextStep[steps[0].kind](steps[0]) : T.step.nextNone,
-  };
-
-  const done = gates.filter(([, v]) => v === "ok").map(([g]) => label(g));
-
-  // Долг: всё, что уже есть, но работает не до конца. Отсутствие долга говорится словами —
-  // молчание здесь прочиталось бы как «проверено и чисто».
-  const debt = [];
-  for (const [g, v] of gates) {
-    if (v === "fail") debt.push({ lead: label(g), text: T.debt.fail });
-    if (v === "cannot") debt.push({ lead: label(g), text: T.debt.cannot });
-  }
+  // Проба: пять состояний, как в блоке для агента, — и перечисление исчерпывающее по той же
+  // причине: выключенная или несостоявшаяся проба не должна выглядеть как «чисто».
   const pr = state.probe || { state: "never" };
-  if (pr.state === "never") debt.push({ text: T.debt.probeNever(self) });
-  else if (pr.state === "off") debt.push({ text: T.debt.probeOff });
-  else if (pr.state === "unknown") debt.push({ text: T.debt.probeUnknown });
-  else {
-    if (pr.state === "stale") debt.push({ text: T.debt.probeStale(pr.behind, self) });
-    if (pr.blind > 0) debt.push({ text: T.debt.probeBlind(pr.blind), names: (pr.classes || []).map((b) => `${b.slug} (${b.file})`) });
-  }
-  if (state.rules?.human) debt.push({ text: T.debt.human(state.rules.human, state.rules.total, state.entry || "AGENTS.md") });
-  for (const r of state.ratchets || []) debt.push({ text: T.debt.ratchet(r.name, r.count) });
+  const quiet = ["never", "off", "unknown"].includes(pr.state);
+  const [pBig, pSmall, pKind] = quiet ? T.probe[pr.state] : pr.blind > 0 ? T.probe.blind(pr.blind) : T.probe.clean;
+  const pPill = pr.state === "stale" ? T.probe.stale(pr.behind) : quiet ? T.probe[pr.state][1] : T.probe.fresh;
 
-  const ahead = steps.map((st) => C.nextStep[st.kind](st));
-  return { last, gates, ok, level, headline, meta, step, done, debt, ahead, rest: state.next?.rest || 0 };
+  const cmp = compare(history);
+  const [tBig, tSmall, tPill] = !cmp ? T.trend.none : cmp.gone.length ? T.trend.shrunk(cmp.gone.length) : cmp.delta < 0 ? T.trend.better(-cmp.delta) : cmp.delta > 0 ? T.trend.worse(cmp.delta) : T.trend.same;
+  const tKind = !cmp || cmp.gone.length ? "unk" : cmp.delta > 0 ? "fail" : "ok";
+  return { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind };
 }
 
-function renderReport(state, history, { T, C, self = "aqk", name = "", intents = {} }) {
-  const S = sections(state, history, { T, C, self, intents });
-  const block = (title, lines, body) => `<section><h2>${esc(title)}</h2>${lines.length ? `<div class="lead">${lines.map(([k, v]) => `<p><b>${esc(k)}</b> ${rich(v)}</p>`).join("")}</div>` : ""}${body}</section>`;
-  const names = (l) => l.map((g) => `<code>${esc(g)}</code>`).join(", ");
+function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
+  const { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind } = summarize(state, history, T);
 
-  const stepLines = [
-    [T.step.made, S.step.made + (S.step.change ? ` ${S.step.change}` : "")],
-    ...(S.step.bad ? [[T.step.bad, S.step.bad]] : []),
-    [T.step.next, S.step.next],
-  ];
-  const stepBody = S.step.changes.length
-    ? `<ul class="plain">${S.step.changes.map(([k, l]) => `<li><span class="state s-${k === "fixed" ? "ok" : k === "broke" ? "fail" : "unk"}">${esc(T.trend[k])}:</span> ${names(l)}</li>`).join("")}</ul>` : "";
+  const gateCells = gates.map(([g, v]) =>
+    `<div class="gate g-${v}" title="${esc(T.gateState[v] || v)}"><span>${esc(g)}</span><span class="t">${esc(Number(last.secs?.[g] ?? 0).toFixed(1))} с</span></div>`).join("")
+    + (last?.skipped || []).map((g) => `<div class="gate g-skipped" title="${esc(T.gateState.skipped)}"><span>${esc(g)}</span><span class="t">~</span></div>`).join("");
 
-  const doneBody = S.done.length ? `<ul class="check">${S.done.map((t) => `<li>✅ ${esc(t)}</li>`).join("")}</ul>` : `<p class="muted">${esc(T.done.none)}</p>`;
-  const doneLines = S.last ? [[T.done.short, T.done.shortText(S.ok, S.gates.length, S.level)], [T.done.gives, T.done.givesText]] : [];
+  const blindList = (pr.classes || []).length
+    ? `<p><b>${esc(T.probeBlindList)}</b> ${(pr.classes || []).map((b) => `<code>${esc(b.slug)}</code> (${esc(b.file)})`).join(", ")}</p>` : "";
+  const counts = pr.counts ? `<p class="muted">${esc(T.probe.counts(pr.counts.caught, pr.counts.unknown))}</p>` : "";
+  const human = state.rules?.human ? `<p>${esc(T.humanRules(state.rules.human, state.rules.total, state.entry || "AGENTS.md"))}</p>` : "";
 
-  const debtLines = S.debt.length ? [[T.debt.short, T.debt.shortText(S.debt.length)], [T.debt.risk, T.debt.riskText]] : [];
-  const debtBody = S.debt.length
-    ? `<ul class="check">${S.debt.map((d) => `<li>⚠️ ${d.lead ? `<b>${esc(d.lead)}</b> — ` : ""}${rich(d.text)}${d.names ? ` ${names(d.names)}` : ""}</li>`).join("")}</ul>`
-    : `<p><b>${esc(T.debt.none)}</b></p>`;
+  const changes = cmp && (cmp.broke.length || cmp.fixed.length || cmp.gone.length)
+    ? `<ul class="plain">${cmp.gone.length ? `<li><span class="state s-unk">${esc(T.trend.gone)}:</span> ${cmp.gone.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.broke.length ? `<li><span class="state s-fail">${esc(T.trend.broke)}:</span> ${cmp.broke.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.fixed.length ? `<li><span class="state s-ok">${esc(T.trend.fixed)}:</span> ${cmp.fixed.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}</ul>` : "";
 
-  const aheadLines = S.ahead.length ? [[T.ahead.short, T.ahead.shortText], [T.ahead.why, T.ahead.whyText]] : [];
-  const aheadBody = S.ahead.length
-    ? `<ol class="todo">${S.ahead.map((line) => {
+  const steps = state.next?.steps || [];
+  const todo = steps.length
+    ? `<ol class="todo">${steps.map((st) => {
+      const line = C.nextStep[st.kind](st);
       const cmd = (/`([^`]+)`/.exec(line) || [])[1] || "";
-      return `<li><span>⬜ ${rich(line)}</span>${cmd ? `<button type="button" data-copy="${esc(cmd)}">${esc(T.copy)}</button>` : ""}</li>`;
-    }).join("")}</ol>${S.rest ? `<p class="muted">${esc(T.ahead.more(S.rest))}</p>` : ""}<p class="muted">${esc(T.ahead.hint)}</p>`
-    : `<p class="muted">${esc(T.ahead.none)}</p>`;
+      return `<li><span>${rich(line)}</span>${cmd ? `<button type="button" data-copy="${esc(cmd)}">${esc(T.copy)}</button>` : ""}</li>`;
+    }).join("")}</ol>${state.next.rest ? `<p class="muted">${esc(T.nextMore(state.next.rest))}</p>` : ""}<p class="muted">${esc(T.nextHint)}</p>`
+    : `<p class="muted">${esc(T.nextNone)}</p>`;
 
   return `<!doctype html>
 <html lang="${esc(T.lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(T.title)}${name ? ` · ${esc(name)}` : ""}</title>
 <style>${CSS}</style></head><body><div class="wrap">
-<header><span class="eyebrow">${esc(T.eyebrow(name))}</span><h1>${esc(S.headline)}</h1><div class="meta">${S.meta.map((m) => `<span>${esc(m)}</span>`).join("")}</div></header>
-${block(T.step.title, stepLines, stepBody)}
-${block(T.done.title, doneLines, doneBody)}
-${block(T.debt.title, debtLines, debtBody)}
-${block(T.ahead.title, aheadLines, aheadBody)}
-<section class="panel">${grid(history, T)}</section>
+<header><span class="eyebrow">${esc(T.eyebrow(name))}</span><h1>${esc(headline)}</h1><div class="meta">${meta.map((m) => `<span>${esc(m)}</span>`).join("")}</div></header>
+<div class="answers">
+${last ? answer(T.q1, T.ofGreen(ok, gates.length), T.greenWord, T.levelPill(level), red ? "fail" : cannot ? "unk" : "ok")
+    : `<div class="answer"><span class="q">${esc(T.q1)}</span><span class="a">— <small>${esc(T.noRun)}</small></span><span class="state s-unk">● ${rich(T.noRunHint(self))}</span></div>`}
+${answer(T.q2, pBig, pSmall, pPill, pKind)}
+${answer(T.q3, tBig, tSmall, tPill, tKind)}
+</div>
+<section><h2>1. ${esc(T.s1)}</h2><div class="panel">${gateCells ? `<div class="gates">${gateCells}</div>` : `<p class="muted">${rich(T.noRunHint(self))}</p>`}${human}</div></section>
+<section><h2>2. ${esc(T.s2)}</h2><div class="panel"><p class="muted">${esc(T.probeWhat)}</p>${blindList}${counts}<p>${rich(T.probeRepeat(self))}</p></div></section>
+<section><h2>3. ${esc(T.s3)}</h2><div class="panel">${changes}${trendChart(history, T)}</div></section>
+<section><h2>4. ${esc(T.s4)}</h2>${todo}</section>
 <footer>${esc(T.footer(self))}</footer>
 </div><script>${copyScript(T)}</script></body></html>
 `;
@@ -180,22 +154,26 @@ ${block(T.ahead.title, aheadLines, aheadBody)}
 // СВОДКА ЗАДАНИЯ GITHUB — Markdown: HTML там не показывается (docs.github.com, «Adding a job
 // summary»). Имена — в `коде`, и из них вынуто то, чем чужой манифест мог бы сломать разметку.
 const mdName = (s) => "`" + String(s ?? "").replace(/`/g, "'").replace(/[<>|]/g, (ch) => ({ "<": "&lt;", ">": "&gt;", "|": "&#124;" })[ch]) + "`";
-const mdText = (s) => String(s ?? "").replace(/[<>|]/g, (ch) => ({ "<": "&lt;", ">": "&gt;", "|": "&#124;" })[ch]);
 
-function renderSummary(state, history, { T, C, self = "aqk", name = "", intents = {} }) {
-  const S = sections(state, history, { T, C, self, intents });
-  const out = [`## ${T.title}${name ? ` · ${name}` : ""}`, "", `**${S.headline}**`, "", `### ${T.step.title}`, ""];
-  out.push(`- **${T.step.made}** ${S.step.made}${S.step.change ? ` ${S.step.change}` : ""}`);
-  for (const [k, l] of S.step.changes) out.push(`  - ${T.trend[k]}: ${l.map(mdName).join(", ")}`);
-  if (S.step.bad) out.push(`- **${T.step.bad}** ${S.step.bad}`);
-  out.push(`- **${T.step.next}** ${S.step.next}`, "", `### ${T.done.title}`, "");
-  if (S.last) out.push(`**${T.done.short}** ${T.done.shortText(S.ok, S.gates.length, S.level)}`, "");
-  out.push(...(S.done.length ? S.done.map((t) => `- ✅ ${mdText(t)}`) : [T.done.none]), "", `### ${T.debt.title}`, "");
-  out.push(...(S.debt.length
-    ? S.debt.map((d) => `- ⚠️ ${d.lead ? `${mdName(d.lead)} — ` : ""}${mdText(d.text)}${d.names ? ` ${d.names.map(mdName).join(", ")}` : ""}`)
-    : [`**${T.debt.none}**`]), "", `### ${T.ahead.title}`, "");
-  out.push(...(S.ahead.length ? S.ahead.map((l) => `- ⬜ ${l}`) : [T.ahead.none]));
-  if (S.rest) out.push("", T.ahead.more(S.rest));
+function renderSummary(state, history, { T, C, self = "aqk", name = "" }) {
+  const { last, gates, ok, level, headline, pr, pBig, pSmall, pPill, cmp, tBig, tSmall, tPill } = summarize(state, history, T);
+  const out = [`## ${T.title}${name ? ` · ${name}` : ""}`, "", `**${headline}**`, ""];
+  out.push(last ? `- **${T.q1}** ${T.ofGreen(ok, gates.length)} ${T.greenWord} · ${T.levelPill(level)}` : `- **${T.q1}** ${T.noRun}`);
+  out.push(`- **${T.q2}** ${pBig} ${pSmall} · ${pPill}`);
+  out.push(`- **${T.q3}** ${tBig} ${tSmall} · ${tPill}`);
+  const by = (st) => gates.filter(([, v]) => v === st).map(([g]) => mdName(g));
+  if (by("fail").length) out.push("", `${T.gateState.fail}: ${by("fail").join(", ")}`);
+  if (by("cannot").length) out.push("", `${T.gateState.cannot}: ${by("cannot").join(", ")}`);
+  if ((pr.classes || []).length) out.push("", `${T.probeBlindList} ${pr.classes.map((b) => `${mdName(b.slug)} (${mdName(b.file)})`).join(", ")}`);
+  if (cmp?.gone.length) out.push("", `${T.trend.gone}: ${cmp.gone.map(mdName).join(", ")}`);
+  if (cmp?.broke.length) out.push("", `${T.trend.broke}: ${cmp.broke.map(mdName).join(", ")}`);
+  if (cmp?.fixed.length) out.push("", `${T.trend.fixed}: ${cmp.fixed.map(mdName).join(", ")}`);
+  const steps = state.next?.steps || [];
+  if (steps.length) {
+    out.push("", `### ${T.s4}`, "");
+    steps.forEach((st, i) => out.push(`${i + 1}. ${C.nextStep[st.kind](st)}`));
+    if (state.next.rest) out.push("", T.nextMore(state.next.rest));
+  }
   out.push("", `_${T.footer(self)}_`, "");
   return out.join("\n");
 }
@@ -215,8 +193,8 @@ code,.mono,.meta,.eyebrow,.gate{font-family:ui-monospace,SFMono-Regular,Menlo,Co
 section{display:grid;gap:14px}.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px}
 .gates{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}.gate{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:6px 9px;border-radius:6px;min-width:0}.gate span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gate .t{color:var(--muted);font-variant-numeric:tabular-nums}
 .g-ok{background:var(--ok-soft)}.g-fail{background:var(--fail-soft);color:var(--fail)}.g-cannot{background:var(--unk-soft);color:var(--unk)}.g-skipped{background:transparent;border:1px dashed var(--line);color:var(--muted)}
-ul.plain,ul.check{list-style:none;padding:0;margin:0;display:grid;gap:6px}ul.check li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px}.lead{display:grid;gap:4px;border-left:3px solid var(--accent);padding-left:12px}h3{margin:0;font-size:17px}svg text.hot{fill:var(--ink);font-weight:700}.chart{overflow-x:auto}svg{max-width:none}svg text{fill:var(--muted);font:11px ui-monospace,Menlo,monospace}
-.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;box-sizing:border-box}
+ul.plain{list-style:none;padding:0;margin:0;display:grid;gap:8px}.chart{overflow-x:auto}svg{min-width:420px;max-width:100%}svg text{fill:var(--muted);font:11px ui-monospace,Menlo,monospace}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
 .todo{padding:0;margin:0;display:grid;gap:10px;counter-reset:n}.todo li{list-style:none;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}.todo li::before{counter-increment:n;content:counter(n);font-weight:700;font-size:18px;color:var(--accent)}
 button{font:600 12px system-ui,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}footer{font-size:12.5px;color:var(--muted)}`;
 
