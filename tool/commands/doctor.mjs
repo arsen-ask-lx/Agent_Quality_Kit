@@ -14,7 +14,7 @@ import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree } from "../lib/run.mjs";
-import { writeHtmlReport } from "./report-page.mjs";
+import { writeHtmlReport, writeStepSummary } from "./report-page.mjs";
 import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
 
 // ПРОБА ЗАПУСКАЕТСЯ САМА, раз в сто коммитов, — кроме конвейера (там это минуты сюрпризом в
@@ -221,6 +221,7 @@ async function cmdDoctor() {
     skippedNames = run.skipped || [];
     await writeRunReport({ version, reached, results: run.results, skipped: run.skipped });
     await writeHtmlReport();
+    await writeStepSummary();
 
     // ПРОБА ЗАПУСКАЕТСЯ САМА. Владелец сформулировал так: «команду, о которой надо вспомнить,
     // агент не вспомнит, а человек о ней не узнает». Это тот же класс, что файл, который можно

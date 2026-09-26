@@ -76,3 +76,26 @@ test("страница не тянет ничего из сети", () => {
   assert.doesNotMatch(html, /(src|href)\s*=\s*["']?(https?:)?\/\//i);
   assert.doesNotMatch(html, /@import|url\(\s*["']?https?:/i);
 });
+
+// СВОДКА ДЛЯ GITHUB (`GITHUB_STEP_SUMMARY`) — те же ответы Markdown-ом: HTML там не показывается
+// (docs.github.com, «Adding a job summary»: только GitHub Flavored Markdown).
+import { renderSummary } from "../lib/report-html.mjs";
+const md = (history, state = {}) => renderSummary({ ...base, ...state }, history, { T: ru.html, C: ru.context, self: "aqk", name: "demo" });
+
+test("сводка: находка и «не смогли проверить» раздельно, упавшие названы", () => {
+  const s = md([entry({ a: "ok", b: "fail", c: "cannot" })]);
+  assert.match(s, /Красных проверок: 1/);
+  assert.match(s, /Не смогли проверить: 1/);
+  assert.match(s, /`b`/);
+  assert.match(s, /`c`/);
+});
+
+test("сводка: имя из чужого манифеста не ломает таблицу и не становится разметкой", () => {
+  const s = md([entry({ "x|y<script>": "fail" })]);
+  assert.doesNotMatch(s, /<script>/);
+  assert.doesNotMatch(s, /x\|y/);
+});
+
+test("сводка без истории говорит, что сравнивать не с чем", () => {
+  assert.match(md([entry({ a: "ok" })]), /не с чем сравнить/);
+});

@@ -62,7 +62,9 @@ function answer(q, big, small, pill, kind) {
   return `<div class="answer"><span class="q">${esc(q)}</span><span class="a">${esc(big)} <small>${esc(small)}</small></span><span class="state s-${kind}">● ${esc(pill)}</span></div>`;
 }
 
-function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
+// ОДИН РАСЧЁТ НА ДВЕ РАСКЛАДКИ: страница и сводка для GitHub отвечают на одни вопросы, и
+// посчитанное дважды разошлось бы — на странице одно, в конвейере другое.
+function summarize(state, history, T) {
   const last = history[history.length - 1] || null;
   const full = fullRuns(history);
   const lastFull = full[full.length - 1] || null;
@@ -81,13 +83,18 @@ function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
   // Проба: пять состояний, как в блоке для агента, — и перечисление исчерпывающее по той же
   // причине: выключенная или несостоявшаяся проба не должна выглядеть как «чисто».
   const pr = state.probe || { state: "never" };
-  const [pBig, pSmall, pKind] = ["never", "off", "unknown"].includes(pr.state) ? T.probe[pr.state]
-    : pr.blind > 0 ? T.probe.blind(pr.blind) : T.probe.clean;
-  const pPill = pr.state === "stale" ? T.probe.stale(pr.behind) : ["never", "off", "unknown"].includes(pr.state) ? T.probe.never[1] : T.probe.fresh;
+  const quiet = ["never", "off", "unknown"].includes(pr.state);
+  const [pBig, pSmall, pKind] = quiet ? T.probe[pr.state] : pr.blind > 0 ? T.probe.blind(pr.blind) : T.probe.clean;
+  const pPill = pr.state === "stale" ? T.probe.stale(pr.behind) : quiet ? T.probe[pr.state][1] : T.probe.fresh;
 
   const cmp = compare(history);
   const [tBig, tSmall, tPill] = !cmp ? T.trend.none : cmp.delta < 0 ? T.trend.better(-cmp.delta) : cmp.delta > 0 ? T.trend.worse(cmp.delta) : T.trend.same;
   const tKind = !cmp ? "unk" : cmp.delta > 0 ? "fail" : "ok";
+  return { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind };
+}
+
+function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
+  const { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind } = summarize(state, history, T);
 
   const gateCells = gates.map(([g, v]) =>
     `<div class="gate g-${v}" title="${esc(T.gateState[v] || v)}"><span>${esc(g)}</span><span class="t">${esc(Number(last.secs?.[g] ?? 0).toFixed(1))} с</span></div>`).join("")
@@ -130,6 +137,32 @@ ${answer(T.q3, tBig, tSmall, tPill, tKind)}
 `;
 }
 
+// СВОДКА ЗАДАНИЯ GITHUB — Markdown: HTML там не показывается (docs.github.com, «Adding a job
+// summary»). Имена — в `коде`, и из них вынуто то, чем чужой манифест мог бы сломать разметку.
+const mdName = (s) => "`" + String(s ?? "").replace(/`/g, "'").replace(/[<>|]/g, (ch) => ({ "<": "&lt;", ">": "&gt;", "|": "&#124;" })[ch]) + "`";
+
+function renderSummary(state, history, { T, C, self = "aqk", name = "" }) {
+  const { last, gates, ok, level, headline, pr, pBig, pSmall, pPill, cmp, tBig, tSmall, tPill } = summarize(state, history, T);
+  const out = [`## ${T.title}${name ? ` · ${name}` : ""}`, "", `**${headline}**`, ""];
+  out.push(last ? `- **${T.q1}** ${T.ofGreen(ok, gates.length)} ${T.greenWord} · ${T.levelPill(level)}` : `- **${T.q1}** ${T.noRun}`);
+  out.push(`- **${T.q2}** ${pBig} ${pSmall} · ${pPill}`);
+  out.push(`- **${T.q3}** ${tBig} ${tSmall} · ${tPill}`);
+  const by = (st) => gates.filter(([, v]) => v === st).map(([g]) => mdName(g));
+  if (by("fail").length) out.push("", `${T.gateState.fail}: ${by("fail").join(", ")}`);
+  if (by("cannot").length) out.push("", `${T.gateState.cannot}: ${by("cannot").join(", ")}`);
+  if ((pr.classes || []).length) out.push("", `${T.probeBlindList} ${pr.classes.map((b) => `${mdName(b.slug)} (${mdName(b.file)})`).join(", ")}`);
+  if (cmp?.broke.length) out.push("", `${T.trend.broke}: ${cmp.broke.map(mdName).join(", ")}`);
+  if (cmp?.fixed.length) out.push("", `${T.trend.fixed}: ${cmp.fixed.map(mdName).join(", ")}`);
+  const steps = state.next?.steps || [];
+  if (steps.length) {
+    out.push("", `### ${T.s4}`, "");
+    steps.forEach((st, i) => out.push(`${i + 1}. ${C.nextStep[st.kind](st)}`));
+    if (state.next.rest) out.push("", T.nextMore(state.next.rest));
+  }
+  out.push("", `_${T.footer(self)}_`, "");
+  return out.join("\n");
+}
+
 const copyScript = (T) => `document.querySelectorAll("button[data-copy]").forEach(function(b){b.addEventListener("click",function(){var t=b.getAttribute("data-copy");try{navigator.clipboard.writeText(t).then(function(){b.textContent=${JSON.stringify(T.copied)};setTimeout(function(){b.textContent=${JSON.stringify(T.copy)}},1500)},function(){b.textContent=t})}catch(e){b.textContent=t}})});`;
 
 // Системные шрифты, а не веб-шрифты: страница обязана выглядеть одинаково без сети.
@@ -150,4 +183,4 @@ ul.plain{list-style:none;padding:0;margin:0;display:grid;gap:8px}.chart{overflow
 .todo{padding:0;margin:0;display:grid;gap:10px;counter-reset:n}.todo li{list-style:none;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}.todo li::before{counter-increment:n;content:counter(n);font-weight:700;font-size:18px;color:var(--accent)}
 button{font:600 12px system-ui,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}footer{font-size:12.5px;color:var(--muted)}`;
 
-export { renderReport };
+export { renderReport, renderSummary };

@@ -432,6 +432,17 @@ gate's "fix:" advice attached; an advisory gate gives a yellow one. At most ten 
 (the limit GitHub is reported to take per step); the rest are counted in the log. The verdict
 does not change — annotations print what the run already decided.
 
+**A report for a human, on the run page.** Inside GitHub Actions `doctor --run` appends a job
+summary by itself: what is protected, whether the protection catches defects, what failed and
+what to hand the agent. It needs no permissions. The full page with charts is `.aqk/report.html`;
+to download it from the run, keep it as an artifact:
+
+```yaml
+- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+  if: always()
+  with: { name: aqk-report, path: .aqk/report.html }
+```
+
 ## Without Node at all
 
 A Python, Go or Rust project where nobody installed Node and nobody will:

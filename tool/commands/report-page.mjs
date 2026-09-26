@@ -3,10 +3,10 @@
 // Зовут двое: `doctor --run` — каждый раз, и `report --html` — по просьбе. Отчёт, который надо
 // вспомнить собрать, не соберут (решение владельца 2026-09-26). Данные — из `gatherState`, той же
 // функции, что кормит блок для агента, и из истории прогонов; раскладка — `lib/report-html.mjs`.
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { CWD, TARGET_DIR, SELF, c, exists } from "../lib/core.mjs";
-import { renderReport } from "../lib/report-html.mjs";
+import { renderReport, renderSummary } from "../lib/report-html.mjs";
 import { gatherState, portableSelf } from "./context.mjs";
 import { L } from "../i18n/index.mjs";
 
@@ -37,4 +37,20 @@ async function writeHtmlReport() {
   }
 }
 
-export { writeHtmlReport };
+// СВОДКА ЗАДАНИЯ GITHUB. В конвейере `.aqk/report.html` никто не откроет, а сводка видна на
+// странице прогона и прав не требует. Файл сводки — общий для всех шагов задания, поэтому
+// ДОПИСЫВАЕМ, а не переписываем: иначе затёрли бы чужие шаги. Переменной нет — ничего не пишем.
+async function writeStepSummary(env = process.env) {
+  const file = env.GITHUB_STEP_SUMMARY;
+  if (!file) return false;
+  try {
+    const md = renderSummary(await gatherState(), await readHistory(), { T: L.html, C: L.context, self: portableSelf(SELF), name: basename(CWD) });
+    await appendFile(file, md, "utf8");
+    return true;
+  } catch (e) {
+    console.log(c.yellow(`  ${L.report.notWritten("GITHUB_STEP_SUMMARY", e?.code || String(e?.message || e))}`));
+    return false;
+  }
+}
+
+export { writeHtmlReport, writeStepSummary };

@@ -95,7 +95,8 @@
   `context.mjs` (`context` — состояние репозитория одним блоком ДЛЯ КОНТЕКСТА агента;
   `--install` кладёт хук `SessionStart` в `.claude/settings.json`; `gatherState` — то же
   состояние для HTML-отчёта, чтобы агент и человек видели одни числа),
-  `report-page.mjs` (запись `.aqk/report.html`: зовут `doctor --run` каждый раз и `report --html`),
+  `report-page.mjs` (запись `.aqk/report.html`: зовут `doctor --run` каждый раз и `report --html`;
+  в GitHub Actions — ещё и сводка задания `GITHUB_STEP_SUMMARY`),
   `prompt.mjs` (`prompt` — одно задание для агента: правила поведения, до пяти пунктов по весу
   — красные гейты, брак из пробы, свои проверки проекта, свод, невидимый Claude Code, «начните
   с трёх» — и у КАЖДОГО команда, которая докажет «готово». Ничего не запускает, считает теми же
@@ -232,7 +233,8 @@
   `gate-limits.test.mjs` (предел гейта из переменной окружения, заданный мусором, — код 2, а не
   тихое «чисто»: `AQK_MAX_DEPTH`, `AQK_DUP_LINES`),
   `report-html.test.mjs` (отчёт для человека появляется сам после `doctor --run` и по
-  `report --html`),
+  `report --html`), `step-summary.test.mjs` (в GitHub Actions сводка дописывается, а не
+  затирает чужие шаги; без переменной — ни одного файла),
   `run-history.test.mjs` (прогон дописывает строку в `.aqk/history.jsonl`: коммит, уровень, итог
   каждого гейта и пометка урезанного прогона — из неё строится «стало лучше или хуже»),
   `verdict.test.mjs` (прогон называет вердикт словами), `commit-report.test.mjs` (где мини-отчёт
