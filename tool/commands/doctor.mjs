@@ -144,6 +144,15 @@ async function cmdDoctor() {
   const proof = process.argv.includes("--run") ? await proveGates(man) : null;
   bar.clear();
   const { reached, steps } = await assessLevel(man, proof);
+  // ПОРОГ — ЦЕЛАЯ СТУПЕНЬ, КОТОРАЯ ЕСТЬ, иначе стоп до прогона, как у `--jobs`. Замер 2026-09-26
+  // (разбор evalite, у них `--threshold abc` проходит как «NaN% passed»): `--min -1` давал «порог
+  // пройден» при любом уровне, `--min ""` молча становился нулём, `--min abc` отказывал только
+  // потому, что сравнение с NaN ложно. Порог, который ничего не держит, хуже отсутствующего: его
+  // поставили, чтобы конвейер краснел. `min-threshold.test.mjs`.
+  const minArg = process.argv.indexOf("--min") > -1 ? String(process.argv[process.argv.indexOf("--min") + 1] ?? "") : null;
+  if (minArg !== null && !(/^\d+$/.test(minArg) && Number(minArg) <= steps.length - 1)) {
+    die(L.doctor.minBad(minArg, steps.length - 1));
+  }
 
   console.log(c.bold(`\n  ${L.doctor.levelHeading}\n`));
   for (const s of steps) {
@@ -272,8 +281,7 @@ async function cmdDoctor() {
   }
 
   // Код возврата — для конвейера. Порог задаётся так: aqk doctor --min 1
-  const minIdx = process.argv.indexOf("--min");
-  const min = minIdx > -1 ? Number(process.argv[minIdx + 1]) : null;
+  const min = minArg === null ? null : Number(minArg);
   if (min !== null) {
     const levelOk = reached >= min;
     const pass = levelOk && gateFailed === 0;

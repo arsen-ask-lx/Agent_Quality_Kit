@@ -91,6 +91,7 @@ export const en = {
     heldQuiet: (n, cmd) => `held by the machine: ${n} — by name: ${cmd}`,
     skipQuiet: (n, cmd) => `not applicable to this repository: ${n} — by name and why: ${cmd}`,
     passedQuiet: (n) => `${n} more passed — by name: --verbose`,
+    minBad: (v, top) => `--min expects a level number from 0 to ${top}: "${v}" will not do. A threshold that holds nothing is worse than none, so stopping before the run.`,
     jobsBad: (v) => `--jobs expects a whole number from 1: "${v}" will not do. A one-by-one run passed off as parallel would be a lie, so stopping.`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
