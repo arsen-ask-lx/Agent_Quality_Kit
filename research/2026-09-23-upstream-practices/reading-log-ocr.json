@@ -1915,272 +1915,326 @@
   {
    "path": "internal/config/rules/rule_docs/arkts.md",
    "bytes": 3473,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/astro.md",
    "bytes": 3821,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/bicep.md",
    "bytes": 3601,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/build_gradle.md",
    "bytes": 199,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/c.md",
    "bytes": 1595,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/capnp.md",
    "bytes": 3560,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/cargo_toml.md",
    "bytes": 1554,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/composer_json.md",
    "bytes": 4627,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/cpp.md",
    "bytes": 2361,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/default.md",
    "bytes": 735,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/elm.md",
    "bytes": 5351,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/freemarker.md",
    "bytes": 4014,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/fsharp.md",
    "bytes": 4925,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/github_config.md",
    "bytes": 1008,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/github_workflows.md",
    "bytes": 3133,
-   "status": "unread"
+   "status": "read",
+   "observation": "Совпадает с гейтами AQK (pull_request_target, незакреплённые действия, || true, выражения в run:), но проверяет модель по списку, а не программа."
   },
   {
    "path": "internal/config/rules/rule_docs/go.md",
    "bytes": 10844,
-   "status": "unread"
+   "status": "read",
+   "observation": "«Не дублируй то, что надёжно находят go vet, Staticcheck, go test -race, компилятор» — ревью рассчитывает на подключённые детерминированные инструменты; проверка их подключения — ниша AQK."
   },
   {
    "path": "internal/config/rules/rule_docs/graphql.md",
    "bytes": 3622,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/handlebars_mustache.md",
    "bytes": 4434,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/haskell.md",
    "bytes": 7455,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/java.md",
    "bytes": 3310,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/json.md",
    "bytes": 86,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/jsonnet.md",
    "bytes": 5752,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/julia.md",
    "bytes": 5289,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/kotlin.md",
    "bytes": 4902,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/mapper_dao_xml.md",
    "bytes": 2315,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/matlab.md",
    "bytes": 14233,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/nim.md",
    "bytes": 4426,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/nix.md",
    "bytes": 3302,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/objc.md",
    "bytes": 18919,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раздел про корректность тестов при исключённых тестах."
   },
   {
    "path": "internal/config/rules/rule_docs/ocaml.md",
    "bytes": 6262,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/package_json.md",
    "bytes": 460,
-   "status": "unread"
+   "status": "read",
+   "observation": "latest/* в зависимостях, инструменты в scripts без devDependencies."
   },
   {
    "path": "internal/config/rules/rule_docs/php.md",
    "bytes": 8343,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/po.md",
    "bytes": 2405,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/pom_xml.md",
    "bytes": 286,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/pot.md",
    "bytes": 2765,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/prisma.md",
    "bytes": 6422,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/properties.md",
    "bytes": 583,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/protobuf.md",
    "bytes": 3121,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/pug.md",
    "bytes": 7702,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/python.md",
    "bytes": 7599,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/r.md",
    "bytes": 6744,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/rego.md",
    "bytes": 6740,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раздел про тесты (test_ без проверки)."
   },
   {
    "path": "internal/config/rules/rule_docs/rust.md",
    "bytes": 6248,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/solidity.md",
    "bytes": 8102,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раздел про тесты при исключённых по умолчанию тестах."
   },
   {
    "path": "internal/config/rules/rule_docs/swift.md",
    "bytes": 8201,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раздел про тесты («проверка, которая не может упасть») при том, что тесты по умолчанию исключены — почти мёртвый раздел."
   },
   {
    "path": "internal/config/rules/rule_docs/terraform.md",
    "bytes": 3411,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/thrift.md",
    "bytes": 3301,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/ts_js_tsx_jsx.md",
    "bytes": 3264,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/verilog.md",
    "bytes": 4867,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/vhdl.md",
    "bytes": 4795,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/vyper.md",
    "bytes": 5517,
-   "status": "unread"
+   "status": "read",
+   "observation": "Раздел про тесты при исключённых по умолчанию тестах."
   },
   {
    "path": "internal/config/rules/rule_docs/yaml.md",
    "bytes": 93,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/rule_docs/zig.md",
    "bytes": 3929,
-   "status": "unread"
+   "status": "read",
+   "observation": "Чек-лист модели для языка/формата, прочитан целиком; большинство начинается с «точность важнее полноты»."
   },
   {
    "path": "internal/config/rules/sniffer.go",
    "bytes": 5944,
-   "status": "unread"
+   "status": "read",
+   "observation": "Различение .m: MATLAB или Objective-C по первой непустой строке; ошибка чтения → MATLAB."
   },
   {
    "path": "internal/config/rules/sniffer_test.go",
