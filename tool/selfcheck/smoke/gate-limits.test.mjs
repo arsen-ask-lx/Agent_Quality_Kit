@@ -21,7 +21,10 @@ import { spawnSync } from "node:child_process";
 
 const GATES = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "kit", "gates");
 const gate = (name, env) => {
-  const r = spawnSync("bash", [join(GATES, name, "check.sh"), join(GATES, name, "red")], {
+  // Пути — прямыми косыми: bash на Windows не находит `C:\\...\\red`, и гейт честно отвечал
+  // «брака нет» — контроль краснел только в конвейере на Windows (2026-09-26).
+  const posix = (x) => String(x).replace(/\\/g, "/");
+  const r = spawnSync("bash", [posix(join(GATES, name, "check.sh")), posix(join(GATES, name, "red"))], {
     encoding: "utf8", env: { ...process.env, ...env },
   });
   return { code: r.status, out: `${r.stdout}${r.stderr}` };
