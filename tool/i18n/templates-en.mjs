@@ -72,6 +72,9 @@ clients) is excluded with \`.aqkignore\` in the root — one pattern per line. E
 - \`.aqk/rules/\` — standards: general, tests, security
 - \`.aqk/docs/\` — guides: the project minimum, the harness, process, research
 - \`.aqk/docs/project-baseline.md\` — **start here** if the project is new
+- \`.aqk/skills/README.md\` — third-party skills: what to look at, what NOT to install and why
+  (page in Russian). Do not install all of them: it is your call, and before installing you read
+  the live version behind the link, not our row — ours is a snapshot
 
 ## Commands
 

@@ -44,7 +44,7 @@ machine-readable — fix the command first, then declare it.
 ```
 
 `doctor` only reads. It writes no file and sends nothing anywhere — safe to point at a repository
-you have decided nothing about yet. Nothing to install: `npx` fetches the package — **≈0.7 MB**,
+you have decided nothing about yet. Nothing to install: `npx` fetches the package — **≈0.8 MB**,
 a number a machine re-checks on every run rather than our memory.
 
 For Claude Code there is a plugin: the repository's real state reaches the agent's context before

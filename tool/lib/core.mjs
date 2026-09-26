@@ -26,6 +26,14 @@ const DOCS_SRC = join(PKG_ROOT, "kit", "docs");
 // НАБОРА ФАЙЛОВ сторожит модульная проверка. Совпадение содержания машина не сторожит — это
 // названо в AGENTS.md, а не спрятано.
 const RULES_SRC = join(PKG_ROOT, "kit", LANG === "en" ? "rules-en" : "rules");
+// ЧУЖИЕ СКИЛЛЫ — ОТДЕЛЬНАЯ ПАПКА, А НЕ РАЗДЕЛ МЕТОДИЧКИ, и это не вкус. Методички идут в склейку
+// `aqk blob` (GOD_AI.md) как то, что агент читает и исполняет. Список чужих скиллов исполнять
+// нельзя: он требует СНАЧАЛА открыть живую ссылку, потому что наша строка — снимок. Лежа среди
+// методичек, он читался бы как указание, а не как список под решение.
+//
+// Языковой развилки здесь нет намеренно: страница не переводится, как и методички (решение
+// владельца 2026-09-07), — а ссылки и коммиты языка не имеют.
+const SKILLS_SRC = join(PKG_ROOT, "kit", "skills");
 const TARGET_DIR = ".aqk";
 
 const c = {
@@ -225,7 +233,7 @@ async function preCommitHook(cwd = CWD) {
 
 export {
   copyDir, writeIfAbsent,
-  PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, TARGET_DIR, docPath,
+  PKG_ROOT, CWD, DOCS_SRC, RULES_SRC, SKILLS_SRC, TARGET_DIR, docPath,
   MANIFEST, GATES_SRC, PROJECT_GATES, RATCHET_DIR, RATCHET_LIB,
   SELF, REPO_URL, c, exists, die, stateDirs, commandRows, preCommitHook, RUNTIME_FILES, ensureIgnored,
 };

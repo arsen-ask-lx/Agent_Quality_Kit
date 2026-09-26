@@ -144,7 +144,7 @@ git init -q .
 node "$CLI" init >/dev/null 2>&1
 # Считаем не «сколько-то файлов», а ровно то, что лежит в комплекте: жёсткое число
 # устаревает при первой же правке состава и роняет проверку на пустом месте.
-EXPECT=$(find "$ROOT/kit/docs" "$ROOT/kit/rules" -type f | wc -l)
+EXPECT=$(find "$ROOT/kit/docs" "$ROOT/kit/rules" "$ROOT/kit/skills" -type f | wc -l)
 GOT=$(find .aqk -type f 2>/dev/null | wc -l)
 if [ "$GOT" -eq "$EXPECT" ]; then
   ok "init разложил весь комплект: $GOT файлов"

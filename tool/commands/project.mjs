@@ -5,7 +5,7 @@ import { readdir, mkdir, writeFile, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join, dirname, relative } from "node:path";
 import {
-  CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
+  CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, SKILLS_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
   copyDir, writeIfAbsent, stateDirs, docPath, ensureIgnored } from "../lib/core.mjs";
 import { askAllowed, markAsked } from "../lib/ask.mjs";
 import { AGENTS_MD, CLAUDE_MD, MANIFEST_YML } from "../lib/templates.mjs";
@@ -31,6 +31,14 @@ async function cmdInit(args) {
 
   const rules = await copyDir(RULES_SRC, join(CWD, TARGET_DIR, "rules"), { force });
   for (const f of rules) created.push(relative(CWD, f));
+
+  // Папка чужих скиллов раскладывается вместе с остальным: список, до которого надо доходить
+  // командой, читается как «его можно не читать». Пусто её не бывает — состав сторожит
+  // `recommended-skills.test.mjs`, а отсутствие самой папки поймала бы эта же строка падением
+  // копирования, поэтому запасной ветки «а если нет» здесь нет: тишина вместо раскладки — ровно
+  // то, против чего комплект.
+  const skills = await copyDir(SKILLS_SRC, join(CWD, TARGET_DIR, "skills"), { force });
+  for (const f of skills) created.push(relative(CWD, f));
 
 
   const manifest = join(CWD, MANIFEST);
