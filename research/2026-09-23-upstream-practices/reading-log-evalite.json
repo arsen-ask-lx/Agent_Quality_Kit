@@ -1,0 +1,1243 @@
+{
+  "date": "2026-09-26",
+  "repository": "mattpocock/evalite",
+  "commit": "e18a793789400b9292f92465d1084344340aef9b",
+  "meaning": "read: полное чтение текста; binary-noted: бинарный ресурс, содержания для разбора нет; generated-structural: сгенерированный файл, проверен по структуре.",
+  "files": [
+    {
+      "file": "readme.md",
+      "status": "read",
+      "observation": "Точка входа: ссылки на сайт и Discord, команды разработки. Утверждений о поведении нет."
+    },
+    {
+      "file": "packages/evalite/readme.md",
+      "status": "read",
+      "observation": "«Experimental, breaking changes»; при странном поведении советует удалить node_modules/.evalite — признание, что кэш/база могут врать."
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "status": "read",
+      "observation": "Команды pnpm и стиль Tailwind (семантические токены, тёмная тема, 7 пунктов проверки тёмной темы глазами). Машинной проверки тёмной темы нет."
+    },
+    {
+      "file": "CLAUDE.md",
+      "status": "read",
+      "observation": "Свод для агента: архитектура, база evalite.db — расходится с quickstart (node_modules/.evalite). Упоминает packages/evalite-core, которого в снимке нет."
+    },
+    {
+      "file": ".changeset/README.md",
+      "status": "read",
+      "observation": "Шаблон changesets, без своего содержания."
+    },
+    {
+      "file": ".changeset/config.json",
+      "status": "read",
+      "observation": "Выпускается только evalite; тесты, UI, доки, пример — в ignore."
+    },
+    {
+      "file": ".changeset/tasty-parents-bathe.md",
+      "status": "read",
+      "observation": "Невыпущенная правка UI: WebSocket от window.location.origin."
+    },
+    {
+      "file": "apps/evalite-docs/CLAUDE.md",
+      "status": "read",
+      "observation": "Одно правило: новые страницы добавлять в astro.config.mts. Машиной не проверяется."
+    },
+    {
+      "file": "apps/evalite-docs/README.md",
+      "status": "read",
+      "observation": "Шаблон Starlight, не про evalite."
+    },
+    {
+      "file": "apps/evalite-docs/astro.config.mts",
+      "status": "read",
+      "observation": "Сайдбар руками (правило из CLAUDE.md), Google Analytics в head."
+    },
+    {
+      "file": "apps/evalite-docs/package.json",
+      "status": "read",
+      "observation": "astro 4, starlight 0.29."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/config.ts",
+      "status": "read",
+      "observation": "Схема коллекции docs."
+    },
+    {
+      "file": "apps/evalite-docs/src/components/Banner.astro",
+      "status": "read",
+      "observation": "ВАЖНО: объявлена бета v1 (v1.evalite.dev). Снимок и 0.19.0 — ветка до v1; находки проверять на v1 перед письмом."
+    },
+    {
+      "file": "apps/evalite-docs/src/assets/logo-dark.svg",
+      "status": "read",
+      "observation": "Логотип, белая заливка."
+    },
+    {
+      "file": "apps/evalite-docs/src/assets/logo-light.svg",
+      "status": "read",
+      "observation": "Логотип, чёрная заливка."
+    },
+    {
+      "file": "apps/evalite-docs/src/env.d.ts",
+      "status": "read",
+      "observation": "Ссылки на типы astro."
+    },
+    {
+      "file": "apps/evalite-docs/tsconfig.json",
+      "status": "read",
+      "observation": "strict от astro."
+    },
+    {
+      "file": "apps/evalite-docs/.gitignore",
+      "status": "read",
+      "observation": "Стандартный."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/index.mdx",
+      "status": "read",
+      "observation": "Обещание «Great On CI: … score thresholds to fail the build» — порог из мусора проходит (замер CYCLE-02)."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/what-is-evalite.mdx",
+      "status": "read",
+      "observation": "«Evals give you a score from 0-100»; шкала оценщика 0–1 нигде не проверяется."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/quickstart.mdx",
+      "status": "read",
+      "observation": "База в node_modules/.evalite; UI на :3006; troubleshooting better-sqlite3."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/ci.mdx",
+      "status": "read",
+      "observation": "Статический экспорт для артефактов CI — тот же ход, что наш report.html. «Exports latest full run» — CLI-гайд говорит «latest run». Пример на actions/*@v3 без закрепления. «Exits with code 1 if average score < 70»."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/cli.mdx",
+      "status": "read",
+      "observation": "threshold «>=»; export «latest run» (расходится с ci.mdx)."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/configuration.mdx",
+      "status": "read",
+      "observation": "maxConcurrency по умолчанию 5, testTimeout 30 c, trialCount — «measuring variance», но разброс нигде не показывается (только средняя)."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/running-programmatically.mdx",
+      "status": "read",
+      "observation": "Пример оборачивает runEvalite в try/catch и печатает «All evals passed!». Но runEvalite сам зовёт process.exit(exitCode), когда код выставлен (run-evalite.ts:359-361): при провале — и при успехе с заданным порогом (modifyExitCode(0)) — строки после вызова не выполняются, а catch провал не ловит: провал идёт выходом процесса, не исключением."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/environment-variables.mdx",
+      "status": "read",
+      "observation": "dotenv через setupFiles."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/skipping.mdx",
+      "status": "read",
+      "observation": "only: true в данных — фильтр evalite, а не it.only: защита раннеров в CI его НЕ ловит. Закоммиченный only: true молча урезает набор."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/scorers.mdx",
+      "status": "read",
+      "observation": "Оценщик возвращает 0/1 или {score, metadata}; LLM-судья через generateObject со шкалой A–E→0..1."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/traces.mdx",
+      "status": "read",
+      "observation": "reportTrace — no-op «в production» (по переменной EVALITE_REPORT_TRACES)."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/variant-comparison.mdx",
+      "status": "read",
+      "observation": "evalite.each для сравнения моделей/подсказок."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/streams.md",
+      "status": "read",
+      "observation": "Задача может вернуть async iterable."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/multi-modal.mdx",
+      "status": "read",
+      "observation": "Uint8Array сохраняются в node_modules/.evalite/files."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/guides/customizing-the-ui.mdx",
+      "status": "read",
+      "observation": "columns получает scores и traces."
+    },
+    {
+      "file": "apps/evalite-docs/src/content/docs/examples/ai-sdk.md",
+      "status": "read",
+      "observation": "traceAISDKModel, разговоры как input."
+    },
+    {
+      "file": "packages/evalite/CHANGELOG.md",
+      "status": "read",
+      "observation": "История починок: 0.11.4 — упавшие задачи давали код 0; 0.17.1/0.18.1 — ошибки в data() и на уровне модуля не показывались; 0.14.0 — «без оценщиков» стало «–» вместо «0%»; 0.14.1 — стрелки сравнения без данных. Повторяющийся класс «сбой молчит»."
+    },
+    {
+      "file": "apps/evalite-docs/public/favicon.ico",
+      "status": "binary-noted",
+      "observation": "картинка сайта документации"
+    },
+    {
+      "file": "apps/evalite-docs/public/hero.webp",
+      "status": "binary-noted",
+      "observation": "картинка сайта документации"
+    },
+    {
+      "file": "apps/evalite-docs/public/og-image.jpg",
+      "status": "binary-noted",
+      "observation": "картинка сайта документации"
+    },
+    {
+      "file": "apps/evalite-docs/src/assets/houston.webp",
+      "status": "binary-noted",
+      "observation": "картинка сайта документации"
+    },
+    {
+      "file": "packages/evalite/src/evalite.ts",
+      "status": "read",
+      "observation": "Регистрация eval поверх describe/it.concurrent. Упавшая задача → status fail и scores: [] (:403) — в среднюю не входит. only:true в данных фильтрует набор (:242-246). trialCount размножает случаи."
+    },
+    {
+      "file": "packages/evalite/src/run-evalite.ts",
+      "status": "read",
+      "observation": "Запуск Vitest, порог и экспорт JSON. averageScore в экспорте — только по оценкам, упавшие без оценок выпадают (:79-83). process.exit только если код выставлен (:359-361)."
+    },
+    {
+      "file": "packages/evalite/src/reporter.ts",
+      "status": "read",
+      "observation": "Итог: averageScore по всем оценкам (:226-229), упавшие отдельно в failedTestsCount. Таймаут без RESULT_SUBMITTED → синтетический fail (:356-377). Ошибка уровня модуля → код 1."
+    },
+    {
+      "file": "packages/evalite/src/reporter/EvaliteRunner.ts",
+      "status": "read",
+      "observation": "Код возврата: упавшие → 1 отдельно от порога (:53-55); averageScore null → порог провален (:60); NaN*100 < порог → ложь (:61), спасает только нейтрализация NaN выше. score ?? 0 при записи (:229)."
+    },
+    {
+      "file": "packages/evalite/src/reporter/events.ts",
+      "status": "read",
+      "observation": "Аннотации сериализуются JSON — NaN становится null (побочный эффект, первая случайная защита от NaN)."
+    },
+    {
+      "file": "packages/evalite/src/reporter/rendering.ts",
+      "status": "read",
+      "observation": "displayScore: null → «-», NaN → 0 (третья нейтрализация NaN). «Duration» в итоге — максимум по тестам, а не сумма."
+    },
+    {
+      "file": "packages/evalite/src/create-scorer.ts",
+      "status": "read",
+      "observation": "Проверяется только typeof === number: NaN и значения вне 0–1 принимаются. Живой замер: 5 → «500 %, порог пройден»."
+    },
+    {
+      "file": "packages/evalite/src/types.ts",
+      "status": "read",
+      "observation": "score: null «reported as 0» — «не смог оценить» сливается с «плохо». Exported.Eval.averageScore обещает «across all results», код считает только оценённые."
+    },
+    {
+      "file": "packages/evalite/src/storage/sqlite.ts",
+      "status": "read",
+      "observation": "Миграции try{ALTER}catch(e){} ×6 — проглоченные ошибки. ADD COLUMN status DEFAULT 'success' — старые записи задним числом «успех». duration eval всегда 0. created_at с точностью до секунды — строгое createdBefore теряет соседей."
+    },
+    {
+      "file": "packages/evalite/src/storage/in-memory.ts",
+      "status": "read",
+      "observation": "Второе хранилище по тому же договору: время до мс (расходится с SQLite), update пропускает undefined (SQLite перезаписывает)."
+    },
+    {
+      "file": "packages/evalite/src/storage/storage.test.ts",
+      "status": "read",
+      "observation": "Приём: один тест договора на оба хранилища (testAllStorage). Пробел: порядок проверен по id, не по created_at по умолчанию; createdBefore и duration не проверены."
+    },
+    {
+      "file": "packages/evalite/src/storage/test-utils.ts",
+      "status": "read",
+      "observation": "Реестр хранилищ для testAllStorage."
+    },
+    {
+      "file": "packages/evalite/src/storage/utils.ts",
+      "status": "read",
+      "observation": "computeAverageScores по результатам."
+    },
+    {
+      "file": "packages/evalite/src/utils.ts",
+      "status": "read",
+      "observation": "sum: fn(b) || 0 — NaN и null → 0 (вторая нейтрализация NaN). average([]) = NaN."
+    },
+    {
+      "file": "packages/evalite/src/config.ts",
+      "status": "read",
+      "observation": "ВАЖНО: ошибка с текстом «Cannot find module» при загрузке конфига → конфиг молча пропускается. Живой замер: конфиг с scoreThreshold 80 и импортом неустановленного пакета → порог не применён, оценка 0, код 0."
+    },
+    {
+      "file": "packages/evalite/src/command.ts",
+      "status": "read",
+      "observation": "parseFloat для --threshold: «abc» → NaN → «Threshold NaN% (passed)», код 0 (живой замер). Подсказка «Default is 100» — в коде порога без флага нет. run/serve не передают hideTable."
+    },
+    {
+      "file": "packages/evalite/src/command.test.ts",
+      "status": "read",
+      "observation": "Разбор флагов проверен только на правильных значениях (--threshold=50); мусор не подаётся."
+    },
+    {
+      "file": "packages/evalite/src/server.ts",
+      "status": "read",
+      "observation": "Меню без полного прогона → score 0 и evalStatus «success». prevScore ?? score — «не с чем сравнить» как «без изменений». Прошлый eval без учёта типа прогона. Дополнительно — закрытая заметка вне репозитория (не публикуется до ответа автора)."
+    },
+    {
+      "file": "packages/evalite/src/sdk.ts",
+      "status": "read",
+      "observation": "Клиент UI: адрес localhost:3006 зашит, путь файла в запрос без кодирования."
+    },
+    {
+      "file": "packages/evalite/src/ai-sdk.ts",
+      "status": "read",
+      "observation": "Обёртка AI SDK для трасс; неизвестное число токенов → 0."
+    },
+    {
+      "file": "packages/evalite/src/traces.ts",
+      "status": "read",
+      "observation": "reportTrace — no-op без EVALITE_REPORT_TRACES; вне eval — исключение."
+    },
+    {
+      "file": "packages/evalite/src/index.ts",
+      "status": "read",
+      "observation": "Экспорты пакета."
+    },
+    {
+      "file": "packages/evalite/src/bin.ts",
+      "status": "read",
+      "observation": "Точка входа CLI."
+    },
+    {
+      "file": "packages/evalite/src/constants.ts",
+      "status": "read",
+      "observation": "Порт 3006, кэш node_modules/.evalite."
+    },
+    {
+      "file": "packages/evalite/src/backend-only-constants.ts",
+      "status": "read",
+      "observation": "База — node_modules/.evalite/cache.sqlite: третье имя (CLAUDE.md — evalite.db, quickstart — каталог)."
+    },
+    {
+      "file": "packages/evalite/src/write-file-queue-local-storage.ts",
+      "status": "read",
+      "observation": "AsyncLocalStorage для очереди записи файлов."
+    },
+    {
+      "file": "packages/evalite/package.json",
+      "status": "read",
+      "observation": "13 зависимостей времени выполнения (fastify, better-sqlite3…). main указывает на tsconfig-warning."
+    },
+    {
+      "file": "packages/evalite/tsconfig.json",
+      "status": "read",
+      "observation": "Конфиг @total-typescript."
+    },
+    {
+      "file": "packages/evalite/.gitignore",
+      "status": "read",
+      "observation": "Остаток старого формата evalite-report.jsonl."
+    },
+    {
+      "file": "packages/evalite/tsconfig-warning/index.js",
+      "status": "read",
+      "observation": "Приём: при неверном moduleResolution импорт попадает сюда и объясняет, что чинить."
+    },
+    {
+      "file": "packages/evalite/tsconfig-warning/index.d.ts",
+      "status": "read",
+      "observation": "То же для типов: evalite = «Something is configured incorrectly!»."
+    },
+    {
+      "file": "packages/evalite/src/export-static.ts",
+      "status": "read",
+      "observation": "Статическая выгрузка UI для CI (как наш report.html). Логика меню ДУБЛИРУЕТ server.ts. prevScore считается из результатов только текущего прогона — прошлых там нет → 0. Живой замер: история [1,1,1], /api/menu-items отдаёт prevScore 0 — UI показывает рост «с 0%». sanitizeFilename заменяет всё не-латинское на «_»: два eval с кириллическими именами одной длины перезапишут друг друга (по чтению). Сбой копирования файла — предупреждение, выгрузка «complete»."
+    },
+    {
+      "file": "packages/evalite-tests/.gitignore",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/CHANGELOG.md",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/package.json",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/ai-sdk-traces.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/basics.test.ts",
+      "status": "read",
+      "observation": "it.skip теста длительности со ссылкой на issue #223 — дефект «duration всегда 0» известен."
+    },
+    {
+      "file": "packages/evalite-tests/tests/columns-with-scores-traces.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/columns.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/config.test.ts",
+      "status": "read",
+      "observation": "Только исправные конфиги; сломанный импорт (тихий пропуск конфига) не проверен."
+    },
+    {
+      "file": "packages/evalite-tests/tests/custom-scorer.test.ts",
+      "status": "read",
+      "observation": "«Не число» проверено; NaN и выход за 0–1 — нет."
+    },
+    {
+      "file": "packages/evalite-tests/tests/export-static.test.ts",
+      "status": "read",
+      "observation": "Выгрузка на ОДНОМ прогоне — prevScore при истории не проверен (дефект prevScore=0 невидим)."
+    },
+    {
+      "file": "packages/evalite-tests/tests/failing.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/files.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/ai-sdk-traces-stream/traces.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/ai-sdk-traces/traces.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/basics/basics.eval.ts",
+      "status": "read",
+      "observation": "Комментарий «To test whether duration is calculated properly» — обещание, чей тест выключен (#223); то же ещё в 6 наборах."
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/columns-with-scores-traces/columns-with-scores-traces.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/columns/columns.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-includes/basics.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-includes/vite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-precedence/evalite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-precedence/test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-precedence/vite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-setupfiles/evalite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-setupfiles/setup.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/config-setupfiles/test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/custom-scorer/index.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/evalite-config/basics.eval.ts",
+      "status": "read",
+      "observation": "НЕ ИСПОЛЬЗУЕТСЯ ни одним тестом."
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/evalite-config/evalite.config.ts",
+      "status": "read",
+      "observation": "НЕ ИСПОЛЬЗУЕТСЯ ни одним тестом: hideTable и server.port из конфига не проверены."
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/evalite-timeout-config/basics.eval.ts",
+      "status": "read",
+      "observation": "НЕ ИСПОЛЬЗУЕТСЯ ни одним тестом."
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/evalite-timeout-config/evalite.config.ts",
+      "status": "read",
+      "observation": "НЕ ИСПОЛЬЗУЕТСЯ: testTimeout: 10 из конфига не проверен, хотя образец для этого написан."
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/experimental_columns/files-4.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/experimental_columns/test.png",
+      "status": "binary-noted",
+      "observation": "картинка-образец для тестов файлов"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/export/export.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/export/test.png",
+      "status": "binary-noted",
+      "observation": "картинка-образец для тестов файлов"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/failing-test-in-data/failing-test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/failing-test/failing-test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/failing-test/vite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/files/files-1.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/files/files-2.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/files/files-3.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/files/files-4.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/files/test.png",
+      "status": "binary-noted",
+      "observation": "картинка-образец для тестов файлов"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/long-text/long-text.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/module-level-error/module-level-error.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/module-level-error/vite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/much-data/much-data.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/multi/multi-1.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/multi/multi-2.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/multi/multi-3.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/no-scorers/no-scorers.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/non-serializable-data/non-serializable-data.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/objects/objects.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/only-flag-multiple/only-flag-multiple.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/only-flag-none/only-flag-none.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/only-flag-single/only-flag-single.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/only-flag-variants/only-flag-variants.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/paths/should-not-run.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/paths/should-run.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/polymorphic-data/polymorphic.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/stream/file.txt",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/stream/stream.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/test-modifiers-regular/test-modifiers.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/test-modifiers-skipped/test-modifiers.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/threshold/basics.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/timeout/timeout.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/timeout/vite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/traces/traces.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/trial-count-config/evalite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/trial-count-config/test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/trial-count-precedence/evalite.config.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/trial-count-precedence/test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/trial-count/trial-count.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/variants/variants.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/fixtures/watch-mode-fail/failing-test.eval.ts",
+      "status": "read",
+      "observation": "подопытный набор; прочитан, особенностей сверх теста-потребителя нет"
+    },
+    {
+      "file": "packages/evalite-tests/tests/long-text.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/much-data.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/multi.test.ts",
+      "status": "read",
+      "observation": "ТАВТОЛОГИЯ: not.toContain(\"ONLY ONE EVAL\") — строки нет нигде в программе (появилась в a85f7ee и исчезла), тест не может упасть."
+    },
+    {
+      "file": "packages/evalite-tests/tests/no-scorers.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/non-serializable-data.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/objects.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/only-flag.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/output-path.test.ts",
+      "status": "read",
+      "observation": "toHaveProperty(\"duration\") — наличие поля, не значение; averageScore проверен в [0,1] только на исправном наборе."
+    },
+    {
+      "file": "packages/evalite-tests/tests/paths.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/polymorphic-data.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/stream.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/test-modifiers.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/test-utils.ts",
+      "status": "read",
+      "observation": "Оснастка: всё через runEvalite с disableServer: true и хранилищем в памяти — сервер и SQLite интеграционными тестами не покрыты вовсе."
+    },
+    {
+      "file": "packages/evalite-tests/tests/threshold.test.ts",
+      "status": "read",
+      "observation": "Порог через runEvalite с числом; «passed» — только текстом, без кода возврата."
+    },
+    {
+      "file": "packages/evalite-tests/tests/timeout.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/traces.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/trial-count.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/variants.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tests/watch-mode.test.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/tsconfig.json",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "packages/evalite-tests/vitest.config.ts",
+      "status": "read",
+      "observation": "прочитан целиком; см. раздел тестов в CYCLE-02"
+    },
+    {
+      "file": "apps/evalite-ui/.eslintrc.cjs",
+      "status": "read",
+      "observation": "Второй конфиг ESLint (legacy) — тоже не вызывается ни одним скриптом."
+    },
+    {
+      "file": "apps/evalite-ui/.gitignore",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/README.md",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/display-input.tsx",
+      "status": "read",
+      "observation": "Показ входа/выхода: markdown без сырого HTML, JSON-дерево, файлы через сервер интерфейса."
+    },
+    {
+      "file": "apps/evalite-ui/app/components/logo.tsx",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/page-layout.tsx",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/score.tsx",
+      "status": "read",
+      "observation": "Состояния up/down/same/FIRST/failed/loading — «сравнивать не с чем» отдельно от «без изменений»: взять к разговору о видимости. Из-за prevScore=0 сервера — зелёная стрелка у каждого набора с историей."
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/breadcrumb.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/button.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/chart.tsx",
+      "status": "read",
+      "observation": "Вставленный shadcn. Подсказка: {item.value && …} — оценка 0 не показывается, ноль как «нет данных»."
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/copy-button.tsx",
+      "status": "read",
+      "observation": "Сбой копирования — только console.error, человек не узнает."
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/input.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/line-chart.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/live-date.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/separator.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/sheet.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/sidebar.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/skeleton.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/table.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/components/ui/tooltip.tsx",
+      "status": "read",
+      "observation": "вставленный компонент shadcn; своих решений нет"
+    },
+    {
+      "file": "apps/evalite-ui/app/data/queries.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/data/use-subscribe-to-socket.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/hooks/use-mobile.ts",
+      "status": "read",
+      "observation": "Побайтно совпадает с use-mobile.tsx — один из двух мёртвый."
+    },
+    {
+      "file": "apps/evalite-ui/app/hooks/use-mobile.tsx",
+      "status": "read",
+      "observation": "Дубликат use-mobile.ts."
+    },
+    {
+      "file": "apps/evalite-ui/app/hooks/use-server-state-utils.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/lib/utils.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/main.tsx",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/routes/$.tsx",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/routes/__root.tsx",
+      "status": "read",
+      "observation": "Боковая панель: оценка и стрелка по данным меню (prevScore=0 при истории)."
+    },
+    {
+      "file": "apps/evalite-ui/app/routes/eval.$name.result.$resultIndex.tsx",
+      "status": "read",
+      "observation": "Результат: шкала трасс, токены, сравнение с прошлым по индексу. Деление на 0 при равных start/end трассы."
+    },
+    {
+      "file": "apps/evalite-ui/app/routes/eval.$name.tsx",
+      "status": "read",
+      "observation": "Страница набора: история графиком, «View Latest», прошлая оценка считается ВЕРНО (в отличие от меню) — одно число тремя способами; упавшие входят в среднюю нулём (в терминале — исключены). duration всегда 0 ms (#223)."
+    },
+    {
+      "file": "apps/evalite-ui/app/sdk.ts",
+      "status": "read",
+      "observation": "Клиент: статический режим (JSON-файлы) или API; имя файла через sanitizeFilename — «должно совпадать с backend» (знание продублировано)."
+    },
+    {
+      "file": "apps/evalite-ui/app/tailwind.css",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/app/utils.test.ts",
+      "status": "read",
+      "observation": "Единственный тест UI: форматирование процентов и времени."
+    },
+    {
+      "file": "apps/evalite-ui/app/utils.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/components.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/eslint.config.js",
+      "status": "read",
+      "observation": "Импортирует 4 пакета, не объявленных нигде — не запустится. Скрипт lint = tsr generate && tsc: ESLint не вызывается вовсе."
+    },
+    {
+      "file": "apps/evalite-ui/index.html",
+      "status": "read",
+      "observation": "Шрифт Inter с Google Fonts — выгрузка «без сервера» всё же тянет сеть за шрифтом (запасной есть)."
+    },
+    {
+      "file": "apps/evalite-ui/package.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/public/assets/favicon.svg",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/tsconfig.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/tsr.config.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "apps/evalite-ui/vite.config.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "status": "read",
+      "observation": "pnpm install --no-frozen-lockfile — lock-файл не соблюдается; действия по меткам @v4, не по SHA. `pnpm run ci` не гоняет тесты и tsc интерфейса."
+    },
+    {
+      "file": ".github/workflows/claude.yml",
+      "status": "read",
+      "observation": "Агент в CI по @claude в комментарии; права только на чтение + id-token."
+    },
+    {
+      "file": ".github/workflows/preview.yml",
+      "status": "read",
+      "observation": "Предварительные выпуски pkg-pr-new, --no-frozen-lockfile."
+    },
+    {
+      "file": ".github/workflows/publish.yml",
+      "status": "read",
+      "observation": "Выпуск тоже с --no-frozen-lockfile: пакет может собраться на других зависимостях, чем проверенные. pnpm/action-setup@v2 (в остальных v4)."
+    },
+    {
+      "file": ".gitignore",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".husky/pre-commit",
+      "status": "read",
+      "observation": "lint-staged → только prettier. Проверок поведения перед коммитом нет."
+    },
+    {
+      "file": ".prettierignore",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".prettierrc",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".vscode/extensions.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".vscode/launch.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".vscode/settings.json",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": ".vscode/snippets.code-snippets",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "LICENSE",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "package.json",
+      "status": "read",
+      "observation": "ci = build, test (evalite и evalite-tests), lint (tsc двух пакетов), prettier --check. Интерфейс и документация вне ci."
+    },
+    {
+      "file": "packages/example/.gitignore",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/CHANGELOG.md",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/evalite.config.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/package.json",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/cache-model.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/content-generation.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/example.2.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/example.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/fail.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/files.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/issue-123.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/long.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/no-scorers.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/normal-test.test.ts",
+      "status": "read",
+      "observation": "expect(true).toBe(true) — тавтология, наш test-has-assertion её ловит"
+    },
+    {
+      "file": "packages/example/src/object.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/test.png",
+      "status": "binary-noted",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/traces.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/trial-count.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/src/variants.eval.ts",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "packages/example/tsconfig.json",
+      "status": "read",
+      "observation": "пример использования; прочитан целиком"
+    },
+    {
+      "file": "pnpm-lock.yaml",
+      "status": "generated-structural",
+      "observation": "Сгенерирован (13 260 строк): проверен по структуре, построчно не читался — знаний об устройстве нет. CI его не соблюдает (--no-frozen-lockfile)."
+    },
+    {
+      "file": "pnpm-workspace.yaml",
+      "status": "read",
+      "observation": "прочитан целиком"
+    },
+    {
+      "file": "repo-card.jpg",
+      "status": "binary-noted",
+      "observation": "Картинка для README."
+    },
+    {
+      "file": "vitest.workspace.ts",
+      "status": "read",
+      "observation": "прочитан целиком"
+    }
+  ]
+}
