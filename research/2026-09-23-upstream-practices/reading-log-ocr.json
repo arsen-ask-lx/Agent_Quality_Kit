@@ -1863,37 +1863,44 @@
   {
    "path": "internal/config/allowlist/allowed_ext.go",
    "bytes": 3291,
-   "status": "unread"
+   "status": "read",
+   "observation": "Проверки расширения и путей исключения, без учёта регистра."
   },
   {
    "path": "internal/config/allowlist/allowed_ext_test.go",
    "bytes": 20226,
-   "status": "unread"
+   "status": "read",
+   "observation": "Тесты: по языку, с «двойниками» (distribution≠dist, vendors≠vendor) и ссылками на поводы (#1494)."
   },
   {
    "path": "internal/config/allowlist/default_exclude_patterns.json",
    "bytes": 2121,
-   "status": "unread"
+   "status": "read",
+   "observation": "Встроенные исключения: тесты всех языков, фикстуры, снимки, сгенерированное, зависимости/сборка. Повод — однажды закоммиченный node_modules дал ревью на 389 файлов."
   },
   {
    "path": "internal/config/allowlist/default_secret_patterns.json",
    "bytes": 165,
-   "status": "unread"
+   "status": "read",
+   "observation": "Пути секретов (.ssh, id_*, .netrc, .npmrc, .pypirc, .dockercfg); .env* отдельно в коде."
   },
   {
    "path": "internal/config/allowlist/secret_path.go",
    "bytes": 2078,
-   "status": "unread"
+   "status": "read",
+   "observation": "Секретные пути вне пользовательских правил; шаблоны .env.example/.sample/.template — не секрет."
   },
   {
    "path": "internal/config/allowlist/secret_path_test.go",
    "bytes": 3597,
-   "status": "unread"
+   "status": "read",
+   "observation": "Тесты секретных путей, включая «.env.example внутри .ssh — всё равно секрет»."
   },
   {
    "path": "internal/config/allowlist/supported_file_types.json",
    "bytes": 1186,
-   "status": "unread"
+   "status": "read",
+   "observation": "Разрешённые расширения. .md и .txt нет — свод правил агента (AGENTS.md/CLAUDE.md) и документация не ревьюятся никогда."
   },
   {
    "path": "internal/config/rules/canonical_config_test.go",
@@ -2183,12 +2190,14 @@
   {
    "path": "internal/config/rules/system_rules.go",
    "bytes": 21446,
-   "status": "unread"
+   "status": "read",
+   "observation": "Четыре слоя правил, merge_system_rule, фильтр include/exclude берётся из ОДНОГО высшего слоя, где он задан. Ссылка правила на отсутствующий файл → пустое правило → молча системное (находка 4, проверено). Проектный слой заперт в корне репо (симлинки, ..), расширения только .md/.txt/.markdown, ≤512 КБ."
   },
   {
    "path": "internal/config/rules/system_rules.json",
    "bytes": 1904,
-   "status": "unread"
+   "status": "read",
+   "observation": "Карта шаблон → документ правил, порядок значим; все 55 ссылок сходятся с файлами (сверено скриптом)."
   },
   {
    "path": "internal/config/rules/system_rules_test.go",
@@ -2208,7 +2217,8 @@
   {
    "path": "internal/config/template/effort.go",
    "bytes": 1606,
-   "status": "unread"
+   "status": "read",
+   "observation": "Пресеты effort: 1/2/3 раунда; неизвестное значение — ошибка."
   },
   {
    "path": "internal/config/template/effort_test.go",
@@ -2218,62 +2228,74 @@
   {
    "path": "internal/config/template/prompts/grouping_task_system.md",
    "bytes": 905,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/grouping_task_user.md",
    "bytes": 209,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/main_task_system.md",
    "bytes": 2550,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/main_task_user.md",
    "bytes": 512,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/memory_compression_task_system.md",
    "bytes": 1760,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/memory_compression_task_user.md",
    "bytes": 12,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/plan_task_system.md",
    "bytes": 2563,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/plan_task_user.md",
    "bytes": 387,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/re_location_task_system.md",
    "bytes": 182,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/re_location_task_user.md",
    "bytes": 680,
-   "status": "unread"
+   "status": "read",
+   "observation": "Промпт, прочитан целиком."
   },
   {
    "path": "internal/config/template/prompts/review_filter_task_system.md",
    "bytes": 905,
-   "status": "unread"
+   "status": "read",
+   "observation": "Фильтр замечаний: асимметрия ошибок — «удалить верное замечание = молча уничтожить находку, никто не узнает», поэтому при недоказанности — одобрить."
   },
   {
    "path": "internal/config/template/prompts/review_filter_task_user.md",
    "bytes": 6054,
-   "status": "unread"
+   "status": "read",
+   "observation": "Только два основания удалить (код отсутствует в дифе файла / строка дифа прямо опровергает), вето на защищённые темы (память, конкурентность, связывание, смена поведения, неиспользуемый параметр) — даже при уверенности модели. Метод по шагам, первый сработавший шаг решает."
   },
   {
    "path": "internal/config/template/scan_template.json",
@@ -2283,12 +2305,14 @@
   {
    "path": "internal/config/template/task_template.json",
    "bytes": 1403,
-   "status": "unread"
+   "status": "read",
+   "observation": "Шесть задач модели и числа: 100 раундов инструментов, план от 50/100 строк, группировка от 4 файлов/200 строк, 2 раунда ревью, 200k вход, 16k выход."
   },
   {
    "path": "internal/config/template/template.go",
    "bytes": 13393,
-   "status": "unread"
+   "status": "read",
+   "observation": "Загрузка шаблона, пороги плана/группировки, язык ответов добавляется в системные сообщения; Validate отвергает нулевые пределы."
   },
   {
    "path": "internal/config/template/template_test.go",
@@ -2688,7 +2712,8 @@
   {
    "path": "internal/llmloop/compression.go",
    "bytes": 12672,
-   "status": "unread"
+   "status": "read",
+   "observation": "Трёхзонное сжатие памяти (замороженная/сжимаемая/активная); асинхронное при 60 %, синхронное при 80 %; при ошибке сжатия разговор сохраняется, а не обрезается. Но без шаблона сжатия runCompression молча оставляет только первые два сообщения."
   },
   {
    "path": "internal/llmloop/compression_test.go",
