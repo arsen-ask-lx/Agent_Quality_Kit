@@ -1,4 +1,4 @@
-# Цикл 3: open-code-review (A3) — чтение закончено, идёт перенос
+# Цикл 3: open-code-review (A3) — цикл закрыт 2026-09-26
 
 Дата открытия: 2026-09-26. Источник: [alibaba/open-code-review](https://github.com/alibaba/open-code-review)
 `486022daaf14f7142275eddb9b3cacc3cc5dadfa` (2026-09-24), Apache-2.0, 945 файлов, ~10 МБ текста.

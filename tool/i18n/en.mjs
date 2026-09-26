@@ -203,6 +203,8 @@ export const en = {
       "field and gate names use latin letters, digits, dash and underscore. What is declared here\n  does not run at all — while looking as if it does.",
     manifestKnown: (keys) => `Manifest fields: ${keys.join(", ")}`,
     runVerdictOk: "Everything declared is green.",
+    runVerdictPartial: (names) => `Everything that ran is green, but the run was partial: not run — ${names}. That is not "green" for them: their state is unknown.`,
+    runVerdictEmpty: "empty: no gates declared — nothing was run. This is not \"green\": there is no protection here. Install the first one: aqk add <name>.",
     runVerdictFail: (why) => `The run is red: ${why}.`,
     whyMissing: "files from the header are missing",
     whyLevel: "the level was not reached",

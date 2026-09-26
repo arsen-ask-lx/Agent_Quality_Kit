@@ -13,6 +13,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { project, run, aqk, gate } from "./_fixture.mjs";
 
@@ -83,4 +84,22 @@ test("код в пропускаемых каталогах не делает п
   const r = aqk(p, "doctor");
   const langs = (r.out.match(/(языки|languages):[^\n]*/) || [""])[0];
   assert.doesNotMatch(langs, /python|javascript/, `языки взяты из vendor/ и coverage/:\n${langs}`);
+});
+
+// Тот же класс уровнем выше. Прогон, в котором не объявлено ни одного гейта, печатал «Всё объявленное
+// зелёное» и выходил с 0: формально верно (объявлено ничего), по сути — зелёная галочка над пустотой.
+// Замечено при разборе cloudflare/security-audit-skill: их проверка реестра покрытия отвечает «PASS: 0
+// coverage units valid» на пустой реестр. Код остаётся 0 (решение владельца для «пусто»), но вердикт
+// обязан сказать, что прогонять было нечего.
+test("doctor --run без единого гейта не говорит «всё зелёное»", (t) => {
+  const p = project(t, { "README.md": "# x\n" });
+  aqk(p, "init");
+  const man = join(p.dir, ".aqk.yml");
+  const text = readFileSync(man, "utf8").replace(/^gates:\n(?:[ \t]+.*\n?)*/m, "gates:\n");
+  writeFileSync(man, text);
+  run(p, "git", ["add", "-A"]);
+  run(p, "git", ["commit", "-qm", "x"]);
+  const r = aqk(p, "doctor", "--run");
+  assert.doesNotMatch(r.out, /Всё объявленное зелёное/, `зелёный вердикт над пустым списком гейтов:\n${r.out}`);
+  assert.match(r.out, /пусто:[^\n]*гейт/i, `не сказано, что прогонять было нечего:\n${r.out}`);
 });

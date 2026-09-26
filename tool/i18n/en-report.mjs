@@ -7,7 +7,7 @@ export const enReport = {
     eyebrow: (name) => `aqk report · ${name}`,
     meta: (when, head, version, n, secs) =>
       [when, head && `commit ${head}`, version && `aqk ${version}`, `${n} checks · ${secs} s total`].filter(Boolean),
-    headline: { red: (n) => `Red checks: ${n}`, cannot: (n) => `Could not check: ${n}`, clean: "Everything declared is green", none: "No run yet" },
+    headline: { red: (n) => `Red checks: ${n}`, cannot: (n) => `Could not check: ${n}`, clean: "Everything declared is green", partial: (n) => `Partial run: ${n} not run — everything that ran is green`, none: "No run yet" },
     q1: "What is protected?",
     q2: "Does the protection actually catch defects?",
     q3: "Better or worse than last time?",

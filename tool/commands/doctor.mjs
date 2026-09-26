@@ -305,9 +305,17 @@ async function cmdDoctor() {
   //
   // Печатается и на зелёном тоже: «ничего не сказал» и «всё проверено» обязаны различаться.
   if (wantRun) {
-    if (ok) {
+    if (ok && !gates.length) {
+      // Пустой список — не «всё зелёное»: зелёная галочка над пустотой читается как проверка, которой
+      // не было. Код остаётся 0 (решение владельца для «пусто», 2026-09-26), но сказано прямо.
+      console.log(c.yellow(`  ${L.doctor.runVerdictEmpty}\n`));
+    } else if (ok && skippedNames.length) {
+      // Урезанный прогон называет себя урезанным: «всё объявленное зелёное» про гейт, который не
+      // запускался, — ложь, а строкой выше сказано, что его состояние неизвестно (сверка с
+      // cloudflare/security-audit-skill 2026-09-26: «states plainly that it is a partial pass»).
+      console.log(c.yellow(`  ${L.doctor.runVerdictPartial(skippedNames.join(", "))}\n`));
+    } else if (ok) {
       console.log(c.green(`  ${L.doctor.runVerdictOk}\n`));
-      if (skippedNames.length) console.log(c.yellow(`  ${L.doctor.selectSkipped(skippedNames.join(", "))}\n`));
     } else {
       const why = [];
       if (missing) why.push(L.doctor.whyMissing);

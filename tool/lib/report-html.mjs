@@ -82,7 +82,9 @@ function summarize(state, history, T) {
   const level = lastFull ? lastFull.level : state.level?.reached ?? -1;
 
   const headline = !last ? T.headline.none
-    : [red && T.headline.red(red), cannot && T.headline.cannot(cannot)].filter(Boolean).join(" · ") || T.headline.clean;
+    : [red && T.headline.red(red), cannot && T.headline.cannot(cannot)].filter(Boolean).join(" · ")
+      // Урезанный прогон не заявляет полного охвата: «всё зелёное» — только про полный.
+      || (last.partial && (last.skipped || []).length ? T.headline.partial((last.skipped || []).length) : T.headline.clean);
   const when = last ? local(last.at).full : "";
   const meta = last ? T.meta(when, String(last.head || "").slice(0, 7), last.version, gates.length, secs.toFixed(0)) : [];
 
