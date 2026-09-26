@@ -20,7 +20,7 @@ tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint
 # непустой `--exclude`) обязательны: без них одна строка в конфиге проекта снимает находку,
 # а нарушение остаётся в коде. Замер и цена — в шапке `kit/gates/_native.sh`.
 recipes:
-  python: ruff check -q --isolated --output-format=concise --select T20 {dir}
+  python: ruff check -q --isolated --no-cache --output-format=concise --select T20 {dir}
   typescript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-console":"error"}' {dir}
   javascript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-console":"error"}' {dir}
 

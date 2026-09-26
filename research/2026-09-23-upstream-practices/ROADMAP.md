@@ -39,7 +39,7 @@
 
 | № | Репозиторий | Файлов | Состояние |
 |---|---|---:|---|
-| A1 | [smixs/code-quality](https://github.com/smixs/code-quality) | 105 | полное чтение завершено; внедрены пакеты 1–2, остаток в [CYCLE-01.md](CYCLE-01.md) |
+| A1 | [smixs/code-quality](https://github.com/smixs/code-quality) | 105 | **цикл закрыт 2026-09-26**: пакеты 1–4, по каждой строке решение и арбитр — [CYCLE-01.md](CYCLE-01.md) |
 | A2 | [mattpocock/evalite](https://github.com/mattpocock/evalite) | 247 | в очереди; как учитываются неуспешные, отсутствующие и повторные оценки |
 | A3 | [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | не снято | в очереди; ревью как арбитр: что считается находкой и кто отвечает за отказ инструмента |
 | A4 | [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | не снято | в очереди; аудит как скилл с проверяемым выводом — ближайший чужой аналог `probe` |

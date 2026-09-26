@@ -17,7 +17,7 @@ tool: https://github.com/astral-sh/ruff · https://github.com/eslint/eslint · h
 # а нарушение остаётся в коде. Замер и цена — в шапке `kit/gates/_native.sh`.
 recipes:
   # BLE — ловля голого исключения, TRY400 — запись без трейса, SIM105 — перехват ради тишины.
-  python: ruff check -q --isolated --output-format=concise --select BLE,TRY400,SIM105 {dir}
+  python: ruff check -q --isolated --no-cache --output-format=concise --select BLE,TRY400,SIM105 {dir}
   typescript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-empty":["error",{"allowEmptyCatch":false}]}' {dir}
   javascript: eslint --no-config-lookup --ignore-pattern 'gates/*/red/**' --ignore-pattern 'gates/*/green/**' --rule '{"no-empty":["error",{"allowEmptyCatch":false}]}' {dir}
   # errcheck — канонический инструмент Go под этот же предмет: ошибка присвоена и не проверена.
