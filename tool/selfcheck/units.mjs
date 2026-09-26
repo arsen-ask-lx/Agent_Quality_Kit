@@ -307,6 +307,30 @@ test("совет по починке отделяется от находок и
   assert.equal(r.advice[1].includes("общий журнал"), true);
 });
 
+// Договор между гейтами и прогоном: строка, которой гейт говорит с человеком, начинается с метки,
+// и прогон обязан эту метку узнать — иначе у зелёного гейта строка не показывается вовсе.
+// Соглашение живёт в двух местах (эхо в check.sh и ADVICE_RE в scope.mjs) и уже расходилось:
+// protection-not-removed печатал «совет: снято осознанно…», прогон ждал только «почини:»,
+// и снятая защита не доходила до человека. Найдено разбором OCR 2026-09-26 (одно правило в
+// двух местах: IDEA исправили, VS Code забыли).
+test("каждую метку, которую печатают гейты, прогон узнаёт как совет", async () => {
+  const { readdir, readFile } = await import("node:fs/promises");
+  const root = new URL("../../kit/gates/", import.meta.url);
+  // Не метки совета, и почему: строка-образец разметки в подсказке promise-has-gate.
+  const notAdvice = new Set(["машина"]);
+  const seen = new Set();
+  for (const d of await readdir(root, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    let text;
+    try { text = await readFile(new URL(`${d.name}/check.sh`, root), "utf8"); } catch { continue; }
+    for (const m of text.matchAll(/echo\s+["']\s*([A-Za-zА-Яа-яё]+):/g)) if (!notAdvice.has(m[1])) seen.add(m[1]);
+  }
+  assert.ok(seen.size > 0, "не нашлось ни одной метки — разбор check.sh сломан, а не гейты молчат");
+  for (const word of seen) {
+    assert.equal(splitAdvice([`  ${word}: пример`]).advice.length, 1, `метку «${word}:» прогон не узнаёт`);
+  }
+});
+
 test("совет по починке опознаётся на обоих языках", () => {
   assert.equal(splitAdvice(["a.py:1: x", "  fix: replace with a logger call"]).advice.length, 1);
   assert.equal(splitAdvice(["a.py:1: x", "  почини: замени на логгер"]).advice.length, 1);
