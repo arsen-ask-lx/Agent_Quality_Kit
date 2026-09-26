@@ -10,6 +10,7 @@ import { templates } from "./templates-en.mjs";
 const ago = (n) => (n === null || n === undefined ? "" : ` (${n} commit${n === 1 ? "" : "s"} ago)`);
 
 import { enGates } from "./en-gates.mjs";
+import { enReport } from "./en-report.mjs";
 
 export const en = {
   learn: {
@@ -343,4 +344,5 @@ export const en = {
     ],
   },
   ...enGates,
+  ...enReport,
 };

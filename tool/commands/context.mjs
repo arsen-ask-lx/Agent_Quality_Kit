@@ -155,6 +155,8 @@ function contextBlock(state, T = L.context) {
   // чем промолчать: он пойдёт его читать и получит пустоту вместо правил. Замерено на шести
   // чужих проектах: на flask блок писал «Свод правил: AGENTS.md», которого там нет.
   if (state.entryExists !== false) out.push("", T.where(state.entry || "AGENTS.md"));
+  // Отчёт для человека — только если файл ЕСТЬ, по той же причине, что свод выше.
+  if (state.report) out.push(T.report(state.report));
   // ПРОСЬБА ОБ ОТЗЫВЕ — последней строкой и только при содержании (feedback.mjs). Последней
   // потому, что это единственная строка блока, которая не про состояние проекта: ставить её
   // выше значило бы отодвинуть работой то, ради чего блок и читают.
@@ -273,9 +275,10 @@ async function readAdvice(man, probe) {
   return { adopt, blind, start, missed };
 }
 
-async function cmdContext(args = []) {
-  const full = args.includes("--full");
-  if (args.includes("--install")) return installHook(full);
+// СОСТОЯНИЕ ПРОЕКТА — одно на двух читателей: блок для агента и отчёт для человека
+// (`report-html.mjs`). Посчитанное дважды разошлось бы: агенту одно число, человеку другое.
+// Ничего не запускает — только читает манифест и файлы прошлых прогонов.
+async function gatherState({ full = false } = {}) {
 
   const man = await readManifest();
   const entry = (Array.isArray(man?.entry) ? man.entry : []).find((e) => typeof e === "string" && e.trim())?.trim()
@@ -346,6 +349,16 @@ async function cmdContext(args = []) {
     next = nextSteps({ init: !man, adopt, blind, start });
   } catch { /* не посчитали — блок скажет остальное; выдумывать шаги нельзя */ }
 
+  const reportRel = join(TARGET_DIR, "report.html");
+  const report = (await exists(join(CWD, reportRel))) ? reportRel.replace(/\\/g, "/") : null;
+  return { man, entry, rules, level, run, probe, ratchets, fullPart, next, report };
+}
+
+async function cmdContext(args = []) {
+  const full = args.includes("--full");
+  if (args.includes("--install")) return installHook(full);
+  const { man, entry, rules, level, run, probe, ratchets, fullPart, next, report } = await gatherState({ full });
+
   // ЕДИНСТВЕННАЯ ПЛАТА ЗА КОМПЛЕКТ — один ответ автору, и просит о нём агент: он читает этот
   // блок каждую сессию и передаёт человеку то, что в нём написано. Замер 2026-09-14: тысяча
   // скачиваний в неделю и ноль отзывов за всё время — просьба печаталась только при `init`, то
@@ -365,8 +378,8 @@ async function cmdContext(args = []) {
 
   console.log(contextBlock({
     entry, entryExists: rules !== null, level, rules, run, ratchets, probe, full: fullPart,
-    next, when: { hook: await preCommitHook(CWD) }, ask,
+    next, when: { hook: await preCommitHook(CWD) }, ask, report,
   }).join("\n"));
 }
 
-export { cmdContext, contextBlock, nextSteps, countArbiters, withHook, hasOurHook, portableSelf, readAdvice };
+export { cmdContext, gatherState, contextBlock, nextSteps, countArbiters, withHook, hasOurHook, portableSelf, readAdvice };

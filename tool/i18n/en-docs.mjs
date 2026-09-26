@@ -55,6 +55,7 @@ const enDocs = {
   // It goes into the agent's context via a SessionStart hook, so it is written as claims of
   // fact: no politeness, no preamble, every line either a fact or an honest "unknown".
   context: {
+    report: (p) => `Report for a human: ${p} — one file that opens in a browser. When you finish, show it to the human: it tells them whether things got better and what to hand you next.`,
     title: "AQK — the state of this repository right now. Only what a machine computed; where it\ndoes not know, it says \"unknown\" — which is not the same as \"fine\".",
     level: (r, top, missing) =>
       `Level: AQK-${r} of ${top}.` + (missing ? ` AQK-${r + 1} is missing: ${missing}.` : ""),

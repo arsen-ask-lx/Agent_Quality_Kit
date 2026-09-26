@@ -23,6 +23,7 @@ import { detectFacts, readCatalog, triggerVerdict, whichSync } from "../lib/repo
 import { changedCode, coverage, evidenceHash, readForHash } from "../lib/evidence.mjs";
 import { runGates, declaredGates, sinceRef } from "../lib/run.mjs";
 import { L } from "../i18n/index.mjs";
+import { writeHtmlReport } from "./report-page.mjs";
 
 // Каким рецептом стоит гейт: родным инструментом или переносимой проверкой. Именно это
 // различие потерялось в первом чужом отчёте, и именно оно решает, что гейт на самом деле ловит.
@@ -70,6 +71,8 @@ async function findDoc(name) {
 }
 
 async function cmdReport() {
+  // `--html` — страница для человека, а не форма для агента: без прогона, из истории и состояния.
+  if (process.argv.includes("--html")) { await writeHtmlReport(); return; }
   const man = await readManifest();
   if (!man) {
     console.log(c.red(`\n  ${L.report2.noManifest(`${SELF} init`)}\n`));

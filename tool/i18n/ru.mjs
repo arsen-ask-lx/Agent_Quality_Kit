@@ -9,6 +9,7 @@ import { ruDocs } from "./ru-docs.mjs";
 import { templates } from "./templates-ru.mjs";
 
 import { ruGates } from "./ru-gates.mjs";
+import { ruReport } from "./ru-report.mjs";
 
 // «(коммитов с тех пор: 3)» — без склонений: число рядом со словом в родительном падеже
 // читается одинаково при любом числе.
@@ -357,4 +358,5 @@ export const ru = {
     ],
   },
   ...ruGates,
+  ...ruReport,
 };
