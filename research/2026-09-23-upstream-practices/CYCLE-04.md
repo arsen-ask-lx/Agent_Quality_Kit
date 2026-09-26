@@ -96,6 +96,20 @@ ATTACK-CLASSES.md · MEMORY-SAFETY-AND-BINARY.md · AI-AND-LLM.md · WEB-PROTOCO
 CLIENT-SIDE.md · SUPPLY-CHAIN-AND-RELEASE.md · CLOUD-AND-DEPLOYMENT.md ·
 PROTOCOLS-RPC-AND-MESSAGING.md · RESOURCE-EXHAUSTION-AND-AVAILABILITY.md ·
 DATA-ISOLATION-AND-LIFECYCLE.md · DESKTOP-MOBILE-AND-LOCAL-IPC.md · report-schema.json ·
-validate-findings.cjs · validate-coverage-ledger.cjs (прочитан код; тела валидации атрибутов —
-целиком) · validate-findings.test.cjs и validate-coverage-ledger.test.cjs (по именам тестов и
-двум прочитанным целиком: сверка общих функций и пустой реестр).
+validate-findings.cjs · validate-coverage-ledger.cjs · validate-findings.test.cjs ·
+validate-coverage-ledger.test.cjs.
+
+**Поправка 2026-09-26, в тот же день.** До этой строки заголовок говорил «все целиком», а
+здесь же стояло, что две программы-проверки прочитаны частично, а два их теста — «по именам
+тестов». Заголовок был сильнее журнала, и владельцу ушло то же «каждый целиком». Недочитанное
+дочитано при открытии цикла 5 — все четыре файла, 3037 строк, — и только после этого заголовок
+стал правдой. Дочитывание дало две заметки, которых в разборе не было:
+
+- **Кто проверял, тот не перепроверяет — и это держит программа.** У реестра покрытия при
+  переназначении участка владелец обязан быть новым (`current assignment owner must be fresh`),
+  а доказательства прежнего владельца нельзя перенести в новую попытку (`prior assignment owner
+  evidence must remain in its archived attempt`, `artifact from an archived attempt cannot be
+  reused`). Правило «проверяет не тот, кто нашёл» здесь не текст инструкции, а проверка.
+- **«Не смог прочитать» и «нашёл нарушение» у них — один код 1.** Различаются только текстом
+  (`Failed to read…` против `FAIL: N validation error(s)`). У нас это три кода (0/1/2), и
+  «не смогли» в вердикт как красное не сливается.
