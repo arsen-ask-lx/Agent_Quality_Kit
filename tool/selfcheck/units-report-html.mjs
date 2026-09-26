@@ -15,6 +15,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { renderReport } from "../lib/report-html.mjs";
 import { ru } from "../i18n/ru.mjs";
+import { en } from "../i18n/en.mjs";
 
 const entry = (gates, extra = {}) => ({
   at: "2026-09-26T10:00:00.000Z", version: "0.17.0", head: "2dc31a83a2df", level: 2,
@@ -118,4 +119,20 @@ test("время прогона — местное, а не по Гринвич�
   const t = text(page([entry({ a: "ok" }), entry({ a: "ok" })]));
   assert.ok(t.includes(`${p(d.getHours())}:${p(d.getMinutes())}`), t.slice(0, 300));
   assert.ok(t.includes(`${p(d.getDate())}.${p(d.getMonth() + 1)}`));
+});
+
+// Неизвестное время — не ноль. Время пишется у каждого запущенного гейта, но в истории бывают
+// строки старше этого поля, и `?? 0` печатал на них «0.0 с»: тот самый «неизвестно как ноль»,
+// который цикл A5 нашёл в чужом лимите трат (там неизвестная цена шла в сумму нулём).
+test("неизвестное время гейта не печатается как «0.0 с»", () => {
+  const html = page([entry({ a: "ok" }, { secs: undefined })]);
+  assert.doesNotMatch(html, /0\.0 с/, "неизвестное время показано нулём");
+  assert.match(html, /<span class="t">—<\/span>/, "неизвестное время не названо прочерком");
+  assert.match(page([entry({ a: "ok" })]), /1\.5 с/, "известное время пропало");
+});
+
+test("единица времени — на языке отчёта", () => {
+  const html = renderReport(base, [entry({ a: "ok" })], { T: en.html, C: en.context, self: "aqk", name: "demo" });
+  assert.match(html, /1\.5 s</, "в английском отчёте нет «s»");
+  assert.doesNotMatch(html, /1\.5 с</, "в английский отчёт попала русская «с»");
 });

@@ -101,11 +101,15 @@ function summarize(state, history, T) {
   return { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind };
 }
 
+// Неизвестное время — прочерк, а не «0.0 с»: в истории бывают строки старше поля `secs`, и ноль
+// на них читался как «гейт отработал мгновенно».
+const secsCell = (v, unit) => (Number.isFinite(Number(v)) && v !== null && v !== undefined ? `${esc(Number(v).toFixed(1))} ${esc(unit)}` : "—");
+
 function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
   const { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind } = summarize(state, history, T);
 
   const gateCells = gates.map(([g, v]) =>
-    `<div class="gate g-${v}" title="${esc(T.gateState[v] || v)}"><span>${esc(g)}</span><span class="t">${esc(Number(last.secs?.[g] ?? 0).toFixed(1))} с</span></div>`).join("")
+    `<div class="gate g-${v}" title="${esc(T.gateState[v] || v)}"><span>${esc(g)}</span><span class="t">${secsCell(last.secs?.[g], T.sec)}</span></div>`).join("")
     + (last?.skipped || []).map((g) => `<div class="gate g-skipped" title="${esc(T.gateState.skipped)}"><span>${esc(g)}</span><span class="t">~</span></div>`).join("");
 
   const blindList = (pr.classes || []).length

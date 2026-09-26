@@ -5,6 +5,8 @@ export const ruReport = {
     lang: "ru",
     title: "Отчёт AQK",
     eyebrow: (name) => `aqk report · ${name}`,
+    // Единица времени у каждого гейта: вшитая «с» попадала и в английский отчёт.
+    sec: "с",
     meta: (when, head, version, n, secs) =>
       [when, head && `коммит ${head}`, version && `aqk ${version}`, `${n} проверок · ${secs} с суммарно`].filter(Boolean),
     headline: { red: (n) => `Красных проверок: ${n}`, cannot: (n) => `Не смогли проверить: ${n}`, clean: "Всё объявленное зелёное", partial: (n) => `Прогон урезан: не запускались ${n} — всё запущенное зелёное`, none: "Прогона ещё не было" },
