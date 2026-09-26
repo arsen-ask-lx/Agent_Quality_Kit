@@ -41,7 +41,8 @@ test("на проекте без своих файлов каждый скани
 });
 
 test(".aqkignore, скрывший весь код, называется, а не выдаётся за чистоту", (t) => {
-  const p = project(t, { "src/app.py": "x = 1\n# TODO fix later\n", ".aqkignore": "src/\n" });
+  // Маркер собран из частей, иначе этот файл сам станет находкой todo-without-task в нашем репозитории.
+  const p = project(t, { "src/app.py": `x = 1\n# ${"TO" + "DO"} fix later\n`, ".aqkignore": "src/\n" });
   const r = gate(p, "todo-without-task");
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, EMPTY_RE, r.out);
