@@ -26,11 +26,16 @@ function compare(history) {
   if (full.length < 2) return null;
   const [prev, now] = full.slice(-2);
   const bad = (h, g) => h.gates[g] === "fail" || h.gates[g] === "cannot";
-  const names = [...new Set([...Object.keys(prev.gates), ...Object.keys(now.gates)])].sort();
+  // Считаем только проверки, которые есть В ОБОИХ прогонах. Иначе удалённый красный гейт давал
+  // «красных стало меньше» — снятие защиты выглядело улучшением (разбор evalite, 2026-09-26).
+  // Пропавшие названы отдельно, и при них вердикт «сравнивать нельзя», а не «лучше».
+  const both = Object.keys(now.gates).filter((g) => g in prev.gates).sort();
+  const reds = (h) => both.filter((g) => bad(h, g)).length;
   return {
-    delta: (count(now, "fail") + count(now, "cannot")) - (count(prev, "fail") + count(prev, "cannot")),
-    broke: names.filter((g) => bad(now, g) && !bad(prev, g)),
-    fixed: names.filter((g) => bad(prev, g) && now.gates[g] === "ok"),
+    delta: reds(now) - reds(prev),
+    broke: both.filter((g) => bad(now, g) && !bad(prev, g)),
+    fixed: both.filter((g) => bad(prev, g) && now.gates[g] === "ok"),
+    gone: Object.keys(prev.gates).filter((g) => !(g in now.gates)).sort(),
   };
 }
 
@@ -88,8 +93,8 @@ function summarize(state, history, T) {
   const pPill = pr.state === "stale" ? T.probe.stale(pr.behind) : quiet ? T.probe[pr.state][1] : T.probe.fresh;
 
   const cmp = compare(history);
-  const [tBig, tSmall, tPill] = !cmp ? T.trend.none : cmp.delta < 0 ? T.trend.better(-cmp.delta) : cmp.delta > 0 ? T.trend.worse(cmp.delta) : T.trend.same;
-  const tKind = !cmp ? "unk" : cmp.delta > 0 ? "fail" : "ok";
+  const [tBig, tSmall, tPill] = !cmp ? T.trend.none : cmp.gone.length ? T.trend.shrunk(cmp.gone.length) : cmp.delta < 0 ? T.trend.better(-cmp.delta) : cmp.delta > 0 ? T.trend.worse(cmp.delta) : T.trend.same;
+  const tKind = !cmp || cmp.gone.length ? "unk" : cmp.delta > 0 ? "fail" : "ok";
   return { last, gates, ok, red, cannot, level, headline, meta, pr, pBig, pSmall, pKind, pPill, cmp, tBig, tSmall, tPill, tKind };
 }
 
@@ -105,8 +110,8 @@ function renderReport(state, history, { T, C, self = "aqk", name = "" }) {
   const counts = pr.counts ? `<p class="muted">${esc(T.probe.counts(pr.counts.caught, pr.counts.unknown))}</p>` : "";
   const human = state.rules?.human ? `<p>${esc(T.humanRules(state.rules.human, state.rules.total, state.entry || "AGENTS.md"))}</p>` : "";
 
-  const changes = cmp && (cmp.broke.length || cmp.fixed.length)
-    ? `<ul class="plain">${cmp.broke.length ? `<li><span class="state s-fail">${esc(T.trend.broke)}:</span> ${cmp.broke.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.fixed.length ? `<li><span class="state s-ok">${esc(T.trend.fixed)}:</span> ${cmp.fixed.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}</ul>` : "";
+  const changes = cmp && (cmp.broke.length || cmp.fixed.length || cmp.gone.length)
+    ? `<ul class="plain">${cmp.gone.length ? `<li><span class="state s-unk">${esc(T.trend.gone)}:</span> ${cmp.gone.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.broke.length ? `<li><span class="state s-fail">${esc(T.trend.broke)}:</span> ${cmp.broke.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}${cmp.fixed.length ? `<li><span class="state s-ok">${esc(T.trend.fixed)}:</span> ${cmp.fixed.map((g) => `<code>${esc(g)}</code>`).join(", ")}</li>` : ""}</ul>` : "";
 
   const steps = state.next?.steps || [];
   const todo = steps.length
@@ -151,6 +156,7 @@ function renderSummary(state, history, { T, C, self = "aqk", name = "" }) {
   if (by("fail").length) out.push("", `${T.gateState.fail}: ${by("fail").join(", ")}`);
   if (by("cannot").length) out.push("", `${T.gateState.cannot}: ${by("cannot").join(", ")}`);
   if ((pr.classes || []).length) out.push("", `${T.probeBlindList} ${pr.classes.map((b) => `${mdName(b.slug)} (${mdName(b.file)})`).join(", ")}`);
+  if (cmp?.gone.length) out.push("", `${T.trend.gone}: ${cmp.gone.map(mdName).join(", ")}`);
   if (cmp?.broke.length) out.push("", `${T.trend.broke}: ${cmp.broke.map(mdName).join(", ")}`);
   if (cmp?.fixed.length) out.push("", `${T.trend.fixed}: ${cmp.fixed.map(mdName).join(", ")}`);
   const steps = state.next?.steps || [];

@@ -31,6 +31,8 @@ export const enReport = {
       same: ["=", "no change", "since the previous full run"],
       better: (n) => [`−${n}`, "fewer red checks", "since the previous full run"],
       worse: (n) => [`+${n}`, "more red checks", "since the previous full run"],
+      shrunk: (n) => [`−${n}`, n === 1 ? "check left the run" : "checks left the run", "not comparable"],
+      gone: "left the run",
       broke: "broke",
       fixed: "fixed",
     },
