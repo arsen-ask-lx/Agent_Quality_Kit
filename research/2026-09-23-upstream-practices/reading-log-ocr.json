@@ -7,7 +7,8 @@
   {
    "path": ".agents/plugins/marketplace.json",
    "bytes": 403,
-   "status": "unread"
+   "status": "read",
+   "observation": "маркетплейс Codex"
   },
   {
    "path": ".claude-plugin/marketplace.json",
@@ -156,17 +157,20 @@
   {
    "path": ".gitignore",
    "bytes": 571,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": ".kimi-plugin/plugin.json",
    "bytes": 895,
-   "status": "unread"
+   "status": "read",
+   "observation": "манифест Kimi"
   },
   {
    "path": ".npmignore",
    "bytes": 196,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": ".opencodereview/rule.json",
@@ -213,7 +217,8 @@
   {
    "path": "LICENSE",
    "bytes": 11356,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "Makefile",
@@ -884,7 +889,8 @@
   {
    "path": "examples/bitbucket_pipelines/bitbucket-pipelines.yml",
    "bytes": 10666,
-   "status": "unread"
+   "status": "read",
+   "observation": "0 замечаний → «Status: **partial**» + message — честный образец"
   },
   {
    "path": "examples/codeup_ci/README.md",
@@ -895,22 +901,26 @@
   {
    "path": "examples/codeup_ci/codeup-flow.yml",
    "bytes": 1894,
-   "status": "unread"
+   "status": "read",
+   "observation": "запуск post_review.py; ворот нет, но скрипт сам возвращает 1 при ненулевом коде ocr"
   },
   {
    "path": "examples/codeup_ci/post_review.py",
    "bytes": 10807,
-   "status": "unread"
+   "status": "read",
+   "observation": "НАХОДКА 8: частичный/пропущенный обзор → «No issues found. ✅», статус выброшен (проверено на настоящем JSON); ненулевой код — честный провал"
   },
   {
    "path": "examples/codeup_ci/post_review_test.py",
    "bytes": 12283,
-   "status": "unread"
+   "status": "read",
+   "observation": "test_unknown_top_level_shape_treated_as_no_comments: незнакомый JSON → «No issues found» закреплён тестом"
   },
   {
    "path": "examples/gerrit_ci/Jenkinsfile",
    "bytes": 5261,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "Jenkins-обвязка"
   },
   {
    "path": "examples/gerrit_ci/README.md",
@@ -921,12 +931,14 @@
   {
    "path": "examples/gerrit_ci/post_review.py",
    "bytes": 17753,
-   "status": "unread"
+   "status": "read",
+   "observation": "0 замечаний → «OpenCodeReview: <message>» без галочки; оценок не ставит — честно"
   },
   {
    "path": "examples/gerrit_ci/post_review_test.py",
    "bytes": 23815,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "тесты по именам"
   },
   {
    "path": "examples/gitflic_ci/README.md",
@@ -937,17 +949,20 @@
   {
    "path": "examples/gitflic_ci/gitflic-ci.yaml",
    "bytes": 3407,
-   "status": "unread"
+   "status": "read",
+   "observation": "НАХОДКА 8: шаг обзора «ocr review ... || true» + echo «OCR review completed.»; пустой вывод → exit 0"
   },
   {
    "path": "examples/gitflic_ci/post_review.py",
    "bytes": 17751,
-   "status": "unread"
+   "status": "read",
+   "observation": "0 замечаний → ✅ + message, в том числе при status failed (проверено)"
   },
   {
    "path": "examples/gitflic_ci/post_review_test.py",
    "bytes": 7804,
-   "status": "unread"
+   "status": "read",
+   "observation": "test_no_comments проверяет только «Looks good to me»"
   },
   {
    "path": "examples/github_actions/README.md",
@@ -958,12 +973,14 @@
   {
    "path": "examples/github_actions/ocr-review.yml",
    "bytes": 5170,
-   "status": "unread"
+   "status": "read",
+   "observation": "пример подключения действия"
   },
   {
    "path": "examples/gitlab_ci/.gitlab-ci.yml",
    "bytes": 9775,
-   "status": "unread"
+   "status": "read",
+   "observation": "есть шаг-ворота: ненулевой код ocr роняет задание"
   },
   {
    "path": "examples/gitlab_ci/README.md",
@@ -974,12 +991,14 @@
   {
    "path": "examples/gitlab_ci/post_review.py",
    "bytes": 68152,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "0 замечаний → «✅ … <message>» («LGTM summary»); доставка тщательная (повторы, лимиты)"
   },
   {
    "path": "examples/gitlab_ci/post_review_test.py",
    "bytes": 77608,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "тесты по именам"
   },
   {
    "path": "extensions/frontend/.gitignore",
@@ -1014,7 +1033,8 @@
   {
    "path": "extensions/frontend/src/shared/i18n.ts",
    "bytes": 43319,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "view.empty.noIssues = «No issues found · Passed» на 5 языках"
   },
   {
    "path": "extensions/frontend/src/shared/messages.ts",
@@ -1029,7 +1049,8 @@
   {
    "path": "extensions/frontend/src/shared/types.ts",
    "bytes": 2534,
-   "status": "unread"
+   "status": "read",
+   "observation": "CliResult.status знает только success|completed_with_errors|completed_with_warnings|skipped — статусов манифеста нет"
   },
   {
    "path": "extensions/frontend/src/webview/App.tsx",
@@ -1144,7 +1165,8 @@
   {
    "path": "extensions/frontend/src/webview/views/EmptyView.tsx",
    "bytes": 1020,
-   "status": "unread"
+   "status": "read",
+   "observation": "рисует noIssues"
   },
   {
    "path": "extensions/frontend/src/webview/views/FailedView.tsx",
@@ -1359,7 +1381,8 @@
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ReviewSession.kt",
    "bytes": 4134,
-   "status": "unread"
+   "status": "read",
+   "observation": "ПРАВИЛЬНО: незнакомый статус и partial/failed → FAILED; «Only recognized, non-failing terminal results can report an empty review»"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ShellEnv.kt",
@@ -1659,7 +1682,8 @@
   {
    "path": "extensions/vscode/src/extension/services/CliService.ts",
    "bytes": 7756,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "ненулевой код → reject → состояние failed"
   },
   {
    "path": "extensions/vscode/src/extension/services/ConfigService.ts",
@@ -1674,7 +1698,8 @@
   {
    "path": "extensions/vscode/src/extension/services/ReviewSession.ts",
    "bytes": 1483,
-   "status": "unread"
+   "status": "read",
+   "observation": "НАХОДКА 9: resultToState: partial/skipped с 0 замечаний → empty → «No issues found · Passed» (проверено на настоящем JSON)"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/CliService.cancel.test.ts",
@@ -1694,7 +1719,8 @@
   {
    "path": "extensions/vscode/src/extension/services/__tests__/ReviewSession.test.ts",
    "bytes": 1094,
-   "status": "unread"
+   "status": "read",
+   "observation": "закрепляет skipped → empty"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/cliParse.test.ts",
@@ -1724,7 +1750,8 @@
   {
    "path": "extensions/vscode/src/extension/services/cliParse.ts",
    "bytes": 2738,
-   "status": "unread"
+   "status": "read",
+   "observation": "запускает ocr review --format json"
   },
   {
    "path": "extensions/vscode/src/extension/services/configDraft.ts",
@@ -1769,12 +1796,14 @@
   {
    "path": "go.mod",
    "bytes": 4600,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "go.sum",
    "bytes": 19689,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "imgs/benchmark-en.png",
@@ -1829,12 +1858,14 @@
   {
    "path": "imgs/logo-core.svg",
    "bytes": 2728,
-   "status": "unread"
+   "status": "binary",
+   "observation": "логотип"
   },
   {
    "path": "imgs/logo.svg",
    "bytes": 5391,
-   "status": "unread"
+   "status": "binary",
+   "observation": "логотип"
   },
   {
    "path": "imgs/providers.jpg",
@@ -1844,12 +1875,14 @@
   {
    "path": "install.ps1",
    "bytes": 5678,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "install.sh",
    "bytes": 4332,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "internal/agent/agent.go",
@@ -3983,37 +4016,44 @@
   {
    "path": "npm/darwin-arm64/package.json",
    "bytes": 437,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "npm/darwin-x64/package.json",
    "bytes": 431,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "npm/linux-arm64/package.json",
    "bytes": 434,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "npm/linux-x64/package.json",
    "bytes": 428,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "npm/win32-arm64/package.json",
    "bytes": 434,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "npm/win32-x64/package.json",
    "bytes": 428,
-   "status": "unread"
+   "status": "read",
+   "observation": "платформенный пакет"
   },
   {
    "path": "package.json",
    "bytes": 1546,
-   "status": "unread"
+   "status": "read",
+   "observation": "корневой файл: install.sh — sha256 обязательна, зеркало честно помечено «integrity is not guaranteed»; package.json — postinstall качает бинарь, в пакет входит update.js"
   },
   {
    "path": "pages/.gitignore",
@@ -5104,12 +5144,14 @@
   {
    "path": "plugins/open-code-review/.codex-plugin/plugin.json",
    "bytes": 1121,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/.cursor-plugin/plugin.json",
    "bytes": 732,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/CODEX.ko-KR.md",
@@ -5126,7 +5168,8 @@
   {
    "path": "plugins/open-code-review/claude-code/.claude-plugin/plugin.json",
    "bytes": 295,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/claude-code/commands/delegate-review.md",
@@ -5155,7 +5198,8 @@
   {
    "path": "plugins/open-code-review/opencode/.gitignore",
    "bytes": 20,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/opencode/README.md",
@@ -5166,27 +5210,32 @@
   {
    "path": "plugins/open-code-review/opencode/open-code-review.ts",
    "bytes": 22706,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "агенту отдаётся сырой JSON (статус виден); stderr при коде 0 теряется — поэтому противоречивые флаги отвергаются заранее"
   },
   {
    "path": "plugins/open-code-review/opencode/package-lock.json",
    "bytes": 151857,
-   "status": "unread"
+   "status": "binary",
+   "observation": "lock-файл"
   },
   {
    "path": "plugins/open-code-review/opencode/package.json",
    "bytes": 470,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/opencode/test/open-code-review.test.mjs",
    "bytes": 28313,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/opencode/tsconfig.json",
    "bytes": 408,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/qca/README.md",
@@ -5203,7 +5252,8 @@
   {
    "path": "plugins/open-code-review/qca/template.example.json",
    "bytes": 2008,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "служебное плагина"
   },
   {
    "path": "plugins/open-code-review/skills/open-code-review-delegate/SKILL.md",

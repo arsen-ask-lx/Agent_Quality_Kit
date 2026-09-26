@@ -247,6 +247,52 @@ npm (`bin/ocr.js`) при каждом запуске, если с прошло�
 `scripts/update.js` — единственный их скрипт без единого теста: тесты обёртки (`bin/ocr.test.js:142`) его
 выключают `OCR_NO_UPDATE: "1"`, и больше его не запускает никто.
 
+### Находка 8 — примеры для других систем повторяют находку 2, а два из них хуже (подтверждено на настоящем выводе)
+
+Их `examples/` — шесть готовых интеграций, которые люди копируют к себе. Прогнал функции публикации каждой
+на двух настоящих JSON от `ocr` 1.12.9: частичный (1 из 2 файлов упал, код 0) и полный провал (негодный ключ,
+упали оба, код 1):
+
+| система | частичный обзор, 0 замечаний | полный провал |
+|---|---|---|
+| GitHub (действие) | «✅ … Review partially complete» (находка 2) | задание красное — шаг «Fail job on OCR error» |
+| GitLab | «✅ … Review partially complete» (`post_review.py:1272`, «LGTM summary») | задание красное — там свой шаг-ворота |
+| GitFlic | «✅ … Review partially complete» | **«✅ … Review failed: 0 finding(s); 2 of 2 selected item(s) failed.»**, а задание **зелёное**: шаг обзора кончается `\|\| true`, следом `echo "OCR review completed."` |
+| CodeUp | **«No issues found. ✅»** — статус и сообщение выброшены целиком (`format_summary_comment` смотрит только на число замечаний) | задание красное — `run_ocr_review` проверяет код |
+| Gerrit | «OpenCodeReview: Review partially complete» — без галочки, оценку не ставит | — |
+| Bitbucket | «Status: **partial**» и сообщение — честно | — |
+
+GitFlic — ровно класс нашего гейта `ci-actually-fails` (`|| true` на проверке), да ещё с галочкой поверх.
+CodeUp — самая тихая форма находки 2: человек видит «проблем нет», когда половина файлов не просмотрена.
+Честные образцы у них же — Bitbucket и Gerrit, так что подача для письма простая: «сделайте как в Bitbucket».
+
+Тесты это закрепляют. `examples/codeup_ci/post_review_test.py:136`,
+`test_unknown_top_level_shape_treated_as_no_comments`: JSON незнакомой формы (`{"unexpected": "shape"}`)
+обязан дать «No issues found» — «не понял ответ» превращено в «проблем нет» и защищено тестом. У GitFlic
+`test_no_comments` проверяет только, что «Looks good to me» дошло до публикации.
+
+### Находка 9 — расширение VS Code пишет «No issues found · Passed» на частичный обзор; расширение IDEA то же правило уже исправило (подтверждено на настоящем выводе)
+
+`extensions/vscode/src/extension/services/ReviewSession.ts`, `resultToState`: есть замечания — «done»;
+статус `completed_with_errors` — «failed»; **всё остальное — «empty»**, а «empty» рисуется как
+`view.empty.noIssues` = «**No issues found · Passed**» (по-русски «Проблем не найдено · Проверка пройдена»).
+Но `ocr review --format json`, который расширение запускает (`cliParse.ts:14`), отдаёт статусы манифеста —
+`complete`, `partial`, `failed`, `skipped`; `completed_with_errors` бывает только у `ocr scan`. Та же функция на
+моём настоящем JSON частичного прогона (1 из 2 файлов упал, код 0): `status=partial → empty → «No issues
+found · Passed»`. Полный провал сюда не доходит — при коде 1 расширение само уходит в «failed». Тест
+(`__tests__/ReviewSession.test.ts:15`) закрепляет `skipped → empty`, то есть находки 1, 3 и 5 в VS Code тоже
+выглядят как «Passed».
+
+Расширение IDEA решает ту же задачу правильно (`idea/.../services/ReviewSession.kt:18`): «Only recognized,
+non-failing terminal results can report an empty review» — незнакомый статус и `partial`/`failed` дают FAILED.
+Это два исполнения одного правила, разошедшиеся между собой, и общего теста-договора на них нет (общий у
+расширений только веб-интерфейс, и его тип `CliResult.status` знает лишь `success | completed_with_errors |
+completed_with_warnings | skipped` — статусов манифеста в нём нет вовсе). Для письма это лучший случай из
+всех: исправление уже написано ими же, его надо перенести из Kotlin в TypeScript.
+
+**Для AQK урок про нас самих:** одно правило в двух местах расходится молча. У нас так живут, например,
+каталоги строк на двух языках — их сторожит модульная проверка; других пар без сторожа надо поискать.
+
 ### Образец для AQK — учёт покрытия (`internal/session/manifest.go`, прочитан целиком)
 
 - знаменатель запечатывается до начала работы: после `SealSelected` добавить файл в «выбранные» нельзя;
