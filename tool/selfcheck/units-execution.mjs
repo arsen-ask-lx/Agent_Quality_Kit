@@ -76,6 +76,13 @@ test("адаптеры знают свои коды: vulture 3 — находк�
   assert.equal(classify(R({ status: 2 }), findingCodes("pylint")).state, "finding");
   assert.equal(classify(R({ status: 24 }), findingCodes("pylint")).state, "finding");
   assert.equal(classify(R({ status: 32 }), findingCodes("pylint")).state, "infra_error");
+  // НОЛЬ У КАЖДОГО АДАПТЕРА ПРОВЕРЯЕТСЯ ОТДЕЛЬНО, и это не педантизм. Мутационный пилот
+  // 2026-09-26 подменил условие pylint на `code < 32`: чистый прогон (0) стал находкой, то есть
+  // красное на исправном коде, — и ни одна из 315 проверок этого не заметила. Утверждения были
+  // только про НЕНУЛЕВЫЕ коды: половина таблицы адаптера проверялась, половина нет.
+  for (const tool of ["pylint", "vulture", "ruff", "eslint", "bash", "неизвестный-инструмент"]) {
+    assert.equal(classify(R({ status: 0 }), findingCodes(tool)).state, "clean", tool);
+  }
 
   // Незнакомая программа — умолчание: 0 чисто, 1 находка, остальное сбой. Это ЧЕСТНЕЕ, чем
   // догадка: неизвестный код становится «не знаем», а не «поймал».
