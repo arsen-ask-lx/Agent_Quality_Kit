@@ -9,7 +9,11 @@ BAD=0
 # файл версий там, где версий нет. Требовать его — красить гейт на пустом месте.
 has_deps_declared() {
   case "$1" in
-    package.json)  grep -qE '"(dependencies|devDependencies|peerDependencies)"[[:space:]]*:[[:space:]]*\{[[:space:]]*"' "$DIR/$1" ;;
+    # Строки склеиваются до поиска: в обычном, отформатированном файле первая зависимость стоит
+    # на новой строке, и поиск по одной строке принимал его за «зависимостей нет» — без
+    # lock-файла гейт молчал. Аудит 2026-09-09 это назвал, а красный образец был написан в той
+    # единственной форме, которую гейт ловил, и дефект дожил до 2026-09-26 (deps-pinned.test.mjs).
+    package.json)  tr -d '\r\n' < "$DIR/$1" | grep -qE '"(dependencies|devDependencies|peerDependencies)"[[:space:]]*:[[:space:]]*\{[[:space:]]*"' ;;
     # go.sum вообще не создаётся, если модуль использует только стандартную библиотеку —
     # требовать его там означает красить гейт на пустом месте, а не ловить нарушение.
     go.mod)        grep -qE '^require\b' "$DIR/$1" ;;
@@ -49,6 +53,24 @@ if [ -f "$DIR/requirements.txt" ]; then
     echo "  почини: закрепи точные версии через ==, иначе сборка завтра соберёт другое."
     BAD=1
   fi
+fi
+
+# Lock-файл, который конвейер выключил, ничего не закрепляет. У pnpm в CI соблюдение включено
+# по умолчанию («For CI: true, if a lockfile is present», pnpm.io/cli/install), поэтому беда — только
+# явный отказ флагом. Замер 2026-09-26: из 20 чужих конвейеров с этим флагом в 20 он стоит в
+# команде установки при pnpm-lock.yaml в корне; у zizmor такой проверки нет. Строки-комментарии
+# и выключенные файлы (*.disabled) не считаются: их никто не запускает.
+if [ -f "$DIR/pnpm-lock.yaml" ] && [ -d "$DIR/.github/workflows" ]; then
+  for WF in "$DIR"/.github/workflows/*.yml "$DIR"/.github/workflows/*.yaml; do
+    [ -f "$WF" ] || continue
+    HIT=$(tr -d '\r' < "$WF" | grep -nE -- '--no-frozen-lockfile|--frozen-lockfile=false' | grep -vE '^[0-9]+:[[:space:]]*#')
+    if [ -n "$HIT" ]; then
+      REL=".github/workflows/$(basename "$WF")"
+      printf '%s\n' "$HIT" | sed "s|^\([0-9]*\):.*|$REL:\1: конвейер выключает pnpm-lock.yaml — ставит не те версии, что закреплены|"
+      echo "  почини: убери --no-frozen-lockfile; если lock-файл разошёлся с package.json, обнови его командой pnpm install и закоммить."
+      BAD=1
+    fi
+  done
 fi
 
 exit $BAD

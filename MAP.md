@@ -235,6 +235,8 @@
   `report-html.test.mjs` (отчёт для человека появляется сам после `doctor --run` и по
   `report --html`), `step-summary.test.mjs` (в GitHub Actions сводка дописывается, а не
   затирает чужие шаги; без переменной — ни одного файла),
+  `deps-pinned.test.mjs` (отформатированный `package.json` без lock-файла и конвейер, выключивший
+  `pnpm-lock.yaml`, — красные, каждый отдельным случаем),
   `min-threshold.test.mjs` (порог `--min` — целая ступень, которая есть; мусор — отказ до
   прогона),
   `run-history.test.mjs` (прогон дописывает строку в `.aqk/history.jsonl`: коммит, уровень, итог
