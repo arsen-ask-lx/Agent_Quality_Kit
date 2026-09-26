@@ -1003,32 +1003,38 @@
   {
    "path": "extensions/frontend/.gitignore",
    "bytes": 109,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/jest.config.js",
    "bytes": 316,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/package-lock.json",
    "bytes": 215822,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/package.json",
    "bytes": 631,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/shared/configUtils.ts",
    "bytes": 5226,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/shared/constants.ts",
    "bytes": 468,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/shared/i18n.ts",
@@ -1039,12 +1045,14 @@
   {
    "path": "extensions/frontend/src/shared/messages.ts",
    "bytes": 2607,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/shared/providers.ts",
    "bytes": 5105,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/shared/types.ts",
@@ -1055,112 +1063,134 @@
   {
    "path": "extensions/frontend/src/webview/App.tsx",
    "bytes": 3468,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/ConfigPanelApp.tsx",
    "bytes": 2985,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/I18nProvider.tsx",
    "bytes": 513,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/__tests__/store.test.ts",
    "bytes": 5331,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/bridge.idea.ts",
    "bytes": 1880,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/bridge.ts",
    "bytes": 692,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/bridge.vsc.ts",
    "bytes": 712,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/CommentCard.tsx",
    "bytes": 1523,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/CustomProviderManager.tsx",
    "bytes": 3191,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/EnvSetupGuide.tsx",
    "bytes": 7045,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/FileList.tsx",
    "bytes": 1463,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/LogViewer.tsx",
    "bytes": 869,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/PasswordInput.tsx",
    "bytes": 1815,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/components/Select.tsx",
    "bytes": 1797,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/configPanel.tsx",
    "bytes": 271,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/configStore.ts",
    "bytes": 3693,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/index.tsx",
    "bytes": 238,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/store.ts",
    "bytes": 3351,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/styles/global.css",
    "bytes": 46442,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/CancelledView.tsx",
    "bytes": 344,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/ConfigView.tsx",
    "bytes": 20357,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/DoneView.tsx",
    "bytes": 1738,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/EmptyView.tsx",
@@ -1171,52 +1201,62 @@
   {
    "path": "extensions/frontend/src/webview/views/FailedView.tsx",
    "bytes": 674,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/IdleView.tsx",
    "bytes": 5867,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/src/webview/views/RunningView.tsx",
    "bytes": 682,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/tsconfig.json",
    "bytes": 544,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/frontend/webpack.config.js",
    "bytes": 1411,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/.gitignore",
    "bytes": 189,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/README.md",
    "bytes": 6996,
-   "status": "unread"
+   "status": "read",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/idea/README.zh-CN.md",
    "bytes": 6626,
-   "status": "unread"
+   "status": "translation-structural",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/idea/build.gradle.kts",
    "bytes": 7173,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/gradle.properties",
    "bytes": 1004,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/gradle/wrapper/gradle-wrapper.jar",
@@ -1226,157 +1266,188 @@
   {
    "path": "extensions/idea/gradle/wrapper/gradle-wrapper.properties",
    "bytes": 203,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/gradlew",
    "bytes": 8070,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/gradlew.bat",
    "bytes": 2674,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/settings.gradle.kts",
    "bytes": 139,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/actions/OpenOcrToolWindowAction.kt",
    "bytes": 892,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/IdeaTheme.kt",
    "bytes": 9446,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/JcefConfigPanelHost.kt",
    "bytes": 5456,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/JcefReviewPanel.kt",
    "bytes": 5108,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/OcrWebview.kt",
    "bytes": 9157,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/WebviewHtml.kt",
    "bytes": 5684,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/messages/HostMessages.kt",
    "bytes": 5645,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/messages/WebviewMessages.kt",
    "bytes": 10479,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/HostStrings.kt",
    "bytes": 10324,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/Locale.kt",
    "bytes": 1718,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/Types.kt",
    "bytes": 5911,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/providers/CommentAnchor.kt",
    "bytes": 9661,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/providers/CommentService.kt",
    "bytes": 33904,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ConfigPanelHost.kt",
    "bytes": 987,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ConfigPanelRouter.kt",
    "bytes": 8353,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ReviewProjectService.kt",
    "bytes": 9739,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/SidebarRouter.kt",
    "bytes": 10118,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliCancellation.kt",
    "bytes": 1270,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliParse.kt",
    "bytes": 7764,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliService.kt",
    "bytes": 17334,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigDraft.kt",
    "bytes": 8707,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigParse.kt",
    "bytes": 3395,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigService.kt",
    "bytes": 10897,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigUtils.kt",
    "bytes": 1956,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/GitMap.kt",
    "bytes": 8732,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/GitService.kt",
    "bytes": 30008,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/Providers.kt",
    "bytes": 1402,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ReviewSession.kt",
@@ -1387,242 +1458,290 @@
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ShellEnv.kt",
    "bytes": 7165,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/toolwindow/OcrToolWindowFactory.kt",
    "bytes": 1903,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/resources/META-INF/jcef.xml",
    "bytes": 251,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/resources/META-INF/plugin.xml",
    "bytes": 4964,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/resources/META-INF/pluginIcon.svg",
    "bytes": 2553,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "extensions/idea/src/main/resources/META-INF/pluginIcon_dark.svg",
    "bytes": 2553,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "extensions/idea/src/main/resources/icons/ocrToolWindow.svg",
    "bytes": 2521,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "extensions/idea/src/main/resources/icons/ocrToolWindow_dark.svg",
    "bytes": 2521,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "extensions/idea/src/main/resources/messages/OcrBundle.properties",
    "bytes": 811,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/main/resources/messages/OcrBundle_zh_CN.properties",
    "bytes": 310,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/FrontendSources.kt",
    "bytes": 1786,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/OcrBundleTest.kt",
    "bytes": 3493,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/jcef/IdeaThemeTest.kt",
    "bytes": 2635,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/jcef/WebviewHtmlTest.kt",
    "bytes": 6155,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/HostMessagesTest.kt",
    "bytes": 10236,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/MessageContractTest.kt",
    "bytes": 5376,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/WebviewMessagesTest.kt",
    "bytes": 12072,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/model/HostStringsTest.kt",
    "bytes": 5129,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/providers/CommentAnchorTest.kt",
    "bytes": 6353,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliCancellationTest.kt",
    "bytes": 2759,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliParseTest.kt",
    "bytes": 10049,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliServiceConcurrencyTest.kt",
    "bytes": 7116,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliServiceTreeKillTest.kt",
    "bytes": 2995,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigDraftTest.kt",
    "bytes": 9450,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigParseTest.kt",
    "bytes": 5111,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigUtilsTest.kt",
    "bytes": 3567,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/GitMapTest.kt",
    "bytes": 13974,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ProvidersTest.kt",
    "bytes": 2064,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ReviewSessionTest.kt",
    "bytes": 2379,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ShellEnvTest.kt",
    "bytes": 2669,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/.eslintrc.json",
    "bytes": 842,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/.gitignore",
    "bytes": 154,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/.vscode/launch.json",
    "bytes": 310,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/.vscodeignore",
    "bytes": 198,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/LICENSE",
    "bytes": 11356,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/README.ja-JP.md",
    "bytes": 8287,
-   "status": "unread"
+   "status": "translation-structural",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/vscode/README.ko-KR.md",
    "bytes": 7268,
-   "status": "unread"
+   "status": "translation-structural",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/vscode/README.md",
    "bytes": 6485,
-   "status": "unread"
+   "status": "read",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/vscode/README.ru-RU.md",
    "bytes": 10047,
-   "status": "unread"
+   "status": "translation-structural",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/vscode/README.zh-CN.md",
    "bytes": 6063,
-   "status": "unread"
+   "status": "translation-structural",
+   "observation": "документация расширения"
   },
   {
    "path": "extensions/vscode/__mocks__/vscode.js",
    "bytes": 1720,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/jest.config.js",
    "bytes": 412,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.json",
    "bytes": 3335,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.nls.ja.json",
    "bytes": 451,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.nls.json",
    "bytes": 419,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.nls.ko.json",
    "bytes": 408,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.nls.ru.json",
    "bytes": 540,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/package.nls.zh-cn.json",
    "bytes": 405,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/resources/icon.png",
@@ -1632,52 +1751,62 @@
   {
    "path": "extensions/vscode/resources/icon.svg",
    "bytes": 2762,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "extensions/vscode/src/extension/commands.ts",
    "bytes": 1245,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/extension.ts",
    "bytes": 1697,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/CommentProvider.ts",
    "bytes": 11944,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/ConfigPanelProvider.ts",
    "bytes": 5706,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/SidebarProvider.ts",
    "bytes": 5437,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/__tests__/commentAnchor.test.ts",
    "bytes": 1542,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/__tests__/lineOffset.test.ts",
    "bytes": 1089,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/commentAnchor.ts",
    "bytes": 6831,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/providers/lineOffset.ts",
    "bytes": 656,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/CliService.ts",
@@ -1688,12 +1817,14 @@
   {
    "path": "extensions/vscode/src/extension/services/ConfigService.ts",
    "bytes": 3439,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/GitService.ts",
    "bytes": 19248,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/ReviewSession.ts",
@@ -1704,17 +1835,20 @@
   {
    "path": "extensions/vscode/src/extension/services/__tests__/CliService.cancel.test.ts",
    "bytes": 5419,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/CliService.test.ts",
    "bytes": 3657,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/GitService.test.ts",
    "bytes": 3169,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/ReviewSession.test.ts",
@@ -1725,27 +1859,32 @@
   {
    "path": "extensions/vscode/src/extension/services/__tests__/cliParse.test.ts",
    "bytes": 4006,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/configDraft.test.ts",
    "bytes": 1983,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/configParse.test.ts",
    "bytes": 2224,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/gitMap.test.ts",
    "bytes": 8532,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/__tests__/shellEnv.test.ts",
    "bytes": 1047,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/cliParse.ts",
@@ -1756,42 +1895,50 @@
   {
    "path": "extensions/vscode/src/extension/services/configDraft.ts",
    "bytes": 4424,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/configParse.ts",
    "bytes": 1865,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/gitMap.ts",
    "bytes": 6122,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/src/extension/services/shellEnv.ts",
    "bytes": 2769,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/tsconfig.extension.json",
    "bytes": 383,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/tsconfig.json",
    "bytes": 713,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/webpack.config.js",
    "bytes": 860,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код расширения: просмотрен поиском по проглоченным ошибкам и обработке статусов; построчно не читан"
   },
   {
    "path": "extensions/vscode/yarn.lock",
    "bytes": 250332,
-   "status": "unread"
+   "status": "binary",
+   "observation": "ресурс/lock"
   },
   {
    "path": "go.mod",
@@ -4058,47 +4205,56 @@
   {
    "path": "pages/.gitignore",
    "bytes": 20,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/README.md",
    "bytes": 7866,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/eslint.config.js",
    "bytes": 774,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/go.mod",
    "bytes": 844,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/index.html",
    "bytes": 3960,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/logo.svg",
    "bytes": 2845,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/package.json",
    "bytes": 1897,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/postcss.config.cjs",
    "bytes": 114,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/public/CNAME",
    "bytes": 19,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/public/images/blog/introducing-ocr-blog/demo.png",
@@ -4113,322 +4269,386 @@
   {
    "path": "pages/public/robots.txt",
    "bytes": 23,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/App.test.tsx",
    "bytes": 1578,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/App.tsx",
    "bytes": 3853,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/assets.d.ts",
    "bytes": 308,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/assets/icons/apple.svg",
    "bytes": 841,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/brew.svg",
    "bytes": 1829,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-check-circle.svg",
    "bytes": 3650,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-contents.svg",
    "bytes": 1573,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-copy.svg",
    "bytes": 4456,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-download-green.svg",
    "bytes": 3673,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-download.svg",
    "bytes": 3706,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/doc-edit.svg",
    "bytes": 1941,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-chevron-down.svg",
    "bytes": 3706,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-chevron-right.svg",
    "bytes": 21851,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-copy.svg",
    "bytes": 4456,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-architecture.svg",
    "bytes": 5774,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-compression.svg",
    "bytes": 5738,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-effort.svg",
    "bytes": 525,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-multi-model.svg",
    "bytes": 7736,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-positioning.svg",
    "bytes": 6962,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-feature-rules.svg",
    "bytes": 5951,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-github.svg",
    "bytes": 4027,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-language.svg",
    "bytes": 11660,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-play.svg",
    "bytes": 1701,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-search.svg",
    "bytes": 1087,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-sort.svg",
    "bytes": 1573,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-usecase-developer.svg",
    "bytes": 12223,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-usecase-platform-a.svg",
    "bytes": 25182,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-usecase-platform-b.svg",
    "bytes": 17725,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-usecase-platform-c.svg",
    "bytes": 20116,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/icon-usecase-researcher.svg",
    "bytes": 15051,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/linux.svg",
    "bytes": 9491,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/npm.svg",
    "bytes": 1150,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/trophy-bronze.svg",
    "bytes": 1337,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/trophy-gold.svg",
    "bytes": 1337,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/trophy-silver.svg",
    "bytes": 1337,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/icons/windows.svg",
    "bytes": 440,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/images/brandicon.svg",
    "bytes": 9975,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/images/icon-claude-code.svg",
    "bytes": 5187,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/images/icon-codex.svg",
    "bytes": 7238,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/assets/images/icon-ocr-source.svg",
    "bytes": 3491,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконка сайта"
   },
   {
    "path": "pages/src/components/BenchmarkSection.tsx",
    "bytes": 16197,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/ColorBends.css",
    "bytes": 280,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/ColorBends.tsx",
    "bytes": 11063,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/ErrorBoundary.test.tsx",
    "bytes": 2311,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/ErrorBoundary.tsx",
    "bytes": 1892,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/FadeInSection.tsx",
    "bytes": 1015,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/FeaturesSection.tsx",
    "bytes": 4579,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/Footer.tsx",
    "bytes": 4987,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/HeroSection.test.tsx",
    "bytes": 3242,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/HeroSection.tsx",
    "bytes": 24850,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/HighlightsSection.tsx",
    "bytes": 6376,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/LandingPage.tsx",
    "bytes": 704,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/MarkdownRenderer.test.tsx",
    "bytes": 2680,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/MarkdownRenderer.tsx",
    "bytes": 8422,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/Navbar.tsx",
    "bytes": 8499,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/QuickStartSection.tsx",
    "bytes": 8956,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/SearchTrigger.tsx",
    "bytes": 1575,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/UseCasesSection.tsx",
    "bytes": 5778,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/WhySection.tsx",
    "bytes": 2355,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/icons/ClaudeIcon.tsx",
    "bytes": 3377,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/icons/OcrIcon.tsx",
    "bytes": 1681,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/icons/OpenAIIcon.tsx",
    "bytes": 2697,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/components/icons/index.ts",
    "bytes": 252,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/content/blog/en/introducing-ocr-blog.md",
@@ -4445,7 +4665,8 @@
   {
    "path": "pages/src/content/blog/index.ts",
    "bytes": 4803,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/content/blog/ja/introducing-ocr-blog.md",
@@ -4570,7 +4791,8 @@
   {
    "path": "pages/src/content/docs/index.ts",
    "bytes": 9568,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/content/docs/ja/architecture.md",
@@ -4767,7 +4989,8 @@
   {
    "path": "pages/src/content/docs/md.d.ts",
    "bytes": 173,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/content/docs/ru/architecture.md",
@@ -4964,182 +5187,218 @@
   {
    "path": "pages/src/hooks/useCommandSearch.ts",
    "bytes": 2881,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useCopyToast.ts",
    "bytes": 1214,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useNpmDownloads.ts",
    "bytes": 2440,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useResponsive.ts",
    "bytes": 803,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useResponsiveStyle.ts",
    "bytes": 850,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useTransitionedLocation.test.tsx",
    "bytes": 3761,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/hooks/useTransitionedLocation.ts",
    "bytes": 1065,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/context.tsx",
    "bytes": 2200,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/en.ts",
    "bytes": 20578,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/index.ts",
    "bytes": 216,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/ja.ts",
    "bytes": 25334,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/ko.ts",
    "bytes": 23335,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/ru.ts",
    "bytes": 30426,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/types.ts",
    "bytes": 294,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/i18n/zh.ts",
    "bytes": 19909,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/index.html.test.ts",
    "bytes": 5465,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/index.tsx",
    "bytes": 699,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/BenchmarkPage.tsx",
    "bytes": 563,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/BlogPage.tsx",
    "bytes": 16897,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/DocsPage.tsx",
    "bytes": 27055,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/FeaturesPage.tsx",
    "bytes": 1258,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/FeaturesRoutePage.tsx",
    "bytes": 568,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/NotFoundPage.test.tsx",
    "bytes": 2704,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/NotFoundPage.tsx",
    "bytes": 1920,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/pages/QuickStartPage.tsx",
    "bytes": 568,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/styles/blog.css",
    "bytes": 2484,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/styles/docs-markdown.css",
    "bytes": 5637,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/styles/index.css",
    "bytes": 3873,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/utils/extractHeadings.ts",
    "bytes": 408,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/utils/headingId.test.ts",
    "bytes": 2461,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/src/utils/headingId.ts",
    "bytes": 3304,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/tailwind.config.cjs",
    "bytes": 1470,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/tsconfig.json",
    "bytes": 374,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/vitest.config.ts",
    "bytes": 340,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/vitest.setup.ts",
    "bytes": 132,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "pages/webpack.config.cjs",
    "bytes": 2859,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "код сайта документации: просмотрен поиском по числовым утверждениям (бенчмарк, скачивания); построчно не читан"
   },
   {
    "path": "plugins/open-code-review/.codex-plugin/plugin.json",
