@@ -254,477 +254,572 @@
   {
    "path": "cmd/opencodereview/apply_provider_field_test.go",
    "bytes": 2989,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/arg_errors.go",
    "bytes": 3702,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/arg_errors_test.go",
    "bytes": 10180,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/background_file.go",
    "bytes": 4698,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/background_file_test.go",
    "bytes": 13120,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/bedrock_config_test.go",
    "bytes": 12379,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/budget_output_test.go",
    "bytes": 10873,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/cli_reference_compare_docs_test.go",
    "bytes": 5139,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/color.go",
    "bytes": 2739,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/color_test.go",
    "bytes": 5710,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/compat_test.go",
    "bytes": 5834,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/completion.go",
    "bytes": 1971,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/config_cmd.go",
    "bytes": 36841,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/config_cmd_test.go",
    "bytes": 54824,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/config_dispatch_test.go",
    "bytes": 781,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/config_runset_test.go",
    "bytes": 4124,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/config_unset_error_test.go",
    "bytes": 1186,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/delegate_cmd.go",
    "bytes": 10041,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/delegate_exec_test.go",
    "bytes": 9289,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/delegate_helpers_test.go",
    "bytes": 2400,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/emit_run_result_test.go",
    "bytes": 27399,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/flag_suggest.go",
    "bytes": 1795,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/flag_suggest_test.go",
    "bytes": 2763,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/flags_test.go",
    "bytes": 11937,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/git.go",
    "bytes": 1219,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/git_test.go",
    "bytes": 4730,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/interrupt.go",
    "bytes": 3513,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/interrupt_test.go",
    "bytes": 11567,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/llm_cmd.go",
    "bytes": 8086,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/llm_cmd_test.go",
    "bytes": 8234,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/main.go",
    "bytes": 572,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/main_test.go",
    "bytes": 905,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/manual_e2e_retry_test.go",
    "bytes": 5804,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/misc_helpers_test.go",
    "bytes": 2799,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/output.go",
    "bytes": 28156,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "manifestMessage: «Review skipped: no items were selected» без причины; JSON без файлов → status skipped «No supported files changed.»"
   },
   {
    "path": "cmd/opencodereview/output_color_test.go",
    "bytes": 5732,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/output_file_test.go",
    "bytes": 23234,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/output_helpers_test.go",
    "bytes": 24382,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/output_manifest_test.go",
    "bytes": 4008,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/output_test.go",
    "bytes": 3706,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/parent_cmd_test.go",
    "bytes": 3752,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/procattr_unix.go",
    "bytes": 399,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/procattr_windows.go",
    "bytes": 467,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/progress_stream_e2e_test.go",
    "bytes": 2674,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_cmd.go",
    "bytes": 13792,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/provider_cmd_test.go",
    "bytes": 15618,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_config_apply_test.go",
    "bytes": 2185,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui.go",
    "bytes": 89992,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/provider_tui_cpinput_test.go",
    "bytes": 4091,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_customform_test.go",
    "bytes": 8919,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_deleteconfirm_test.go",
    "bytes": 1806,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_editsave_test.go",
    "bytes": 3624,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_funcs_test.go",
    "bytes": 63321,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_manualenter_test.go",
    "bytes": 6254,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_modeltui_test.go",
    "bytes": 8843,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_persist_test.go",
    "bytes": 12054,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_rollback_test.go",
    "bytes": 6824,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_savefail_test.go",
    "bytes": 5090,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/provider_tui_test.go",
    "bytes": 88806,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/retry_fake_llm_test.go",
    "bytes": 11410,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/retry_report_e2e_test.go",
    "bytes": 11688,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/retry_report_render_test.go",
    "bytes": 14187,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/review_cmd.go",
    "bytes": 21515,
-   "status": "unread"
+   "status": "read",
+   "observation": "контракт выхода: ненулевой только при failed; манифест публикуется до решения о коде; отчёт о повторах с нарушенным инвариантом подавляется; initMCPClients — сбой MCP только в stderr"
   },
   {
    "path": "cmd/opencodereview/review_cmd_test.go",
    "bytes": 5670,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/review_helpers_test.go",
    "bytes": 10935,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/review_mcp_more_test.go",
    "bytes": 2293,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/review_output_order_test.go",
    "bytes": 1252,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/review_resume_more_test.go",
    "bytes": 12641,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/root.go",
    "bytes": 2387,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/rules_check_test.go",
    "bytes": 1003,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/rules_cmd.go",
    "bytes": 2314,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "просмотрен по комментариям-обоснованиям: второй сигнал — немедленный выход; llm test проигрывает ход после вызова инструмента (#1357); stdout отдельно от stderr git"
   },
   {
    "path": "cmd/opencodereview/rules_cmd_test.go",
    "bytes": 4629,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/sarif.go",
    "bytes": 12860,
-   "status": "unread"
+   "status": "read",
+   "observation": "partial/skipped → executionSuccessful true + уведомление с причиной (решение объяснено); failed → false"
   },
   {
    "path": "cmd/opencodereview/sarif_test.go",
    "bytes": 25837,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/scan_budget_json_test.go",
    "bytes": 4580,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/scan_cmd.go",
    "bytes": 8790,
-   "status": "unread"
+   "status": "read",
+   "observation": "частичный провал → код 0, статус completed_with_errors"
   },
   {
    "path": "cmd/opencodereview/scan_cmd_test.go",
    "bytes": 8617,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/scan_helpers_test.go",
    "bytes": 4253,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/scan_resume_more_test.go",
    "bytes": 2239,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/session_cmd.go",
    "bytes": 27244,
-   "status": "unread"
+   "status": "read",
+   "observation": "сравнение: разные cwd — отказ, разные режимы — предупреждение; LoadSummary для after без манифеста → находка 6"
   },
   {
    "path": "cmd/opencodereview/session_cmd_test.go",
    "bytes": 33195,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/session_complete_test.go",
    "bytes": 1198,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/session_display_more_test.go",
    "bytes": 2775,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/session_rm_test.go",
    "bytes": 17717,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/shared.go",
    "bytes": 32537,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "emitRunResult прочитан; ошибки записи --output роняют команду (образец: сбой вывода ≠ успех)"
   },
   {
    "path": "cmd/opencodereview/shared_flags.go",
    "bytes": 11948,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/shared_llmruntime_test.go",
    "bytes": 3505,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/shared_raw_test.go",
    "bytes": 2774,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/shared_test.go",
    "bytes": 9051,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/shell_unix.go",
    "bytes": 286,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/shell_windows.go",
    "bytes": 286,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/smallfiles_test.go",
    "bytes": 3919,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "cmd/opencodereview/version.go",
    "bytes": 556,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/viewer_cmd.go",
    "bytes": 1367,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "не прочитан построчно: настройка, TUI, служебное"
   },
   {
    "path": "cmd/opencodereview/zero_args_test.go",
    "bytes": 1219,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "838 тестов: прочитаны имена, отфильтрованные по silent/never/must/not/skip/partial/fail/exit/manifest/abort; TestRunSessionCompare_UnfinishedAfterRunIsNotResolved прочитан целиком"
   },
   {
    "path": "docs/i18n/CONTRIBUTING.ja-JP.md",
@@ -2641,7 +2736,8 @@
   {
    "path": "internal/llm/bedrock_test.go",
    "bytes": 21090,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/bpe_data/cl100k_base.tiktoken",
@@ -2651,202 +2747,242 @@
   {
    "path": "internal/llm/client.go",
    "bytes": 63568,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "63 КБ: просмотрены ключевые решения (поиск тихих запасных путей — нет, есть комментарии против них)"
   },
   {
    "path": "internal/llm/client_params_test.go",
    "bytes": 9814,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/client_test.go",
    "bytes": 70251,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/embedded_loader.go",
    "bytes": 3080,
-   "status": "unread"
+   "status": "read",
+   "observation": "BPE вшит: без него подсчёт токенов молча деградировал до len/4 — образец «не деградировать молча»"
   },
   {
    "path": "internal/llm/embedded_loader_test.go",
    "bytes": 2858,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/keycmd.go",
    "bytes": 7589,
-   "status": "unread"
+   "status": "read",
+   "observation": "любой сбой — жёсткая ошибка, «never a silent fallback»; пустой вывод, многострочный, управляющие байты — отказ с офсетом; предел 64 КиБ; таймаут 60 с. Образец"
   },
   {
    "path": "internal/llm/keycmd_test.go",
    "bytes": 8524,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/keycmd_unix.go",
    "bytes": 1570,
-   "status": "unread"
+   "status": "read",
+   "observation": "осознанно без Setpgid — объяснено измерением (pinentry читает tty)"
   },
   {
    "path": "internal/llm/keycmd_windows.go",
    "bytes": 2552,
-   "status": "unread"
+   "status": "read",
+   "observation": "cmd.exe /S /C через CmdLine; почему не экранируется — объяснено"
   },
   {
    "path": "internal/llm/keycmd_windows_test.go",
    "bytes": 6265,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/message_test.go",
    "bytes": 11045,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/native_turn_test.go",
    "bytes": 14740,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/protocol.go",
    "bytes": 2980,
-   "status": "unread"
+   "status": "read",
+   "observation": "неизвестный протокол не проглатывается — точная ошибка"
   },
   {
    "path": "internal/llm/protocol_test.go",
    "bytes": 2632,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/provider_error_test.go",
    "bytes": 10201,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/providers.go",
    "bytes": 13983,
-   "status": "unread"
+   "status": "read",
+   "observation": "реестр провайдеров; правило ревью в .opencodereview/rule.json требует тест на каждого"
   },
   {
    "path": "internal/llm/providers_test.go",
    "bytes": 13917,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/raw.go",
    "bytes": 10434,
-   "status": "unread"
+   "status": "read",
+   "observation": "сырая запись только при OCR_RAW_LOGGING=1 ровно"
   },
   {
    "path": "internal/llm/raw_test.go",
    "bytes": 31451,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/resolver.go",
    "bytes": 37330,
-   "status": "unread"
+   "status": "read",
+   "observation": "порядок источников: флаг → config → OCR env → окружение Claude Code → ~/.zshrc/.bashrc/.profile (разбирает export ANTHROPIC_*). Источник подписан; переменные окружения разобраны ДО запуска api_key_cmd, чтобы не спрашивать пароль ради отброшенного ключа"
   },
   {
    "path": "internal/llm/resolver_keycmd_test.go",
    "bytes": 15221,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/resolver_norm_test.go",
    "bytes": 2062,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/resolver_shellrc_test.go",
    "bytes": 1732,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/resolver_test.go",
    "bytes": 82336,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/responses_client.go",
    "bytes": 13519,
-   "status": "unread"
+   "status": "read",
+   "observation": "OpenAI Responses без состояния на сервере"
   },
   {
    "path": "internal/llm/responses_client_test.go",
    "bytes": 28101,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/retry_boundary.go",
    "bytes": 6046,
-   "status": "unread"
+   "status": "read",
+   "observation": "нераспознанная ошибка не записывается в unknown: «a guessed one is not [a fact]» — образец"
   },
   {
    "path": "internal/llm/retry_boundary_test.go",
    "bytes": 31471,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/retry_meta.go",
    "bytes": 6332,
-   "status": "unread"
+   "status": "read",
+   "observation": "идентичность логического запроса"
   },
   {
    "path": "internal/llm/retry_meta_test.go",
    "bytes": 5861,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/retry_observer.go",
    "bytes": 5134,
-   "status": "unread"
+   "status": "read",
+   "observation": "неклассифицированный не-2xx — нарушение, а не успех, иначе запрос исчез бы из отчёта, оставаясь в счёте — наш принцип"
   },
   {
    "path": "internal/llm/retry_observer_test.go",
    "bytes": 24015,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/retry_report.go",
    "bytes": 24965,
-   "status": "unread"
+   "status": "read",
+   "observation": "класс ошибки только по статусу и типу, никогда по тексту"
   },
   {
    "path": "internal/llm/retry_report_test.go",
    "bytes": 32509,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/sessionkey.go",
    "bytes": 5710,
-   "status": "unread"
+   "status": "read",
+   "observation": "ключ кэша на разговор"
   },
   {
    "path": "internal/llm/sessionkey_test.go",
    "bytes": 7382,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/test_home_test.go",
    "bytes": 570,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/tool_call_extra_content_test.go",
    "bytes": 10159,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llm/usage_resolver.go",
    "bytes": 5587,
-   "status": "unread"
+   "status": "read",
+   "observation": "разбор usage по провайдерам"
   },
   {
    "path": "internal/llm/usage_resolver_test.go",
    "bytes": 3879,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/llmloop/compression.go",
