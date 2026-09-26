@@ -54,8 +54,8 @@ CODE=$(find "$DIR" $(skip_find) -type f -name package.json -print 2>/dev/null \
   | while IFS= read -r F; do grep -qE "\"($CODE_DEPS)\"[[:space:]]*:" "$F" && printf '%s\n' "$F"; done)
 
 [ -z "$SPECS$CODE" ] && {
-  echo "договора API здесь нет — ни файла OpenAPI, ни tRPC, ts-rest или провайдера типов"
-  echo "Fastify; эта проверка не про тебя"
+  echo "пусто: договора API здесь нет — ни файла OpenAPI, ни tRPC, ts-rest или провайдера типов"
+  echo "  Fastify; проверять было нечего"
   exit 0
 }
 

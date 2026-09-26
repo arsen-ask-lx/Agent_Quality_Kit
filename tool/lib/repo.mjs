@@ -2,7 +2,7 @@
 // триггера, выбор рецепта, сверка по намерению.
 
 import { readdir, readFile } from "node:fs/promises";
-import { existsSync, statSync, lstatSync, realpathSync } from "node:fs";
+import { existsSync, statSync, lstatSync, realpathSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CWD, GATES_SRC, c, exists } from "./core.mjs";
 import { parseManifest } from "./manifest.mjs";
@@ -62,7 +62,20 @@ async function isCodeContract(path) {
   }
 }
 
-const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "dist", "build", "__pycache__", ".aqk"]);
+// Каталоги, которые не читаются, — ОДИН список на гейты и на определение языков: он живёт в
+// `kit/gates/_skip.sh` и читается отсюда. Пока списков было два (сорок имён у гейтов, восемь здесь),
+// код в `vendor/` делал проект «проектом на Python», и doctor советовал записи, которые, будучи
+// поставлены, не прочитали бы ни одного файла. Урок разбора open-code-review 2026-09-26.
+// Файл едет в пакете вместе с программой; если его нет, пакет сломан — тогда хотя бы базовый набор.
+function readSkipNames() {
+  try {
+    const text = readFileSync(join(GATES_SRC, "_skip.sh"), "utf8");
+    const m = text.match(/^SKIP_NAMES="([^"]*)"/m);
+    if (m) return m[1].split(/\s+/).filter(Boolean);
+  } catch { /* ниже — базовый набор, и он назван в комментарии, а не выдуман */ }
+  return [".git", "node_modules", ".venv", "venv", "dist", "build", "__pycache__", ".aqk"];
+}
+const SKIP_DIRS = new Set(readSkipNames());
 
 // Факты о репозитории. Только то, что видно машине: спрашивать человека анкетой
 // значит снова получить мнение вместо факта.
@@ -118,12 +131,14 @@ async function detectFacts(man) {
     for (const it of items) {
       const full = join(dir, it.name);
       if (it.isDirectory()) {
+        // Признаки считаются ДО пропуска: `migrations` в общем списке пропусков (гейты не читают
+        // сгенерированные миграции), но сам каталог — признак базы данных.
+        if (/^(tests?|spec|__tests__)$/i.test(it.name)) hasTests = true;
+        if (/^migrations?$/i.test(it.name)) hasDb = true;
         if (SKIP_DIRS.has(it.name)) continue;
         // Образцы каталога — код специально сломанный и специально исправный.
         // Считать его языками проекта значит врать о репозитории.
         if (full === GATES_SRC || (samplesDir && full === samplesDir)) continue;
-        if (/^(tests?|spec|__tests__)$/i.test(it.name)) hasTests = true;
-        if (/^migrations?$/i.test(it.name)) hasDb = true;
         await walk(full, depth + 1);
       } else {
         files++;

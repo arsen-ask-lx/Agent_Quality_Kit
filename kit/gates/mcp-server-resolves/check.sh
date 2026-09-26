@@ -33,6 +33,12 @@ if [ "${AQK_SKIP_READY:-}" != 1 ]; then
 fi
 
 OUT=""
+# «Пусто» — не «чисто»: ни одной настройки MCP — сверять было нечего, и это говорится вслух.
+MCP_ANY=""
+for F in "$DIR/.mcp.json" "$DIR/.cursor/mcp.json" "$DIR/.vscode/mcp.json" "$DIR/.claude/mcp.json"; do
+  [ -f "$F" ] && MCP_ANY=1
+done
+[ -z "$MCP_ANY" ] && { echo "пусто: настроек MCP (.mcp.json и соседей) не нашлось — сверять было нечего"; exit 0; }
 for F in "$DIR/.mcp.json" "$DIR/.cursor/mcp.json" "$DIR/.vscode/mcp.json" "$DIR/.claude/mcp.json"; do
   [ -f "$F" ] || continue
   RES=$(awk -v file="$F" -v dir="$DIR" '

@@ -40,7 +40,7 @@ FILES=$(find "$DIR" $(skip_find) -type f \( \
     -o -name '*.test.mjs' -o -name '*.spec.js' -o -name '*.spec.jsx' -o -name '*.spec.ts' \
     -o -name '*.spec.tsx' -o -name '*.spec.mjs' \
     -o -name '*_test.go' -o -name '*_test.rb' -o -name '*_spec.rb' \) -print 2>/dev/null)
-[ -z "$FILES" ] && { echo "файлов тестов не нашлось — эта проверка не про тебя"; exit 0; }
+[ -z "$FILES" ] && { echo "пусто: файлов тестов не нашлось — проверять было нечего"; exit 0; }
 
 # Сгенерированный файл правят не руками: тест в нём написал инструмент. Признак проверяется
 # внутри awk по первым строкам, а не циклом с `head` на файл.

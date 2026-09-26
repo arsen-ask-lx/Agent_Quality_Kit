@@ -26,6 +26,9 @@ if [ "${AQK_SKIP_READY:-}" != 1 ]; then
   echo "  почини: замени kit/gates/_skip.sh целым файлом из каталога"
   exit 2
 fi
+
+# «Пусто» — не «чисто»: см. nothing_to_check в _skip.sh.
+nothing_to_check "$DIR" "$CODE_RE" "файлов с кодом вне тестов" "$TESTS_RE" && exit 0
 MAX="${AQK_MAX_DEPTH:-5}"
 # Предел — целое больше нуля, иначе проверки нет: `awk` превращает «abc» в ноль молча, и опечатка
 # в переменной выключала гейт на заведомом браке (замер 2026-09-26, `gate-limits.test.mjs`).

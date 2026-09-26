@@ -43,6 +43,9 @@ SOURCE_RE="${AQK_COLOR_SOURCE:-tokens|theme|themes|palette|colors|colours|variab
 
 EXT_RE="$(printf '%s' "$COLOR_EXT" | tr ' ' '|')"
 
+# «Пусто» — не «чисто»: см. nothing_to_check в _skip.sh.
+nothing_to_check "$DIR" "\\.($EXT_RE)$" "файлов стилей и разметки" && exit 0
+
 # shellcheck disable=SC2086
 HITS=$(find "$DIR" $(skip_find "$DIR") -type f -print 2>/dev/null \
   | grep -E "\.($EXT_RE)$" \

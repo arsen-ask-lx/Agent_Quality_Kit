@@ -36,7 +36,7 @@ fi
 ENTRIES=$( { find "$DIR" -maxdepth 1 -type f \( -iname 'agents.md' -o -iname 'claude.md' -o -iname 'gemini.md' \) -print
   for F in .claude/CLAUDE.md .github/copilot-instructions.md; do [ -f "$DIR/$F" ] && printf '%s\n' "$DIR/$F"; done
 } 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$')
-[ -z "$ENTRIES" ] && { echo "свода агента здесь нет — сверять нечего"; exit 0; }
+[ -z "$ENTRIES" ] && { echo "пусто: свода агента здесь нет — сверять было нечего"; exit 0; }
 
 # --- что в проекте есть ---------------------------------------------------------
 # Скрипты — только из блока "scripts" каждого package.json (рабочие пространства тоже: команда

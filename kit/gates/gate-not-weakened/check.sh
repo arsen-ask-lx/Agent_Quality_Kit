@@ -32,6 +32,9 @@ if [ "${AQK_SKIP_READY:-}" != 1 ]; then
   exit 2
 fi
 
+# «Пусто» — не «чисто»: см. nothing_to_check в _skip.sh.
+nothing_to_check "$DIR" "$CODE_RE|\\.(sh|yml|yaml|json|toml|mk)$|(^|/)Makefile$" "файлов с кодом, скриптов и настроек" && exit 0
+
 OUT=""
 add() { [ -z "$1" ] || OUT="$OUT$1
 "; }

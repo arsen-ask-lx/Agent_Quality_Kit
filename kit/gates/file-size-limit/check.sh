@@ -26,6 +26,9 @@ if [ "${AQK_SKIP_READY:-}" != 1 ]; then
   exit 2
 fi
 
+# «Пусто» — не «чисто»: см. nothing_to_check в _skip.sh.
+nothing_to_check "$DIR" "$CODE_RE" "файлов с кодом" && exit 0
+
 # Один обход и один wc на все файлы разом: на проекте в 36 тысяч файлов цикл с wc на каждый
 # не укладывался в две минуты.
 # shellcheck disable=SC2046
