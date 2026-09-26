@@ -3613,197 +3613,236 @@
   {
    "path": "internal/viewer/browser.go",
    "bytes": 7955,
-   "status": "unread"
+   "status": "read",
+   "observation": "открытие браузера"
   },
   {
    "path": "internal/viewer/browser_exec_test.go",
    "bytes": 11345,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/browser_test.go",
    "bytes": 2265,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/compare_test.go",
    "bytes": 19313,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/export.go",
    "bytes": 2976,
-   "status": "unread"
+   "status": "read",
+   "observation": "рендер в память, потом запись — без обрезанных файлов; ассеты встраиваются"
   },
   {
    "path": "internal/viewer/export_test.go",
    "bytes": 7321,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/handler.go",
    "bytes": 6793,
-   "status": "unread"
+   "status": "read",
+   "observation": "сравнение отказывает при разных cwd (знают про склейку encodeRepoPath); пустая корзина рисуется как none — образец"
   },
   {
    "path": "internal/viewer/handler_test.go",
    "bytes": 13919,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/hostguard.go",
    "bytes": 4476,
-   "status": "unread"
+   "status": "read",
+   "observation": "защита от DNS-rebinding: allowlist по Host, при привязке на 0.0.0.0 требуется явное OCR_VIEWER_ALLOWED_HOSTS"
   },
   {
    "path": "internal/viewer/hostguard_test.go",
    "bytes": 5698,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/securityheaders.go",
    "bytes": 1608,
-   "status": "unread"
+   "status": "read",
+   "observation": "строгий CSP без unsafe-inline"
   },
   {
    "path": "internal/viewer/securityheaders_test.go",
    "bytes": 1807,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/server.go",
    "bytes": 16484,
-   "status": "unread"
+   "status": "read",
+   "observation": "время жёстко Asia/Shanghai; номер строки не рисуется, если ему нельзя верить; живой рендер пишет в ответ сразу (частичная страница — только лог)"
   },
   {
    "path": "internal/viewer/server_extra_test.go",
    "bytes": 39298,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/server_startserver_test.go",
    "bytes": 16787,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/server_test.go",
    "bytes": 2999,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/static/a11y.js",
    "bytes": 1751,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/static/icons/NOTICE",
    "bytes": 924,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/chevron-down.svg",
    "bytes": 325,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/chevron-left.svg",
    "bytes": 323,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/chevron-right.svg",
    "bytes": 326,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/file.svg",
    "bytes": 375,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/logo.svg",
    "bytes": 2625,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/search.svg",
    "bytes": 656,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/icons/settings.svg",
    "bytes": 1977,
-   "status": "unread"
+   "status": "binary",
+   "observation": "иконки"
   },
   {
    "path": "internal/viewer/static/pager.js",
    "bytes": 5381,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/static/repos.js",
    "bytes": 1134,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/static/session.js",
    "bytes": 12567,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/static/sessions.js",
    "bytes": 472,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/static/style.css",
    "bytes": 54022,
-   "status": "unread"
+   "status": "skimmed",
+   "observation": "статика просмотрщика: поведение сверено по живой выгрузке, код просмотрен бегло"
   },
   {
    "path": "internal/viewer/store.go",
    "bytes": 26245,
-   "status": "unread"
+   "status": "read",
+   "observation": "files_reviewed = Coverage.Selected (подмена имени, подтверждена выгрузкой); битые строки JSONL пропускаются; аномалия группировки показывается как #idx, а не выбрасывается"
   },
   {
    "path": "internal/viewer/store_load_test.go",
    "bytes": 29126,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/store_test.go",
    "bytes": 14323,
-   "status": "unread"
+   "status": "read",
+   "observation": "тесты по именам"
   },
   {
    "path": "internal/viewer/templates/app-header.html",
    "bytes": 718,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "internal/viewer/templates/compare.html",
    "bytes": 3745,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "internal/viewer/templates/pager.html",
    "bytes": 530,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "internal/viewer/templates/repos.html",
    "bytes": 1937,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "internal/viewer/templates/session.html",
    "bytes": 23723,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "internal/viewer/templates/sessions.html",
    "bytes": 2616,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон; session.html прочитан в шапке и сверен с живой выгрузкой"
   },
   {
    "path": "npm/darwin-arm64/package.json",
