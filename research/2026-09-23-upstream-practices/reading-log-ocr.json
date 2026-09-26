@@ -30,27 +30,32 @@
   {
    "path": ".gitattributes",
    "bytes": 455,
-   "status": "unread"
+   "status": "read",
+   "observation": "text=auto eol=lf, бинарные типы"
   },
   {
    "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
    "bytes": 3044,
-   "status": "unread"
+   "status": "read",
+   "observation": "версия, ОС, способ установки, провайдер обязательны; галочка «не использовал ИИ»"
   },
   {
    "path": ".github/ISSUE_TEMPLATE/config.yml",
    "bytes": 657,
-   "status": "unread"
+   "status": "read",
+   "observation": "пустые issue запрещены; уязвимости — приватно"
   },
   {
    "path": ".github/ISSUE_TEMPLATE/docs_report.yml",
    "bytes": 1497,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон"
   },
   {
    "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
    "bytes": 1906,
-   "status": "unread"
+   "status": "read",
+   "observation": "шаблон"
   },
   {
    "path": ".github/SECURITY.md",
@@ -61,7 +66,8 @@
   {
    "path": ".github/dependabot.yml",
    "bytes": 864,
-   "status": "unread"
+   "status": "read",
+   "observation": "ежемесячно, группами; @types/vscode исключён с объяснением"
   },
   {
    "path": ".github/pull_request_template.md",
@@ -72,67 +78,80 @@
   {
    "path": ".github/release.yml",
    "bytes": 402,
-   "status": "unread"
+   "status": "read",
+   "observation": "категории журнала по меткам"
   },
   {
    "path": ".github/workflows/action-contract.yml",
    "bytes": 1969,
-   "status": "unread"
+   "status": "read",
+   "observation": "контракт составного действия проверяется поддельными ocr/npm; README примера — часть контракта"
   },
   {
    "path": ".github/workflows/ci.yml",
    "bytes": 6234,
-   "status": "unread"
+   "status": "read",
+   "observation": "paths-ignore **.md, а 65 .md вшиты в программу (промпты, правила) и читаются Go-тестами; 3 из 42 коммитов в промпты/правила прошли без Go-тестов. Порог покрытия при пустом числе печатает PASS (проверено). Комментарии отстали: 80% vs 90, 1.26.5 vs 1.26.6"
   },
   {
    "path": ".github/workflows/codeql.yml",
    "bytes": 5069,
-   "status": "unread"
+   "status": "read",
+   "observation": "CodeQL для actions, go, js/ts; шаблон GitHub почти без правок"
   },
   {
    "path": ".github/workflows/deploy-pages.yml",
    "bytes": 1914,
-   "status": "unread"
+   "status": "read",
+   "observation": "перед выкладкой сверяет install.sh/ps1 с исходником (cmp) и sh -n — сайт раздаёт установщик, и он проверен"
   },
   {
    "path": ".github/workflows/frontend-ext.yml",
    "bytes": 1744,
-   "status": "unread"
+   "status": "read",
+   "observation": "typecheck, test, две сборки webview"
   },
   {
    "path": ".github/workflows/idea-ext.yml",
    "bytes": 1786,
-   "status": "unread"
+   "status": "read",
+   "observation": "проверка обёртки gradle, тесты без фронтенда"
   },
   {
    "path": ".github/workflows/ocr-review.yml",
    "bytes": 2389,
-   "status": "unread"
+   "status": "read",
+   "observation": "pull_request_target только на opened; последующие пуши в PR не смотрятся"
   },
   {
    "path": ".github/workflows/pages-ci.yml",
    "bytes": 2214,
-   "status": "unread"
+   "status": "read",
+   "observation": "только pages/**; npm test сайта, дымовая проверка отдачи страниц"
   },
   {
    "path": ".github/workflows/plugin-contract.yml",
    "bytes": 3168,
-   "status": "unread"
+   "status": "read",
+   "observation": "ссылки и манифесты; гоняется и на push в main: «two PRs can each pass alone and break the invariant once merged»"
   },
   {
    "path": ".github/workflows/release.yml",
    "bytes": 7953,
-   "status": "unread"
+   "status": "read",
+   "observation": "выпуск по метке без прогона тестов на этом коммите (метка может стоять на коммите, где CI не шёл — например, только .md); npm через долгоживущий NPM_TOKEN без provenance (у AQK — OIDC и удостоверение); повторный прогон пропускает уже опубликованное — идемпотентно"
   },
   {
    "path": ".github/workflows/translation-sync.yml",
    "bytes": 2375,
-   "status": "unread"
+   "status": "read",
+   "observation": "структура README на языках — блокирует; синхронность docs — continue-on-error, только предупреждение (объявлено честно)"
   },
   {
    "path": ".github/workflows/vscode-ext.yml",
    "bytes": 1437,
-   "status": "unread"
+   "status": "read",
+   "observation": "запускается и на изменения frontend — зависимость учтена"
   },
   {
    "path": ".gitignore",
@@ -152,7 +171,8 @@
   {
    "path": ".opencodereview/rule.json",
    "bytes": 1646,
-   "status": "unread"
+   "status": "read",
+   "observation": "свои правила ревью для providers.go: синхронность доков на 4 языках и тест на каждого провайдера — обещание, отданное модели, а не проверке"
   },
   {
    "path": "AGENTS.md",
@@ -198,7 +218,8 @@
   {
    "path": "Makefile",
    "bytes": 3931,
-   "status": "unread"
+   "status": "read",
+   "observation": "make check ЧИНИТ (gofmt -w, go mod tidy) и пишет «check passed» — локальная проверка, которая не может упасть на форматировании; в CI сделано правильно (дифф после). Порог покрытия 90"
   },
   {
    "path": "README.md",
@@ -221,7 +242,8 @@
   {
    "path": "bin/ocr.js",
    "bytes": 4212,
-   "status": "unread"
+   "status": "read",
+   "observation": "сигнал ребёнка → 128+signo, а не 0 («OOM kill read as success») — образец; запускает update.js отцепленным, если нет OCR_NO_UPDATE"
   },
   {
    "path": "bin/ocr.test.js",
@@ -4927,17 +4949,20 @@
   {
    "path": "scripts/add-license.sh",
    "bytes": 3213,
-   "status": "unread"
+   "status": "read",
+   "observation": "та же ловушка SIGPIPE описана: без неё вписывался бы второй заголовок"
   },
   {
    "path": "scripts/github-actions/action-contract.test.js",
    "bytes": 84609,
-   "status": "unread"
+   "status": "read",
+   "observation": "49 контрактных проверок настоящих шагов action.yml с поддельными git/ocr/npm. Fetch PR head — только с git, который всегда успешен; Compute merge-base (находка 1) в набор не входит"
   },
   {
    "path": "scripts/github-actions/check-plugin-contract.js",
    "bytes": 37094,
-   "status": "unread"
+   "status": "read",
+   "observation": "ОБРАЗЕЦ: пол корпуса (≥50 ссылок/10 файлов, иначе провал), непрочитанные документы называются, непроверенное допущение — предупреждение каждый прогон, пустое дерево — ошибка, экранирование аннотаций"
   },
   {
    "path": "scripts/github-actions/check-plugin-contract.test.js",
@@ -4947,7 +4972,8 @@
   {
    "path": "scripts/github-actions/check-translation-sync.js",
    "bytes": 13383,
-   "status": "unread"
+   "status": "read",
+   "observation": "README по структуре заголовков — блокирует; пропавший файл — отказ сразу (иначе следующий стал бы эталоном). Режим docs: сбой git diff → пустой список → печатает «no en-only documentation changes detected» — наш класс, но проверка необязательная. Шапка говорит «вызывается из ci.yml» — на деле translation-sync.yml"
   },
   {
    "path": "scripts/github-actions/check-translation-sync.test.js",
@@ -4963,17 +4989,20 @@
   {
    "path": "scripts/github-actions/post-review-comments.test.js",
    "bytes": 308272,
-   "status": "unread"
+   "status": "read",
+   "observation": "166 проверок доставки (лимиты, повторы, IoU, сумма корзин == total); ни одна не смотрит на status обзора — partial/skipped с нулём замечаний публикуется ✅ без теста. Прочитано по именам и утверждениям"
   },
   {
    "path": "scripts/install.js",
    "bytes": 7155,
-   "status": "unread"
+   "status": "read",
+   "observation": "только https, проверка sha256 обязательна при checksumPattern; нет строки для платформы — отказ и удаление бинаря"
   },
   {
    "path": "scripts/platform.js",
    "bytes": 1896,
-   "status": "unread"
+   "status": "read",
+   "observation": "бинарь из платформенного пакета, иначе из bin/"
   },
   {
    "path": "scripts/publish/.env.example",
@@ -4998,27 +5027,32 @@
   {
    "path": "scripts/update.js",
    "bytes": 4330,
-   "status": "unread"
+   "status": "read",
+   "observation": "НАХОДКА 7: в фоне npm i -g последней версии, раз в 18 мин; отменяет закреплённую ocr_version в их же действии; в окне замены ocr = 127 (подтверждено песочницей)"
   },
   {
    "path": "scripts/verify-action-pins.sh",
    "bytes": 3115,
-   "status": "unread"
+   "status": "read",
+   "observation": "SHA + строгий # vX.Y.Z; необычный синтаксис — отказ, а не догадка; нет файла — «проверка не может выполниться», код 1. Образец"
   },
   {
    "path": "scripts/verify-english-only.go",
    "bytes": 10705,
-   "status": "unread"
+   "status": "read",
+   "observation": "маркер исключения обязан нести причину (двоеточие в маркере); что проверка НЕ ловит — названо в шапке. Образец формы для AQK"
   },
   {
    "path": "scripts/verify-license.sh",
    "bytes": 2138,
-   "status": "unread"
+   "status": "read",
+   "observation": "here-string вместо echo|grep -q под pipefail (SIGPIPE 141 → ложное «нет заголовка»). У AQK: гейты pipefail не включают; smoke.sh включает, но вывод мал — не воспроизвелось даже на 300 КБ"
   },
   {
    "path": "scripts/version.js",
    "bytes": 1268,
-   "status": "unread"
+   "status": "read",
+   "observation": "semver без зависимостей"
   },
   {
    "path": "scripts/version.test.js",
