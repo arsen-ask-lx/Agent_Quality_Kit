@@ -438,7 +438,7 @@ what to hand the agent. It needs no permissions. The full page with charts is `.
 to download it from the run, keep it as an artifact:
 
 ```yaml
-- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # upload-artifact 7.0.1
   if: always()
   with: { name: aqk-report, path: .aqk/report.html }
 ```
