@@ -3,8 +3,25 @@
 **English** · [Русский](README.ru.md)
 
 [![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
-[![checks](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![checks](https://img.shields.io/github/actions/workflow/status/arsen-ask-lx/Agent_Quality_Kit/ci.yml?branch=main&label=checks)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
+[![node](https://img.shields.io/node/v/agent-quality-kit)](package.json)
+[![dependencies: 0](https://img.shields.io/badge/dependencies-0-2ea44f)](package.json)
 [![MIT licence](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
+
+[![Linux](https://img.shields.io/badge/Linux-tested-FCC624?logo=linux&logoColor=black)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/badge/Windows-tested-0078D6)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](docs/guide.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](docs/guide.md)
+[![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](docs/guide.md)
+[![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](docs/guide.md)
+[![any language](https://img.shields.io/badge/any%20language-sh-4EAA25?logo=gnubash&logoColor=white)](kit/gates)
+
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-D97757?logo=claude&logoColor=white)](#install-for-good)
+[![Codex](https://img.shields.io/badge/Codex-AGENTS.md-412991)](AGENTS.md)
+[![Cursor](https://img.shields.io/badge/Cursor-AGENTS.md-000000)](AGENTS.md)
+[![any agent](https://img.shields.io/badge/any%20agent%20or%20none-555555)](AGENTS.md)
+[![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Marketplace-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ```
  █████╗   ██████╗ ██╗  ██╗

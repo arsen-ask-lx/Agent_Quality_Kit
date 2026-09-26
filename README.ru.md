@@ -3,8 +3,25 @@
 [English](README.md) · **Русский**
 
 [![npm](https://img.shields.io/npm/v/agent-quality-kit)](https://www.npmjs.com/package/agent-quality-kit)
-[![проверки](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![проверки](https://img.shields.io/github/actions/workflow/status/arsen-ask-lx/Agent_Quality_Kit/ci.yml?branch=main&label=%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%BA%D0%B8)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![AQK-3](https://img.shields.io/badge/AQK-3-2ea44f)](https://github.com/arsen-ask-lx/Agent_Quality_Kit)
+[![node](https://img.shields.io/node/v/agent-quality-kit)](package.json)
+[![зависимостей: 0](https://img.shields.io/badge/%D0%B7%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B5%D0%B9-0-2ea44f)](package.json)
 [![лицензия MIT](https://img.shields.io/npm/l/agent-quality-kit)](LICENSE)
+
+[![Linux](https://img.shields.io/badge/Linux-%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%B5%D0%BD%D0%BE-FCC624?logo=linux&logoColor=black)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/badge/Windows-%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%B5%D0%BD%D0%BE-0078D6)](https://github.com/arsen-ask-lx/Agent_Quality_Kit/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](docs/guide.ru.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](docs/guide.ru.md)
+[![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](docs/guide.ru.md)
+[![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](docs/guide.ru.md)
+[![любой язык](https://img.shields.io/badge/%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20%D1%8F%D0%B7%D1%8B%D0%BA-sh-4EAA25?logo=gnubash&logoColor=white)](kit/gates)
+
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-%D0%BF%D0%BB%D0%B0%D0%B3%D0%B8%D0%BD-D97757?logo=claude&logoColor=white)](#поставить-насовсем)
+[![Codex](https://img.shields.io/badge/Codex-AGENTS.md-412991)](AGENTS.md)
+[![Cursor](https://img.shields.io/badge/Cursor-AGENTS.md-000000)](AGENTS.md)
+[![любой агент](https://img.shields.io/badge/%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%20%D0%B8%D0%BB%D0%B8%20%D0%B1%D0%B5%D0%B7%20%D0%BD%D0%B5%D0%B3%D0%BE-555555)](AGENTS.md)
+[![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Marketplace-2ea44f?logo=github)](https://github.com/marketplace/actions/agent-quality-kit-aqk)
 
 ```
  █████╗   ██████╗ ██╗  ██╗
