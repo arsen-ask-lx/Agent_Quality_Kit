@@ -150,4 +150,4 @@ ul.plain{list-style:none;padding:0;margin:0;display:grid;gap:8px}.chart{overflow
 .todo{padding:0;margin:0;display:grid;gap:10px;counter-reset:n}.todo li{list-style:none;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}.todo li::before{counter-increment:n;content:counter(n);font-weight:700;font-size:18px;color:var(--accent)}
 button{font:600 12px system-ui,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}footer{font-size:12.5px;color:var(--muted)}`;
 
-export { renderReport, compare };
+export { renderReport };

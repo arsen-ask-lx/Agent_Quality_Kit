@@ -37,4 +37,4 @@ async function writeHtmlReport() {
   }
 }
 
-export { writeHtmlReport, readHistory };
+export { writeHtmlReport };
