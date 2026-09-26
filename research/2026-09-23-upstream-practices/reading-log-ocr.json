@@ -1,0 +1,4860 @@
+{
+ "source": "alibaba/open-code-review",
+ "commit": "486022daaf14f7142275eddb9b3cacc3cc5dadfa",
+ "started": "2026-09-26",
+ "order": "документация, потом код",
+ "files": [
+  {
+   "path": ".agents/plugins/marketplace.json",
+   "bytes": 403,
+   "status": "unread"
+  },
+  {
+   "path": ".claude-plugin/marketplace.json",
+   "bytes": 682,
+   "status": "read",
+   "observation": "Маркетплейс Claude Code: один плагин из plugins/open-code-review/claude-code."
+  },
+  {
+   "path": ".claude/commands/commit.md",
+   "bytes": 232,
+   "status": "read",
+   "observation": "Команда Claude: коммит на английском, без Co-Authored-By ИИ."
+  },
+  {
+   "path": ".claude/commands/tag.md",
+   "bytes": 949,
+   "status": "read",
+   "observation": "Команда Claude: подписанная метка с резюме изменений с прошлой метки."
+  },
+  {
+   "path": ".gitattributes",
+   "bytes": 455,
+   "status": "unread"
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+   "bytes": 3044,
+   "status": "unread"
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/config.yml",
+   "bytes": 657,
+   "status": "unread"
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/docs_report.yml",
+   "bytes": 1497,
+   "status": "unread"
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+   "bytes": 1906,
+   "status": "unread"
+  },
+  {
+   "path": ".github/SECURITY.md",
+   "bytes": 3142,
+   "status": "read",
+   "observation": "Приватные отчёты через GitHub; политика про ИИ: раскрыть и приложить промпты. Сроки 3/7/14 дней. Подпись выпусков — attestations Sigstore, теги git tag -s."
+  },
+  {
+   "path": ".github/dependabot.yml",
+   "bytes": 864,
+   "status": "unread"
+  },
+  {
+   "path": ".github/pull_request_template.md",
+   "bytes": 1375,
+   "status": "read",
+   "observation": "Шаблон PR: галочки make test, самопроверка, раскрытие ИИ. Галочки — утверждения автора, не машины."
+  },
+  {
+   "path": ".github/release.yml",
+   "bytes": 402,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/action-contract.yml",
+   "bytes": 1969,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "bytes": 6234,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/codeql.yml",
+   "bytes": 5069,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/deploy-pages.yml",
+   "bytes": 1914,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/frontend-ext.yml",
+   "bytes": 1744,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/idea-ext.yml",
+   "bytes": 1786,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/ocr-review.yml",
+   "bytes": 2389,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/pages-ci.yml",
+   "bytes": 2214,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/plugin-contract.yml",
+   "bytes": 3168,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/release.yml",
+   "bytes": 7953,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/translation-sync.yml",
+   "bytes": 2375,
+   "status": "unread"
+  },
+  {
+   "path": ".github/workflows/vscode-ext.yml",
+   "bytes": 1437,
+   "status": "unread"
+  },
+  {
+   "path": ".gitignore",
+   "bytes": 571,
+   "status": "unread"
+  },
+  {
+   "path": ".kimi-plugin/plugin.json",
+   "bytes": 895,
+   "status": "unread"
+  },
+  {
+   "path": ".npmignore",
+   "bytes": 196,
+   "status": "unread"
+  },
+  {
+   "path": ".opencodereview/rule.json",
+   "bytes": 1646,
+   "status": "unread"
+  },
+  {
+   "path": "AGENTS.md",
+   "bytes": 5580,
+   "status": "read",
+   "observation": "Правила участникам: раскрывать ИИ, не приписывать коммиты ИИ, ревью ocr перед коммитом. Машинные сторожа: make english-check (любая не-ASCII буква в исходниках; узкий обход маркером allow-non-english: <reason> на строке, широкий — префикс с условием снятия), SPDX-заголовки make license-add, покрытие 90% make coverage, LF-переносы."
+  },
+  {
+   "path": "ASSURANCE_CASE.md",
+   "bytes": 11207,
+   "status": "read",
+   "observation": "Модель угроз T1–T7 с таблицей: граница → угроза → мера, ссылки на файл:строку. Сопоставление с принципами Saltzer–Schroeder и OWASP. Раздел «Automated Verification» — какая проверка, чем, когда."
+  },
+  {
+   "path": "CLAUDE.md",
+   "bytes": 11,
+   "status": "read",
+   "observation": "Одна строка @AGENTS.md — тот же приём, что у нас: один свод, две точки входа."
+  },
+  {
+   "path": "CODE_OF_CONDUCT.md",
+   "bytes": 1047,
+   "status": "read",
+   "observation": "Кодекс поведения, машинных утверждений нет."
+  },
+  {
+   "path": "CONTRIBUTING.md",
+   "bytes": 13240,
+   "status": "read",
+   "observation": "Порядок вклада: ветки по префиксам, Conventional Commits, SPDX, make check/test/build, CLA. Раздел про ИИ — те же 8 правил, что в AGENTS.md; «описание PR обязано совпадать с дифом»."
+  },
+  {
+   "path": "GOVERNANCE.md",
+   "bytes": 7857,
+   "status": "read",
+   "observation": "Управление: роли, ленивый консенсус, значимые изменения (CLI, формат конфига, движок ревью) — через issue до кода. Машинных утверждений нет."
+  },
+  {
+   "path": "LICENSE",
+   "bytes": 11356,
+   "status": "unread"
+  },
+  {
+   "path": "Makefile",
+   "bytes": 3931,
+   "status": "unread"
+  },
+  {
+   "path": "README.md",
+   "bytes": 13413,
+   "status": "read",
+   "observation": "Позиционирование: детерминированная обвязка + агент. Детерминизм там, где «нельзя ошибиться»: отбор файлов, связки файлов в подагентов, подбор правил шаблонами, отдельные модули позиционирования и «рефлексии» комментариев. Бенчмарк AACR-Bench: 200 PR, 1505 размеченных проблем, точность выше Claude Code при 1/9 токенов, полнота ниже — сознательно."
+  },
+  {
+   "path": "ROADMAP.md",
+   "bytes": 3084,
+   "status": "read",
+   "observation": "План: JetBrains, режим делегирования (ocr готовит задачу, ревьюит агент хоста своей подпиской — уже сделан), Ultra (выше полнота ценой токенов), долгая память. Не планируют: автопочинку без человека."
+  },
+  {
+   "path": "action.yml",
+   "bytes": 55520,
+   "status": "unread"
+  },
+  {
+   "path": "bin/ocr.js",
+   "bytes": 4212,
+   "status": "unread"
+  },
+  {
+   "path": "bin/ocr.test.js",
+   "bytes": 8510,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/apply_provider_field_test.go",
+   "bytes": 2989,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/arg_errors.go",
+   "bytes": 3702,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/arg_errors_test.go",
+   "bytes": 10180,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/background_file.go",
+   "bytes": 4698,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/background_file_test.go",
+   "bytes": 13120,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/bedrock_config_test.go",
+   "bytes": 12379,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/budget_output_test.go",
+   "bytes": 10873,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/cli_reference_compare_docs_test.go",
+   "bytes": 5139,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/color.go",
+   "bytes": 2739,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/color_test.go",
+   "bytes": 5710,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/compat_test.go",
+   "bytes": 5834,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/completion.go",
+   "bytes": 1971,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/config_cmd.go",
+   "bytes": 36841,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/config_cmd_test.go",
+   "bytes": 54824,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/config_dispatch_test.go",
+   "bytes": 781,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/config_runset_test.go",
+   "bytes": 4124,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/config_unset_error_test.go",
+   "bytes": 1186,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/delegate_cmd.go",
+   "bytes": 10041,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/delegate_exec_test.go",
+   "bytes": 9289,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/delegate_helpers_test.go",
+   "bytes": 2400,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/emit_run_result_test.go",
+   "bytes": 27399,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/flag_suggest.go",
+   "bytes": 1795,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/flag_suggest_test.go",
+   "bytes": 2763,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/flags_test.go",
+   "bytes": 11937,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/git.go",
+   "bytes": 1219,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/git_test.go",
+   "bytes": 4730,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/interrupt.go",
+   "bytes": 3513,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/interrupt_test.go",
+   "bytes": 11567,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/llm_cmd.go",
+   "bytes": 8086,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/llm_cmd_test.go",
+   "bytes": 8234,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/main.go",
+   "bytes": 572,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/main_test.go",
+   "bytes": 905,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/manual_e2e_retry_test.go",
+   "bytes": 5804,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/misc_helpers_test.go",
+   "bytes": 2799,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output.go",
+   "bytes": 28156,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output_color_test.go",
+   "bytes": 5732,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output_file_test.go",
+   "bytes": 23234,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output_helpers_test.go",
+   "bytes": 24382,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output_manifest_test.go",
+   "bytes": 4008,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/output_test.go",
+   "bytes": 3706,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/parent_cmd_test.go",
+   "bytes": 3752,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/procattr_unix.go",
+   "bytes": 399,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/procattr_windows.go",
+   "bytes": 467,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/progress_stream_e2e_test.go",
+   "bytes": 2674,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_cmd.go",
+   "bytes": 13792,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_cmd_test.go",
+   "bytes": 15618,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_config_apply_test.go",
+   "bytes": 2185,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui.go",
+   "bytes": 89992,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_cpinput_test.go",
+   "bytes": 4091,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_customform_test.go",
+   "bytes": 8919,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_deleteconfirm_test.go",
+   "bytes": 1806,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_editsave_test.go",
+   "bytes": 3624,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_funcs_test.go",
+   "bytes": 63321,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_manualenter_test.go",
+   "bytes": 6254,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_modeltui_test.go",
+   "bytes": 8843,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_persist_test.go",
+   "bytes": 12054,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_rollback_test.go",
+   "bytes": 6824,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_savefail_test.go",
+   "bytes": 5090,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/provider_tui_test.go",
+   "bytes": 88806,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/retry_fake_llm_test.go",
+   "bytes": 11410,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/retry_report_e2e_test.go",
+   "bytes": 11688,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/retry_report_render_test.go",
+   "bytes": 14187,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_cmd.go",
+   "bytes": 21515,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_cmd_test.go",
+   "bytes": 5670,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_helpers_test.go",
+   "bytes": 10935,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_mcp_more_test.go",
+   "bytes": 2293,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_output_order_test.go",
+   "bytes": 1252,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/review_resume_more_test.go",
+   "bytes": 12641,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/root.go",
+   "bytes": 2387,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/rules_check_test.go",
+   "bytes": 1003,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/rules_cmd.go",
+   "bytes": 2314,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/rules_cmd_test.go",
+   "bytes": 4629,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/sarif.go",
+   "bytes": 12860,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/sarif_test.go",
+   "bytes": 25837,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/scan_budget_json_test.go",
+   "bytes": 4580,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/scan_cmd.go",
+   "bytes": 8790,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/scan_cmd_test.go",
+   "bytes": 8617,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/scan_helpers_test.go",
+   "bytes": 4253,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/scan_resume_more_test.go",
+   "bytes": 2239,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/session_cmd.go",
+   "bytes": 27244,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/session_cmd_test.go",
+   "bytes": 33195,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/session_complete_test.go",
+   "bytes": 1198,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/session_display_more_test.go",
+   "bytes": 2775,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/session_rm_test.go",
+   "bytes": 17717,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shared.go",
+   "bytes": 32537,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shared_flags.go",
+   "bytes": 11948,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shared_llmruntime_test.go",
+   "bytes": 3505,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shared_raw_test.go",
+   "bytes": 2774,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shared_test.go",
+   "bytes": 9051,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shell_unix.go",
+   "bytes": 286,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/shell_windows.go",
+   "bytes": 286,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/smallfiles_test.go",
+   "bytes": 3919,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/version.go",
+   "bytes": 556,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/viewer_cmd.go",
+   "bytes": 1367,
+   "status": "unread"
+  },
+  {
+   "path": "cmd/opencodereview/zero_args_test.go",
+   "bytes": 1219,
+   "status": "unread"
+  },
+  {
+   "path": "docs/i18n/CONTRIBUTING.ja-JP.md",
+   "bytes": 16050,
+   "status": "read",
+   "observation": "Перевод; нет Line Endings; таблица только zh."
+  },
+  {
+   "path": "docs/i18n/CONTRIBUTING.ko-KR.md",
+   "bytes": 13414,
+   "status": "read",
+   "observation": "Перевод; нет Line Endings; таблица без ru."
+  },
+  {
+   "path": "docs/i18n/CONTRIBUTING.ru-RU.md",
+   "bytes": 21097,
+   "status": "read",
+   "observation": "Перевод CONTRIBUTING. Нет раздела Line Endings (git config core.autocrlf input) — его нет ни в одном из четырёх переводов: перевод отстал от оригинала, их правило синхронизации в AGENTS.md касается только README."
+  },
+  {
+   "path": "docs/i18n/CONTRIBUTING.zh-CN.md",
+   "bytes": 11270,
+   "status": "read",
+   "observation": "Перевод; нет Line Endings; таблица документов перечисляет только zh — отстал от оригинала."
+  },
+  {
+   "path": "docs/i18n/README.ja-JP.md",
+   "bytes": 16579,
+   "status": "read",
+   "observation": "Перевод README, по разделам совпадает с английским (206 строк у всех четырёх)."
+  },
+  {
+   "path": "docs/i18n/README.ko-KR.md",
+   "bytes": 14159,
+   "status": "read",
+   "observation": "Перевод README, по разделам совпадает с английским (206 строк у всех четырёх)."
+  },
+  {
+   "path": "docs/i18n/README.ru-RU.md",
+   "bytes": 19916,
+   "status": "read",
+   "observation": "Перевод README, по разделам совпадает с английским (206 строк у всех четырёх)."
+  },
+  {
+   "path": "docs/i18n/README.zh-CN.md",
+   "bytes": 13011,
+   "status": "read",
+   "observation": "Перевод README, по разделам совпадает с английским (206 строк у всех четырёх)."
+  },
+  {
+   "path": "examples/README.md",
+   "bytes": 618,
+   "status": "read",
+   "observation": "Оглавление пяти CI-примеров."
+  },
+  {
+   "path": "examples/bitbucket_pipelines/README.md",
+   "bytes": 10188,
+   "status": "read",
+   "observation": "Bitbucket: «любая ошибка авторизации/прав/лимита/сервера валит шаг публикации, а не теряет замечания молча»; сводка публикуется всегда, даже без находок; правила — из ветки назначения через git show (доверенный источник)."
+  },
+  {
+   "path": "examples/bitbucket_pipelines/bitbucket-pipelines.yml",
+   "bytes": 10666,
+   "status": "unread"
+  },
+  {
+   "path": "examples/codeup_ci/README.md",
+   "bytes": 3157,
+   "status": "read",
+   "observation": "CodeUp (Alibaba Yunxiao): одна сводка вместо построчных — честно названо ограничением."
+  },
+  {
+   "path": "examples/codeup_ci/codeup-flow.yml",
+   "bytes": 1894,
+   "status": "unread"
+  },
+  {
+   "path": "examples/codeup_ci/post_review.py",
+   "bytes": 10807,
+   "status": "unread"
+  },
+  {
+   "path": "examples/codeup_ci/post_review_test.py",
+   "bytes": 12283,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gerrit_ci/Jenkinsfile",
+   "bytes": 5261,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gerrit_ci/README.md",
+   "bytes": 8187,
+   "status": "read",
+   "observation": "Gerrit: 200 с HTML-страницей входа распознаётся как ошибка настройки (успех, который отказ); таймаут чтения НЕ повторяется — неоднозначен; коды 0/1/2; в примере ocr review | python3 post_review.py — код ocr теряется в конвейере без pipefail (проверить Jenkinsfile)."
+  },
+  {
+   "path": "examples/gerrit_ci/post_review.py",
+   "bytes": 17753,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gerrit_ci/post_review_test.py",
+   "bytes": 23815,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitflic_ci/README.md",
+   "bytes": 5099,
+   "status": "read",
+   "observation": "GitFlic: без всех четырёх полей позиции API молча создаёт общий комментарий — скрипт считает старую строку сам; тесты перенесены из Go-тестов ради паритета."
+  },
+  {
+   "path": "examples/gitflic_ci/gitflic-ci.yaml",
+   "bytes": 3407,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitflic_ci/post_review.py",
+   "bytes": 17751,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitflic_ci/post_review_test.py",
+   "bytes": 7804,
+   "status": "unread"
+  },
+  {
+   "path": "examples/github_actions/README.md",
+   "bytes": 42665,
+   "status": "read",
+   "observation": "Главный CI-документ. Действие берёт базу как доверенную и лишь блобы головы PR. checkpoint_range — образец честного покрытия: «сомневаешься — ревьюй всё», 14 причин отказа от сужения видны в выходах, «только расширяется», чекпойнт двигается лишь после terminal_state complete; оговорка «complete = выбранное проверено, а не каждый байт». resolve_outdated: режим report перед true; «модель промолчала — не доказательство, что старые находки ушли»; «наш собственный конвейер до этого пути не доходит — не считайте его прогоны доказательством». Замер прав токена на трёх заданиях. Противоречие: сами закрепляют действия по SHA (scripts/verify-action-pins.sh), а пример велит @main и create-github-app-token@main."
+  },
+  {
+   "path": "examples/github_actions/ocr-review.yml",
+   "bytes": 5170,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitlab_ci/.gitlab-ci.yml",
+   "bytes": 9775,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitlab_ci/README.md",
+   "bytes": 21045,
+   "status": "read",
+   "observation": "GitLab. ОБРАЗЕЦ НАШЕГО КЛАССА в их же документации: обёртка «не ревьюить повторно» делает exit 0, если в ЛЮБОЙ заметке MR встречается слово OpenCodeReview (человек написал «OpenCodeReview ошибся» — ревью больше не будет), и не проверяет код возврата ocr (subprocess.run без check; печатает «OCR review completed» всегда). Хорошо: маршрутизация fail-open «никогда не роняет находку», OCR_FAIL_ON_SEVERITY валит задание ПОСЛЕ публикации сводки, артефакты when: always, счётчики взаимоисключающие и в сумме дают total."
+  },
+  {
+   "path": "examples/gitlab_ci/post_review.py",
+   "bytes": 68152,
+   "status": "unread"
+  },
+  {
+   "path": "examples/gitlab_ci/post_review_test.py",
+   "bytes": 77608,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/.gitignore",
+   "bytes": 109,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/jest.config.js",
+   "bytes": 316,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/package-lock.json",
+   "bytes": 215822,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/package.json",
+   "bytes": 631,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/configUtils.ts",
+   "bytes": 5226,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/constants.ts",
+   "bytes": 468,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/i18n.ts",
+   "bytes": 43319,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/messages.ts",
+   "bytes": 2607,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/providers.ts",
+   "bytes": 5105,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/shared/types.ts",
+   "bytes": 2534,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/App.tsx",
+   "bytes": 3468,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/ConfigPanelApp.tsx",
+   "bytes": 2985,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/I18nProvider.tsx",
+   "bytes": 513,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/__tests__/store.test.ts",
+   "bytes": 5331,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/bridge.idea.ts",
+   "bytes": 1880,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/bridge.ts",
+   "bytes": 692,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/bridge.vsc.ts",
+   "bytes": 712,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/CommentCard.tsx",
+   "bytes": 1523,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/CustomProviderManager.tsx",
+   "bytes": 3191,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/EnvSetupGuide.tsx",
+   "bytes": 7045,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/FileList.tsx",
+   "bytes": 1463,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/LogViewer.tsx",
+   "bytes": 869,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/PasswordInput.tsx",
+   "bytes": 1815,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/components/Select.tsx",
+   "bytes": 1797,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/configPanel.tsx",
+   "bytes": 271,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/configStore.ts",
+   "bytes": 3693,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/index.tsx",
+   "bytes": 238,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/store.ts",
+   "bytes": 3351,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/styles/global.css",
+   "bytes": 46442,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/CancelledView.tsx",
+   "bytes": 344,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/ConfigView.tsx",
+   "bytes": 20357,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/DoneView.tsx",
+   "bytes": 1738,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/EmptyView.tsx",
+   "bytes": 1020,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/FailedView.tsx",
+   "bytes": 674,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/IdleView.tsx",
+   "bytes": 5867,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/src/webview/views/RunningView.tsx",
+   "bytes": 682,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/tsconfig.json",
+   "bytes": 544,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/frontend/webpack.config.js",
+   "bytes": 1411,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/.gitignore",
+   "bytes": 189,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/README.md",
+   "bytes": 6996,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/README.zh-CN.md",
+   "bytes": 6626,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/build.gradle.kts",
+   "bytes": 7173,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/gradle.properties",
+   "bytes": 1004,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/gradle/wrapper/gradle-wrapper.jar",
+   "bytes": 60756,
+   "status": "binary"
+  },
+  {
+   "path": "extensions/idea/gradle/wrapper/gradle-wrapper.properties",
+   "bytes": 203,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/gradlew",
+   "bytes": 8070,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/gradlew.bat",
+   "bytes": 2674,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/settings.gradle.kts",
+   "bytes": 139,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/actions/OpenOcrToolWindowAction.kt",
+   "bytes": 892,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/IdeaTheme.kt",
+   "bytes": 9446,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/JcefConfigPanelHost.kt",
+   "bytes": 5456,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/JcefReviewPanel.kt",
+   "bytes": 5108,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/OcrWebview.kt",
+   "bytes": 9157,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/jcef/WebviewHtml.kt",
+   "bytes": 5684,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/messages/HostMessages.kt",
+   "bytes": 5645,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/messages/WebviewMessages.kt",
+   "bytes": 10479,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/HostStrings.kt",
+   "bytes": 10324,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/Locale.kt",
+   "bytes": 1718,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/Types.kt",
+   "bytes": 5911,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/providers/CommentAnchor.kt",
+   "bytes": 9661,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/providers/CommentService.kt",
+   "bytes": 33904,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ConfigPanelHost.kt",
+   "bytes": 987,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ConfigPanelRouter.kt",
+   "bytes": 8353,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/ReviewProjectService.kt",
+   "bytes": 9739,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/review/SidebarRouter.kt",
+   "bytes": 10118,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliCancellation.kt",
+   "bytes": 1270,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliParse.kt",
+   "bytes": 7764,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/CliService.kt",
+   "bytes": 17334,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigDraft.kt",
+   "bytes": 8707,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigParse.kt",
+   "bytes": 3395,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigService.kt",
+   "bytes": 10897,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ConfigUtils.kt",
+   "bytes": 1956,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/GitMap.kt",
+   "bytes": 8732,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/GitService.kt",
+   "bytes": 30008,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/Providers.kt",
+   "bytes": 1402,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ReviewSession.kt",
+   "bytes": 4134,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/services/ShellEnv.kt",
+   "bytes": 7165,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/toolwindow/OcrToolWindowFactory.kt",
+   "bytes": 1903,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/META-INF/jcef.xml",
+   "bytes": 251,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/META-INF/plugin.xml",
+   "bytes": 4964,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/META-INF/pluginIcon.svg",
+   "bytes": 2553,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/META-INF/pluginIcon_dark.svg",
+   "bytes": 2553,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/icons/ocrToolWindow.svg",
+   "bytes": 2521,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/icons/ocrToolWindow_dark.svg",
+   "bytes": 2521,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/messages/OcrBundle.properties",
+   "bytes": 811,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/main/resources/messages/OcrBundle_zh_CN.properties",
+   "bytes": 310,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/FrontendSources.kt",
+   "bytes": 1786,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/OcrBundleTest.kt",
+   "bytes": 3493,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/jcef/IdeaThemeTest.kt",
+   "bytes": 2635,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/jcef/WebviewHtmlTest.kt",
+   "bytes": 6155,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/HostMessagesTest.kt",
+   "bytes": 10236,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/MessageContractTest.kt",
+   "bytes": 5376,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/messages/WebviewMessagesTest.kt",
+   "bytes": 12072,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/model/HostStringsTest.kt",
+   "bytes": 5129,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/providers/CommentAnchorTest.kt",
+   "bytes": 6353,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliCancellationTest.kt",
+   "bytes": 2759,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliParseTest.kt",
+   "bytes": 10049,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliServiceConcurrencyTest.kt",
+   "bytes": 7116,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/CliServiceTreeKillTest.kt",
+   "bytes": 2995,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigDraftTest.kt",
+   "bytes": 9450,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigParseTest.kt",
+   "bytes": 5111,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ConfigUtilsTest.kt",
+   "bytes": 3567,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/GitMapTest.kt",
+   "bytes": 13974,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ProvidersTest.kt",
+   "bytes": 2064,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ReviewSessionTest.kt",
+   "bytes": 2379,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/idea/src/test/kotlin/com/alibaba/opencodereview/idea/services/ShellEnvTest.kt",
+   "bytes": 2669,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/.eslintrc.json",
+   "bytes": 842,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/.gitignore",
+   "bytes": 154,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/.vscode/launch.json",
+   "bytes": 310,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/.vscodeignore",
+   "bytes": 198,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/LICENSE",
+   "bytes": 11356,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/README.ja-JP.md",
+   "bytes": 8287,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/README.ko-KR.md",
+   "bytes": 7268,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/README.md",
+   "bytes": 6485,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/README.ru-RU.md",
+   "bytes": 10047,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/README.zh-CN.md",
+   "bytes": 6063,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/__mocks__/vscode.js",
+   "bytes": 1720,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/jest.config.js",
+   "bytes": 412,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.json",
+   "bytes": 3335,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.nls.ja.json",
+   "bytes": 451,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.nls.json",
+   "bytes": 419,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.nls.ko.json",
+   "bytes": 408,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.nls.ru.json",
+   "bytes": 540,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/package.nls.zh-cn.json",
+   "bytes": 405,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/resources/icon.png",
+   "bytes": 1744,
+   "status": "binary"
+  },
+  {
+   "path": "extensions/vscode/resources/icon.svg",
+   "bytes": 2762,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/commands.ts",
+   "bytes": 1245,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/extension.ts",
+   "bytes": 1697,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/CommentProvider.ts",
+   "bytes": 11944,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/ConfigPanelProvider.ts",
+   "bytes": 5706,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/SidebarProvider.ts",
+   "bytes": 5437,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/__tests__/commentAnchor.test.ts",
+   "bytes": 1542,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/__tests__/lineOffset.test.ts",
+   "bytes": 1089,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/commentAnchor.ts",
+   "bytes": 6831,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/providers/lineOffset.ts",
+   "bytes": 656,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/CliService.ts",
+   "bytes": 7756,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/ConfigService.ts",
+   "bytes": 3439,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/GitService.ts",
+   "bytes": 19248,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/ReviewSession.ts",
+   "bytes": 1483,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/CliService.cancel.test.ts",
+   "bytes": 5419,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/CliService.test.ts",
+   "bytes": 3657,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/GitService.test.ts",
+   "bytes": 3169,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/ReviewSession.test.ts",
+   "bytes": 1094,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/cliParse.test.ts",
+   "bytes": 4006,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/configDraft.test.ts",
+   "bytes": 1983,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/configParse.test.ts",
+   "bytes": 2224,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/gitMap.test.ts",
+   "bytes": 8532,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/__tests__/shellEnv.test.ts",
+   "bytes": 1047,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/cliParse.ts",
+   "bytes": 2738,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/configDraft.ts",
+   "bytes": 4424,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/configParse.ts",
+   "bytes": 1865,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/gitMap.ts",
+   "bytes": 6122,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/src/extension/services/shellEnv.ts",
+   "bytes": 2769,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/tsconfig.extension.json",
+   "bytes": 383,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/tsconfig.json",
+   "bytes": 713,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/webpack.config.js",
+   "bytes": 860,
+   "status": "unread"
+  },
+  {
+   "path": "extensions/vscode/yarn.lock",
+   "bytes": 250332,
+   "status": "unread"
+  },
+  {
+   "path": "go.mod",
+   "bytes": 4600,
+   "status": "unread"
+  },
+  {
+   "path": "go.sum",
+   "bytes": 19689,
+   "status": "unread"
+  },
+  {
+   "path": "imgs/benchmark-en.png",
+   "bytes": 416020,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/benchmark-ja.png",
+   "bytes": 416137,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/benchmark-ko.png",
+   "bytes": 416342,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/benchmark-ru.png",
+   "bytes": 421464,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/benchmark-zh.png",
+   "bytes": 417691,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/highlights-en.png",
+   "bytes": 53992,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/highlights-ja.png",
+   "bytes": 58765,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/highlights-ko.png",
+   "bytes": 53733,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/highlights-ru.png",
+   "bytes": 60088,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/highlights-zh.png",
+   "bytes": 58515,
+   "status": "binary"
+  },
+  {
+   "path": "imgs/logo-core.svg",
+   "bytes": 2728,
+   "status": "unread"
+  },
+  {
+   "path": "imgs/logo.svg",
+   "bytes": 5391,
+   "status": "unread"
+  },
+  {
+   "path": "imgs/providers.jpg",
+   "bytes": 186925,
+   "status": "binary"
+  },
+  {
+   "path": "install.ps1",
+   "bytes": 5678,
+   "status": "unread"
+  },
+  {
+   "path": "install.sh",
+   "bytes": 4332,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/agent.go",
+   "bytes": 85258,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/agent_test.go",
+   "bytes": 38598,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/budget_test.go",
+   "bytes": 17466,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/coverage_test.go",
+   "bytes": 33411,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/estimate.go",
+   "bytes": 4457,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/estimate_test.go",
+   "bytes": 4173,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/getters_test.go",
+   "bytes": 822,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/grouping.go",
+   "bytes": 14011,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/grouping_test.go",
+   "bytes": 26797,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/identity.go",
+   "bytes": 4438,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/identity_test.go",
+   "bytes": 7436,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/init_test.go",
+   "bytes": 216,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/manifest_hash_test.go",
+   "bytes": 5406,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/manifest_integration_test.go",
+   "bytes": 33375,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/preview.go",
+   "bytes": 5166,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/preview_run_test.go",
+   "bytes": 13850,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/preview_test.go",
+   "bytes": 14768,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/retry_identity_test.go",
+   "bytes": 6311,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/sealed_input_test.go",
+   "bytes": 3979,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/selection.go",
+   "bytes": 4403,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/test_home_test.go",
+   "bytes": 572,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/testmain_test.go",
+   "bytes": 369,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/util.go",
+   "bytes": 5399,
+   "status": "unread"
+  },
+  {
+   "path": "internal/agent/util_test.go",
+   "bytes": 4834,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/allowed_ext.go",
+   "bytes": 3291,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/allowed_ext_test.go",
+   "bytes": 20226,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/default_exclude_patterns.json",
+   "bytes": 2121,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/default_secret_patterns.json",
+   "bytes": 165,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/secret_path.go",
+   "bytes": 2078,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/secret_path_test.go",
+   "bytes": 3597,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/allowlist/supported_file_types.json",
+   "bytes": 1186,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/canonical_config_test.go",
+   "bytes": 3104,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/resolve_github_test.go",
+   "bytes": 956,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/arkts.md",
+   "bytes": 3473,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/astro.md",
+   "bytes": 3821,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/bicep.md",
+   "bytes": 3601,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/build_gradle.md",
+   "bytes": 199,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/c.md",
+   "bytes": 1595,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/capnp.md",
+   "bytes": 3560,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/cargo_toml.md",
+   "bytes": 1554,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/composer_json.md",
+   "bytes": 4627,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/cpp.md",
+   "bytes": 2361,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/default.md",
+   "bytes": 735,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/elm.md",
+   "bytes": 5351,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/freemarker.md",
+   "bytes": 4014,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/fsharp.md",
+   "bytes": 4925,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/github_config.md",
+   "bytes": 1008,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/github_workflows.md",
+   "bytes": 3133,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/go.md",
+   "bytes": 10844,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/graphql.md",
+   "bytes": 3622,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/handlebars_mustache.md",
+   "bytes": 4434,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/haskell.md",
+   "bytes": 7455,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/java.md",
+   "bytes": 3310,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/json.md",
+   "bytes": 86,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/jsonnet.md",
+   "bytes": 5752,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/julia.md",
+   "bytes": 5289,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/kotlin.md",
+   "bytes": 4902,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/mapper_dao_xml.md",
+   "bytes": 2315,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/matlab.md",
+   "bytes": 14233,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/nim.md",
+   "bytes": 4426,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/nix.md",
+   "bytes": 3302,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/objc.md",
+   "bytes": 18919,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/ocaml.md",
+   "bytes": 6262,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/package_json.md",
+   "bytes": 460,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/php.md",
+   "bytes": 8343,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/po.md",
+   "bytes": 2405,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/pom_xml.md",
+   "bytes": 286,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/pot.md",
+   "bytes": 2765,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/prisma.md",
+   "bytes": 6422,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/properties.md",
+   "bytes": 583,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/protobuf.md",
+   "bytes": 3121,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/pug.md",
+   "bytes": 7702,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/python.md",
+   "bytes": 7599,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/r.md",
+   "bytes": 6744,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/rego.md",
+   "bytes": 6740,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/rust.md",
+   "bytes": 6248,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/solidity.md",
+   "bytes": 8102,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/swift.md",
+   "bytes": 8201,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/terraform.md",
+   "bytes": 3411,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/thrift.md",
+   "bytes": 3301,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/ts_js_tsx_jsx.md",
+   "bytes": 3264,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/verilog.md",
+   "bytes": 4867,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/vhdl.md",
+   "bytes": 4795,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/vyper.md",
+   "bytes": 5517,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/yaml.md",
+   "bytes": 93,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/rule_docs/zig.md",
+   "bytes": 3929,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/sniffer.go",
+   "bytes": 5944,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/sniffer_test.go",
+   "bytes": 11492,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/system_rules.go",
+   "bytes": 21446,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/system_rules.json",
+   "bytes": 1904,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/system_rules_test.go",
+   "bytes": 65707,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/system_rules_unmarshal_test.go",
+   "bytes": 2323,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/rules/test_home_test.go",
+   "bytes": 572,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/effort.go",
+   "bytes": 1606,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/effort_test.go",
+   "bytes": 1738,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/grouping_task_system.md",
+   "bytes": 905,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/grouping_task_user.md",
+   "bytes": 209,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/main_task_system.md",
+   "bytes": 2550,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/main_task_user.md",
+   "bytes": 512,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/memory_compression_task_system.md",
+   "bytes": 1760,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/memory_compression_task_user.md",
+   "bytes": 12,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/plan_task_system.md",
+   "bytes": 2563,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/plan_task_user.md",
+   "bytes": 387,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/re_location_task_system.md",
+   "bytes": 182,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/re_location_task_user.md",
+   "bytes": 680,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/review_filter_task_system.md",
+   "bytes": 905,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/prompts/review_filter_task_user.md",
+   "bytes": 6054,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/scan_template.json",
+   "bytes": 9604,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/task_template.json",
+   "bytes": 1403,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/template.go",
+   "bytes": 13393,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/template/template_test.go",
+   "bytes": 15118,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/testconnection/task.json",
+   "bytes": 1053,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/testconnection/testconnection.go",
+   "bytes": 2136,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/testconnection/testconnection_test.go",
+   "bytes": 2949,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/toolsconfig/tools.json",
+   "bytes": 10628,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/toolsconfig/toolsconfig.go",
+   "bytes": 1556,
+   "status": "unread"
+  },
+  {
+   "path": "internal/config/toolsconfig/toolsconfig_test.go",
+   "bytes": 3175,
+   "status": "unread"
+  },
+  {
+   "path": "internal/delegate/format.go",
+   "bytes": 646,
+   "status": "unread"
+  },
+  {
+   "path": "internal/delegate/format_test.go",
+   "bytes": 1320,
+   "status": "unread"
+  },
+  {
+   "path": "internal/delegate/rulegroup.go",
+   "bytes": 1910,
+   "status": "unread"
+  },
+  {
+   "path": "internal/delegate/rulegroup_test.go",
+   "bytes": 4578,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/crlf_test.go",
+   "bytes": 4833,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/first_line_test.go",
+   "bytes": 851,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/git.go",
+   "bytes": 29353,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/git_cquoted_test.go",
+   "bytes": 4323,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/git_error_test.go",
+   "bytes": 10628,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/git_resolve_test.go",
+   "bytes": 8132,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/git_test.go",
+   "bytes": 27685,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/gitignore.go",
+   "bytes": 1826,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/gitignore_test.go",
+   "bytes": 8463,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/hunk.go",
+   "bytes": 2905,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/hunk_test.go",
+   "bytes": 3087,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/parser.go",
+   "bytes": 6609,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/parser_test.go",
+   "bytes": 7984,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/quotedpath.go",
+   "bytes": 4996,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/quotedpath_test.go",
+   "bytes": 10012,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/relocate_across_files_test.go",
+   "bytes": 4155,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/relocation.go",
+   "bytes": 3678,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/relocation_test.go",
+   "bytes": 8410,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/resolver.go",
+   "bytes": 8766,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/resolver_test.go",
+   "bytes": 25820,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/workspace_file.go",
+   "bytes": 2164,
+   "status": "unread"
+  },
+  {
+   "path": "internal/diff/workspace_file_test.go",
+   "bytes": 4903,
+   "status": "unread"
+  },
+  {
+   "path": "internal/gitcmd/runner.go",
+   "bytes": 3275,
+   "status": "unread"
+  },
+  {
+   "path": "internal/gitcmd/runner_test.go",
+   "bytes": 3390,
+   "status": "unread"
+  },
+  {
+   "path": "internal/gitcmd/version.go",
+   "bytes": 1971,
+   "status": "unread"
+  },
+  {
+   "path": "internal/gitcmd/version_test.go",
+   "bytes": 4263,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/bedrock_test.go",
+   "bytes": 21090,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/bpe_data/cl100k_base.tiktoken",
+   "bytes": 1681126,
+   "status": "binary"
+  },
+  {
+   "path": "internal/llm/client.go",
+   "bytes": 63568,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/client_params_test.go",
+   "bytes": 9814,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/client_test.go",
+   "bytes": 70251,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/embedded_loader.go",
+   "bytes": 3080,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/embedded_loader_test.go",
+   "bytes": 2858,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/keycmd.go",
+   "bytes": 7589,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/keycmd_test.go",
+   "bytes": 8524,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/keycmd_unix.go",
+   "bytes": 1570,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/keycmd_windows.go",
+   "bytes": 2552,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/keycmd_windows_test.go",
+   "bytes": 6265,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/message_test.go",
+   "bytes": 11045,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/native_turn_test.go",
+   "bytes": 14740,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/protocol.go",
+   "bytes": 2980,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/protocol_test.go",
+   "bytes": 2632,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/provider_error_test.go",
+   "bytes": 10201,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/providers.go",
+   "bytes": 13983,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/providers_test.go",
+   "bytes": 13917,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/raw.go",
+   "bytes": 10434,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/raw_test.go",
+   "bytes": 31451,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/resolver.go",
+   "bytes": 37330,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/resolver_keycmd_test.go",
+   "bytes": 15221,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/resolver_norm_test.go",
+   "bytes": 2062,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/resolver_shellrc_test.go",
+   "bytes": 1732,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/resolver_test.go",
+   "bytes": 82336,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/responses_client.go",
+   "bytes": 13519,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/responses_client_test.go",
+   "bytes": 28101,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_boundary.go",
+   "bytes": 6046,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_boundary_test.go",
+   "bytes": 31471,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_meta.go",
+   "bytes": 6332,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_meta_test.go",
+   "bytes": 5861,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_observer.go",
+   "bytes": 5134,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_observer_test.go",
+   "bytes": 24015,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_report.go",
+   "bytes": 24965,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/retry_report_test.go",
+   "bytes": 32509,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/sessionkey.go",
+   "bytes": 5710,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/sessionkey_test.go",
+   "bytes": 7382,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/test_home_test.go",
+   "bytes": 570,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/tool_call_extra_content_test.go",
+   "bytes": 10159,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/usage_resolver.go",
+   "bytes": 5587,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llm/usage_resolver_test.go",
+   "bytes": 3879,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/compression.go",
+   "bytes": 12672,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/compression_test.go",
+   "bytes": 7180,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/init_test.go",
+   "bytes": 218,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/loop.go",
+   "bytes": 36645,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/loop_execute_more_test.go",
+   "bytes": 14299,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/loop_execute_test.go",
+   "bytes": 7899,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/loop_test.go",
+   "bytes": 33858,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/pool.go",
+   "bytes": 5587,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/pool_test.go",
+   "bytes": 6456,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/retry_background_test.go",
+   "bytes": 4548,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/retry_identity_test.go",
+   "bytes": 15219,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/runner_test.go",
+   "bytes": 22815,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/test_home_test.go",
+   "bytes": 574,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/testmain_test.go",
+   "bytes": 371,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/tool_args_json.go",
+   "bytes": 2577,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/tool_args_json_test.go",
+   "bytes": 3466,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/tool_failure_streak.go",
+   "bytes": 3740,
+   "status": "unread"
+  },
+  {
+   "path": "internal/llmloop/tool_failure_streak_test.go",
+   "bytes": 6288,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/client.go",
+   "bytes": 7514,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/client_test.go",
+   "bytes": 10348,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/closeall_stress_test.go",
+   "bytes": 5360,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/closeall_test.go",
+   "bytes": 6259,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/norace_test.go",
+   "bytes": 239,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/provider.go",
+   "bytes": 3278,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/provider_test.go",
+   "bytes": 5958,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/race_test.go",
+   "bytes": 237,
+   "status": "unread"
+  },
+  {
+   "path": "internal/mcp/stdio_test.go",
+   "bytes": 5256,
+   "status": "unread"
+  },
+  {
+   "path": "internal/model/diff.go",
+   "bytes": 607,
+   "status": "unread"
+  },
+  {
+   "path": "internal/model/model_test.go",
+   "bytes": 4459,
+   "status": "unread"
+  },
+  {
+   "path": "internal/model/preview.go",
+   "bytes": 2013,
+   "status": "unread"
+  },
+  {
+   "path": "internal/model/review.go",
+   "bytes": 1166,
+   "status": "unread"
+  },
+  {
+   "path": "internal/model/scan.go",
+   "bytes": 1099,
+   "status": "unread"
+  },
+  {
+   "path": "internal/pathutil/path.go",
+   "bytes": 1134,
+   "status": "unread"
+  },
+  {
+   "path": "internal/pathutil/path_test.go",
+   "bytes": 5854,
+   "status": "unread"
+  },
+  {
+   "path": "internal/release/asset_naming_test.go",
+   "bytes": 5388,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/agent.go",
+   "bytes": 44259,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/agent_test.go",
+   "bytes": 17624,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/batch.go",
+   "bytes": 3290,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/batch_test.go",
+   "bytes": 3816,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/budget_exceeded_test.go",
+   "bytes": 2032,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/budget_test.go",
+   "bytes": 4577,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/coverage_test.go",
+   "bytes": 43470,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/dedup_test.go",
+   "bytes": 3642,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/estimate.go",
+   "bytes": 4483,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/estimate_test.go",
+   "bytes": 4884,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/getters_more_test.go",
+   "bytes": 3112,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/getters_test.go",
+   "bytes": 1066,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/init_test.go",
+   "bytes": 215,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/preview.go",
+   "bytes": 2251,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/provider.go",
+   "bytes": 10266,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/provider_more_test.go",
+   "bytes": 4781,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/provider_paths_test.go",
+   "bytes": 4657,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/provider_test.go",
+   "bytes": 7240,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/retry_identity_test.go",
+   "bytes": 5022,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/test_home_test.go",
+   "bytes": 571,
+   "status": "unread"
+  },
+  {
+   "path": "internal/scan/testmain_test.go",
+   "bytes": 368,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/comments.go",
+   "bytes": 1836,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/comments_test.go",
+   "bytes": 2481,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/compare.go",
+   "bytes": 6814,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/compare_test.go",
+   "bytes": 14503,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/delete.go",
+   "bytes": 7725,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/delete_test.go",
+   "bytes": 11222,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/final_manifest_test.go",
+   "bytes": 1050,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/history.go",
+   "bytes": 19195,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/history_test.go",
+   "bytes": 23165,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/list.go",
+   "bytes": 11372,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/list_error_test.go",
+   "bytes": 2115,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/list_more_test.go",
+   "bytes": 3330,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/list_test.go",
+   "bytes": 8233,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/manifest.go",
+   "bytes": 36609,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/manifest_guards_test.go",
+   "bytes": 3386,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/manifest_test.go",
+   "bytes": 31147,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/persist.go",
+   "bytes": 12757,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/persist_test.go",
+   "bytes": 15745,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/raw_writer.go",
+   "bytes": 3539,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/raw_writer_test.go",
+   "bytes": 9820,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/resume.go",
+   "bytes": 11681,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/resume_identity.go",
+   "bytes": 9433,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/resume_identity_test.go",
+   "bytes": 12431,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/resume_orphan_request_test.go",
+   "bytes": 2822,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/resume_test.go",
+   "bytes": 26575,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/test_home_test.go",
+   "bytes": 574,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/testing.go",
+   "bytes": 515,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/testmain_test.go",
+   "bytes": 371,
+   "status": "unread"
+  },
+  {
+   "path": "internal/session/validate_scan_options_test.go",
+   "bytes": 2318,
+   "status": "unread"
+  },
+  {
+   "path": "internal/stdout/stdout.go",
+   "bytes": 1596,
+   "status": "unread"
+  },
+  {
+   "path": "internal/stdout/stdout_test.go",
+   "bytes": 1452,
+   "status": "unread"
+  },
+  {
+   "path": "internal/suggestdiff/diff.go",
+   "bytes": 2266,
+   "status": "unread"
+  },
+  {
+   "path": "internal/suggestdiff/diff_test.go",
+   "bytes": 4072,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/config.go",
+   "bytes": 3693,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/config_test.go",
+   "bytes": 7274,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/events.go",
+   "bytes": 5073,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/events_test.go",
+   "bytes": 7911,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/exporter.go",
+   "bytes": 8387,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/exporter_test.go",
+   "bytes": 9198,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/metrics.go",
+   "bytes": 4046,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/metrics_test.go",
+   "bytes": 1678,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/provider.go",
+   "bytes": 2075,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/provider_test.go",
+   "bytes": 3659,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/shutdown.go",
+   "bytes": 958,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/shutdown_test.go",
+   "bytes": 1995,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/span.go",
+   "bytes": 4350,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/span_test.go",
+   "bytes": 7333,
+   "status": "unread"
+  },
+  {
+   "path": "internal/telemetry/traceid_test.go",
+   "bytes": 999,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/code_comment.go",
+   "bytes": 5882,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/code_comment_test.go",
+   "bytes": 9913,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/code_search.go",
+   "bytes": 8082,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/code_search_test.go",
+   "bytes": 26756,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/comment_args_repair.go",
+   "bytes": 9619,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/comment_args_repair_test.go",
+   "bytes": 25594,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/comment_collector.go",
+   "bytes": 3110,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/comment_collector_test.go",
+   "bytes": 4602,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/definitions.go",
+   "bytes": 3064,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/definitions_test.go",
+   "bytes": 3375,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_find.go",
+   "bytes": 6133,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_find_test.go",
+   "bytes": 10247,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_read.go",
+   "bytes": 2319,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_read_diff.go",
+   "bytes": 1793,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_read_diff_test.go",
+   "bytes": 2670,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/file_read_test.go",
+   "bytes": 13054,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/filereader.go",
+   "bytes": 7044,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/filereader_read_test.go",
+   "bytes": 8148,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/filereader_test.go",
+   "bytes": 3426,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/response_message.go",
+   "bytes": 1164,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/response_message_test.go",
+   "bytes": 1152,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/stub.go",
+   "bytes": 1122,
+   "status": "unread"
+  },
+  {
+   "path": "internal/tool/stub_test.go",
+   "bytes": 1128,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/browser.go",
+   "bytes": 7955,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/browser_exec_test.go",
+   "bytes": 11345,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/browser_test.go",
+   "bytes": 2265,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/compare_test.go",
+   "bytes": 19313,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/export.go",
+   "bytes": 2976,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/export_test.go",
+   "bytes": 7321,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/handler.go",
+   "bytes": 6793,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/handler_test.go",
+   "bytes": 13919,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/hostguard.go",
+   "bytes": 4476,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/hostguard_test.go",
+   "bytes": 5698,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/securityheaders.go",
+   "bytes": 1608,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/securityheaders_test.go",
+   "bytes": 1807,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/server.go",
+   "bytes": 16484,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/server_extra_test.go",
+   "bytes": 39298,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/server_startserver_test.go",
+   "bytes": 16787,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/server_test.go",
+   "bytes": 2999,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/a11y.js",
+   "bytes": 1751,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/NOTICE",
+   "bytes": 924,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/chevron-down.svg",
+   "bytes": 325,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/chevron-left.svg",
+   "bytes": 323,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/chevron-right.svg",
+   "bytes": 326,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/file.svg",
+   "bytes": 375,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/logo.svg",
+   "bytes": 2625,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/search.svg",
+   "bytes": 656,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/icons/settings.svg",
+   "bytes": 1977,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/pager.js",
+   "bytes": 5381,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/repos.js",
+   "bytes": 1134,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/session.js",
+   "bytes": 12567,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/sessions.js",
+   "bytes": 472,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/static/style.css",
+   "bytes": 54022,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/store.go",
+   "bytes": 26245,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/store_load_test.go",
+   "bytes": 29126,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/store_test.go",
+   "bytes": 14323,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/app-header.html",
+   "bytes": 718,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/compare.html",
+   "bytes": 3745,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/pager.html",
+   "bytes": 530,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/repos.html",
+   "bytes": 1937,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/session.html",
+   "bytes": 23723,
+   "status": "unread"
+  },
+  {
+   "path": "internal/viewer/templates/sessions.html",
+   "bytes": 2616,
+   "status": "unread"
+  },
+  {
+   "path": "npm/darwin-arm64/package.json",
+   "bytes": 437,
+   "status": "unread"
+  },
+  {
+   "path": "npm/darwin-x64/package.json",
+   "bytes": 431,
+   "status": "unread"
+  },
+  {
+   "path": "npm/linux-arm64/package.json",
+   "bytes": 434,
+   "status": "unread"
+  },
+  {
+   "path": "npm/linux-x64/package.json",
+   "bytes": 428,
+   "status": "unread"
+  },
+  {
+   "path": "npm/win32-arm64/package.json",
+   "bytes": 434,
+   "status": "unread"
+  },
+  {
+   "path": "npm/win32-x64/package.json",
+   "bytes": 428,
+   "status": "unread"
+  },
+  {
+   "path": "package.json",
+   "bytes": 1546,
+   "status": "unread"
+  },
+  {
+   "path": "pages/.gitignore",
+   "bytes": 20,
+   "status": "unread"
+  },
+  {
+   "path": "pages/README.md",
+   "bytes": 7866,
+   "status": "unread"
+  },
+  {
+   "path": "pages/eslint.config.js",
+   "bytes": 774,
+   "status": "unread"
+  },
+  {
+   "path": "pages/go.mod",
+   "bytes": 844,
+   "status": "unread"
+  },
+  {
+   "path": "pages/index.html",
+   "bytes": 3960,
+   "status": "unread"
+  },
+  {
+   "path": "pages/logo.svg",
+   "bytes": 2845,
+   "status": "unread"
+  },
+  {
+   "path": "pages/package.json",
+   "bytes": 1897,
+   "status": "unread"
+  },
+  {
+   "path": "pages/postcss.config.cjs",
+   "bytes": 114,
+   "status": "unread"
+  },
+  {
+   "path": "pages/public/CNAME",
+   "bytes": 19,
+   "status": "unread"
+  },
+  {
+   "path": "pages/public/images/blog/introducing-ocr-blog/demo.png",
+   "bytes": 787626,
+   "status": "binary"
+  },
+  {
+   "path": "pages/public/og-image.png",
+   "bytes": 4172,
+   "status": "binary"
+  },
+  {
+   "path": "pages/public/robots.txt",
+   "bytes": 23,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/App.test.tsx",
+   "bytes": 1578,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/App.tsx",
+   "bytes": 3853,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets.d.ts",
+   "bytes": 308,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/apple.svg",
+   "bytes": 841,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/brew.svg",
+   "bytes": 1829,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-check-circle.svg",
+   "bytes": 3650,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-contents.svg",
+   "bytes": 1573,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-copy.svg",
+   "bytes": 4456,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-download-green.svg",
+   "bytes": 3673,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-download.svg",
+   "bytes": 3706,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/doc-edit.svg",
+   "bytes": 1941,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-chevron-down.svg",
+   "bytes": 3706,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-chevron-right.svg",
+   "bytes": 21851,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-copy.svg",
+   "bytes": 4456,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-architecture.svg",
+   "bytes": 5774,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-compression.svg",
+   "bytes": 5738,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-effort.svg",
+   "bytes": 525,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-multi-model.svg",
+   "bytes": 7736,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-positioning.svg",
+   "bytes": 6962,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-feature-rules.svg",
+   "bytes": 5951,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-github.svg",
+   "bytes": 4027,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-language.svg",
+   "bytes": 11660,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-play.svg",
+   "bytes": 1701,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-search.svg",
+   "bytes": 1087,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-sort.svg",
+   "bytes": 1573,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-usecase-developer.svg",
+   "bytes": 12223,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-usecase-platform-a.svg",
+   "bytes": 25182,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-usecase-platform-b.svg",
+   "bytes": 17725,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-usecase-platform-c.svg",
+   "bytes": 20116,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/icon-usecase-researcher.svg",
+   "bytes": 15051,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/linux.svg",
+   "bytes": 9491,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/npm.svg",
+   "bytes": 1150,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/trophy-bronze.svg",
+   "bytes": 1337,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/trophy-gold.svg",
+   "bytes": 1337,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/trophy-silver.svg",
+   "bytes": 1337,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/icons/windows.svg",
+   "bytes": 440,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/images/brandicon.svg",
+   "bytes": 9975,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/images/icon-claude-code.svg",
+   "bytes": 5187,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/images/icon-codex.svg",
+   "bytes": 7238,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/assets/images/icon-ocr-source.svg",
+   "bytes": 3491,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/BenchmarkSection.tsx",
+   "bytes": 16197,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/ColorBends.css",
+   "bytes": 280,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/ColorBends.tsx",
+   "bytes": 11063,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/ErrorBoundary.test.tsx",
+   "bytes": 2311,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/ErrorBoundary.tsx",
+   "bytes": 1892,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/FadeInSection.tsx",
+   "bytes": 1015,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/FeaturesSection.tsx",
+   "bytes": 4579,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/Footer.tsx",
+   "bytes": 4987,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/HeroSection.test.tsx",
+   "bytes": 3242,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/HeroSection.tsx",
+   "bytes": 24850,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/HighlightsSection.tsx",
+   "bytes": 6376,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/LandingPage.tsx",
+   "bytes": 704,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/MarkdownRenderer.test.tsx",
+   "bytes": 2680,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/MarkdownRenderer.tsx",
+   "bytes": 8422,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/Navbar.tsx",
+   "bytes": 8499,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/QuickStartSection.tsx",
+   "bytes": 8956,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/SearchTrigger.tsx",
+   "bytes": 1575,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/UseCasesSection.tsx",
+   "bytes": 5778,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/WhySection.tsx",
+   "bytes": 2355,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/icons/ClaudeIcon.tsx",
+   "bytes": 3377,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/icons/OcrIcon.tsx",
+   "bytes": 1681,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/icons/OpenAIIcon.tsx",
+   "bytes": 2697,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/components/icons/index.ts",
+   "bytes": 252,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/content/blog/en/introducing-ocr-blog.md",
+   "bytes": 4754,
+   "status": "read",
+   "observation": "Как устроен блог: md-файлы, реестр в index.ts. Цель блога — записывать, почему что-то сделано и почему что-то НЕ сделано."
+  },
+  {
+   "path": "pages/src/content/blog/en/oss-two-month-retrospective.md",
+   "bytes": 22699,
+   "status": "read",
+   "observation": "Ретроспектива 2 месяцев: 15.5k звёзд, 89 выпусков, 81 участник. Уроки: простота первого шага = конверсия (волна пришла и ушла, пока настройка модели была сложной); открыто писать о недостатках — удержание выше; README 1000→200 строк (кто вы, почему, как начать); флаг мерят вопросом «ставит ли он ТОГО ЖЕ пользователя перед лишним выбором» (--max-tool-calls отвергли, --max-tokens-budget приняли); good first issues заранее — иначе пришедшие уходят; скорость ответа отбирает участников. Шишка: ИИ сам выбрал, как переделать вызов инструментов, тесты зелёные, баг в глобальном поиске ударил в день HN — правило: изменение ядра только через полный набор 200 PR, ИИ даются явные рамки подхода. Процесс: ocr как pre-commit хук, /release-eval решает, гонять ли 8-часовой набор."
+  },
+  {
+   "path": "pages/src/content/blog/index.ts",
+   "bytes": 4803,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/content/blog/ja/introducing-ocr-blog.md",
+   "bytes": 5940,
+   "status": "translation-structural",
+   "observation": "Перевод английской статьи (прочитана целиком), сверен по структуре."
+  },
+  {
+   "path": "pages/src/content/blog/ja/oss-two-month-retrospective.md",
+   "bytes": 31270,
+   "status": "translation-structural",
+   "observation": "Перевод английской статьи (прочитана целиком), сверен по структуре."
+  },
+  {
+   "path": "pages/src/content/blog/zh/introducing-ocr-blog.md",
+   "bytes": 4638,
+   "status": "translation-structural",
+   "observation": "Перевод английской статьи (прочитана целиком), сверен по структуре."
+  },
+  {
+   "path": "pages/src/content/blog/zh/oss-two-month-retrospective.md",
+   "bytes": 19255,
+   "status": "translation-structural",
+   "observation": "Перевод английской статьи (прочитана целиком), сверен по структуре."
+  },
+  {
+   "path": "pages/src/content/docs/en/architecture.md",
+   "bytes": 21071,
+   "status": "read",
+   "observation": "Конвейер: bootstrap → diff → фильтр → смысловая группировка (1 вызов модели по метаданным, страж покрытия: неприписанный файл получает свою группу) → подагенты с планом и раундами → разрешение строк → REVIEW_FILTER (ошибки глотаются). Пропуск группы по токенам — «нефатальное предупреждение» в warnings. Расхождение: здесь фильтр «пять ворот» без secret_exclude, в review-rules — шесть."
+  },
+  {
+   "path": "pages/src/content/docs/en/cli-reference.md",
+   "bytes": 31498,
+   "status": "read",
+   "observation": "Статус прогона в JSON: success / completed_with_warnings / completed_with_errors / skipped («нет изменений» ≠ «нет находок»). НО код возврата 0 и при пропущенном по токенам файле, и при упавшем подагенте — только warnings. session compare: new/persisting/resolved/NOT REVIEWED (не просмотренное не считается исправленным), сверка по пути+категории+фрагменту, а не строке. session export — один HTML без сети. --output создаётся лениво: упавший прогон не затирает прежний файл. Resume строгий по манифесту прогона. --max-tools 1–49 молча поднимается до 50."
+  },
+  {
+   "path": "pages/src/content/docs/en/configuration.md",
+   "bytes": 16564,
+   "status": "read",
+   "observation": "Провайдеры, api_key_cmd: ненулевой код/пусто/многострочно — жёсткая ошибка, «никогда молча не откатываемся». Bedrock через llm.protocol «отвергается, а не принимается и игнорируется» — тот же принцип, что наша «НЕ ДЕЙСТВУЕТ» у непонятой строки манифеста. retry_codes: лишние коды из файла молча игнорируются, из config set — с предупреждением (несимметрично)."
+  },
+  {
+   "path": "pages/src/content/docs/en/contributing.md",
+   "bytes": 11607,
+   "status": "read",
+   "observation": "Сокращённая копия CONTRIBUTING.md; таблица make-целей; как добавить инструмент и правило. Сам говорит «канонический — CONTRIBUTING.md» — две копии одного текста."
+  },
+  {
+   "path": "pages/src/content/docs/en/faq.md",
+   "bytes": 17751,
+   "status": "read",
+   "observation": "ПРЯМО: «часть подагентов упала — прогон всё равно exit 0, by design; ненулевой только если не удалось ничего». Честный канал — JSON manifest.terminal_state и массивы coverage. «Файл с нулём замечаний — его вообще смотрели?» — ответ: руками в просмотрщике. {ts, tsx} с пробелом молча не совпадает — описано, не исправлено. Секреты перед отправкой не вычищаются."
+  },
+  {
+   "path": "pages/src/content/docs/en/installation.md",
+   "bytes": 7965,
+   "status": "read",
+   "observation": "Пять способов. npm-обёртка САМА обновляется в фоне по умолчанию (раз в 18 мин), выключатель OCR_NO_UPDATE — у нас решено обратное: автообновления нет. Противоречие внутри страницы: выше «обновляется сам», в таблице состояния «печатает подсказку». Честная оговорка про зеркало: целостность в режиме зеркала не гарантирована."
+  },
+  {
+   "path": "pages/src/content/docs/en/integrations/agent-skill.md",
+   "bytes": 4632,
+   "status": "read",
+   "observation": "Скилл: проверяет which ocr и llm test; сам ставит CLI без вопроса; без LLM останавливается и спрашивает; сортирует High/Medium/Low, нитпики и «вероятно ложные» молча выбрасывает."
+  },
+  {
+   "path": "pages/src/content/docs/en/integrations/ci.md",
+   "bytes": 21326,
+   "status": "read",
+   "observation": "CI: пример GitHub на pull_request_target (секреты доступны форкам), uses: alibaba/open-code-review@main — действие не закреплено, npm install -g без версии. max_tokens_budget: недоделанные файлы — failed(budget), exit 0. OCR_DEBUG описан как нереализованный. Правила проекта читаются из <repo>/.opencodereview/rule.json — ПРОВЕРИТЬ: из какого коммита в pull_request_target (база или голова PR)."
+  },
+  {
+   "path": "pages/src/content/docs/en/integrations/claude-code.md",
+   "bytes": 4442,
+   "status": "read",
+   "observation": "Команда Claude Code: ревью → сортировка → АВТОПОЧИНКА по умолчанию (в отличие от скилла). Low молча выбрасывается."
+  },
+  {
+   "path": "pages/src/content/docs/en/integrations/delegate.md",
+   "bytes": 4957,
+   "status": "read",
+   "observation": "Делегирование: ocr делает только детерминированное (preview: список и причины исключения; rule: правила по группам), ревью ведёт модель хоста. Отчёт по серьёзности; Low «молча выбросить»."
+  },
+  {
+   "path": "pages/src/content/docs/en/mcp.md",
+   "bytes": 7484,
+   "status": "read",
+   "observation": "MCP-клиент. Хорошо: имя из allowlist, которого нет у сервера, — предупреждение («опечатка всплывает, а не молча ничего не делает»); заголовок, раскрывшийся в пустоту, роняет подключение, а не уходит пустым. Но сервер, который не поднялся, пропускается, ревью идёт без его инструментов — только stderr."
+  },
+  {
+   "path": "pages/src/content/docs/en/quickstart.md",
+   "bytes": 2920,
+   "status": "read",
+   "observation": "Быстрый старт: установка, провайдер, llm test, review, --preview."
+  },
+  {
+   "path": "pages/src/content/docs/en/review-rules.md",
+   "bytes": 22025,
+   "status": "read",
+   "observation": "Четыре слоя правил, первое совпадение побеждает; merge_system_rule. Шесть ворот фильтра с причиной на каждый исключённый файл; --preview показывает без затрат; ocr rules check <path> называет слой и шаблон-победитель. Встроенные пути секретов не отправляются в модель и не обходятся include."
+  },
+  {
+   "path": "pages/src/content/docs/en/telemetry.md",
+   "bytes": 13629,
+   "status": "read",
+   "observation": "OpenTelemetry выключена по умолчанию. События деградации (token.threshold.exceeded, subtask.error, plan.failed) есть в телеметрии — «чтобы заметить падение качества раньше пользователя», но не в коде возврата. content_logging «проведён, но ничего не включает» — ключ без действия, признан в документации. Неверный адрес коллектора — тишина."
+  },
+  {
+   "path": "pages/src/content/docs/en/tools.md",
+   "bytes": 12690,
+   "status": "read",
+   "observation": "Шесть инструментов агента. task_done принимает state DONE|FAILED, но FAILED НЕ сохраняется и не влияет на код возврата — собственный сигнал агента «не смог» выбрасывается. file_read_diff: путь вне набора молча опускается. file_find: сверх 100 молча обрезается. Непривязанный комментарий — start_line=0."
+  },
+  {
+   "path": "pages/src/content/docs/en/viewer.md",
+   "bytes": 13037,
+   "status": "read",
+   "observation": "Просмотрщик сессий. Сравнение прогонов: всегда все четыре корзины, «Resolved (0) — это ответ, молча пропавший раздел читается как сломанная страница». «Файл без замечаний — успех, только если агент сам вызвал task_done; если дорожка кончилась ошибкой — это отказ, наряженный тишиной». Отметки Fixed/Ignored в localStorage. Автооткрытие браузера пишет причину отказа. Честная оговорка: старые прогоны без манифеста дают Resolved вместо Not reviewed."
+  },
+  {
+   "path": "pages/src/content/docs/index.ts",
+   "bytes": 9568,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/content/docs/ja/architecture.md",
+   "bytes": 27213,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: нет раздела о смысловой группировке."
+  },
+  {
+   "path": "pages/src/content/docs/ja/cli-reference.md",
+   "bytes": 39317,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/configuration.md",
+   "bytes": 21158,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/contributing.md",
+   "bytes": 15024,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/faq.md",
+   "bytes": 23950,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/installation.md",
+   "bytes": 10153,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/integrations/agent-skill.md",
+   "bytes": 6081,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/integrations/ci.md",
+   "bytes": 27365,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/integrations/claude-code.md",
+   "bytes": 5690,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/integrations/delegate.md",
+   "bytes": 6323,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/mcp.md",
+   "bytes": 9558,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/quickstart.md",
+   "bytes": 3696,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/review-rules.md",
+   "bytes": 26112,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/telemetry.md",
+   "bytes": 15385,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: на 4 заголовка и 4 блока кода меньше."
+  },
+  {
+   "path": "pages/src/content/docs/ja/tools.md",
+   "bytes": 16519,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ja/viewer.md",
+   "bytes": 18326,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/architecture.md",
+   "bytes": 25489,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/cli-reference.md",
+   "bytes": 36951,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/configuration.md",
+   "bytes": 18985,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/contributing.md",
+   "bytes": 13688,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/faq.md",
+   "bytes": 22524,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/installation.md",
+   "bytes": 9085,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/integrations/agent-skill.md",
+   "bytes": 5657,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/integrations/ci.md",
+   "bytes": 25267,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/integrations/claude-code.md",
+   "bytes": 5330,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/integrations/delegate.md",
+   "bytes": 5891,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/mcp.md",
+   "bytes": 8707,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/quickstart.md",
+   "bytes": 3505,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/review-rules.md",
+   "bytes": 23181,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/telemetry.md",
+   "bytes": 16297,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/tools.md",
+   "bytes": 14881,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ko/viewer.md",
+   "bytes": 16213,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/md.d.ts",
+   "bytes": 173,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/content/docs/ru/architecture.md",
+   "bytes": 33913,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: нет раздела о смысловой группировке."
+  },
+  {
+   "path": "pages/src/content/docs/ru/cli-reference.md",
+   "bytes": 44532,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: нет разделов Per-run LLM selection и ocr completion."
+  },
+  {
+   "path": "pages/src/content/docs/ru/configuration.md",
+   "bytes": 26517,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/contributing.md",
+   "bytes": 18991,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/faq.md",
+   "bytes": 30409,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/installation.md",
+   "bytes": 11559,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/integrations/agent-skill.md",
+   "bytes": 7987,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/integrations/ci.md",
+   "bytes": 33397,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/integrations/claude-code.md",
+   "bytes": 7188,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/integrations/delegate.md",
+   "bytes": 8208,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/mcp.md",
+   "bytes": 13096,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/quickstart.md",
+   "bytes": 4340,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/review-rules.md",
+   "bytes": 29740,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/telemetry.md",
+   "bytes": 21239,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/tools.md",
+   "bytes": 21088,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/ru/viewer.md",
+   "bytes": 23062,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/architecture.md",
+   "bytes": 19375,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: нет раздела о смысловой группировке."
+  },
+  {
+   "path": "pages/src/content/docs/zh/cli-reference.md",
+   "bytes": 29853,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/configuration.md",
+   "bytes": 16477,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/contributing.md",
+   "bytes": 10862,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/faq.md",
+   "bytes": 16241,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/installation.md",
+   "bytes": 7757,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/integrations/agent-skill.md",
+   "bytes": 4226,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/integrations/ci.md",
+   "bytes": 19950,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/integrations/claude-code.md",
+   "bytes": 4078,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/integrations/delegate.md",
+   "bytes": 4672,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/mcp.md",
+   "bytes": 7283,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/quickstart.md",
+   "bytes": 2798,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/review-rules.md",
+   "bytes": 20233,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/telemetry.md",
+   "bytes": 11965,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. ОТСТАЛ: на 4 заголовка и 4 блока кода меньше."
+  },
+  {
+   "path": "pages/src/content/docs/zh/tools.md",
+   "bytes": 11864,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/content/docs/zh/viewer.md",
+   "bytes": 12583,
+   "status": "translation-structural",
+   "observation": "Перевод английской страницы (прочитана целиком). Сверен по структуре: заголовки, блоки кода, строки таблиц. Совпадает."
+  },
+  {
+   "path": "pages/src/hooks/useCommandSearch.ts",
+   "bytes": 2881,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useCopyToast.ts",
+   "bytes": 1214,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useNpmDownloads.ts",
+   "bytes": 2440,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useResponsive.ts",
+   "bytes": 803,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useResponsiveStyle.ts",
+   "bytes": 850,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useTransitionedLocation.test.tsx",
+   "bytes": 3761,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/hooks/useTransitionedLocation.ts",
+   "bytes": 1065,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/context.tsx",
+   "bytes": 2200,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/en.ts",
+   "bytes": 20578,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/index.ts",
+   "bytes": 216,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/ja.ts",
+   "bytes": 25334,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/ko.ts",
+   "bytes": 23335,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/ru.ts",
+   "bytes": 30426,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/types.ts",
+   "bytes": 294,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/i18n/zh.ts",
+   "bytes": 19909,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/index.html.test.ts",
+   "bytes": 5465,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/index.tsx",
+   "bytes": 699,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/BenchmarkPage.tsx",
+   "bytes": 563,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/BlogPage.tsx",
+   "bytes": 16897,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/DocsPage.tsx",
+   "bytes": 27055,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/FeaturesPage.tsx",
+   "bytes": 1258,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/FeaturesRoutePage.tsx",
+   "bytes": 568,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/NotFoundPage.test.tsx",
+   "bytes": 2704,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/NotFoundPage.tsx",
+   "bytes": 1920,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/pages/QuickStartPage.tsx",
+   "bytes": 568,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/styles/blog.css",
+   "bytes": 2484,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/styles/docs-markdown.css",
+   "bytes": 5637,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/styles/index.css",
+   "bytes": 3873,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/utils/extractHeadings.ts",
+   "bytes": 408,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/utils/headingId.test.ts",
+   "bytes": 2461,
+   "status": "unread"
+  },
+  {
+   "path": "pages/src/utils/headingId.ts",
+   "bytes": 3304,
+   "status": "unread"
+  },
+  {
+   "path": "pages/tailwind.config.cjs",
+   "bytes": 1470,
+   "status": "unread"
+  },
+  {
+   "path": "pages/tsconfig.json",
+   "bytes": 374,
+   "status": "unread"
+  },
+  {
+   "path": "pages/vitest.config.ts",
+   "bytes": 340,
+   "status": "unread"
+  },
+  {
+   "path": "pages/vitest.setup.ts",
+   "bytes": 132,
+   "status": "unread"
+  },
+  {
+   "path": "pages/webpack.config.cjs",
+   "bytes": 2859,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/.codex-plugin/plugin.json",
+   "bytes": 1121,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/.cursor-plugin/plugin.json",
+   "bytes": 732,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/CODEX.ko-KR.md",
+   "bytes": 2296,
+   "status": "read",
+   "observation": "Как ставить в Codex (корейский). Правка файлов и коммит — только по явной просьбе."
+  },
+  {
+   "path": "plugins/open-code-review/README.md",
+   "bytes": 3468,
+   "status": "read",
+   "observation": "Установка под Claude Code, Codex, Cursor, Kimi, QCA."
+  },
+  {
+   "path": "plugins/open-code-review/claude-code/.claude-plugin/plugin.json",
+   "bytes": 295,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/claude-code/commands/delegate-review.md",
+   "bytes": 1811,
+   "status": "read",
+   "observation": "Делегирование как команда: preview → rule → git diff → ревью → автопочинка High/Medium. В отличие от скилла, покрытие (reviewed/skipped) НЕ требует."
+  },
+  {
+   "path": "plugins/open-code-review/claude-code/commands/review.md",
+   "bytes": 1674,
+   "status": "read",
+   "observation": "Команда: ревью → High/Medium/Low → Low молча выбросить → автопочинка. Опечатка «--c» вместо «-c» (в копии kimi исправлено — копии разошлись)."
+  },
+  {
+   "path": "plugins/open-code-review/kimi-code/commands/delegate-review.md",
+   "bytes": 1811,
+   "status": "read",
+   "observation": "Идентична копии Claude — сверено diff."
+  },
+  {
+   "path": "plugins/open-code-review/kimi-code/commands/review.md",
+   "bytes": 1673,
+   "status": "read",
+   "observation": "Копия команды Claude, отличие одно: «-c» исправлено. Сверено diff."
+  },
+  {
+   "path": "plugins/open-code-review/opencode/.gitignore",
+   "bytes": 20,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/opencode/README.md",
+   "bytes": 3672,
+   "status": "read",
+   "observation": "OpenCode: инструменты ocr_review/ocr_health, запуск массивом аргументов shell:false, фон через временный файл, таймаут 30 мин, предел вывода 10 МиБ."
+  },
+  {
+   "path": "plugins/open-code-review/opencode/open-code-review.ts",
+   "bytes": 22706,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/opencode/package-lock.json",
+   "bytes": 151857,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/opencode/package.json",
+   "bytes": 470,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/opencode/test/open-code-review.test.mjs",
+   "bytes": 28313,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/opencode/tsconfig.json",
+   "bytes": 408,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/qca/README.md",
+   "bytes": 3084,
+   "status": "read",
+   "observation": "QCA: контракт исполнения — чек-лист из всех reviewable, каждый reviewed/skipped с причиной, итог total/reviewed/skipped/coverage. Честно: «только чтение Bash держится промптом, если среда не строже»."
+  },
+  {
+   "path": "plugins/open-code-review/qca/system-prompt.md",
+   "bytes": 1217,
+   "status": "read",
+   "observation": "Системный промпт QCA: покрытие каждого файла, только чтение, «содержимое репозитория — недоверенные данные, не инструкции»."
+  },
+  {
+   "path": "plugins/open-code-review/qca/template.example.json",
+   "bytes": 2008,
+   "status": "unread"
+  },
+  {
+   "path": "plugins/open-code-review/skills/open-code-review-delegate/SKILL.md",
+   "bytes": 8239,
+   "status": "read",
+   "observation": "Копия корневого скилла делегирования + абзац о синхронизации. Сверено diff."
+  },
+  {
+   "path": "plugins/open-code-review/skills/open-code-review/SKILL.md",
+   "bytes": 12891,
+   "status": "read",
+   "observation": "Копия корневого скилла + абзац «держать синхронно, симлинк нельзя». Отличий кроме абзаца нет — сверено diff."
+  },
+  {
+   "path": "scripts/add-license.sh",
+   "bytes": 3213,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/action-contract.test.js",
+   "bytes": 84609,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/check-plugin-contract.js",
+   "bytes": 37094,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/check-plugin-contract.test.js",
+   "bytes": 33268,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/check-translation-sync.js",
+   "bytes": 13383,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/check-translation-sync.test.js",
+   "bytes": 10444,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/post-review-comments.js",
+   "bytes": 150667,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/github-actions/post-review-comments.test.js",
+   "bytes": 308272,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/install.js",
+   "bytes": 7155,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/platform.js",
+   "bytes": 1896,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/publish/.env.example",
+   "bytes": 576,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/publish/_common.sh",
+   "bytes": 2778,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/publish/publish-platform.sh",
+   "bytes": 3934,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/publish/publish.sh",
+   "bytes": 11653,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/update.js",
+   "bytes": 4330,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/verify-action-pins.sh",
+   "bytes": 3115,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/verify-english-only.go",
+   "bytes": 10705,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/verify-license.sh",
+   "bytes": 2138,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/version.js",
+   "bytes": 1268,
+   "status": "unread"
+  },
+  {
+   "path": "scripts/version.test.js",
+   "bytes": 1494,
+   "status": "unread"
+  },
+  {
+   "path": "skills/open-code-review-delegate/SKILL.md",
+   "bytes": 7966,
+   "status": "read",
+   "observation": "Делегирование: «ПОКРЫТИЕ ОБЯЗАТЕЛЬНО — каждый reviewable файл кончается reviewed или skipped с причиной, молча не пропускать»; в итоге total/reviewed/skipped/coverage_rate; чек-лист по (путь, статус). Это ровно наш report --since, но в виде инструкции модели, а не проверки машины."
+  },
+  {
+   "path": "skills/open-code-review/SKILL.md",
+   "bytes": 12632,
+   "status": "read",
+   "observation": "Скилл ревью. «Проверка успеха»: exit 0 + есть замечания + предупреждения в stderr — при том что exit 0 бывает при упавших группах; статус и покрытие скилл НЕ проверяет. Low и «вероятно ложные» — молча выбросить. Не проверять заранее, стоит ли ocr — экономия вызова. На старом CLI без --output — спросить человека про обновление, не продолжать."
+  }
+ ]
+}
