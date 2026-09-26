@@ -372,6 +372,35 @@ async function writeRunReport({ version, reached, results, skipped = [] }) {
   } catch (e) {
     console.log(c.yellow(`  ${L.report.notWritten(join(TARGET_DIR, "last-run.md"), e?.code || String(e?.message || e))}`));
   }
+  await appendHistory({ version, reached, results, skipped });
+}
+
+// ИСТОРИЯ ПРОГОНОВ. `last-run.md` перезаписывается, и на вопрос владельца «стало лучше или хуже»
+// (2026-09-26, `PROJECT.md` §9а) ответить было нечем. Строка JSON на прогон — её дописывают, а не
+// переписывают, и её читает отчёт. Урезанный прогон помечен: без пометки график сравнил бы полный
+// прогон с `--only`, и «стало лучше» значило бы «меньше проверяли». Держим последние HISTORY_MAX
+// строк: файл лежит в `.aqk/`, которую git не видит, и расти без предела ему незачем.
+const HISTORY_MAX = 500;
+async function appendHistory({ version, reached, results, skipped }) {
+  const git = spawnSync("git", ["rev-parse", "HEAD"], { cwd: CWD, encoding: "utf8" });
+  const entry = {
+    at: new Date().toISOString(),
+    version: version || null,
+    head: git.status === 0 ? git.stdout.trim() : null,
+    level: reached,
+    partial: skipped.length > 0,
+    skipped,
+    gates: Object.fromEntries(results.map((r) => [r.name, r.ok ? "ok" : r.cannot ? "cannot" : "fail"])),
+    secs: Object.fromEntries(results.map((r) => [r.name, Number(r.secs)])),
+  };
+  const dst = join(CWD, TARGET_DIR, "history.jsonl");
+  try {
+    const old = existsSync(dst) ? (await readFile(dst, "utf8")).split("\n").filter(Boolean) : [];
+    const keep = [...old, JSON.stringify(entry)].slice(-HISTORY_MAX);
+    await writeFile(dst, keep.join("\n") + "\n", "utf8");
+  } catch (e) {
+    console.log(c.yellow(`  ${L.report.notWritten(join(TARGET_DIR, "history.jsonl"), e?.code || String(e?.message || e))}`));
+  }
 }
 
 // Разбор отчёта прошлого прогона. Формат кладёт сам `doctor` в .aqk/last-run.md; читаем его,
