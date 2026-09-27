@@ -122,3 +122,18 @@ test("eslint с --max-warnings 0 — шаг «не заглушён»; неиз�
   assert.doesNotMatch(unknown, /заглушён/, "про неизвестный инструмент сказано «(не) заглушён»");
   assert.match(unknown, /сведений об этом инструменте в AQK нет/);
 });
+
+// Настройки в файле, который назван в САМОЙ команде: у k6 пороги живут в скрипте теста.
+// Без порогов прогон не падает ни от проваленных check(), ни от ошибок запросов — документация k6.
+test("k6: скрипт из команды без thresholds — «заглушён»; с порогами — нет", (t) => {
+  const bare = project(t, {
+    ...files({ load: "k6 run tests/load.js" }, { samples: false }),
+    "tests/load.js": "import http from 'k6/http';\nexport default function () { http.get('http://x'); }\n",
+  });
+  assert.match(plain(aqk(bare, "adopt", "load").out), /✘\s+заглушён: k6/);
+  const strict = project(t, {
+    ...files({ load: "k6 run tests/load.js" }, { samples: false }),
+    "tests/load.js": "export const options = { thresholds: { http_req_failed: ['rate<0.01'] } };\n",
+  });
+  assert.match(plain(aqk(strict, "adopt", "load").out), /✔\s+не заглушён: k6/);
+});

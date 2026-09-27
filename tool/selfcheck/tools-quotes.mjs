@@ -21,6 +21,9 @@ let bad = 0;
 let checked = 0;
 for (const t of await loadTools()) {
   for (const r of t.off || []) {
+    // Правило на замере, а не на цитате: сверять в документации нечего — она об этом молчит.
+    // Печатается отдельно, чтобы «сверено» не значило больше, чем сделано.
+    if (!r.quote && r.measured) { console.log(`~ ${t.tool}/${r.id}: замер, не цитата — ${r.measured}`); continue; }
     if (!r.source_raw) { console.log(`✘ ${t.tool}/${r.id}: нет source_raw — сверить не с чем`); bad++; continue; }
     if (!cache.has(r.source_raw)) {
       const res = await fetch(r.source_raw, { signal: AbortSignal.timeout(15000) });

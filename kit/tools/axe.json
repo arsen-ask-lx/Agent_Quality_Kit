@@ -1,0 +1,38 @@
+{
+  "tool": "axe",
+  "detect": "(^|[\\s/])(axe|@axe-core/cli)(\\s|$)",
+  "catches": "недоступный интерфейс: кнопка без подписи, текст, который не прочтёт программа чтения с экрана, слабый контраст",
+  "catches_en": "inaccessible UI: unlabeled buttons, text a screen reader cannot read, low contrast",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript"
+    ],
+    "has_frontend": true
+  },
+  "docs": "https://github.com/dequelabs/axe-core-npm/tree/develop/packages/cli#readme",
+  "install": "npx @axe-core/cli <адрес>  (внутри тестов Playwright — @axe-core/playwright)",
+  "exit": "без --exit находки не роняют проверку; с --exit — код 1 при любом нарушении. В тестах Playwright роняет только утверждение на results.violations",
+  "exit_en": "without --exit findings do not fail the check; with --exit — code 1 on any violation. Inside Playwright tests only an assertion on results.violations fails",
+  "off": [
+    {
+      "id": "no-exit-flag",
+      "command_lacks": "(--exit|-q)\\b",
+      "quote": "Use the --exit flag, -q for short, to have the axe-cli process exit with a failure code 1 when any rule fails to pass.",
+      "source": "https://github.com/dequelabs/axe-core-npm/tree/develop/packages/cli#exit-with-failure",
+      "source_raw": "https://raw.githubusercontent.com/dequelabs/axe-core-npm/develop/packages/cli/README.md",
+      "why": "без --exit нарушения доступности печатаются, но проверка выходит с нулём",
+      "why_en": "without --exit accessibility violations are printed, but the check exits zero",
+      "fix": "добавь --exit в команду гейта",
+      "fix_en": "add --exit to the gate command",
+      "red": [
+        "npx @axe-core/cli http://localhost:3000",
+        "axe http://localhost:3000 --tags wcag2a"
+      ],
+      "green": [
+        "npx @axe-core/cli http://localhost:3000 --exit",
+        "axe http://localhost:3000 -q"
+      ]
+    }
+  ]
+}

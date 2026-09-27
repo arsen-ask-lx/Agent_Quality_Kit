@@ -22,14 +22,20 @@ for (const t of tools) {
       assert.ok(String(t[k] || "").trim(), `нет поля ${k}`);
     }
     assert.match(t.docs, /^https:\/\//, "документация — адресом");
-    assert.ok(new RegExp(t.detect).test(t.tool), "инструмент не опознаётся по собственному имени");
+    // Узнаётся по имени, а если по подкоманде (`k6 run`, `st run`) — по примеру команды.
+    assert.ok(new RegExp(t.detect).test(t.detect_example || t.tool), "инструмент не опознаётся по собственной команде");
   });
 
   for (const r of t.off || []) {
     test(`${t.tool}/${r.id}: краснеет на красных примерах, молчит на зелёных`, () => {
-      for (const k of ["quote", "source", "why", "why_en", "fix", "fix_en"]) {
+      for (const k of ["source", "why", "why_en", "fix", "fix_en"]) {
         assert.ok(String(r[k] || "").trim(), `нет поля ${k}`);
       }
+      // Доказательство правила — либо дословная цитата из документации, либо наш ЗАМЕР с версией
+      // и датой, когда документация молчит (mutmut: про выживших мутантов в ней ни слова, а код
+      // выхода 0 виден только запуском). Третьего нет: пересказ не принимается.
+      assert.ok(String(r.quote || "").trim() || /\d{4}-\d{2}-\d{2}/.test(String(r.measured || "")),
+        "нет ни цитаты, ни замера с датой");
       assert.match(r.source, /^https:\/\//);
       assert.ok(r.red?.length && r.green?.length, "нужен хотя бы один красный и один зелёный пример");
       const norm = (x) => (typeof x === "string" ? { command: x, config: null } : x);

@@ -19,7 +19,7 @@
   проверяет. Повод — замер того же дня: Stryker по умолчанию не роняет сборку никогда
   (`thresholds.break: null`), и у 96 из 149 настоящих файлов его настроек на GitHub порога нет.
   Сводка для агента теперь велит `adopt` после любой установки инструмента.
-- **Сведения о сторонних инструментах — `kit/tools/`: ruff, eslint, biome, knip, Stryker, jscpd, vulture, gitleaks, zizmor.** `adopt` опознаёт
+- **Сведения о сторонних инструментах — `kit/tools/`: ruff, eslint, biome, knip, Stryker, jscpd, vulture, gitleaks, zizmor, mutmut, schemathesis, k6, axe.** `adopt` опознаёт
   инструмент по команде гейта (и по скрипту `package.json`, который она зовёт) и говорит, не
   заглушён ли он: `ruff --exit-zero`, `ruff check --fix` без `--exit-non-zero-on-fix`, `ruff
   format` без `--check`, eslint с правилами `warn` и без `--max-warnings 0`, eslint с
@@ -29,6 +29,11 @@
   файле настроек — из команды его не передать) и с `allowEmpty`; jscpd с `--exit-code 0` и без
   `--fail-on-empty`; vulture с `--min-confidence` выше 60 (прячет все неиспользуемые функции и
   классы); gitleaks с `--exit-code 0`; zizmor с `--no-exit-codes`, `--format=sarif` и `--fix`.
+  mutmut не роняет проверку ни при каком числе выживших мутантов — документация об этом молчит,
+  установлено замером (mutmut 3.8.0: `run` и `results` выходят с нулём), и правило помечено как
+  замер, а не цитата; в починке — обёртка, проверенная на том же проекте. schemathesis, сужённый
+  до `--checks not_a_server_error`; k6 без `thresholds` в скрипте теста (скрипт читается по пути из
+  команды) и с `--no-thresholds`; axe без `--exit`.
   Каждое правило — с дословной цитатой из официальной
   документации и адресом; цитаты сверяет с исходником `tool/selfcheck/tools-quotes.mjs`, примеры
   каждого правила прогоняет `units-tools.mjs`.

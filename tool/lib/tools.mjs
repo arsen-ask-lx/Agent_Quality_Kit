@@ -81,7 +81,10 @@ async function toolFindings(cmd, { tools, cwd = CWD } = {}) {
   if (!tool) return null;
   const found = [];
   for (const rule of tool.off || []) {
-    const configs = await readConfigs(rule.config_files, cwd);
+    // `config_from_command` — настройки лежат в файле, который назван в САМОЙ команде: у k6
+    // пороги живут в скрипте теста (`k6 run load.js`). Первая скобка выражения — путь.
+    const named = rule.config_from_command ? (new RegExp(rule.config_from_command).exec(command) || [])[1] : null;
+    const configs = await readConfigs([...(rule.config_files || []), ...(named ? [named] : [])], cwd);
     if (ruleFires(rule, command, configs)) found.push(rule);
   }
   return { tool, command, found };

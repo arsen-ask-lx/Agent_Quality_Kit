@@ -1,0 +1,36 @@
+{
+  "tool": "mutmut",
+  "detect": "(^|[\\s/])mutmut(\\s|$)",
+  "catches": "тесты, которые проходят, но ошибку не ловят — в Python: mutmut портит код и смотрит, заметили ли тесты",
+  "catches_en": "tests that pass but do not catch a defect — in Python: mutmut mutates the code and checks whether the tests notice",
+  "for": {
+    "langs": [
+      "python"
+    ],
+    "has_tests": true
+  },
+  "docs": "https://github.com/boxed/mutmut#readme",
+  "install": "pip install mutmut  (или uv tool install mutmut)",
+  "exit": "выжившие мутанты код выхода НЕ меняют: и run, и results выходят с нулём (замер, mutmut 3.8.0); 1 — только сбой. Гейтом служит только обёртка, читающая results",
+  "exit_en": "surviving mutants do NOT change the exit code: both run and results exit zero (measured, mutmut 3.8.0); 1 is a failure only. Only a wrapper that reads results works as a gate",
+  "off": [
+    {
+      "id": "survivors-never-fail",
+      "command_has": "\\bmutmut\\s+(run|results)\\b",
+      "command_lacks": "test\\s+-z\\s+\"\\$\\(mutmut\\s+results",
+      "measured": "mutmut 3.8.0, 2026-09-27: функция add и тест без утверждения, один мутант выжил — `mutmut run` выход 0, `mutmut results` выход 0 и строка «survived». Та же обёртка ниже на этом проекте: 1, после добавления утверждения: 0",
+      "source": "https://github.com/boxed/mutmut/blob/14a7230049/src/mutmut/__main__.py",
+      "why": "mutmut не роняет проверку ни при каком числе выживших мутантов: слабые тесты проходят зелёным",
+      "why_en": "mutmut never fails the check, whatever the number of surviving mutants: weak tests pass green",
+      "fix": "в гейте: mutmut run && test -z \"$(mutmut results 2>/dev/null)\" — results печатает только неубитых мутантов, пустой вывод и есть «все пойманы»",
+      "fix_en": "in a gate: mutmut run && test -z \"$(mutmut results 2>/dev/null)\" — results prints only non-killed mutants, empty output means all were caught",
+      "red": [
+        "mutmut run",
+        "mutmut run && mutmut results"
+      ],
+      "green": [
+        "mutmut run && test -z \"$(mutmut results 2>/dev/null)\""
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "tool": "schemathesis",
+  "detect": "(^|[\\s/])(st|schemathesis)\\s+run\\b",
+  "detect_example": "st run openapi.yaml",
+  "catches": "расхождение API с его описанием: сервер падает, отвечает не по схеме, принимает то, что должен отвергать",
+  "catches_en": "an API diverging from its spec: the server crashes, answers off-schema, accepts what it must reject",
+  "for": {
+    "langs": [],
+    "has_api_spec": true
+  },
+  "docs": "https://schemathesis.readthedocs.io/en/stable/reference/cli/#exit-codes",
+  "install": "uvx schemathesis  (или pip install schemathesis; команда st)",
+  "exit": "0 — все проверки прошли; 1 — хотя бы одна провалилась; 2 — проверить не смогли, в том числе прогон, не проверивший ничего",
+  "exit_en": "0 — all checks passed; 1 — at least one failed; 2 — could not do its job, including a run that tested nothing",
+  "off": [
+    {
+      "id": "server-error-only",
+      "command_has": "(-c|--checks)[=\\s]+not_a_server_error(\\s|$)",
+      "quote": "Default: All checks enabled",
+      "source": "https://schemathesis.readthedocs.io/en/stable/reference/cli/#-c-checks-checks",
+      "source_raw": "https://raw.githubusercontent.com/schemathesis/schemathesis/master/docs/reference/cli.md",
+      "why": "оставлена одна проверка — «сервер не упал»: ответы не по схеме и принятые плохие данные проходят. Замер AQK 2026-09-09: сервер, врущий в каждом поле ответа, с умолчаниями даёт 3 нарушения, с этим флагом — «18 из 18 прошли»",
+      "why_en": "only one check left — \"the server did not crash\": off-schema answers and accepted bad data pass. AQK measurement 2026-09-09: a server lying in every response field gives 3 violations by default, and \"18 of 18 passed\" with this flag",
+      "fix": "убери --checks not_a_server_error: по умолчанию включены все проверки",
+      "fix_en": "drop --checks not_a_server_error: all checks are enabled by default",
+      "red": [
+        "st run openapi.yaml -c not_a_server_error",
+        "schemathesis run spec.json --checks not_a_server_error --url http://x"
+      ],
+      "green": [
+        "st run openapi.yaml",
+        "st run openapi.yaml --checks not_a_server_error,response_schema_conformance",
+        "st run openapi.yaml --checks all"
+      ]
+    }
+  ]
+}

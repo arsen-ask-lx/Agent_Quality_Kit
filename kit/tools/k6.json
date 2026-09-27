@@ -1,0 +1,59 @@
+{
+  "tool": "k6",
+  "detect": "(^|[\\s/])k6\\s+(run|cloud)\\b",
+  "detect_example": "k6 run load.js",
+  "catches": "падение под нагрузкой: ошибки и медленные ответы, когда пользователей много",
+  "catches_en": "failure under load: errors and slow responses when there are many users",
+  "for": {
+    "langs": [],
+    "has_server": true
+  },
+  "docs": "https://grafana.com/docs/k6/latest/using-k6/thresholds/",
+  "install": "docker run --rm -i grafana/k6 run - <script.js  (или пакет k6)",
+  "exit": "проваливают прогон только пороги (thresholds); проверки check не роняют ничего — без порогов выход 0 при любых ошибках",
+  "exit_en": "only thresholds fail a run; check() fails nothing — without thresholds it exits 0 whatever the errors",
+  "off": [
+    {
+      "id": "no-thresholds-in-script",
+      "command_has": "\\bk6\\s+run\\b",
+      "config_from_command": "\\bk6\\s+run\\b.*?(\\S+\\.(?:js|mjs|ts))",
+      "config_lacks": "thresholds\\s*:",
+      "quote": "When a check fails, the script will continue executing successfully and will not return a 'failed' exit status.",
+      "source": "https://grafana.com/docs/k6/latest/using-k6/checks/",
+      "source_raw": "https://raw.githubusercontent.com/grafana/k6-docs/main/docs/sources/k6/next/using-k6/checks.md",
+      "why": "в скрипте нет порогов: провалившиеся проверки и ошибки запросов не роняют прогон — нагрузочный тест зеленеет, даже если сервер лёг",
+      "why_en": "the script has no thresholds: failed checks and request errors do not fail the run — the load test stays green even if the server is down",
+      "fix": "добавь в options скрипта thresholds, например http_req_failed: ['rate<0.01'] и checks: ['rate>0.99']",
+      "fix_en": "add thresholds to the script options, e.g. http_req_failed: ['rate<0.01'] and checks: ['rate>0.99']",
+      "red": [
+        {
+          "command": "k6 run load.js",
+          "config": "import http from 'k6/http';\nexport default function () { http.get('http://x'); }\n"
+        }
+      ],
+      "green": [
+        {
+          "command": "k6 run load.js",
+          "config": "export const options = { thresholds: { http_req_failed: ['rate<0.01'] } };\n"
+        }
+      ]
+    },
+    {
+      "id": "no-thresholds-flag",
+      "command_has": "--no-thresholds\\b",
+      "quote": "Disables threshold execution. Available in the k6 run command.",
+      "source": "https://grafana.com/docs/k6/latest/using-k6/k6-options/reference/#no-thresholds",
+      "source_raw": "https://raw.githubusercontent.com/grafana/k6-docs/main/docs/sources/k6/next/using-k6/k6-options/reference.md",
+      "why": "пороги выключены — прогон не может провалиться",
+      "why_en": "thresholds are disabled — the run cannot fail",
+      "fix": "убери --no-thresholds из команды",
+      "fix_en": "remove --no-thresholds from the command",
+      "red": [
+        "k6 run --no-thresholds load.js"
+      ],
+      "green": [
+        "k6 run load.js"
+      ]
+    }
+  ]
+}
