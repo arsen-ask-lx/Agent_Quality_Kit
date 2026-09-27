@@ -96,7 +96,7 @@ npx agent-quality-kit start     # кода ещё нет: поставить с�
 В конвейер GitHub:
 
 ```yaml
-- uses: arsen-ask-lx/Agent_Quality_Kit@v0.18.0
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.19.0
   with:
     min: 1   # сборка падает ниже AQK-1 или если упала любая объявленная проверка
 ```
@@ -106,7 +106,7 @@ npx agent-quality-kit start     # кода ещё нет: поставить с�
 ```yaml
 repos:
   - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
-    rev: v0.18.0
+    rev: v0.19.0
     hooks:
       - id: aqk
 ```

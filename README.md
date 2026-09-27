@@ -96,7 +96,7 @@ says what to do.
 In GitHub CI:
 
 ```yaml
-- uses: arsen-ask-lx/Agent_Quality_Kit@v0.18.0
+- uses: arsen-ask-lx/Agent_Quality_Kit@v0.19.0
   with:
     min: 1   # the build fails below AQK-1 or if any declared check failed
 ```
@@ -106,7 +106,7 @@ As a [pre-commit](https://pre-commit.com) hook:
 ```yaml
 repos:
   - repo: https://github.com/arsen-ask-lx/Agent_Quality_Kit
-    rev: v0.18.0
+    rev: v0.19.0
     hooks:
       - id: aqk
 ```
