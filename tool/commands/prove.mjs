@@ -21,6 +21,9 @@ function line(r) {
       : r.why === "planted-skipped" ? P.plantedSkipped(`${SELF} prove`)
       : r.why === "needs-program" ? P.needsProgram(r.missing.join(", "))
       : P.empty;
+    // Сбой самой проверки — не «законно нечем доказать»: он отнимает ступень, и печатать его тусклой
+    // тильдой с подписью «команда пустая», как было до 2026-09-27, значит соврать дважды.
+    if (r.why === "infra") return `  ${c.yellow("?")}  ${pad} ${c.yellow(P.infra(r.reason || ""))}`;
     return `  ${c.dim("~")}  ${c.dim(pad)} ${c.dim(why)}`;
   }
   const why = r.why === "red-passed" ? P.redPassed : r.why === "green-failed" ? P.greenFailed : P.empty;
@@ -53,14 +56,25 @@ async function cmdProve() {
   // СЛОМАННЫЙ — С ПРИЧИНОЙ. «Покраснел на зелёном» без вывода гейта отправляет гадать: в
   // конвейере 2026-09-27 так краснел `dead-code` в образе и зеленел везде, где его можно было
   // рассмотреть. Хвост вывода того прогона, который и решил вердикт, — сразу под строкой.
+  // Хвост — у каждого вердикта, который надо объяснять: сломан, не смогли, красная без подсадки.
+  const tailOf = (r) => r.why === "green-failed" ? r.green
+    : r.why === "red-passed" ? r.red
+    : r.why === "baseline-red" ? r.red
+    : r.why === "infra" ? (r.side === "green" ? r.green : r.red)
+    : null;
+  const printTail = (r) => {
+    const tailLines = String(tailOf(r)?.out || "").trim().split("\n").slice(-6);
+    if (tailLines.length && tailLines[0]) console.log(c.dim(tailLines.map((l) => `       │ ${l}`).join("\n")));
+  };
   for (const r of res.results.filter((x) => x.state === "broken")) {
     console.log(line(r));
-    const side = r.why === "green-failed" ? r.green : r.why === "red-passed" ? r.red : null;
-    const tailLines = String(side?.out || "").trim().split("\n").slice(-6);
-    if (tailLines.length && tailLines[0]) console.log(c.dim(tailLines.map((l) => `       │ ${l}`).join("\n")));
+    printTail(r);
   }
   for (const r of res.results.filter((x) => x.state === "proven")) console.log(line(r));
-  for (const r of res.results.filter((x) => x.state === "unprovable")) console.log(line(r));
+  for (const r of res.results.filter((x) => x.state === "unprovable")) {
+    console.log(line(r));
+    if (r.why === "infra" || r.why === "baseline-red") printTail(r);
+  }
 
   const parts = [c.green(P.proven(res.proven))];
   if (res.broken) parts.push(c.red(P.broken(res.broken)));
