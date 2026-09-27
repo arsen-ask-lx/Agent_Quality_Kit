@@ -12,14 +12,33 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 1
 BAD=0
 
-for F in $(git ls-files 'tool/*.mjs' 'tool/**/*.mjs' 2>/dev/null); do
+# СПИСОК ФАЙЛОВ — С НОВЫМИ И БЕЗ GIT. Прежде здесь стоял `git ls-files`: файл, ещё не добавленный
+# в индекс, не проверялся вовсе, а вне репозитория список был пуст, и проверка отвечала «чисто».
+# Найдено 2026-09-27 договором установки (`aqk adopt syntax`): подсаженный в копию проекта файл с
+# ошибкой синтаксиса прошёл зелёным. Теперь — отслеживаемые И новые (`--others`), а без git —
+# обход каталога. Образцы гейтов (`gates/<имя>/red|green`) не в счёт: красные обязаны быть
+# неправильными, но это не наш код.
+list() {
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git ls-files --cached --others --exclude-standard
+  else
+    find . -type d \( -name node_modules -o -name .git \) -prune -o -type f -print | sed 's|^\./||'
+  fi | grep -vE '(^|/)gates/[^/]+/(red|green)(/|$)'
+}
+FILES="$(list)"
+MJS="$(printf '%s\n' "$FILES" | grep -E '^tool/.*\.mjs$')"
+SHS="$(printf '%s\n' "$FILES" | grep -E '\.sh$')"
+
+# Пусто — не «чисто». Исходники комплекта есть всегда; не нашли ни одного — сломан сам обход.
+if [ -z "$MJS" ]; then
+  echo "не смогли проверить: не найдено ни одного tool/*.mjs — обход файлов сломан, а не код чист"
+  exit 2
+fi
+
+for F in $MJS; do
   node --check "$F" || BAD=1
 done
-# Разбираем тем интерпретатором, который объявлен в шебанге, а не всегда bash. `bash -n`
-# принимает bash-измы («<<<», массивы, «local») в файле, который объявлен как `sh`, — и
-# переносимость ломается молча, на чужой машине с dash. Так и вышло: четыре гейта, объявленные
-# `#!/usr/bin/env sh`, получили «<<<» и прошли проверку синтаксиса зелёными.
-for F in $(git ls-files '*.sh' 2>/dev/null); do
+for F in $SHS; do
   case "$(head -1 "$F")" in
     *bash*) SH=bash ;;
     *) SH=sh ;;

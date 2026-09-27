@@ -20,7 +20,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
-import { proveGates } from "../lib/prove.mjs";
+import { proveGates, samplesFor } from "../lib/prove.mjs";
 import { toolFindings } from "../lib/tools.mjs";
 import { CWD, SELF, c, exists } from "../lib/core.mjs";
 import { L, LANG } from "../i18n/index.mjs";
@@ -79,17 +79,21 @@ async function cmdAdopt(args = []) {
   step(true, T.declared(cmd));
 
   // 2. Образцы. Путь называется целиком: агент кладёт файлы туда, куда сказано, а не угадывает.
-  const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
-  const red = samplesDir ? join(samplesDir, name, "red") : "";
-  const green = samplesDir ? join(samplesDir, name, "green") : "";
-  const haveSamples = Boolean(samplesDir) && (await exists(join(CWD, red))) && (await exists(join(CWD, green)));
+  // Образцы ищутся там же, где их ищет `prove`; класть новые — в `own_samples:`, если он заведён:
+  // проверка, которую ставит сам проект, — не запись каталога.
+  const found = await samplesFor(man, name);
+  const field = (k) => (typeof man?.[k] === "string" ? man[k].trim() : "");
+  const samplesDir = field("own_samples") || field("samples");
+  const red = found ? found.red : samplesDir ? join(samplesDir, name, "red") : "";
+  const green = found ? found.green : samplesDir ? join(samplesDir, name, "green") : "";
+  const haveSamples = Boolean(found);
   step(haveSamples, haveSamples ? T.samples(red, green) : T.noSamples,
     haveSamples ? "" : samplesDir ? T.samplesFix(red.replace(/\\/g, "/"), green.replace(/\\/g, "/")) : T.samplesDirFix);
 
   // 3. Доказан. Самый дорогой шаг и самый важный: только он отличает настоящую проверку от
   // `exit 0`. Без образцов доказывать нечем — это не «доказан», а тот же провал шага 2.
   if (haveSamples) {
-    const { results } = await proveGates(man, { only: name });
+    const { results } = await proveGates(man, { only: name, planted: true });
     const r = results[0] || {};
     const P = L.prove;
     const why = r.state === "proven" ? P.okRed

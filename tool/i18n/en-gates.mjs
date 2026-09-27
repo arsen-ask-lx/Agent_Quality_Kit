@@ -350,6 +350,7 @@ export const enGates = {
     empty: "the command is empty — a declaration without a command protects nothing",
     noSamples: "no samples — nothing to prove with",
     noTarget: "the command does not end with a directory, and a project copy for planting could not be made — git is required",
+    plantedSkipped: (cmd) => `proven by planting into a project copy — costly, not done in this run: ${cmd}`,
     baselineRed: "already red on a clean project copy, before planting — whether it caught the sample cannot be told. Fix what it complains about first",
     otherRecipe: (lang) => `the samples are written for the "${lang}" recipe, another one is installed — nothing to prove with`,
     noGates: "no gates declared — nothing to prove",

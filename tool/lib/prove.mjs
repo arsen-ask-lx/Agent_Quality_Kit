@@ -22,12 +22,21 @@ import { rm } from "node:fs/promises";
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
 // образцов в команде не упоминает, но образцы у неё есть — их кладёт `aqk add`.
-async function samplesFor(samplesDir, name) {
+async function samplesIn(samplesDir, name) {
   if (!samplesDir) return null;
   const red = join(CWD, samplesDir, name, "red");
   const green = join(CWD, samplesDir, name, "green");
   if (!(await exists(red)) || !(await exists(green))) return null;
   return { red: join(samplesDir, name, "red"), green: join(samplesDir, name, "green") };
+}
+
+// Два места, и порядок важен. `samples:` — образцы записей каталога (их кладёт `aqk add`);
+// `own_samples:` — образцы проверок, написанных самим проектом (`npm test`, `make check`). Держать
+// их вместе нельзя: у самого AQK `samples:` — это каталог записей, и образец для `units` читался
+// бы там как новая запись. Снаружи так же: у semgrep тест правила лежит рядом с правилом.
+async function samplesFor(man, name) {
+  const dir = (k) => (typeof man?.[k] === "string" ? man[k].trim() : "");
+  return (await samplesIn(dir("samples"), name)) || (await samplesIn(dir("own_samples"), name));
 }
 
 // Команда записи всегда кончается каталогом проверки: рецепт пишется как `… {dir}`, и при
@@ -119,7 +128,12 @@ function run(cmd, timeoutMs, prog, cwd = CWD) {
 // сам решал, что печатать и чем краснеть.
 // `only` — доказать один гейт: `adopt` спрашивает про конкретную проверку, и гонять ради неё
 // все остальные значило бы платить минутами за ответ на другой вопрос.
-async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null } = {}) {
+// `planted` — доказывать ли подсадкой в копию проекта команды, которые не кончаются каталогом.
+// Это втрое дороже самого гейта (чистая копия, красный, зелёный) плюс копирование проекта: замер
+// 2026-09-27 на самом AQK — 3 с → 22 с из-за двух таких гейтов. Поэтому по умолчанию НЕТ: уровень,
+// значок, отчёт и `doctor --run` зовут это на каждом прогоне. Включают явно `aqk prove` и
+// `aqk adopt` — там вопрос именно «умеет ли краснеть», и за ответ платят сознательно.
+async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null, planted = false } = {}) {
   const all = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   const gates = only ? Object.fromEntries(Object.entries(all).filter(([n]) => n === only)) : all;
   const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
@@ -135,7 +149,7 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null } = {
       results.push({ name, state: "broken", why: "empty" });
       continue;
     }
-    const s = await samplesFor(samplesDir, name);
+    const s = await samplesFor(man, name);
     if (!s) {
       results.push({ name, state: "unprovable", why: "no-samples" });
       continue;
@@ -178,6 +192,10 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null } = {
       // поэтому образец подсаживается в КОПИЮ проекта по своим путям, а команда идёт как есть.
       // Сначала чистая копия: команда, красная без подсадки, ничего не доказывает — это
       // называется отдельно, а не засчитывается ни доказанной, ни сломанной.
+      if (!planted) {
+        results.push({ name, state: "unprovable", why: "planted-skipped" });
+        continue;
+      }
       const box = await getSandbox();
       if (!box) {
         results.push({ name, state: "unprovable", why: "no-target" });
@@ -237,4 +255,4 @@ function verdict(results) {
   return { proven, broken, unprovable, infra, ok: broken === 0 && infra === 0 && proven > 0 };
 }
 
-export { proveGates, commandFor, verdict };
+export { proveGates, commandFor, verdict, samplesFor };

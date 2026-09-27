@@ -61,3 +61,21 @@ test("команда, красная уже на чистом проекте, н
   assert.doesNotMatch(words, /✔/, "красная до подсадки засчитана доказанной");
   assert.match(words, /без подсадки|чистом/, `причина не названа: ${words}`);
 });
+
+// ОБРАЗЦЫ СОБСТВЕННЫХ ПРОВЕРОК ПРОЕКТА — ОТДЕЛЬНО ОТ КАТАЛОГА. `samples:` указывает на каталог
+// записей (у самого AQK это `kit/gates`), и образец для `npm test` или `make check` там читался бы
+// как новая запись каталога. Принято снаружи так же: у semgrep тест правила лежит рядом с правилом,
+// а не в общей куче. Поле `own_samples:` — где лежат образцы проверок, написанных проектом.
+test("образцы своих проверок лежат в own_samples и доказывают гейт", (t) => {
+  const p = project(t, {
+    "AGENTS.md": "# a\n", "check.sh": CHECK, "src/app.txt": "ok\n",
+    ".aqk.yml": manifest({ words: "sh check.sh" }).replace("samples: gates", "samples: gates\nown_samples: checks/samples"),
+    "checks/samples/words/red/src/planted.txt": "BAD\n",
+    "checks/samples/words/green/src/planted.txt": "fine\n",
+  });
+  const r = aqk(p, "prove");
+  const words = lines(r.out).find((l) => /\bwords\b/.test(l)) || "";
+  assert.match(words, /✔/, `образцы из own_samples не найдены:\n${tail(r.out, 12)}`);
+  const d = aqk(p, "doctor");
+  assert.doesNotMatch(d.out, /неизвестн\S* пол\S*[^\n]*own_samples|own_samples[^\n]*неизвестн/, "own_samples назван неизвестным полем");
+});

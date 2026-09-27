@@ -18,6 +18,7 @@ function line(r) {
       : r.why === "other-recipe" ? P.otherRecipe(r.forRecipe.lang)
       : r.why === "no-target" ? P.noTarget
       : r.why === "baseline-red" ? P.baselineRed
+      : r.why === "planted-skipped" ? P.plantedSkipped(`${SELF} prove`)
       : r.why === "needs-program" ? P.needsProgram(r.missing.join(", "))
       : P.empty;
     return `  ${c.dim("~")}  ${c.dim(pad)} ${c.dim(why)}`;
@@ -42,12 +43,12 @@ async function cmdProve() {
     console.log(`  ${P.noGates}\n`);
     process.exit(1);
   }
-  if (!String(man?.samples || "").trim()) {
+  if (!String(man?.samples || "").trim() && !String(man?.own_samples || "").trim()) {
     console.log(`  ${c.red(P.noSamplesDir)}\n`);
     process.exit(1);
   }
 
-  const res = await proveGates(man);
+  const res = await proveGates(man, { planted: true });
   // Сначала сломанные: красное называется первым, иначе его не читают.
   for (const r of res.results.filter((x) => x.state === "broken")) console.log(line(r));
   for (const r of res.results.filter((x) => x.state === "proven")) console.log(line(r));
