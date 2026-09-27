@@ -36,8 +36,9 @@ import { readManifest } from "../lib/manifest.mjs";
 import { L } from "../i18n/index.mjs";
 
 // Каталог логов зовётся по рабочему пути, где всё, кроме букв и цифр, заменено на дефис.
-// Правило снято с живой машины, а не угадано: /home/ser/projects/audit_project лежит в
-// -home-ser-projects-audit-project, то есть подчёркивание тоже становится дефисом.
+// Правило снято с живой машины, а не угадано: каталог проекта с подчёркиванием в имени лежал в
+// логах с дефисом на его месте — `/home/ser/projects/my_app` → `-home-ser-projects-my-app` (имя
+// здесь заменено примером: настоящий проект закрытый).
 function logSlug(cwd) {
   return String(cwd).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }

@@ -11,11 +11,11 @@ import assert from "node:assert/strict";
 
 // Каталог логов зовётся по рабочему пути, где всё, кроме букв и цифр, заменено на дефис.
 // Проверено на живой машине: /home/ser/projects/aqk → -home-ser-projects-aqk,
-// /home/ser/projects/audit_project → -home-ser-projects-audit-project.
+// /home/ser/projects/my_app → -home-ser-projects-my-app.
 test("logSlug: путь проекта превращается в имя каталога логов", async () => {
   const { logSlug } = await import("../commands/learn.mjs");
   assert.equal(logSlug("/home/ser/projects/aqk"), "-home-ser-projects-aqk");
-  assert.equal(logSlug("/home/ser/projects/audit_project"), "-home-ser-projects-audit-project");
+  assert.equal(logSlug("/home/ser/projects/my_app"), "-home-ser-projects-my-app");
   assert.equal(logSlug("C:\\work\\my.app"), "c-work-my-app");
 });
 

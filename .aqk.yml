@@ -57,6 +57,10 @@ gates:
   shellcheck: "bash kit/ratchet/ratchet.sh ratchets/shellcheck.txt bash tool/selfcheck/shellcheck.sh"
   # JavaScript комплекта — под biome (выбран замером против eslint 2026-09-27; см. шапку скрипта).
   biome: "bash kit/ratchet/ratchet.sh ratchets/biome.txt bash tool/selfcheck/biome.sh"
+  # Закрытые проекты владельца не попадают в публичный репозиторий никогда. Сверка 2026-09-27
+  # нашла в текущих файлах 83 упоминания закрытого проекта — правило держалось на памяти агента.
+  # Имён в проверке нет, только отпечатки SHA-256 (tool/selfcheck/private-names.txt).
+  private-names: "node tool/selfcheck/private-names.mjs ."
   # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip@6 --directory ."

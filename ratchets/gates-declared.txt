@@ -64,6 +64,8 @@ todo-without-task
 units
 shellcheck
 biome
+private-names
 # run units: node --test tool/selfcheck/units*.mjs
 # run shellcheck: bash kit/ratchet/ratchet.sh ratchets/shellcheck.txt bash tool/selfcheck/shellcheck.sh
 # run biome: bash kit/ratchet/ratchet.sh ratchets/biome.txt bash tool/selfcheck/biome.sh
+# run private-names: node tool/selfcheck/private-names.mjs .

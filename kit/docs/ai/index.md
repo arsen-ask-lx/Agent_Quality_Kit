@@ -46,7 +46,6 @@
 | [`anthropic-ai-native-sdlc-2026-08.md`](anthropic-ai-native-sdlc-2026-08.md) | плейбук Anthropic по перестройке SDLC под агентов, разобранный по шести стадиям | 2026-08-26 |
 | [`ai-native-development.md`](ai-native-development.md) | практики из двух каналов, каждая с отметкой «есть у нас / нет» | 2026-08-25 |
 | [`stream-2026-08-ai-coding-panel.md`](stream-2026-08-ai-coding-panel.md) | панель практиков: 🎙 мнение · 📏 замер · ⚖️ спорно | 2026-08-24 |
-| [`quality-gates-checklist.md`](quality-gates-checklist.md) | снимок 98 гейтов audit_project со статусами — сырьё каталога гейтов | 2026-08-24 |
 | [`harness-best-practices.md`](harness-best-practices.md) | каталог приёмов, снятых с чужих харнесов; устройство собственного агента исключено | 2026-07-13 |
 | [`deep-research-2026-07.md`](deep-research-2026-07.md) | gap-ресёрч: харнес · безопасность · качество кода · платформы | 2026-07-05 |
 | [`sources-building-with-agents.md`](sources-building-with-agents.md) | статьи OpenAI / Anthropic / Manus, с провенансом | 2026-07 |
@@ -62,5 +61,5 @@
 | разделы «Скиллы» из `how-we-work.md` | `agent-harness-playbook.md`, раздел 13 |
 | правила кода и тестов из плейбука | `kit/rules/` — там они источник истины, в плейбуке указатель |
 
-Статусы «у нас» внутри чужих файлов относятся к `audit_project` и проверяются по коду, а не по
+Статусы «у нас» внутри чужих файлов относятся к проекту-источнику и проверяются по его коду, а не по
 этим документам: статусы в документах устаревают молча.

@@ -46,7 +46,8 @@
       "tool/selfcheck/units*.mjs",
       "tool/selfcheck/smoke/*.test.mjs",
       "tool/selfcheck/lifecycle.mjs",
-      "tool/selfcheck/tools-quotes.mjs"
+      "tool/selfcheck/tools-quotes.mjs",
+      "tool/selfcheck/private-names.mjs"
     ],
     "project": [
       "tool/**/*.mjs"
