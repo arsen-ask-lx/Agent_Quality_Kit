@@ -1,0 +1,12 @@
+{
+  "gate": "ci-actually-fails",
+  "source": {
+    "repo": "arsen-ask-lx/Agent_Quality_Kit",
+    "checked": "образец для доказательства гейта evals, 2026-09-27"
+  },
+  "files": {
+    ".github/workflows/ci.yml": "name: ci\non: [push]\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm test\n"
+  },
+  "expect": "red",
+  "why": "Образец: честный конвейер, а случай ждёт красного — прогон корпуса обязан это заметить."
+}
