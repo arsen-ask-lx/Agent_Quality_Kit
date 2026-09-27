@@ -190,8 +190,8 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null, plan
     } else {
       // КОМАНДА НЕ КОНЧАЕТСЯ КАТАЛОГОМ — `npm run lint`, `make check`. Подставлять некуда,
       // поэтому образец подсаживается в КОПИЮ проекта по своим путям, а команда идёт как есть.
-      // Сначала чистая копия: команда, красная без подсадки, ничего не доказывает — это
-      // называется отдельно, а не засчитывается ни доказанной, ни сломанной.
+      // Команда, красная без подсадки, ничего не доказывает — это называется отдельно, а не
+      // засчитывается ни доказанной, ни сломанной (см. ниже, когда гоняется чистая копия).
       if (!planted) {
         results.push({ name, state: "unprovable", why: "planted-skipped" });
         continue;
@@ -201,16 +201,24 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null, plan
         results.push({ name, state: "unprovable", why: "no-target" });
         continue;
       }
-      const base = run(cmd, timeoutMs, prog, box);
-      if (base.state !== "clean") {
-        results.push({ name, state: "unprovable", why: base.state === "infra_error" ? "infra" : "baseline-red", side: "base", reason: base.reason, red: base });
-        continue;
-      }
-      let undo = await plantTree(box, join(CWD, s.red));
-      red = run(cmd, timeoutMs, prog, box);
-      await undo();
-      undo = await plantTree(box, join(CWD, s.green));
+      // Чистая копия гоняется ТОЛЬКО когда зелёный образец покраснел. Пока зелёный чист, копия
+      // без подсадки ничего не добавляет: красный отличается от зелёного ровно подсаженным, и
+      // разница вердиктов — это и есть доказательство. А вот красный зелёный образец надо
+      // объяснить: «ругается на исправный код» или «красная ещё до подсадки» — разные починки.
+      // Так прогонов два, а не три: для `smoke` (минута на прогон) это минута на каждое
+      // доказательство.
+      let undo = await plantTree(box, join(CWD, s.green));
       green = run(cmd, timeoutMs, prog, box);
+      await undo();
+      if (green.state === "finding") {
+        const base = run(cmd, timeoutMs, prog, box);
+        if (base.state !== "clean") {
+          results.push({ name, state: "unprovable", why: base.state === "infra_error" ? "infra" : "baseline-red", side: "base", reason: base.reason, red: base });
+          continue;
+        }
+      }
+      undo = await plantTree(box, join(CWD, s.red));
+      red = run(cmd, timeoutMs, prog, box);
       await undo();
     }
 

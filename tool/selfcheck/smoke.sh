@@ -13,6 +13,13 @@
 
 set -uo pipefail
 
+# СОВПАДЕНИЕ В ТЕКСТЕ — БЕЗ ТРУБЫ. Под `pipefail` конвейер `printf "$X" | grep -q` падает, когда
+# `grep -q` находит совпадение и выходит раньше, чем `printf` дописал: тот получает SIGPIPE, и
+# найденное читается как ненайденное. Зависит от размера текста и загрузки машины — то есть
+# проверка плавает. Найдено 2026-09-27: `smoke` покраснел на исправном коде только под нагрузкой.
+# `has "$ТЕКСТ" -qE шаблон` — те же аргументы grep, текст подаётся строкой. Сторожит units-verdict.mjs.
+has() { local _t="$1"; shift; grep "$@" <<<"$_t"; }
+
 # Язык вывода закреплён: проверки ниже сверяют русский текст, а без этой строки они зависели бы
 # от локали машины — на англоязычном раннере зелёное стало бы красным без единой правки в коде.
 export AQK_LANG=ru
@@ -192,7 +199,7 @@ if [ -n "$NS_PID" ]; then
         bad "${NS_LINE#*- }" "${NS_WHY:-подробности: node --test $NODE_SMOKE/*.test.mjs}" ;;
     esac
   done <<EOF
-$(printf '%s\n' "$NS_OUT" | grep -E '^(ok|not ok) ')
+$(has "$NS_OUT" -E '^(ok|not ok) ')
 EOF
 fi
 }
@@ -216,7 +223,9 @@ printf '  \033[2mне покрыто: СОДЕРЖАНИЕ документов 
 # упавшего гейта обрезается: видно голову и хвост. Значит единственное место, где список
 # гарантированно доедет до глаз, — конец. Проверено прогоном с нарочно сломанной проверкой.
 [ "$FAIL" -eq 0 ] || printf '  \033[31mупало: %s\033[0m\n\n' "$FAILED_NAMES"
-exit "$FAIL"
+# Код выхода — 0 или 1, а не число провалов: два провала дали бы 2, и договор гейтов прочитал бы
+# это как «не смогли проверить»; 256 провалов дали бы 0 — «чисто». Сторожит units-verdict.mjs.
+exit $(( FAIL > 0 ))
 }
 
 # Только node-часть: bash-проверки этого файла не запускаются, итог честно называет часть.
@@ -421,7 +430,7 @@ if [ "$N" -ge 5 ]; then ok "start поставил сторожей дня 0 ($N
 
 OUT="$(node "$CLI" doctor --run 2>&1)"
 case "$OUT" in
-  *"✘"*"код "*) bad "сторожа дня 0 краснеют на пустом проекте" "$(printf '%s' "$OUT" | grep -A2 '✘' | head -6)" ;;
+  *"✘"*"код "*) bad "сторожа дня 0 краснеют на пустом проекте" "$(has "$OUT" -A2 '✘' | head -6)" ;;
   *) ok "все сторожа дня 0 зелёные — долга нет" ;;
 esac
 
@@ -431,7 +440,7 @@ esac
 # пояснением «нет языков». Первая редакция искала само слово и падала на строке про скрытое.
 case "$OUT" in
   *"dead-code"*"нет языков"*) ok "образцы гейтов не считаются кодом проекта" ;;
-  *) bad "образцы гейтов посчитаны кодом проекта" "$(printf '%s' "$OUT" | grep 'dead-code')" ;;
+  *) bad "образцы гейтов посчитаны кодом проекта" "$(has "$OUT" 'dead-code')" ;;
 esac
 cd "$WORK" || exit 1
 
@@ -573,7 +582,7 @@ printf 'package pkg\nfunc Foo() {}\n' > "$GODIR/pkg/foo.go"
 printf 'package pkg\nfunc TestFoo(t *testing.T) {}\n' > "$GODIR/pkg/foo_test.go"
 ( cd "$GODIR" && node "$CLI" init >/dev/null 2>&1 )
 GOOUT=$( cd "$GODIR" && node "$CLI" doctor 2>&1 )
-if printf '%s' "$GOOUT" | grep -E 'есть:.*\btests\b' >/dev/null; then
+if has "$GOOUT" -E 'есть:.*\btests\b' >/dev/null; then
   ok "*_test.go опознаётся как тесты (Go)"
 else
   bad "*_test.go не опознан как тесты" "признак has_tests молчит на репозитории gin-типа"
@@ -591,14 +600,14 @@ rm -rf "$GODIR"
 FAKEHOME="$(mktemp -d)"
 D1="$(mktemp -d)"
 OUT1=$( cd "$D1" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
-if printf '%s' "$OUT1" | grep -qi 'звезд'; then
+if has "$OUT1" -qi 'звезд'; then
   ok "первый init на новой машине зовёт поставить звезду"
 else
   bad "первый init не упомянул звезду/обратную связь" "$OUT1"
 fi
 D2="$(mktemp -d)"
 OUT2=$( cd "$D2" && HOME="$FAKEHOME" USERPROFILE="$FAKEHOME" node "$CLI" init 2>&1 )
-if printf '%s' "$OUT2" | grep -qi 'звезд'; then
+if has "$OUT2" -qi 'звезд'; then
   bad "init повторил просьбу про звезду на той же машине" "второй проект, та же HOME"
 else
   ok "просьба про звезду не повторяется на той же машине"
@@ -634,7 +643,7 @@ rm -f /tmp/aqk-broken-doc-links.$$
 # текущего каталога, а не подставляем абсолютный путь в код.
 PKGVER=$( cd "$ROOT" && node -p "require('./package.json').version" )
 DOCVER=$( cd "$ROOT" && node "$CLI" doctor 2>&1 | head -3)
-if printf '%s' "$DOCVER" | grep -qF "$PKGVER"; then
+if has "$DOCVER" -qF "$PKGVER"; then
   ok "doctor печатает версию комплекта ($PKGVER)"
 else
   bad "doctor не печатает версию" "package.json: $PKGVER; шапка doctor: $(printf '%s' "$DOCVER" | tr '\n' ' ')"
@@ -663,7 +672,7 @@ NOTEJ="$(mktemp -d)"
 ( cd "$NOTEJ" && git init -q . && git config user.email t@t.com && git config user.name t \
   && mkdir -p incidents && echo "# Журнал" > incidents/README.md && git add -A && git commit -q -m init )
 NOWORD=$(cd /tmp && AQK_HOME="$NOTEJ" sh -c 'echo "слово вывод здесь есть, но отметки нет" | node "'"$CLI"'" note "без отметки"' 2>&1; echo "EXIT:$?")
-if printf '%s' "$NOWORD" | grep -q "EXIT:0"; then
+if has "$NOWORD" -q "EXIT:0"; then
   bad "note принял запись без настоящей отметки решения" "$(printf '%s' "$NOWORD" | head -3)"
 else
   ok "note требует настоящую отметку (✅🔧📜👤), не просто слово «вывод»"
@@ -728,7 +737,7 @@ fi
 SHDIR="$(mktemp -d)"
 git clone -q --depth 1 "file://$CEDIR" "$SHDIR/r" 2>/dev/null
 OUT=$(bash "$ROOT/kit/gates/commit-explains-itself/check.sh" "$SHDIR/r" 2>&1)
-if [ $? -eq 0 ] && printf '%s' "$OUT" | grep -q "fetch-depth"; then
+if [ $? -eq 0 ] && has "$OUT" -q "fetch-depth"; then
   ok "мелкий клон: гейт пропускает, назвав причину и способ починки"
 else
   bad "в мелком клоне гейт врёт про состав коммита" "$OUT"
@@ -744,16 +753,16 @@ rm -rf "$SHDIR" "$CEDIR"
 # что выбор языка вообще доехал до вывода. Это проверяется только запуском.
 EN_OUT=$(AQK_LANG=en node "$CLI" 2>&1)
 RU_OUT=$(AQK_LANG=ru node "$CLI" 2>&1)
-if printf '%s' "$EN_OUT" | grep -q "install a gate from the catalogue" &&
-   ! printf '%s' "$EN_OUT" | grep -qE 'гейт|каталог|проверк|уровен|репозитор' &&
-   printf '%s' "$RU_OUT" | grep -q "поставить гейт из каталога"; then
+if has "$EN_OUT" -q "install a gate from the catalogue" &&
+   ! has "$EN_OUT" -qE 'гейт|каталог|проверк|уровен|репозитор' &&
+   has "$RU_OUT" -q "поставить гейт из каталога"; then
   ok "справка печатается на двух языках, в английской нет кириллицы"
 else
   # Диагностика по каждому условию отдельно. Прежняя печатала первые строки вывода — по ним
   # видно, что вывод английский, и совершенно не видно, какая из трёх сверок не сошлась.
-  EN_HAS=$(printf '%s' "$EN_OUT" | grep -c "install a gate from the catalogue")
-  EN_CYR=$(printf '%s' "$EN_OUT" | grep -cE 'гейт|каталог|проверк|уровен|репозитор')
-  RU_HAS=$(printf '%s' "$RU_OUT" | grep -c "поставить гейт из каталога")
+  EN_HAS=$(has "$EN_OUT" -c "install a gate from the catalogue")
+  EN_CYR=$(has "$EN_OUT" -cE 'гейт|каталог|проверк|уровен|репозитор')
+  RU_HAS=$(has "$RU_OUT" -c "поставить гейт из каталога")
   bad "выбор языка не доехал до вывода" "англ.фраза=$EN_HAS кириллица_в_англ=$EN_CYR рус.фраза=$RU_HAS"
 fi
 
@@ -763,10 +772,10 @@ fi
 # несуществующую страницу. Единственное место, где мы просим человека о чём-то, вело в никуда.
 FBDIR="$(mktemp -d)"; FBPROJ="$(mktemp -d)"
 FB_OUT=$( cd "$FBPROJ" && git init -q . && HOME="$FBDIR" USERPROFILE="$FBDIR" node "$CLI" init 2>&1 )
-if printf '%s' "$FB_OUT" | grep -qE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'; then
+if has "$FB_OUT" -qE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'; then
   ok "просьба про звезду ведёт на репозиторий, а не на github.com/<имя пакета>"
 else
-  bad "ссылка на репозиторий собрана неверно" "$(printf '%s' "$FB_OUT" | grep -i github | head -2)"
+  bad "ссылка на репозиторий собрана неверно" "$(has "$FB_OUT" -i github | head -2)"
 fi
 rm -rf "$FBDIR" "$FBPROJ"
 
@@ -781,7 +790,7 @@ REPDIR="$(mktemp -d)"
   node "$CLI" start > "$WORK/start.log" 2>&1
 )
 REP_OUT=$( cd "$REPDIR" && node "$CLI" report 2>&1 ); REP_CODE=$?
-if [ "$REP_CODE" -ne 0 ] && printf '%s' "$REP_OUT" | grep -q '❌ gate-not-weakened'; then
+if [ "$REP_CODE" -ne 0 ] && has "$REP_OUT" -q '❌ gate-not-weakened'; then
   ok "report краснеет кодом возврата и называет упавший гейт"
 else
   # Код возврата отчёта не говорит, ПОЧЕМУ он ноль: гейт не сработал, не установился или
@@ -798,10 +807,10 @@ else
   bad "report не сохранил файл отчёта" "$REPDIR/.aqk/report.md"
 fi
 # Путь к методичке ИЩЕТСЯ: baseline лежит в подпапке ai/, и жёстко вписанный путь уже соврал.
-if printf '%s' "$REP_OUT" | grep -q '📖 .aqk/docs/ai/project-baseline.md'; then
+if has "$REP_OUT" -q '📖 .aqk/docs/ai/project-baseline.md'; then
   ok "report находит методичку в подпапке, а не пишет путь наизусть"
 else
-  bad "report не нашёл project-baseline.md" "$(printf '%s' "$REP_OUT" | grep -i baseline | head -1)"
+  bad "report не нашёл project-baseline.md" "$(has "$REP_OUT" -i baseline | head -1)"
 fi
 rm -rf "$REPDIR"
 
@@ -834,9 +843,9 @@ printf 'theirs = 1  # noqa\n' > "$IGNDIR/third-party/inner/theirs.py"
 OUT_BEFORE="$(bash "$ROOT/kit/gates/gate-not-weakened/check.sh" "$IGNDIR" 2>&1)"
 printf '# принесено из другого репозитория\nthird-party/\n' > "$IGNDIR/.aqkignore"
 OUT_AFTER="$(bash "$ROOT/kit/gates/gate-not-weakened/check.sh" "$IGNDIR" 2>&1)"
-if printf '%s' "$OUT_BEFORE" | grep -q 'theirs.py' &&
-   ! printf '%s' "$OUT_AFTER" | grep -q 'theirs.py' &&
-   printf '%s' "$OUT_AFTER" | grep -q 'mine.py'; then
+if has "$OUT_BEFORE" -q 'theirs.py' &&
+   ! has "$OUT_AFTER" -q 'theirs.py' &&
+   has "$OUT_AFTER" -q 'mine.py'; then
   ok ".aqkignore прячет чужой код и не трогает свой"
 else
   bad ".aqkignore не работает" "до: $(printf '%s' "$OUT_BEFORE" | head -2) | после: $(printf '%s' "$OUT_AFTER" | head -2)"
@@ -858,7 +867,7 @@ if command -v vulture >/dev/null 2>&1; then
   )
   NAT_CMD=$(sed -n 's/^  dead-code: "\(.*\)"$/\1/p' "$NATDIR/.aqk.yml")
   NAT_OUT=$( cd "$NATDIR" && eval "$NAT_CMD" 2>&1 )
-  if printf '%s' "$NAT_OUT" | grep -q 'gates/'; then
+  if has "$NAT_OUT" -q 'gates/'; then
     bad "родной рецепт выдаёт образцы гейтов как находки" "$(printf '%s' "$NAT_OUT" | head -2)"
   else
     ok "родной рецепт не ругается на образцы гейтов"
@@ -898,8 +907,8 @@ sed -i.bak 's|^  file-size-limit: .*|&\n  broken: "sh -c '"'"'exit 1'"'"'"|' "$B
 B_RED=$( cd "$BDIR" && node "$CLI" badge 2>&1 ); B_RED_CODE=$?
 # Условие «нет значка» само по себе зелёное и у несуществующей команды — поэтому здесь
 # требуется ещё и названный виновник: иначе проверка не умеет краснеть.
-if [ "$B_RED_CODE" -ne 0 ] && ! printf '%s' "$B_RED" | grep -q 'img.shields.io' &&
-   printf '%s' "$B_RED" | grep -q 'broken'; then
+if [ "$B_RED_CODE" -ne 0 ] && ! has "$B_RED" -q 'img.shields.io' &&
+   has "$B_RED" -q 'broken'; then
   ok "badge отказывает при красном гейте"
 else
   bad "badge выдал значок при красном гейте" "код=$B_RED_CODE $(printf '%s' "$B_RED" | head -2)"
@@ -932,9 +941,9 @@ OUT_GATE="$( cd "$TDIR" && node "$CLI" doctor --run --min 1 2>&1 )"; RC_GATE=$?
 EDIR="$(mktemp -d)"; ( cd "$EDIR" && git init -q . && printf 'aqk: 1\n' > .aqk.yml )
 OUT_LVL="$( cd "$EDIR" && node "$CLI" doctor --min 3 2>&1 )"; RC_LVL=$?
 if [ "$RC_GATE" -ne 0 ] && [ "$RC_LVL" -ne 0 ] &&
-   printf '%s' "$OUT_GATE" | grep -q 'always-fails' &&
-   ! printf '%s' "$OUT_GATE" | grep -qE '(НЕ пройден|NOT passed): (сейчас|currently) AQK-1' &&
-   printf '%s' "$OUT_LVL" | grep -qE '(НЕ пройден|NOT passed)'; then
+   has "$OUT_GATE" -q 'always-fails' &&
+   ! has "$OUT_GATE" -qE '(НЕ пройден|NOT passed): (сейчас|currently) AQK-1' &&
+   has "$OUT_LVL" -qE '(НЕ пройден|NOT passed)'; then
   ok "порог различает упавший гейт и недобранную ступень"
 else
   bad "сообщение о пороге не различает две развилки" "гейт: $(printf '%s' "$OUT_GATE" | tail -2 | tr '\n' ' ')"
@@ -984,11 +993,11 @@ MDIR="$(mktemp -d)"
 sed -i 's/^gates:/gate:/' "$MDIR/.aqk.yml"
 OUT_TYPO="$( cd "$MDIR" && node "$CLI" doctor 2>&1 )"
 OUT_OK="$( cd "$MDIR" && sed -i 's/^gate:/gates:/' .aqk.yml && node "$CLI" doctor 2>&1 )"
-if printf '%s' "$OUT_TYPO" | grep -qE '(does not know|не знает).*gate' &&
-   ! printf '%s' "$OUT_OK" | grep -qE '(does not know|не знает)'; then
+if has "$OUT_TYPO" -qE '(does not know|не знает).*gate' &&
+   ! has "$OUT_OK" -qE '(does not know|не знает)'; then
   ok "манифест называет неизвестное поле и молчит на верном"
 else
-  bad "опечатка в поле манифеста проходит молча" "$(printf '%s' "$OUT_TYPO" | grep -i 'know\|знает' | head -1)"
+  bad "опечатка в поле манифеста проходит молча" "$(has "$OUT_TYPO" -i 'know\|знает' | head -1)"
 fi
 rm -rf "$MDIR"
 
@@ -1015,9 +1024,9 @@ printf ' - \033[1m\033[32msrc/mine.py:python\033[39m\033[22m [1:1 - 9:2]\n'
 exit 1
 EOT
 OUT_N="$(cd "$NDIR" && sh "$ROOT/kit/gates/_native.sh" . sh ./fake-tool.sh 2>&1)"
-if printf '%s' "$OUT_N" | grep -q 'src/mine.py' &&
-   ! printf '%s' "$OUT_N" | grep -q '\.aqk/docs' &&
-   ! printf '%s' "$OUT_N" | grep -q 'node_modules'; then
+if has "$OUT_N" -q 'src/mine.py' &&
+   ! has "$OUT_N" -q '\.aqk/docs' &&
+   ! has "$OUT_N" -q 'node_modules'; then
   ok "родной рецепт молчит про .aqk и node_modules, но видит свой код"
 else
   bad "родной инструмент выдаёт то, что переносимые не читают" "$(printf '%s' "$OUT_N" | tr '\n' ' ')"
@@ -1077,18 +1086,18 @@ OUT_EMPTY="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
 # пожелание. Проверка, знающая только про npm, объявила бы половину мира несоответствующей.
 printf 'x\n' > "$BDIR2/Cargo.lock"; printf 'x\n' > "$BDIR2/ruff.toml"; printf 'x\n' > "$BDIR2/Dockerfile"
 OUT_FULL="$( cd "$BDIR2" && node "$CLI" doctor --baseline 2>&1 )"
-BEFORE=$(printf '%s' "$OUT_EMPTY" | grep -c '✔' || true)
-AFTER=$(printf '%s' "$OUT_FULL" | grep -c '✔' || true)
+BEFORE=$(has "$OUT_EMPTY" -c '✔' || true)
+AFTER=$(has "$OUT_FULL" -c '✔' || true)
 # ЧЬЯ ЭТО МЕРКА — СКАЗАНО ДО СПИСКА. Замер 2026-09-16 по пятнадцати чужим репозиториям
 # (requests, httpx, flask, express, gin, cobra, ripgrep, uv и другие): ВСЕ получили от четырёх
 # до восьми пунктов из четырнадцати, и кресты оказались честными — эквивалентов у них правда
 # нет, проверено чтением их же конфигов. Значит число само по себе читается как приговор
 # хорошему проекту, а оно про другое: про готовность отдать работу машине. Строка, которая это
 # называет, обязана быть — и обязана стоять ДО списка, после него её уже не читают.
-if printf '%s' "$OUT_FULL" | grep -qE 'cargo.lock' &&
-   printf '%s' "$OUT_FULL" | grep -qE 'ruff.toml' &&
-   printf '%s' "$OUT_FULL" | grep -qE 'dockerfile' &&
-   printf '%s' "$OUT_FULL" | grep -q "НЕ оценка проекта" &&
+if has "$OUT_FULL" -qE 'cargo.lock' &&
+   has "$OUT_FULL" -qE 'ruff.toml' &&
+   has "$OUT_FULL" -qE 'dockerfile' &&
+   has "$OUT_FULL" -q "НЕ оценка проекта" &&
    [ "$AFTER" -gt "$BEFORE" ]; then
   ok "doctor --baseline засчитывает признаки разных экосистем, называет доказательство и чью мерку применяет"
 else
@@ -1146,8 +1155,8 @@ FAKE_PROVE=$( cd "$FAKEDIR" && node "$CLI" prove 2>&1 ); FAKE_PCODE=$?
 # Проверяем ИМЕННО ту ступень, что назначена: без этого `grep 'AQK-1|AQK-3'` совпадал всегда,
 # потому что doctor печатает все четыре строки в любом исходе. Пустая проверка хуже отсутствующей.
 if [ "$FAKE_CODE" -ne 0 ] && [ "$FAKE_PCODE" -ne 0 ] &&
-   printf '%s' "$FAKE_OUT" | grep -qE 'AQK-1\.?$|AQK-1[^0-9]' &&
-   printf '%s' "$FAKE_OUT" | grep -qiE '(НЕ пройден|not passed|not reached)'; then
+   has "$FAKE_OUT" -qE 'AQK-1\.?$|AQK-1[^0-9]' &&
+   has "$FAKE_OUT" -qiE '(НЕ пройден|not passed|not reached)'; then
   ok "гейт «true» не берёт уровень выше первого"
 else
   bad "подделка получила уровень" "порог: код $FAKE_CODE, доказательство: код $FAKE_PCODE, хвост: $(printf '%s' "$FAKE_OUT" | tail -2 | tr '\n' ' ')"
@@ -1168,8 +1177,8 @@ NO_OUT=$( cd "$NODIR" && PATH="$NOBIN" node "$CLI" add no-print-in-prod 2>&1 ); 
 # Имя инструмента в отказе БЫЛО и до этой проверки — не хватало действия. Требуем оба:
 # «ruff не установлен» — это диагноз, «поставь ruff» — это то, ради чего человек читает.
 if [ "$NO_CODE" -ne 0 ] &&
-   printf '%s' "$NO_OUT" | grep -q 'ruff' &&
-   printf '%s' "$NO_OUT" | grep -qiE '(почини|поставь|install)'; then
+   has "$NO_OUT" -q 'ruff' &&
+   has "$NO_OUT" -qiE '(почини|поставь|install)'; then
   ok "отказ установки называет инструмент И что с ним делать"
 else
   bad "отказ установки — тупик" "код $NO_CODE, вывод: $(printf '%s' "$NO_OUT" | tr '\n' ' ' | tail -c 200)"
@@ -1194,7 +1203,7 @@ sed -i.bak 's|^  python: vulture .*|  python: aqk-nesuschestvuyuschiy-instrument
 ST_SOFT_OUT=$(AQK_GATES_STRICT=0 bash "$STPKG/tool/selfcheck/gates.sh" 2>&1); ST_SOFT=$?
 ST_HARD_OUT=$(AQK_GATES_STRICT=1 bash "$STPKG/tool/selfcheck/gates.sh" 2>&1); ST_HARD=$?
 if [ "$ST_SOFT" -eq 0 ] && [ "$ST_HARD" -ne 0 ] &&
-   printf '%s' "$ST_HARD_OUT" | grep -q 'строгий режим'; then
+   has "$ST_HARD_OUT" -q 'строгий режим'; then
   ok "строгий режим делает «не проверено» ошибкой, обычный — нет"
 else
   bad "строгий режим приёмки не работает" "обычный: $ST_SOFT, строгий: $ST_HARD"
@@ -1215,7 +1224,7 @@ printf 'lifecycle: deprecated\nsuperseded_by: no-print-in-prod\n' >> "$DEPKG/kit
 ( cd "$DEPRJ" && git init -q . && printf 'x = 1\n' > a.py && node "$DEPKG/tool/program.mjs" init >/dev/null 2>&1 )
 DE_OUT=$( cd "$DEPRJ" && node "$DEPKG/tool/program.mjs" add todo-without-task 2>&1 ); DE_CODE=$?
 if [ "$DE_CODE" -ne 0 ] &&
-   printf '%s' "$DE_OUT" | grep -q 'no-print-in-prod' &&
+   has "$DE_OUT" -q 'no-print-in-prod' &&
    [ ! -d "$DEPRJ/gates/todo-without-task" ]; then
   ok "add отказывает в выведенной записи и называет ту, что её заменяет"
 else
@@ -1238,16 +1247,16 @@ SCDIR="$(mktemp -d)"
 )
 SC_WIDE=$( cd "$SCDIR" && node "$CLI" doctor --run 2>&1 )
 SC_NARROW=$( cd "$SCDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
-if printf '%s' "$SC_WIDE"   | grep -q 'old.py' &&
-   printf '%s' "$SC_NARROW" | grep -q 'fresh.py' &&
-   ! printf '%s' "$SC_NARROW" | grep -q 'old.py'; then
+if has "$SC_WIDE" -q 'old.py' &&
+   has "$SC_NARROW" -q 'fresh.py' &&
+   ! has "$SC_NARROW" -q 'old.py'; then
   ok "--since прячет старый долг и показывает внесённый дифом"
 else
-  bad "--since сузил не то" "широкий: $(printf '%s' "$SC_WIDE" | grep -c 'py:'), узкий: $(printf '%s' "$SC_NARROW" | grep -c 'py:')"
+  bad "--since сузил не то" "широкий: $(has "$SC_WIDE" -c 'py:'), узкий: $(has "$SC_NARROW" -c 'py:')"
 fi
 # Несуществующая ссылка обязана быть отказом, а не тихим «сравнили с ничем».
 SC_BAD=$( cd "$SCDIR" && node "$CLI" doctor --run --since net-takoy-vetki 2>&1 ); SC_BADCODE=$?
-if [ "$SC_BADCODE" -ne 0 ] && printf '%s' "$SC_BAD" | grep -qi 'net-takoy-vetki'; then
+if [ "$SC_BADCODE" -ne 0 ] && has "$SC_BAD" -qi 'net-takoy-vetki'; then
   ok "--since с несуществующей ссылкой — отказ, а не тихое сравнение с ничем"
 else
   bad "--since проглотил неверную ссылку" "код $SC_BADCODE"
@@ -1266,11 +1275,11 @@ ADIR="$(mktemp -d)"
   node "$CLI" add gate-not-weakened >/dev/null 2>&1
 )
 A_OUT=$( cd "$ADIR" && node "$CLI" doctor --run 2>&1 )
-if printf '%s' "$A_OUT" | grep -qiE '(почини|fix)[[:space:]]*:' &&
-   printf '%s' "$A_OUT" | grep -qE 'py:[0-9]+'; then
+if has "$A_OUT" -qiE '(почини|fix)[[:space:]]*:' &&
+   has "$A_OUT" -qE 'py:[0-9]+'; then
   ok "совет по починке виден при обрезанных находках"
 else
-  bad "совет по починке потерялся" "находок в выводе: $(printf '%s' "$A_OUT" | grep -c 'py:')"
+  bad "совет по починке потерялся" "находок в выводе: $(has "$A_OUT" -c 'py:')"
 fi
 rm -rf "$ADIR"
 
@@ -1292,7 +1301,7 @@ if [ -f "$R_REG" ] && grep -q 'aqk-goal' "$R_REG"; then
   # Срок в прошлом — обязано покраснеть без единого нового нарушения.
   sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline: 2020-01-01/' "$R_REG"
   R_LATE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
-  if printf '%s' "$R_LATE" | grep -qi 'срок\|deadline'; then
+  if has "$R_LATE" -qi 'срок\|deadline'; then
     ok "срок долга вышел — храповик краснеет без новых нарушений"
   else
     bad "просроченный долг прошёл молча" "код базового прогона $R_BASE_CODE"
@@ -1300,10 +1309,10 @@ if [ -f "$R_REG" ] && grep -q 'aqk-goal' "$R_REG"; then
   # Цель заведомо достигнута — храповик обязан сказать, что обёртку пора убрать.
   sed -i.bak 's/^# aqk-deadline:.*/# aqk-deadline:/; s/^# aqk-goal:.*/# aqk-goal: 99/' "$R_REG"
   R_DONE=$( cd "$RDIR" && node "$CLI" doctor --run 2>&1 )
-  if printf '%s' "$R_DONE" | grep -qi 'погашен\|paid off'; then
+  if has "$R_DONE" -qi 'погашен\|paid off'; then
     ok "цель достигнута — храповик говорит убрать обёртку"
   else
-    bad "погашенный долг не назван" "$(printf '%s' "$R_DONE" | grep -i ratchet | head -1)"
+    bad "погашенный долг не назван" "$(has "$R_DONE" -i ratchet | head -1)"
   fi
 else
   bad "реестр долга не создан или без цели" "$R_REG"
@@ -1321,7 +1330,7 @@ printf '# Реестр долга: проба\n# aqk-goal: 0\nsrc/a.py: печа
 W_OUT=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'exit 3' 2>&1 ); W_CODE=$?
 W_LEFT=$(grep -c 'src/a.py' "$WDIR/ratchets/t.txt" || true)
 if [ "$W_CODE" -ne 0 ] && [ "$W_LEFT" -eq 1 ] &&
-   ! printf '%s' "$W_OUT" | grep -qi 'погашен'; then
+   ! has "$W_OUT" -qi 'погашен'; then
   ok "упавший гейт не стирает реестр и не предлагает снять защиту"
 else
   bad "упавший гейт съел реестр" "код $W_CODE, строк долга осталось $W_LEFT"
@@ -1329,7 +1338,7 @@ fi
 # Директива с опечаткой обязана быть слышной: молчаливо отключённая цель — та же тишина.
 printf '# Реестр\n# aqk-goal: скоро\nsrc/a.py: печать\n' > "$WDIR/ratchets/t.txt"
 W_BAD=$( cd "$WDIR" && bash "$ROOT/kit/ratchet/ratchet.sh" ratchets/t.txt sh -c 'echo "src/a.py: печать"' 2>&1 )
-if printf '%s' "$W_BAD" | grep -qi 'не число'; then
+if has "$W_BAD" -qi 'не число'; then
   ok "опечатка в директиве храповика названа, а не проглочена"
 else
   bad "нечисловая цель отключилась молча" "$(printf '%s' "$W_BAD" | head -1)"
@@ -1353,11 +1362,11 @@ DDIR="$(mktemp -d)"
 )
 D_WIDE=$( cd "$DDIR" && node "$CLI" doctor --run 2>&1 )
 D_NARROW=$( cd "$DDIR" && node "$CLI" doctor --run --since HEAD 2>&1 )
-if printf '%s' "$D_WIDE" | grep -q 'gate-not-weakened' &&
-   printf '%s' "$D_NARROW" | grep -qE 'gate-not-weakened.*(код|exit)' ; then
+if has "$D_WIDE" -q 'gate-not-weakened' &&
+   has "$D_NARROW" -qE 'gate-not-weakened.*(код|exit)' ; then
   ok "просроченный долг краснеет и при --since"
 else
-  bad "--since отменил срок долга" "узкий прогон: $(printf '%s' "$D_NARROW" | grep no-print | head -1 | cut -c1-90)"
+  bad "--since отменил срок долга" "узкий прогон: $(has "$D_NARROW" no-print | head -1 | cut -c1-90)"
 fi
 rm -rf "$DDIR"
 
@@ -1376,8 +1385,8 @@ VDIR="$(mktemp -d)"
 printf '\nadvisory:\n  - gate-not-weakened\n' >> "$VDIR/.aqk.yml"
 V_OUT=$( cd "$VDIR" && node "$CLI" doctor --run --min 1 2>&1 ); V_SOFT=$?
 if [ "$V_HARD" -ne 0 ] && [ "$V_SOFT" -eq 0 ] &&
-   printf '%s' "$V_OUT" | grep -qE 'advisory|совещательн' &&
-   printf '%s' "$V_OUT" | grep -q 'src/a.py'; then
+   has "$V_OUT" -qE 'advisory|совещательн' &&
+   has "$V_OUT" -q 'src/a.py'; then
   ok "совещательный гейт показывает находки, называется и не роняет прогон"
 else
   bad "совещательный режим работает не так" "обычный код $V_HARD, совещательный $V_SOFT"
@@ -1386,7 +1395,7 @@ fi
 # и правило, которое человек считал введённым, роняло бы сборку.
 sed -i.bak 's/^advisory:/advisery:/' "$VDIR/.aqk.yml"
 V_TYPO=$( cd "$VDIR" && node "$CLI" doctor 2>&1 )
-if printf '%s' "$V_TYPO" | grep -qi 'advisery'; then
+if has "$V_TYPO" -qi 'advisery'; then
   ok "опечатка в имени поля манифеста названа"
 else
   bad "опечатка в advisory проглочена" "$(printf '%s' "$V_TYPO" | tail -2 | head -1)"
@@ -1447,7 +1456,7 @@ else
 fi
 # Ссылка, которой нет, обязана быть названа: «сравнили не с тем» не должно читаться как «чисто».
 EV_BAD=$( cd "$EVDIR" && AQK_LANG=ru node "$CLI" report --since no-such-ref 2>&1 )
-if printf '%s' "$EV_BAD" | grep -q "no-such-ref"; then
+if has "$EV_BAD" -q "no-such-ref"; then
   ok "report --since называет неразобранную ссылку"
 else
   bad "report --since проглотил неверную ссылку" "$(printf '%s' "$EV_BAD" | tail -2 | head -1)"
@@ -1474,9 +1483,9 @@ mkdir -p "$LRNP/$LRN/projects/$SLUG"
 printf '# правила\n- Ничего особенного.\n' > "$LRNP/AGENTS.md"
 printf 'aqk: "1"\nentry: [AGENTS.md]\n' > "$LRNP/.aqk.yml"
 LRN_OUT=$( cd "$LRNP" && CLAUDE_CONFIG_DIR="$LRN" AQK_LANG=ru node "$CLI" learn 2>&1 )
-if printf '%s' "$LRN_OUT" | grep -q "основную ветку" &&
-   ! printf '%s' "$LRN_OUT" | grep -q "го дальше" &&
-   printf '%s' "$LRN_OUT" | grep -q "напечатано человеком: 2"; then
+if has "$LRN_OUT" -q "основную ветку" &&
+   ! has "$LRN_OUT" -q "го дальше" &&
+   has "$LRN_OUT" -q "напечатано человеком: 2"; then
   ok "learn берёт напечатанное человеком и не берёт вывод инструментов"
 else
   bad "learn отобрал не то" "$(printf '%s' "$LRN_OUT" | tr '\n' ' ' | cut -c1-150)"
@@ -1484,7 +1493,7 @@ fi
 # Правило, уже стоящее в точке входа, показывать незачем: команда не пересказывает свод.
 printf '# правила\n- Никогда не коммить прямо в основную ветку.\n' > "$LRNP/AGENTS.md"
 LRN_W=$( cd "$LRNP" && CLAUDE_CONFIG_DIR="$LRN" AQK_LANG=ru node "$CLI" learn 2>&1 )
-if printf '%s' "$LRN_W" | grep -q "уже стоит в точке входа"; then
+if has "$LRN_W" -q "уже стоит в точке входа"; then
   ok "learn молчит о правиле, которое уже записано"
 else
   bad "learn повторил записанное правило" "$(printf '%s' "$LRN_W" | tr '\n' ' ' | cut -c1-150)"
@@ -1507,7 +1516,7 @@ BL_OK=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline 2>&1 ); BL_OK_C=
 BL_BAD=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline --min 1 2>&1 ); BL_BAD_C=$?
 BL_RUN=$( cd "$BLP" && AQK_LANG=ru node "$CLI" doctor --baseline --run 2>&1 ); BL_RUN_C=$?
 if [ "$BL_OK_C" -eq 0 ] && [ "$BL_BAD_C" -ne 0 ] && [ "$BL_RUN_C" -ne 0 ] &&
-   printf '%s' "$BL_BAD" | grep -q "не может покраснеть"; then
+   has "$BL_BAD" -q "не может покраснеть"; then
   ok "--baseline с --min и --run отказывает вслух, сам по себе работает"
 else
   bad "--baseline не отказал на пороге" "коды: сам $BL_OK_C, с --min $BL_BAD_C, с --run $BL_RUN_C"
@@ -1546,11 +1555,11 @@ LYP="$(mktemp -d)"
   printf '# вход\n' > CLAUDE.md && printf '.x\n' > .gitignore &&
   printf 'aqk: 1\nentry:\n  - CLAUDE.md\nrules: .temper/rules\ndocs: .temper/docs\ngates:\n  smoke: "true"\n' > .aqk.yml ) >/dev/null 2>&1
 LY=$( cd "$LYP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
-if printf '%s' "$LY" | grep -q "\.temper/rules" &&
-   printf '%s' "$LY" | grep -q "\.temper/docs" &&
-   printf '%s' "$LY" | grep -q "CLAUDE\.md" &&
-   ! printf '%s' "$LY" | grep -q "\.aqk/rules" &&
-   ! printf '%s' "$LY" | grep -q "неизвестное поле"; then
+if has "$LY" -q "\.temper/rules" &&
+   has "$LY" -q "\.temper/docs" &&
+   has "$LY" -q "CLAUDE\.md" &&
+   ! has "$LY" -q "\.aqk/rules" &&
+   ! has "$LY" -q "неизвестное поле"; then
   ok "шапка doctor берёт правила, методички и вход из манифеста"
 else
   bad "doctor проверил не то, что объявлено в манифесте" "$(printf '%s' "$LY" | head -8)"
@@ -1565,9 +1574,9 @@ CTXP="$(mktemp -d)"
 ( cd "$CTXP" && git init -q . ) >/dev/null 2>&1
 CTX=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context 2>&1 ); CTX_C=$?
 if [ "$CTX_C" -eq 0 ] &&
-   printf '%s' "$CTX" | grep -q "НЕИЗВЕСТНО" &&
-   printf '%s' "$CTX" | grep -q "не вычислен" &&
-   ! printf '%s' "$CTX" | grep -q "AGENTS.md"; then
+   has "$CTX" -q "НЕИЗВЕСТНО" &&
+   has "$CTX" -q "не вычислен" &&
+   ! has "$CTX" -q "AGENTS.md"; then
   ok "context без прогона говорит «неизвестно» и не называет несуществующий свод"
 else
   bad "context выдал незнание за чистоту" "код $CTX_C: $(printf '%s' "$CTX" | head -5)"
@@ -1581,7 +1590,7 @@ AGAIN=$( cd "$CTXP" && AQK_LANG=ru node "$CLI" context --install 2>&1 )
 HOOKS=$(node_in "$CTXP" -e 'const s=require("./.claude/settings.json");
   console.log([s.hooks?.SessionStart?.length, s.permissions?.deny?.length,
     /[/\\]program\.mjs/.test(JSON.stringify(s.hooks?.SessionStart||[]))].join(" "))' 2>&1)
-if [ "$HOOKS" = "1 1 false" ] && printf '%s' "$AGAIN" | grep -q "уже стоит"; then
+if [ "$HOOKS" = "1 1 false" ] && has "$AGAIN" -q "уже стоит"; then
   ok "хук ставится один раз, переносимой командой, чужие настройки целы"
 else
   bad "установка хука испортила настройки или задвоилась" "разбор: $HOOKS"
@@ -1598,10 +1607,10 @@ FULP="$(mktemp -d)"
   printf 'aqk: 1\nentry:\n  - AGENTS.md\n' > .aqk.yml ) >/dev/null 2>&1
 FUL=$( cd "$FULP" && AQK_LANG=ru node "$CLI" context --full 2>&1 )
 SHORT=$( cd "$FULP" && AQK_LANG=ru node "$CLI" context 2>&1 )
-if printf '%s' "$FUL" | grep -q "Правило-маячок-для-проверки" &&
-   printf '%s' "$FUL" | grep -q "doctor --run --since main" &&
-   printf '%s' "$FUL" | grep -q "ЧТО УМЕЕТ ЭТОТ ИНСТРУМЕНТ" &&
-   ! printf '%s' "$SHORT" | grep -q "Правило-маячок-для-проверки"; then
+if has "$FUL" -q "Правило-маячок-для-проверки" &&
+   has "$FUL" -q "doctor --run --since main" &&
+   has "$FUL" -q "ЧТО УМЕЕТ ЭТОТ ИНСТРУМЕНТ" &&
+   ! has "$SHORT" -q "Правило-маячок-для-проверки"; then
   ok "context --full несёт карту и свод дословно, обычный — нет"
 else
   bad "полный блок не донёс свод или карту" "$(printf '%s' "$FUL" | head -4)"
@@ -1661,13 +1670,13 @@ COVP="$(mktemp -d)"
   printf 'правило\n' > rules/r.md && printf '.x\n' > .gitignore &&
   printf 'aqk: 1\nentry: [AGENTS.md]\nrules: rules\ngates:\n  lint: "true"\ncovers:\n  lint: [no-print-in-prod, swallowed-error]\n  biome: [duplicate-code]\n' > .aqk.yml ) >/dev/null 2>&1
 COV=$( cd "$COVP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
-if printf '%s' "$COV" | grep -q "закрыто другим арбитром 2" &&
-   printf '%s' "$COV" | grep -q "covers называет гейт, которого нет" &&
-   printf '%s' "$COV" | grep -q "biome" &&
-   ! printf '%s' "$COV" | grep -q "неизвестное поле"; then
+if has "$COV" -q "закрыто другим арбитром 2" &&
+   has "$COV" -q "covers называет гейт, которого нет" &&
+   has "$COV" -q "biome" &&
+   ! has "$COV" -q "неизвестное поле"; then
   ok "covers снимает запись с долга — и только когда закрывающий гейт объявлен"
 else
-  bad "covers посчитан неверно" "$(printf '%s' "$COV" | grep -E 'Итого|covers' | head -3)"
+  bad "covers посчитан неверно" "$(has "$COV" -E 'Итого|covers' | head -3)"
 fi
 rm -rf "$COVP"
 
@@ -1681,8 +1690,8 @@ LNGP="$(mktemp -d)"
   printf 'aqk: 1\nlang: ru\nentry: [AGENTS.md]\n' > .aqk.yml ) >/dev/null 2>&1
 BY_MAN=$( cd "$LNGP" && env -u AQK_LANG LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 node "$CLI" context 2>&1 | head -1 )
 BY_ENV=$( cd "$LNGP" && AQK_LANG=en node "$CLI" context 2>&1 | head -1 )
-if printf '%s' "$BY_MAN" | grep -q "состояние этого репозитория" &&
-   printf '%s' "$BY_ENV" | grep -q "the state of this repository"; then
+if has "$BY_MAN" -q "состояние этого репозитория" &&
+   has "$BY_ENV" -q "the state of this repository"; then
   ok "язык берётся из манифеста поверх локали, а переменная окружения — поверх манифеста"
 else
   bad "порядок выбора языка нарушен" "по манифесту: $BY_MAN | по окружению: $BY_ENV"
@@ -1703,12 +1712,12 @@ WITH_SRV=$( cd "$BRWP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
 NOUIP="$(mktemp -d)"
 ( cd "$NOUIP" && git init -q . && printf 'print(1)\n' > a.py && printf '# вход\n' > AGENTS.md ) >/dev/null 2>&1
 NO_UI=$( cd "$NOUIP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
-if printf '%s' "$WITH_UI" | grep -q "нет браузера" &&
-   ! printf '%s' "$WITH_SRV" | grep -q "нет браузера" &&
-   ! printf '%s' "$NO_UI" | grep -q "нет браузера"; then
+if has "$WITH_UI" -q "нет браузера" &&
+   ! has "$WITH_SRV" -q "нет браузера" &&
+   ! has "$NO_UI" -q "нет браузера"; then
   ok "совет про браузер даётся проекту с интерфейсом и молчит, когда сервер уже есть"
 else
-  bad "совет про браузер показан не тому" "с ui: $(printf '%s' "$WITH_UI" | grep -c 'нет браузера'), с сервером: $(printf '%s' "$WITH_SRV" | grep -c 'нет браузера'), без ui: $(printf '%s' "$NO_UI" | grep -c 'нет браузера')"
+  bad "совет про браузер показан не тому" "с ui: $(has "$WITH_UI" -c 'нет браузера'), с сервером: $(has "$WITH_SRV" -c 'нет браузера'), без ui: $(has "$NO_UI" -c 'нет браузера')"
 fi
 rm -rf "$BRWP" "$NOUIP"
 
@@ -1725,12 +1734,12 @@ CVUP="$(mktemp -d)"
 WITHOUT=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
 ( cd "$CVUP" && printf 'extend-select = ["I","B","UP","SIM","T20"]\n' > ruff.toml )
 WITHT20=$( cd "$CVUP" && AQK_LANG=ru node "$CLI" doctor 2>&1 )
-if printf '%s' "$WITHOUT" | grep -q "заявка не подтверждена" &&
-   printf '%s' "$WITHOUT" | grep -q "T20" &&
-   ! printf '%s' "$WITHT20" | grep -q "заявка не подтверждена"; then
+if has "$WITHOUT" -q "заявка не подтверждена" &&
+   has "$WITHOUT" -q "T20" &&
+   ! has "$WITHT20" -q "заявка не подтверждена"; then
   ok "covers сверяется с кодами правил: без T20 говорит вслух, с T20 молчит"
 else
-  bad "сверка заявки covers не работает" "без T20: $(printf '%s' "$WITHOUT" | grep -c 'не подтверждена'), с T20: $(printf '%s' "$WITHT20" | grep -c 'не подтверждена')"
+  bad "сверка заявки covers не работает" "без T20: $(has "$WITHOUT" -c 'не подтверждена'), с T20: $(has "$WITHT20" -c 'не подтверждена')"
 fi
 rm -rf "$CVUP"
 
@@ -1749,11 +1758,11 @@ B2=$( cd "$BRFP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
 rm -f "$BRFP/.aqk/advice-shown"
 B3=$( cd "$BRFP" && AQK_ADVICE=0 AQK_LANG=ru node "$CLI" doctor --run --min 1 --brief 2>&1 )
 if [ "$B1C" -eq 0 ] &&
-   printf '%s' "$B1" | grep -qE "^(❖ )?AQK  держит" &&
-   printf '%s' "$B1" | grep -q "поставить:" &&
-   printf '%s' "$B2" | grep -qE "^(❖ )?AQK  держит" &&
-   ! printf '%s' "$B2" | grep -q "поставить:" &&
-   ! printf '%s' "$B3" | grep -q "поставить:" &&
+   has "$B1" -qE "^(❖ )?AQK  держит" &&
+   has "$B1" -q "поставить:" &&
+   has "$B2" -qE "^(❖ )?AQK  держит" &&
+   ! has "$B2" -q "поставить:" &&
+   ! has "$B3" -q "поставить:" &&
    [ "$(printf '%s\n' "$B2" | wc -l)" -le 2 ]; then
   ok "краткий режим: строка есть всегда, совет один раз в сутки и выключается"
 else
@@ -1826,12 +1835,12 @@ UNPP="$(mktemp -d)"
 UNP=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
 ( cd "$UNPP" && printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  ok: "true"\n  bad: "false"\n' > .aqk.yml )
 OKM=$( cd "$UNPP" && node "$CLI" doctor 2>&1 )
-if printf '%s' "$UNP" | grep -q "НЕ ДЕЙСТВУЕТ" &&
-   printf '%s' "$UNP" | grep -q "строка 6" &&
-   ! printf '%s' "$OKM" | grep -q "НЕ ДЕЙСТВУЕТ"; then
+if has "$UNP" -q "НЕ ДЕЙСТВУЕТ" &&
+   has "$UNP" -q "строка 6" &&
+   ! has "$OKM" -q "НЕ ДЕЙСТВУЕТ"; then
   ok "непонятая строка манифеста называется с номером, понятая — молчит"
 else
-  bad "потерянная строка манифеста не названа" "$(printf '%s' "$UNP" | grep -c 'НЕ ДЕЙСТВУЕТ') на кириллице, $(printf '%s' "$OKM" | grep -c 'НЕ ДЕЙСТВУЕТ') на латинице"
+  bad "потерянная строка манифеста не названа" "$(has "$UNP" -c 'НЕ ДЕЙСТВУЕТ') на кириллице, $(has "$OKM" -c 'НЕ ДЕЙСТВУЕТ') на латинице"
 fi
 rm -rf "$UNPP"
 
@@ -1849,8 +1858,8 @@ VOK=$( cd "$VITP" && AQK_LANG=ru node "$CLI" vitals 2>&1 ); VOK_C=$?
 ( cd "$VITP" && printf 'aqk: 1\nentry: [AGENTS.md]\nlang: ru\ngates:\n  lint: "инструментакоторогонет ."\n' > .aqk.yml )
 VBAD=$( cd "$VITP" && AQK_LANG=ru node "$CLI" vitals 2>&1 ); VBAD_C=$?
 if [ "$VOK_C" -eq 0 ] && [ "$VBAD_C" -eq 1 ] &&
-   printf '%s' "$VBAD" | grep -q "НЕ НАЙДЕНЫ" &&
-   printf '%s' "$VOK" | grep -q "хук pre-commit"; then
+   has "$VBAD" -q "НЕ НАЙДЕНЫ" &&
+   has "$VOK" -q "хук pre-commit"; then
   ok "vitals: пропавший инструмент роняет прогон, отсутствие хука — нет"
 else
   bad "vitals путает отказ с выбором" "исправный код $VOK_C, сломанный код $VBAD_C"
@@ -1893,13 +1902,13 @@ HK_OURS=$( cd "$HKP" && AQK_LANG=ru node "$CLI" vitals 2>&1 )
 exec aqk doctor --run --min 1 --brief
 ' > .git/hooks/pre-commit )
 HK_DIRECT=$( cd "$HKP" && AQK_LANG=ru node "$CLI" vitals 2>&1 )
-if printf '%s' "$HK_OTHER" | grep -q "AQK в нём не вызывается" &&
-   ! printf '%s' "$HK_OURS" | grep -q "AQK в нём не вызывается" &&
-   ! printf '%s' "$HK_DIRECT" | grep -q "AQK в нём не вызывается"; then
+if has "$HK_OTHER" -q "AQK в нём не вызывается" &&
+   ! has "$HK_OURS" -q "AQK в нём не вызывается" &&
+   ! has "$HK_DIRECT" -q "AQK в нём не вызывается"; then
   ok "vitals: чужой хук назван чужим, наш — нашим, и оба пути подключения сочтены"
 else
   bad "vitals путает чужой хук с подключённым AQK" \
-      "чужой: $(printf '%s' "$HK_OTHER" | grep -c 'не вызывается'), через конфиг: $(printf '%s' "$HK_OURS" | grep -c 'не вызывается'), прямой: $(printf '%s' "$HK_DIRECT" | grep -c 'не вызывается')"
+      "чужой: $(has "$HK_OTHER" -c 'не вызывается'), через конфиг: $(has "$HK_OURS" -c 'не вызывается'), прямой: $(has "$HK_DIRECT" -c 'не вызывается')"
 fi
 rm -rf "$HKP"
 
@@ -1933,10 +1942,10 @@ ADVGREEN=$( cd "$ADVP" && AQK_LANG=ru node "$CLI" doctor --run --min 1 2>&1 )
 ( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); ADV_C=$?
 ( cd "$ADVP" && printf 'aqk: 1\nentry: [AGENTS.md]\nrules: r\ngates:\n  adv: "bash noscope.sh"\n' > .aqk.yml )
 ( cd "$ADVP" && node "$CLI" doctor --run --min 1 --since "$ADVBASE" >/dev/null 2>&1 ); BLOCK_C=$?
-if printf '%s' "$ADVGREEN" | grep -q "уронить прогон не может" && [ "$ADV_C" -eq 0 ] && [ "$BLOCK_C" -eq 1 ]; then
+if has "$ADVGREEN" -q "уронить прогон не может" && [ "$ADV_C" -eq 0 ] && [ "$BLOCK_C" -eq 1 ]; then
   ok "совещательный назван и на зелёном, и не роняет прогон даже когда сузить нечем"
 else
-  bad "совещательный гейт неотличим или роняет прогон" "зелёный помечен: $(printf '%s' "$ADVGREEN" | grep -c 'уронить прогон не может'), код совещательного $ADV_C, код блокирующего $BLOCK_C"
+  bad "совещательный гейт неотличим или роняет прогон" "зелёный помечен: $(has "$ADVGREEN" -c 'уронить прогон не может'), код совещательного $ADV_C, код блокирующего $BLOCK_C"
 fi
 rm -rf "$ADVP"
 
@@ -1972,12 +1981,12 @@ PRV_REQ=$( cd "$PRVP" && AQK_LANG=ru node "$CLI" prove 2>&1 ); PRV_REQ_C=$?
 # всегда. Две команды об одном репозитории говорили разное; читатель верил той, что зеленее.
 PRV_VIT=$( cd "$PRVP" && AQK_LANG=ru node "$CLI" vitals 2>&1 )
 if [ "$PRV_NOREQ_C" -ne 0 ] && [ "$PRV_REQ_C" -eq 0 ] &&
-   printf '%s' "$PRV_REQ" | grep -q "НЕ ПРОВЕРЕНА здесь" &&
-   printf '%s' "$PRV_VIT" | grep -q "программыкоторойнет"; then
+   has "$PRV_REQ" -q "НЕ ПРОВЕРЕНА здесь" &&
+   has "$PRV_VIT" -q "программыкоторойнет"; then
   ok "prove и vitals одинаково видят программу из requires: пропуск, а не обвинение"
 else
   bad "prove путает «нечем проверить» со «сломан», либо vitals её не видит" \
-      "без поля код $PRV_NOREQ_C, с полем код $PRV_REQ_C, vitals назвал: $(printf '%s' "$PRV_VIT" | grep -c 'программыкоторойнет')"
+      "без поля код $PRV_NOREQ_C, с полем код $PRV_REQ_C, vitals назвал: $(has "$PRV_VIT" -c 'программыкоторойнет')"
 fi
 rm -rf "$PRVP"
 
@@ -2034,7 +2043,7 @@ else
   ( cd "$HOMEP" && git init -q . ) >/dev/null 2>&1
   HOMEOUT=$( cd "$HOMEP" && HOME="$HOMEH" AQK_LANG=ru node "$CLI" init 2>&1 ); HOME_C=$?
   if [ "$HOME_C" -eq 0 ] && [ -f "$HOMEP/.aqk.yml" ] &&
-     printf '%s' "$HOMEOUT" | grep -q "запомнить не удалось"; then
+     has "$HOMEOUT" -q "запомнить не удалось"; then
     ok "init доходит до конца при недоступном доме и называет, чего не смог"
   else
     bad "init падает или молчит, когда дом недоступен для записи" \
@@ -2066,12 +2075,12 @@ PRB=$( cd "$PRBP" && AQK_LANG=ru node "$CLI" probe --top 1 2>&1 ); PRB_C=$?
 # Слепое: secrets-not-in-code не объявлен, образец под .py у него есть — обязан быть красным.
 # Прикрытое: todo-without-task объявлен — обязан быть зелёным и назвать, кто поймал.
 if [ "$PRB_C" -eq 0 ] &&
-   printf '%s' "$PRB" | grep -q "НЕ ЛОВИТ НИКТО" &&
-   printf '%s' "$PRB" | grep -q "ловит: todo-without-task" &&
-   printf '%s' "$PRB" | grep -q "починок в истории: 1"; then
+   has "$PRB" -q "НЕ ЛОВИТ НИКТО" &&
+   has "$PRB" -q "ловит: todo-without-task" &&
+   has "$PRB" -q "починок в истории: 1"; then
   ok "probe: слепые классы названы, прикрытый назван поимённо, прогон не уронен"
 else
-  bad "probe не различает слепое и прикрытое" "код $PRB_C, слепых $(printf '%s' "$PRB" | grep -c 'НЕ ЛОВИТ'), пойманных $(printf '%s' "$PRB" | grep -c 'ловит:')"
+  bad "probe не различает слепое и прикрытое" "код $PRB_C, слепых $(has "$PRB" -c 'НЕ ЛОВИТ'), пойманных $(has "$PRB" -c 'ловит:')"
 fi
 # КОД человека проба не трогает: образец живёт во временном каталоге. Если бы он попал в
 # репозиторий, команда осмотра стала бы командой правки — и её выключили бы в тот же день.
@@ -2111,14 +2120,14 @@ NOCI="env -u CI -u GITHUB_ACTIONS -u GITLAB_CI -u BUILDKITE -u JENKINS_URL"
 RUN1=$( cd "$CADP" && $NOCI AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
 RUN2=$( cd "$CADP" && $NOCI AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
 CTX1=$( cd "$CADP" && AQK_LANG=ru node "$CLI" context 2>&1 )
-if printf '%s' "$CTX0" | grep -q "НЕИЗВЕСТНО" &&
-   printf '%s' "$RUN1" | grep -q "ещё не делали" &&
-   ! printf '%s' "$RUN2" | grep -q "ещё не делали" &&
-   printf '%s' "$CTX1" | grep -q "Не прикрыто ничем"; then
+if has "$CTX0" -q "НЕИЗВЕСТНО" &&
+   has "$RUN1" -q "ещё не делали" &&
+   ! has "$RUN2" -q "ещё не делали" &&
+   has "$CTX1" -q "Не прикрыто ничем"; then
   ok "проба запускается прогоном сама, не повторяется и попадает агенту в контекст"
 else
   bad "каденция пробы не работает" \
-      "до: $(printf '%s' "$CTX0" | grep -c 'НЕИЗВЕСТНО'), первый: $(printf '%s' "$RUN1" | grep -c 'ещё не делали'), второй: $(printf '%s' "$RUN2" | grep -c 'ещё не делали'), после: $(printf '%s' "$CTX1" | grep -c 'Не прикрыто')"
+      "до: $(has "$CTX0" -c 'НЕИЗВЕСТНО'), первый: $(has "$RUN1" -c 'ещё не делали'), второй: $(has "$RUN2" -c 'ещё не делали'), после: $(has "$CTX1" -c 'Не прикрыто')"
 fi
 # Выключатель обязан быть у всего, что случается само: иначе первый же, кому это помешало,
 # выключит весь прогон, а не одну пробу.
@@ -2128,7 +2137,7 @@ CADP2="$(mktemp -d)"
   git add -A && git commit -qm "feat: старт"
   node "$CLI" init && node "$CLI" add todo-without-task ) >/dev/null 2>&1
 OFF=$( cd "$CADP2" && AQK_PROBE=0 AQK_LANG=ru node "$CLI" doctor --run 2>&1 )
-if ! printf '%s' "$OFF" | grep -q "ещё не делали"; then
+if ! has "$OFF" -q "ещё не делали"; then
   ok "AQK_PROBE=0 выключает пробу, не трогая прогон"
 else
   bad "проба игнорирует выключатель" "AQK_PROBE=0 не подействовал"

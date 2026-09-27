@@ -7,6 +7,13 @@
 #   bash tool/selfcheck/gates.sh
 
 set -uo pipefail
+
+# СОВПАДЕНИЕ В ТЕКСТЕ — БЕЗ ТРУБЫ. Под `pipefail` конвейер `printf "$X" | grep -q` падает, когда
+# `grep -q` находит совпадение и выходит раньше, чем `printf` дописал: тот получает SIGPIPE, и
+# найденное читается как ненайденное. Зависит от размера текста и загрузки машины — то есть
+# проверка плавает. Найдено 2026-09-27: `smoke` покраснел на исправном коде только под нагрузкой.
+# `has "$ТЕКСТ" -qE шаблон` — те же аргументы grep, текст подаётся строкой. Сторожит units-verdict.mjs.
+has() { local _t="$1"; shift; grep "$@" <<<"$_t"; }
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CAT="$ROOT/kit/gates"
 PASS=0; FAIL=0; WARN=0; UNVERIFIED=0
@@ -225,7 +232,7 @@ for GATE in "$CAT"/*/; do
   # (`dead-code` — vulture, knip, staticcheck), печатает вывод ЭТОГО инструмента. Требовать от
   # чужого вывода нашу строку — значит требовать невозможного, а невыполнимое требование норма
   # либо обходит молча, либо ломает всем.
-  elif [ "$PORTABLE" -eq 1 ] && ! printf '%s\n' "$RED_OUT" | grep -qiE '^[[:space:]]*(почини|fix)[[:space:]]*:'; then
+  elif [ "$PORTABLE" -eq 1 ] && ! has "$RED_OUT" -qiE '^[[:space:]]*(почини|fix)[[:space:]]*:'; then
     bad "$SLUG: на красном образце не сказано, ЧТО делать — нужна строка «почини: …»"
   elif [ "$GRN_CODE" -ne 0 ]; then
     bad "$SLUG: арбитр покраснел на ЗЕЛЁНОМ образце — гейт ругается на исправный код"
@@ -263,8 +270,8 @@ for YML in "$CAT"/*/gate.yml; do
   SLUG="$(basename "$(dirname "$YML")")"
   KEYS="$(tr -d '\r' < "$YML" | awk '/^recipes:/{r=1;next} r && /^[^[:space:]#]/{r=0} r && /^  [a-z_]+:/{sub(/^  /,""); sub(/:.*/,""); print}')"
   PROVEN="any"
-  printf '%s\n' "$KEYS" | grep -qx 'any' || PROVEN="$(sed -n 's/^samples_for:[[:space:]]*\(.*\)$/\1/p' "$YML" | head -1)"
-  REST="$(printf '%s\n' "$KEYS" | grep -vx "$PROVEN" | grep -v '^$' | tr '\n' ' ' | sed 's/ $//; s/ /, /g')"
+  has "$KEYS" -qx 'any' || PROVEN="$(sed -n 's/^samples_for:[[:space:]]*\(.*\)$/\1/p' "$YML" | head -1)"
+  REST="$(has "$KEYS" -vx "$PROVEN" | grep -v '^$' | tr '\n' ' ' | sed 's/ $//; s/ /, /g')"
   [ -z "$REST" ] && continue
   UCOUNT=$((UCOUNT + $(printf '%s' "$REST" | tr ',' '\n' | grep -c .)))
   UNPROVEN="$UNPROVEN    $SLUG: $REST
@@ -280,4 +287,6 @@ if [ "$STRICT" = "1" ] && [ "$UNVERIFIED" -gt 0 ]; then
   printf '  почини: поставь названные инструменты и убедись, что они видны в PATH этого шага.\n\n'
   exit $((FAIL + UNVERIFIED))
 fi
-exit "$FAIL"
+# Код выхода — 0 или 1, а не число провалов: два провала дали бы 2, и договор гейтов прочитал бы
+# это как «не смогли проверить»; 256 провалов дали бы 0 — «чисто». Сторожит units-verdict.mjs.
+exit $(( FAIL > 0 ))

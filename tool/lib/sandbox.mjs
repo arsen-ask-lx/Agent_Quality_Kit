@@ -43,6 +43,22 @@ async function buildSandbox() {
   if (!files.length) return null;
 
   const root = await mkdtemp(join(tmpdir(), "aqk-sandbox-"));
+  // КОПИЯ — РЕПОЗИТОРИЙ, А НЕ ПАПКА С ФАЙЛАМИ. Проверки читают историю и индекс: `git ls-files`,
+  // последний коммит, состав изменений. В папке без `.git` они падали сбоем, и доказать их было
+  // нельзя — найдено 2026-09-27 на собственном `smoke` комплекта: две проверки из трёхсот читали
+  // git. `clone --shared` историю не копирует, а ссылается на исходную (полсекунды на нашем
+  // репозитории, работает и из мелкого клона конвейера); поверх ложится рабочее дерево ниже.
+  // Не вышло — остаётся прежняя папка с файлами: хуже, но не «нет пробы вовсе».
+  const cloned = spawnSync("git", ["clone", "-q", "--shared", "--no-hardlinks", CWD, root],
+    { encoding: "utf8", timeout: 120000 }).status === 0;
+  if (cloned) {
+    // Удалённое в рабочем дереве удаляется и в копии: иначе там жил бы файл, которого у
+    // человека уже нет, и гейт проверял бы не то, что лежит перед ним.
+    const del = spawnSync("git", ["ls-files", "-z", "--deleted"], { cwd: CWD, encoding: "utf8" });
+    for (const rel of String(del.stdout || "").split("\0").filter(Boolean)) {
+      await rm(join(root, rel), { force: true });
+    }
+  }
   const made = new Set();
   for (const rel of files) {
     const dest = join(root, rel);

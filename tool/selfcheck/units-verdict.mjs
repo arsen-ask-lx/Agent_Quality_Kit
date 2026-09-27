@@ -74,3 +74,60 @@ test("пара: файла не назвал — «безымянно»; зел�
   assert.equal(catchVerdict("", { code: 1, out: "Found 1 error." }, { code: 0, out: "" }, "src/a.py"), "nameless");
   assert.equal(catchVerdict("", { code: 1, out: "src/a.py:1 T201" }, null, "src/a.py"), "caught");
 });
+
+// СЧЁТЧИК ПРОВАЛОВ — НЕ КОД ВЫХОДА. `exit "$FAIL"` при двух провалах даёт 2, а договор гейтов
+// читает 2 как «не смогли проверить», а не как находку; при 256 провалах — 0, то есть «чисто»:
+// код выхода берётся по модулю 256. Найдено 2026-09-27 доказательством `smoke` подсадкой: две
+// упавшие проверки превратились в «сбой самой проверки». Правило одно на все наши скрипты:
+// переменная, которую увеличивают на единицу, не уходит в `exit` как есть.
+test("ни один скрипт комплекта не выходит со счётчиком провалов", async () => {
+  const { readdirSync, readFileSync, existsSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const files = [
+    ...readdirSync(join(root, "tool", "selfcheck")).filter((f) => f.endsWith(".sh")).map((f) => join(root, "tool", "selfcheck", f)),
+    ...readdirSync(join(root, "kit", "gates")).map((g) => join(root, "kit", "gates", g, "check.sh")).filter((f) => existsSync(f)),
+  ];
+  const bad = [];
+  for (const f of files) {
+    const text = readFileSync(f, "utf8");
+    const counters = [...text.matchAll(/\b([A-Z_]+)=\$\(\(\s*\1\s*\+\s*1\s*\)\)/g)].map((m) => m[1]);
+    for (const v of new Set(counters)) {
+      if (new RegExp(`^\\s*exit\\s+"?\\$\\{?${v}\\}?"?\\s*$`, "m").test(text)) bad.push(`${f.slice(root.length + 1)}: exit $${v}`);
+    }
+  }
+  assert.deepEqual(bad, [], `счётчик уходит в код выхода: ${bad.join("; ")}`);
+});
+
+// ТРУБА В `grep -q` ПОД `pipefail` ПЛАВАЕТ. `grep -q` выходит, найдя совпадение, `printf` получает
+// SIGPIPE, и под `pipefail` весь конвейер — провал: найденное читается как ненайденное. Зависит от
+// размера текста и загрузки машины. Найдено 2026-09-27: `smoke` краснел на исправном коде только
+// тогда, когда его запускал `prove` рядом с другой работой. Лечится функцией `has`, подающей
+// текст строкой. Правило одно на все наши скрипты с `pipefail`.
+test("под pipefail нет конвейера printf/echo | grep -q", async () => {
+  const { readdirSync, readFileSync, existsSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const dirs = [["tool", "selfcheck"], ["kit", "ratchet"], ["kit", "gates"]];
+  const files = [];
+  for (const d of dirs) {
+    const base = join(root, ...d);
+    for (const f of readdirSync(base)) {
+      const p = join(base, f);
+      if (f.endsWith(".sh")) files.push(p);
+      else if (existsSync(join(p, "check.sh"))) files.push(join(p, "check.sh"));
+    }
+  }
+  const bad = [];
+  for (const f of files) {
+    const text = readFileSync(f, "utf8");
+    if (!/^\s*set\s+-[a-z]*o\s+pipefail/m.test(text)) continue;
+    text.split("\n").forEach((line, i) => {
+      if (/^\s*#/.test(line)) return;
+      if (/(printf|echo)\b[^|]*\|\s*grep\s+(-[a-zA-Z]*q|--quiet)/.test(line)) bad.push(`${f.slice(root.length + 1)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(bad, [], `труба в grep -q под pipefail: ${bad.join(", ")}`);
+});
