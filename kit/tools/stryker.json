@@ -1,0 +1,126 @@
+{
+  "tool": "stryker",
+  "detect": "(^|[\\s/])stryker(\\s|$)",
+  "catches": "тесты, которые проходят, но ошибку не ловят: Stryker портит код и смотрит, заметили ли тесты",
+  "catches_en": "tests that pass but do not catch a defect: Stryker mutates the code and checks whether the tests notice",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript"
+    ],
+    "has_tests": true
+  },
+  "docs": "https://stryker-mutator.io/docs/stryker-js/configuration/",
+  "install": "npm i -D @stryker-mutator/core  (запуск: npx stryker run)",
+  "exit": "1 — оценка мутаций ниже thresholds.break; по умолчанию break пустой, и тогда Stryker не роняет сборку никогда",
+  "exit_en": "1 — mutation score below thresholds.break; by default break is null, and then Stryker never fails the build",
+  "off": [
+    {
+      "id": "no-break-threshold",
+      "config_files": [
+        "stryker.conf.json",
+        "stryker.conf.js",
+        "stryker.conf.mjs",
+        "stryker.conf.cjs",
+        ".stryker.conf.json",
+        ".stryker.conf.js",
+        ".stryker.conf.mjs",
+        ".stryker.conf.cjs",
+        "stryker.config.json",
+        "stryker.config.js",
+        "stryker.config.mjs",
+        "stryker.config.cjs",
+        ".stryker.config.json",
+        ".stryker.config.js",
+        ".stryker.config.mjs",
+        ".stryker.config.cjs"
+      ],
+      "config_lacks": "break[\"']?\\s*:\\s*\\d",
+      "quote": "mutation score < break: Error! Stryker will exit with exit code 1, indicating a build failure.",
+      "source": "https://stryker-mutator.io/docs/stryker-js/configuration/#thresholds-object",
+      "source_raw": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/docs/configuration.md",
+      "why": "порог break не задан (по умолчанию null): при любой оценке мутаций выход 0 — проверка тестов не может провалиться. Из командной строки его не передать, только в файле настроек",
+      "why_en": "no break threshold (null by default): any mutation score exits 0 — the test check cannot fail. It cannot be set on the command line, only in the config file",
+      "fix": "задай в файле настроек thresholds.break чуть ниже нынешней оценки и поднимай его, как храповик",
+      "fix_en": "set thresholds.break in the config file slightly under the current score and raise it like a ratchet",
+      "red": [
+        {
+          "command": "npx stryker run",
+          "config": "{ \"testRunner\": \"vitest\" }"
+        },
+        {
+          "command": "npx stryker run",
+          "config": "{ \"thresholds\": { \"high\": 80, \"low\": 60, \"break\": null } }"
+        }
+      ],
+      "green": [
+        {
+          "command": "npx stryker run",
+          "config": "{ \"thresholds\": { \"high\": 80, \"low\": 60, \"break\": 60 } }"
+        },
+        {
+          "command": "npx stryker run",
+          "config": "export default { thresholds: { break: 55 } };"
+        }
+      ]
+    },
+    {
+      "id": "allow-empty",
+      "config_files": [
+        "stryker.conf.json",
+        "stryker.conf.js",
+        "stryker.conf.mjs",
+        "stryker.conf.cjs",
+        ".stryker.conf.json",
+        ".stryker.conf.js",
+        ".stryker.conf.mjs",
+        ".stryker.conf.cjs",
+        "stryker.config.json",
+        "stryker.config.js",
+        "stryker.config.mjs",
+        "stryker.config.cjs",
+        ".stryker.config.json",
+        ".stryker.config.js",
+        ".stryker.config.mjs",
+        ".stryker.config.cjs"
+      ],
+      "config_has": "allowEmpty[\"']?\\s*:\\s*true",
+      "quote": "By setting this option to true, it prevents the test runner to exit with an error in such cases.",
+      "source": "https://stryker-mutator.io/docs/stryker-js/configuration/#allowempty-boolean",
+      "source_raw": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/docs/configuration.md",
+      "why": "allowEmpty: «тестов не нашлось» больше не ошибка — проверка тестов проходит, не прогнав ни одного",
+      "why_en": "allowEmpty: \"no tests found\" is no longer an error — the test check passes without running a single test",
+      "fix": "убери allowEmpty из настроек Stryker",
+      "fix_en": "remove allowEmpty from the Stryker config",
+      "red": [
+        {
+          "command": "npx stryker run",
+          "config": "{ \"allowEmpty\": true, \"thresholds\": { \"break\": 60 } }"
+        }
+      ],
+      "green": [
+        {
+          "command": "npx stryker run",
+          "config": "{ \"thresholds\": { \"break\": 60 } }"
+        }
+      ]
+    },
+    {
+      "id": "allow-empty-flag",
+      "command_has": "--allowEmpty\\b",
+      "quote": "By setting this option to true, it prevents the test runner to exit with an error in such cases.",
+      "source": "https://stryker-mutator.io/docs/stryker-js/configuration/#allowempty-boolean",
+      "source_raw": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/docs/configuration.md",
+      "why": "allowEmpty: «тестов не нашлось» больше не ошибка — проверка тестов проходит, не прогнав ни одного",
+      "why_en": "allowEmpty: \"no tests found\" is no longer an error — the test check passes without running a single test",
+      "fix": "убери --allowEmpty из команды",
+      "fix_en": "remove --allowEmpty from the command",
+      "red": [
+        "npx stryker run --allowEmpty"
+      ],
+      "green": [
+        "npx stryker run"
+      ]
+    }
+  ]
+}

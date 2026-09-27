@@ -1,0 +1,113 @@
+{
+  "tool": "biome",
+  "detect": "(^|[\\s/])biome(\\s|$)",
+  "catches": "ошибки, опасные приёмы и форматирование в JavaScript, TypeScript, JSON и CSS — линтер и форматер одной программой",
+  "catches_en": "errors, risky patterns and formatting in JavaScript, TypeScript, JSON and CSS — linter and formatter in one program",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript"
+    ]
+  },
+  "docs": "https://biomejs.dev/reference/cli/",
+  "install": "npm i -D -E @biomejs/biome",
+  "exit": "находка уровня error — выход с ошибкой; warn — нет, если не передан --error-on-warnings; info — никогда",
+  "exit_en": "an error-level diagnostic exits with an error; warn does not unless --error-on-warnings is passed; info never does",
+  "off": [
+    {
+      "id": "warnings-never-fail",
+      "config_files": [
+        "biome.json",
+        "biome.jsonc"
+      ],
+      "config_has": "\"warn\"",
+      "command_lacks": "--error-on-warnings\\b",
+      "quote": "\"warn\" are similar to errors, but they don't cause the CLI to exit with an error code, unless the --error-on-warnings flag is used.",
+      "source": "https://biomejs.dev/linter/#configure-the-rule-severity",
+      "source_raw": "https://raw.githubusercontent.com/biomejs/website/main/src/content/docs/en/linter/index.mdx",
+      "why": "правила уровня warn не роняют проверку никогда: предупреждений сколько угодно — выход 0. Подсадка это не всегда видит: образец может попасть в правило уровня error",
+      "why_en": "warn-level rules never fail the check: any number of warnings exits 0. Planting does not always show it: the sample may hit an error-level rule",
+      "fix": "добавь в команду гейта --error-on-warnings либо переведи нужные правила в error",
+      "fix_en": "add --error-on-warnings to the gate command, or raise the rules you rely on to error",
+      "red": [
+        {
+          "command": "biome check .",
+          "config": "{ \"linter\": { \"rules\": { \"suspicious\": { \"noConsole\": \"warn\" } } } }"
+        }
+      ],
+      "green": [
+        {
+          "command": "biome check --error-on-warnings .",
+          "config": "{ \"linter\": { \"rules\": { \"suspicious\": { \"noConsole\": \"warn\" } } } }"
+        },
+        {
+          "command": "biome check .",
+          "config": "{ \"linter\": { \"rules\": { \"suspicious\": { \"noConsole\": \"error\" } } } }"
+        }
+      ]
+    },
+    {
+      "id": "info-never-fails",
+      "config_files": [
+        "biome.json",
+        "biome.jsonc"
+      ],
+      "config_has": "\"info\"",
+      "quote": "The \"info\" severity won't affect the exit status code of the CLI, even when --error-on-warnings is passed.",
+      "source": "https://biomejs.dev/linter/#configure-the-rule-severity",
+      "source_raw": "https://raw.githubusercontent.com/biomejs/website/main/src/content/docs/en/linter/index.mdx",
+      "why": "правила уровня info не роняют проверку никогда — даже с --error-on-warnings: они только показываются",
+      "why_en": "info-level rules never fail the check — not even with --error-on-warnings: they are only displayed",
+      "fix": "переведи правила, на которые рассчитываешь, в warn (с --error-on-warnings) или в error",
+      "fix_en": "raise the rules you rely on to warn (with --error-on-warnings) or to error",
+      "red": [
+        {
+          "command": "biome check --error-on-warnings .",
+          "config": "{ \"linter\": { \"rules\": { \"style\": { \"noNonNullAssertion\": \"info\" } } } }"
+        }
+      ],
+      "green": [
+        {
+          "command": "biome check .",
+          "config": "{ \"linter\": { \"rules\": { \"style\": { \"noNonNullAssertion\": \"error\" } } } }"
+        }
+      ]
+    },
+    {
+      "id": "empty-is-clean",
+      "command_has": "--no-errors-on-unmatched\\b",
+      "quote": "Does not emit an error when no files are processed.",
+      "source": "https://biomejs.dev/reference/cli/#--no-errors-on-unmatched",
+      "source_raw": "https://raw.githubusercontent.com/biomejs/website/main/src/content/docs/en/reference/cli.mdx",
+      "why": "если ни один файл не попал в проверку, выход 0: проверено ничего, а выглядит как «чисто»",
+      "why_en": "if no file is processed, it exits 0: nothing was checked, and it looks clean",
+      "fix": "убери --no-errors-on-unmatched из команды гейта",
+      "fix_en": "remove --no-errors-on-unmatched from the gate command",
+      "red": [
+        "biome check --no-errors-on-unmatched src",
+        "biome lint --no-errors-on-unmatched ."
+      ],
+      "green": [
+        "biome check src",
+        "biome lint ."
+      ]
+    },
+    {
+      "id": "skip-parse-errors",
+      "command_has": "--skip-parse-errors\\b",
+      "quote": "Skips files containing syntax errors instead of emitting an error diagnostic.",
+      "source": "https://biomejs.dev/reference/cli/#--skip-parse-errors",
+      "source_raw": "https://raw.githubusercontent.com/biomejs/website/main/src/content/docs/en/reference/cli.mdx",
+      "why": "файл с синтаксической ошибкой пропускается молча — сломанный код проходит проверку зелёным",
+      "why_en": "a file with a syntax error is skipped silently — broken code passes the check green",
+      "fix": "убери --skip-parse-errors из команды гейта",
+      "fix_en": "remove --skip-parse-errors from the gate command",
+      "red": [
+        "biome check --skip-parse-errors ."
+      ],
+      "green": [
+        "biome check ."
+      ]
+    }
+  ]
+}

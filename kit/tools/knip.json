@@ -1,0 +1,57 @@
+{
+  "tool": "knip",
+  "detect": "(^|[\\s/])knip(@\\S+)?(\\s|$)",
+  "catches": "мёртвый код в JavaScript и TypeScript: неиспользуемые файлы, экспорты и зависимости",
+  "catches_en": "dead code in JavaScript and TypeScript: unused files, exports and dependencies",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript"
+    ]
+  },
+  "docs": "https://knip.dev/reference/cli",
+  "install": "npm i -D knip",
+  "exit": "0 — находок нет; 1 — есть хотя бы одна; 2 — плохой ввод, сбой настройки или самого knip",
+  "exit_en": "0 — no issues; 1 — at least one issue; 2 — bad input, config load error or internal error",
+  "off": [
+    {
+      "id": "no-exit-code",
+      "command_has": "--no-exit-code\\b",
+      "quote": "Exit with code zero (0) even when there are lint issues.",
+      "source": "https://knip.dev/reference/cli#--no-exit-code",
+      "source_raw": "https://raw.githubusercontent.com/webpro-nl/knip/main/packages/docs/src/content/docs/reference/cli.md",
+      "why": "проверка выходит с нулём при любых находках — покраснеть не может",
+      "why_en": "the check exits zero on any finding — it cannot fail",
+      "fix": "убери --no-exit-code из команды гейта",
+      "fix_en": "remove --no-exit-code from the gate command",
+      "red": [
+        "knip --no-exit-code",
+        "npx --yes knip@6 --no-exit-code --directory ."
+      ],
+      "green": [
+        "knip",
+        "npx --yes knip@6 --directory ."
+      ]
+    },
+    {
+      "id": "max-issues",
+      "command_has": "--max-issues[=\\s]+[1-9]",
+      "quote": "Maximum number of issues before non-zero exit code. Default: 0",
+      "source": "https://knip.dev/reference/cli#--max-issues",
+      "source_raw": "https://raw.githubusercontent.com/webpro-nl/knip/main/packages/docs/src/content/docs/reference/cli.md",
+      "why": "находки до порога не роняют проверку: новый мёртвый код проходит, пока их меньше заданного числа",
+      "why_en": "issues below the threshold do not fail the check: new dead code passes while the count stays under it",
+      "fix": "убери --max-issues; старый долг держи храповиком (aqk ratchet), а не порогом, пропускающим новое",
+      "fix_en": "drop --max-issues; keep old debt under a ratchet (aqk ratchet), not a threshold that lets new issues in",
+      "red": [
+        "knip --max-issues 20",
+        "knip --max-issues=5"
+      ],
+      "green": [
+        "knip",
+        "knip --max-issues 0",
+        "knip --max-show-issues 5"
+      ]
+    }
+  ]
+}

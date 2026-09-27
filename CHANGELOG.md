@@ -19,11 +19,14 @@
   проверяет. Повод — замер того же дня: Stryker по умолчанию не роняет сборку никогда
   (`thresholds.break: null`), и у 96 из 149 настоящих файлов его настроек на GitHub порога нет.
   Сводка для агента теперь велит `adopt` после любой установки инструмента.
-- **Сведения о сторонних инструментах — `kit/tools/`: ruff и eslint.** `adopt` опознаёт
+- **Сведения о сторонних инструментах — `kit/tools/`: ruff, eslint, biome, knip, Stryker.** `adopt` опознаёт
   инструмент по команде гейта (и по скрипту `package.json`, который она зовёт) и говорит, не
   заглушён ли он: `ruff --exit-zero`, `ruff check --fix` без `--exit-non-zero-on-fix`, `ruff
   format` без `--check`, eslint с правилами `warn` и без `--max-warnings 0`, eslint с
-  `--no-error-on-unmatched-pattern`. Каждое правило — с дословной цитатой из официальной
+  `--no-error-on-unmatched-pattern`; biome с правилами `warn` без `--error-on-warnings`, правила
+  `info` (не роняют никогда), `--no-errors-on-unmatched`, `--skip-parse-errors`; knip с
+  `--no-exit-code` или `--max-issues` больше нуля; Stryker без `thresholds.break` (задаётся только в
+  файле настроек — из команды его не передать) и с `allowEmpty`. Каждое правило — с дословной цитатой из официальной
   документации и адресом; цитаты сверяет с исходником `tool/selfcheck/tools-quotes.mjs`, примеры
   каждого правила прогоняет `units-tools.mjs`.
 
