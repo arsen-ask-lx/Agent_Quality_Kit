@@ -21,10 +21,9 @@
 // удаляется. Не меняет манифест. Не роняет прогон: код возврата всегда 0 — это осмотр, а
 // не порог. Порог — у `doctor --run --min`.
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, copyFile, rm, readdir, writeFile, readFile, symlink } from "node:fs/promises";
+import { rm, readdir, writeFile, readFile, mkdir } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, dirname, extname } from "node:path";
+import { join, extname } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
 import { fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, catchVerdict } from "../lib/history.mjs";
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
@@ -33,6 +32,7 @@ import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
 import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, parseCounts } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 import { gateCommand } from "../lib/execution.mjs";
+import { buildSandbox, plant } from "../lib/sandbox.mjs";
 
 // Тот же набор расширений, что у привязки доказательства к дифу. Список один на программу:
 // второй через месяц разошёлся бы с первым.
@@ -172,69 +172,7 @@ async function sampleFor(entry, ext, kind = "red") {
   return null;
 }
 
-// Песочница: КОПИЯ ПРОЕКТА, в которую подсаживается образец. Раньше здесь был временный каталог
-// с одним файлом, а путь к нему подставлялся в команду гейта — отчего пробовать можно было
-// только команды, кончающиеся каталогом. Замер 2026-09-10 на семи чужих репозиториях: у шести
-// команды такие (`xo`, `eslint lib/**/*.js`, `mocha --require…`, `pytest`), и проба не
-// запускалась вовсе.
-//
-// Способ взят из мутационного тестирования, где та же задача решена двадцать лет назад: Stryker
-// копирует проект во временный каталог, СИМЛИНКУЕТ `node_modules` и гоняет там родную команду.
-// Копируются отслеживаемые и неигнорируемые файлы (`git ls-files --cached --others
-// --exclude-standard`) — файлы проекта не меняются (итог пишется в .aqk/last-probe.md), а
-// мусор сборки не тащится; тяжёлые каталоги зависимостей симлинкуются, иначе `npm test` в
-// песочнице падал бы с «модуль не найден», и это читалось бы как сбой инструмента.
-const DEP_DIRS = ["node_modules", ".venv", "venv", "vendor", "target", ".tox", ".bundle"];
-
-async function buildSandbox() {
-  // Копируется РАБОЧЕЕ ДЕРЕВО, а не HEAD. Первая версия брала `git archive HEAD`, и это было
-  // неверно: комплект зовут из хука ДО коммита, и пользователь пробует то, что у него сейчас,
-  // а не то, что уже записано. На свежем `init` + `add` без коммита проба вообще ничего не
-  // видела — гейты в песочнице отсутствовали и «не запускались».
-  //
-  // Список — `git ls-files --cached --others --exclude-standard`: отслеживаемые плюс новые, но
-  // БЕЗ игнорируемых. Игнорируемое — это сборка и зависимости; первое пробе не нужно, второе
-  // приходит симлинком.
-  //
-  // Копирование средствами node, а не `tar`: у конвейера есть windows-задание, и полагаться на
-  // ключи GNU tar там нельзя.
-  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
-    cwd: CWD, encoding: "utf8", timeout: 60000, maxBuffer: 64 * 1024 * 1024,
-  });
-  if (r.status !== 0) return null;
-  const files = String(r.stdout || "").split("\0").filter(Boolean);
-  if (!files.length) return null;
-
-  const root = await mkdtemp(join(tmpdir(), "aqk-sandbox-"));
-  const made = new Set();
-  for (const rel of files) {
-    const dest = join(root, rel);
-    const dir = dirname(dest);
-    if (!made.has(dir)) { await mkdir(dir, { recursive: true }); made.add(dir); }
-    // Файл мог исчезнуть между списком и копией, а каталог — оказаться подмодулем.
-    try { await copyFile(join(CWD, rel), dest); } catch { /* пропускаем, не роняя пробу */ }
-  }
-  for (const dep of DEP_DIRS) {
-    const from = join(CWD, dep);
-    if (await exists(from)) { try { await symlink(from, join(root, dep), "junction"); } catch { /* уже есть */ } }
-  }
-  return root;
-}
-
-// Подсадка образца на место горячего файла и возврат как было. Файл СНАЧАЛА удаляется:
-// в песочнице он может быть жёсткой ссылкой, и запись поверх задела бы оригинал.
-async function plant(root, relPath, sample) {
-  const dest = join(root, relPath);
-  await mkdir(dirname(dest), { recursive: true });
-  let backup = null;
-  try { backup = await readFile(dest); } catch { /* файла может не быть */ }
-  await rm(dest, { force: true });
-  await copyFile(sample, dest);
-  return async () => {
-    await rm(dest, { force: true });
-    if (backup !== null) await writeFile(dest, backup);
-  };
-}
+// Песочница и подсадка — в `lib/sandbox.mjs`: ими же пользуется `prove`.
 
 // Гейт запускается В ПЕСОЧНИЦЕ и командой КАК ЕСТЬ — ничего в неё не подставляется. Именно это
 // и делает пробу независимой от формы команды.

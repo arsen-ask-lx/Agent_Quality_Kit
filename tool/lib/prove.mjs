@@ -16,6 +16,8 @@ import { CWD, exists } from "./core.mjs";
 import { parseManifest, gateRequires } from "./manifest.mjs";
 import { whichSync } from "./repo.mjs";
 import { classify, findingCodes, gateCommand, gateTimeout } from "./execution.mjs";
+import { buildSandbox, plantTree } from "./sandbox.mjs";
+import { rm } from "node:fs/promises";
 
 // Гейт можно доказать, если у него есть оба образца. Признак по образцам, а не по тексту
 // команды: запись, делегирующая готовому инструменту (`npx knip --directory .`), каталог
@@ -107,8 +109,8 @@ async function samplesForRecipe(samplesDir, name) {
 // `code = r.status === null ? 124 : r.status`, и комментарий рядом честно называл 124
 // «не знаем» — а вызывающий тут же считал его находкой. Опыт 2026-09-09: проверка, виснущая
 // на красном образце, получала вердикт «доказана».
-function run(cmd, timeoutMs, prog) {
-  const r = spawnSync(gateCommand(cmd), { shell: true, encoding: "utf8", cwd: CWD, timeout: timeoutMs });
+function run(cmd, timeoutMs, prog, cwd = CWD) {
+  const r = spawnSync(gateCommand(cmd), { shell: true, encoding: "utf8", cwd, timeout: timeoutMs });
   const out = `${r.stdout || ""}${r.stderr || ""}`.trim();
   return { ...classify(r, findingCodes(prog)), out };
 }
@@ -119,7 +121,11 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
   const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
   const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
   const results = [];
-
+  // Песочница одна на весь вызов и строится только тогда, когда понадобилась: копировать
+  // проект ради гейтов, которые доказываются подстановкой каталога, незачем.
+  let sandbox;
+  const getSandbox = async () => (sandbox === undefined ? (sandbox = await buildSandbox()) : sandbox);
+  try {
   for (const [name, rawCmd] of Object.entries(gates)) {
     const cmd = String(rawCmd || "").trim();
     if (!cmd) {
@@ -157,16 +163,35 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
       results.push({ name, state: "unprovable", why: "other-recipe", forRecipe });
       continue;
     }
-    if (!targetIsLast(bare)) {
-      results.push({ name, state: "unprovable", why: "no-target" });
-      continue;
-    }
-
     // Программа, чьи коды разбираем: первое слово команды БЕЗ обёрток. У обёрнутой записи
     // это ruff/vulture, а не bash, — иначе адаптер брался бы для оболочки.
     const prog = effective[0];
-    const red = run(commandFor(cmd, s.red), timeoutMs, prog);
-    const green = run(commandFor(cmd, s.green), timeoutMs, prog);
+    let red, green;
+    if (targetIsLast(bare)) {
+      red = run(commandFor(cmd, s.red), timeoutMs, prog);
+      green = run(commandFor(cmd, s.green), timeoutMs, prog);
+    } else {
+      // КОМАНДА НЕ КОНЧАЕТСЯ КАТАЛОГОМ — `npm run lint`, `make check`. Подставлять некуда,
+      // поэтому образец подсаживается в КОПИЮ проекта по своим путям, а команда идёт как есть.
+      // Сначала чистая копия: команда, красная без подсадки, ничего не доказывает — это
+      // называется отдельно, а не засчитывается ни доказанной, ни сломанной.
+      const box = await getSandbox();
+      if (!box) {
+        results.push({ name, state: "unprovable", why: "no-target" });
+        continue;
+      }
+      const base = run(cmd, timeoutMs, prog, box);
+      if (base.state !== "clean") {
+        results.push({ name, state: "unprovable", why: base.state === "infra_error" ? "infra" : "baseline-red", side: "base", reason: base.reason, red: base });
+        continue;
+      }
+      let undo = await plantTree(box, join(CWD, s.red));
+      red = run(cmd, timeoutMs, prog, box);
+      await undo();
+      undo = await plantTree(box, join(CWD, s.green));
+      green = run(cmd, timeoutMs, prog, box);
+      await undo();
+    }
 
     // СБОЙ АРБИТРА — НЕ ВЕРДИКТ О ЗАПИСИ, ни в ту сторону, ни в другую. Раньше сбой на красном
     // читался как «поймал», а сбой на зелёном — как «ругается на исправный код»: инструмент
@@ -183,6 +208,9 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
     } else {
       results.push({ name, state: "proven", red, green });
     }
+  }
+  } finally {
+    if (sandbox) await rm(sandbox, { recursive: true, force: true });
   }
 
   return { ...verdict(results), results };
