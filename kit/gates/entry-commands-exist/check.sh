@@ -83,9 +83,19 @@ for M in $(find "$DIR" $(skip_find) -type f \( -name Makefile -o -name makefile 
     case "$INC" in
       *'$'*) continue ;;
     esac
-    [ -e "$(dirname "$M")/$INC" ] || MK_BLIND="$MK_BLIND$INC
+    [ -e "$(dirname "$M")/$INC" ] || MK_BLIND="$MK_BLIND$INC — подключён, но в этом каталоге его нет
 "
   done
+done
+
+# MAKEFILE СОЗДАЁТ ГЕНЕРАТОР СБОРКИ. Найдено 2026-09-27 на `MolarVerse/PQ`: свод велит
+# «make test» и «make docs» «из папки сборки», а эти цели появляются, только когда CMake
+# сконфигурирует проект. В клоне их нет по построению — «такой цели нет» было бы неправдой.
+# Тот же третий исход, что у подключённого файла: не смогли проверить, и это сказано вслух.
+for GEN in CMakeLists.txt configure.ac Makefile.am; do
+  G=$(find "$DIR" $(skip_find) -maxdepth 2 -type f -name "$GEN" -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
+  [ -n "$G" ] && MK_BLIND="$MK_BLIND${G#"$DIR"/} — Makefile создаётся при сборке
+"
 done
 
 # Рецепты just: «имя:», «@имя арг:», «alias имя := …».
@@ -146,10 +156,15 @@ while IFS= read -r E; do
   # «it» и «one». У них выше по файлу незакрытый блок кода, и весь текст после него читается как
   # команды — но чинить надо не разбор блоков, а предмет обвинения: Makefile в репозитории нет
   # вовсе, сравнивать не с чем.
-  [ -n "$HAS_MK" ] && for N in $(printf '%s\n' "$CODE" | grep -E '(^|[^A-Za-z0-9_-])make[[:space:]]' | grep -vE -- '-C|--directory|-f[[:space:]]|--file' \
+  # Комментарий оболочки внутри блока кода — текст: «# ... make changes, commit ...»
+  # (`MolarVerse/PQ`, 2026-09-27) называл цель «changes». Отрезаем от «#» до конца строки.
+  [ -n "$HAS_MK" ] && for N in $(printf '%s\n' "$CODE" | sed -e 's/^#.*$//' -e 's/[[:space:]]#.*$//' | grep -E '(^|[^A-Za-z0-9_-])make[[:space:]]' | grep -vE -- '-C|--directory|-f[[:space:]]|--file' \
       | grep -oE '(^|[^A-Za-z0-9_-])make([[:space:]]+-[A-Za-z0-9]+)*[[:space:]]+[A-Za-z][A-Za-z0-9_.-]*=?' \
       | grep -v '=$' | sed 's/.*[[:space:]]//' | sort -u); do
     [ -n "$MK_BLIND" ] && continue
+    # Общее правило «%:» принимает ЛЮБУЮ цель — так устроен Makefile, который создаёт Sphinx
+    # (`MolarVerse/PQ`, «make html»). Здесь промолчать честно: цель действительно существует.
+    has "%" "$TARGETS" && continue
     has "$N" "$TARGETS" || report "$E" "make $N" "такой цели нет ни в одном Makefile"
   done
   # «JUST» — ОБЫЧНОЕ АНГЛИЙСКОЕ СЛОВО, и в прозе оно стоит чаще, чем в роли запускалки. Найдено
@@ -179,8 +194,8 @@ if [ -n "$NPM_BLIND" ]; then
   echo "    почини: поставь node либо прогони проверку там, где он есть."
 fi
 if [ -n "$MK_BLIND" ]; then
-  echo "  не проверено: цели make. Makefile подключает файлы, которых нет в этом каталоге:"
+  echo "  не проверено: цели make. Часть целей объявлена там, где их отсюда не видно:"
   printf '%s' "$MK_BLIND" | sort -u | sed 's/^/    /'
-  echo "    обычно это подмодуль git — тогда проверять надо там, где он выгружен."
+  echo "    проверять надо там, где эти файлы есть: подмодуль выгружен, сборка сконфигурирована."
 fi
 exit "$MISS"

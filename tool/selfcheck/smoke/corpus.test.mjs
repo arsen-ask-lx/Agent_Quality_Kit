@@ -75,6 +75,34 @@ const CASES = [
     gates: { "entry-commands-exist": 0 },
   },
   {
+    name: "цели make создаёт CMake — в репозитории их не видно",
+    source: "MolarVerse/PQ, 2026-09-27: «make test» и «make docs» выполняются в папке сборки CMake",
+    files: {
+      "AGENTS.md": "# Rules\n\nRun with `make test` from the build directory.\n",
+      "CMakeLists.txt": "cmake_minimum_required(VERSION 3.20)\nproject(x)\nenable_testing()\n",
+      "docs/sphinx/Makefile": "html:\n\tsphinx-build . _build\n",
+    },
+    gates: { "entry-commands-exist": 0 },
+  },
+  {
+    name: "общее правило «%:» в Makefile Sphinx принимает любую цель",
+    source: "MolarVerse/PQ, 2026-09-27: «make html» внутри docs/sphinx",
+    files: {
+      "AGENTS.md": "# Rules\n\n- docs: `make html` inside `docs/sphinx/`\n",
+      "docs/sphinx/Makefile": "help:\n\t@sphinx-build -M help . _build\n\n%: Makefile\n\t@sphinx-build -M $@ . _build\n",
+    },
+    gates: { "entry-commands-exist": 0 },
+  },
+  {
+    name: "«make» в комментарии внутри блока кода — текст, а не команда",
+    source: "MolarVerse/PQ, 2026-09-27: «# ... make changes, commit ...»",
+    files: {
+      "AGENTS.md": "# Rules\n\n```sh\ngit checkout -b feature/x\n# ... make changes, commit ...\nmake check\n```\n",
+      "Makefile": "check:\n\techo ok\n",
+    },
+    gates: { "entry-commands-exist": 0 },
+  },
+  {
     name: "договор в коде (провайдер типов Fastify) без проверки типов",
     source: "отзыв с живого проекта 2026-09-11: «спецификации API не видно» при zod-схемах в общем пакете",
     files: { "backend/package.json": JSON.stringify({ dependencies: { "@fastify/type-provider-zod": "1.0.0", zod: "4.5.4" } }) },
