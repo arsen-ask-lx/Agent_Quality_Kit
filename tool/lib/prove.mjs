@@ -30,13 +30,20 @@ async function samplesIn(samplesDir, name) {
   return { red: join(samplesDir, name, "red"), green: join(samplesDir, name, "green") };
 }
 
-// Два места, и порядок важен. `samples:` — образцы записей каталога (их кладёт `aqk add`);
+// Два места. `samples:` — образцы записей каталога (их кладёт `aqk add`);
 // `own_samples:` — образцы проверок, написанных самим проектом (`npm test`, `make check`). Держать
 // их вместе нельзя: у самого AQK `samples:` — это каталог записей, и образец для `units` читался
 // бы там как новая запись. Снаружи так же: у semgrep тест правила лежит рядом с правилом.
+//
+// СВОИ — ПЕРВЫМИ. Запись каталога бывает поставлена не тем рецептом, под который написаны её
+// образцы: у самого AQK `dead-code` стоит на knip, а образцы записи питоновские. Свои образцы
+// проект пишет под ту команду, что у него стоит, — они точнее, и сверка рецепта к ним не
+// применяется (`own: true`).
 async function samplesFor(man, name) {
   const dir = (k) => (typeof man?.[k] === "string" ? man[k].trim() : "");
-  return (await samplesIn(dir("samples"), name)) || (await samplesIn(dir("own_samples"), name));
+  const own = await samplesIn(dir("own_samples"), name);
+  if (own) return { ...own, own: true };
+  return samplesIn(dir("samples"), name);
 }
 
 // Команда записи всегда кончается каталогом проверки: рецепт пишется как `… {dir}`, и при
@@ -175,7 +182,7 @@ async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null, plan
     // проект, поставивший `no-print-in-prod` с `ruff`, терял AQK-2 целиком.
     const { parts: bare, nativeAt } = unwrap(cmd);
     const effective = nativeAt === -1 ? bare : bare.slice(nativeAt + 2);
-    const forRecipe = await samplesForRecipe(samplesDir, name);
+    const forRecipe = s.own ? null : await samplesForRecipe(samplesDir, name);
     if (forRecipe && effective[0] !== forRecipe.prog) {
       results.push({ name, state: "unprovable", why: "other-recipe", forRecipe });
       continue;

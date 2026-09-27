@@ -79,3 +79,22 @@ test("образцы своих проверок лежат в own_samples и д
   const d = aqk(p, "doctor");
   assert.doesNotMatch(d.out, /неизвестн\S* пол\S*[^\n]*own_samples|own_samples[^\n]*неизвестн/, "own_samples назван неизвестным полем");
 });
+
+// СВОИ ОБРАЗЦЫ ТОЧНЕЕ ОБРАЗЦОВ КАТАЛОГА. Запись каталога бывает поставлена другим рецептом, чем
+// тот, под который написаны её образцы: у самого AQK `dead-code` стоит на knip (JavaScript), а
+// образцы записи — питоновские, и доказать было нечем («образцы под другой рецепт»). Проект кладёт
+// свои образцы в own_samples — они берутся первыми, и сверка рецепта к ним не применяется: их
+// писали под ту команду, что стоит.
+test("свои образцы берутся раньше образцов каталога и доказывают гейт", (t) => {
+  const p = project(t, {
+    "AGENTS.md": "# a\n", "check.sh": CHECK, "src/app.txt": "ok\n",
+    ".aqk.yml": manifest({ words: "sh check.sh" }).replace("samples: gates", "samples: gates\nown_samples: own/gates"),
+    // Образцы «каталога» — под чужой рецепт: на них гейт доказать нельзя.
+    "gates/words/gate.yml": "intent: x\nsamples_for: python\nrecipes:\n  python: ruff check {dir}\n",
+    "gates/words/red/src/planted.txt": "BAD\n", "gates/words/green/src/planted.txt": "fine\n",
+    "own/gates/words/red/src/planted.txt": "BAD\n", "own/gates/words/green/src/planted.txt": "fine\n",
+  });
+  const r = aqk(p, "prove");
+  const words = lines(r.out).find((l) => /\bwords\b/.test(l)) || "";
+  assert.match(words, /✔/, `свои образцы не взяты первыми:\n${tail(r.out, 12)}`);
+});

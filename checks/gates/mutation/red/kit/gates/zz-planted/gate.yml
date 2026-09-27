@@ -1,0 +1,3 @@
+intent: образец для доказательства гейта mutation
+recipes:
+  any: bash {gate}/check.sh {dir}

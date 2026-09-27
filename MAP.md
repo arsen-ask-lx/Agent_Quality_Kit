@@ -154,8 +154,10 @@
 - `checks/gates/` — образцы СОБСТВЕННЫХ прогонов комплекта (поле `own_samples:`): `<гейт>/red` и
   `/green` повторяют пути проекта и подсаживаются в его копию, когда `aqk prove` доказывает, что
   прогон умеет покраснеть. Подсаживаемые файлы: `zz-planted.mjs` (syntax), `units-zz-planted.mjs`
-  (units), `zz-planted.test.mjs` (smoke), `zz-planted.json` (evals), `zz-planted/gate.yml`
-  (proof-from-journal). Их имена названы здесь потому, что опись обязана знать каждый файл,
+  (units), `zz-planted.test.mjs` (smoke), `zz-planted.json` (evals), каталог записи
+  `kit/gates/zz-planted/` (proof-from-journal, gates, mutation). У `dead-code` — отдельный
+  маленький проект на JavaScript (`package.json`, `index.js`, `lib.js`): его команда кончается
+  каталогом, и образец подставляется, а не подсаживается. Их имена названы здесь потому, что опись обязана знать каждый файл,
   который может оказаться среди исходников: в копии они там и оказываются
 - `evals/` — КОРПУС ЧУЖИХ СЛУЧАЕВ и его прогонщик (`run.mjs`, объявлен гейтом `evals`).
   Отличается от образцов `red`/`green` тем, кем размечен: те писал автор гейта, эти взяты из
