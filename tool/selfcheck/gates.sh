@@ -215,7 +215,7 @@ for GATE in "$CAT"/*/; do
   }
 
   probe "$GATE/red";   RED_CODE=$CODE; RED_OUT="$OUT"
-  probe "$GATE/green"; GRN_CODE=$CODE; GRN_OUT="$OUT"
+  probe "$GATE/green"; GRN_CODE=$CODE
 
   if [ "$RED_CODE" -eq 127 ] || [ "$GRN_CODE" -eq 127 ]; then
     bad "$SLUG: арбитр не запускается — команда не найдена"

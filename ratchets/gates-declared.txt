@@ -62,4 +62,6 @@ test-not-adjusted
 todo-without-task
 # run todo-without-task: bash kit/gates/todo-without-task/check.sh .
 units
+shellcheck
 # run units: node --test tool/selfcheck/units*.mjs
+# run shellcheck: bash kit/ratchet/ratchet.sh ratchets/shellcheck.txt bash tool/selfcheck/shellcheck.sh

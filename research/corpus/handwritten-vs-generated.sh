@@ -28,14 +28,17 @@ while IFS= read -r REPO; do
     done | sort -u | head -60)
   [ -z "$NAMES" ] && { rm -rf "$D"; continue; }
   FOUND=""
+  # Список порождённых файлов — ФАЙЛОМ шаблонов, а не через /dev/stdin. Прежде здесь стояло
+  # `… | grep -vFf /dev/stdin <<EOF`: here-документ перебивал трубу, grep читал из него шаблоны,
+  # а проверять ему было нечего — поток уже исчерпан. `M` был пуст всегда, и скрипт насчитывал
+  # ноль рукописных копий при любых данных. Найдено shellcheck (SC2259) 2026-09-27; результат
+  # скрипта нигде не опубликован.
+  printf '%s\n' "$GEN" > "$D/.aqk-generated-list"
   for N in $NAMES; do
     # Та же сущность, объявленная руками в НЕ порождённом файле.
     M=$(grep -rlE "^[[:space:]]*(export[[:space:]]+)?(interface|type)[[:space:]]+$N\b" \
         --include='*.ts' --include='*.tsx' "$D" 2>/dev/null \
-        | grep -vFf /dev/stdin <<EOF2 2>/dev/null || true
-$GEN
-EOF2
-)
+        | grep -vFf "$D/.aqk-generated-list" 2>/dev/null || true)
     [ -n "$M" ] && FOUND="$FOUND$N "
   done
   if [ -n "$FOUND" ]; then HIT=$((HIT+1)); echo "✘ $REPO: руками объявлены те же имена — $FOUND"; fi

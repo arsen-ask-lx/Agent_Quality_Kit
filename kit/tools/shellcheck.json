@@ -1,0 +1,37 @@
+{
+  "tool": "shellcheck",
+  "detect": "(^|[\\s/])shellcheck(\\s|$)",
+  "catches": "тихие дефекты скриптов оболочки: подстановки без кавычек, режущие имена с пробелами, перебитый ввод, неиспользуемые переменные",
+  "catches_en": "silent shell-script defects: unquoted substitutions that split names with spaces, overridden input, unused variables",
+  "for": {
+    "langs": [
+      "shell"
+    ]
+  },
+  "docs": "https://github.com/koalaman/shellcheck/blob/master/shellcheck.1.md",
+  "install": "pipx install shellcheck-py  (или uvx --from shellcheck-py shellcheck; или пакет shellcheck)",
+  "exit": "0 — замечаний нет; 1 — есть; 2 — не все файлы удалось обработать; 3–4 — плохие ключи",
+  "exit_en": "0 — no issues; 1 — some issues; 2 — some files could not be processed; 3–4 — bad syntax or options",
+  "off": [
+    {
+      "id": "severity-error-only",
+      "command_has": "(-S\\s*|--severity=)error\\b",
+      "quote": "Specify minimum severity of errors to consider. Valid values in order of severity are error, warning, info and style.",
+      "source": "https://github.com/koalaman/shellcheck/blob/master/shellcheck.1.md#options",
+      "source_raw": "https://raw.githubusercontent.com/koalaman/shellcheck/master/shellcheck.1.md",
+      "why": "с порогом error предупреждения не считаются вовсе — а подстановка без кавычек (SC2046), режущая имена файлов с пробелами, как раз предупреждение",
+      "why_en": "with the error threshold warnings are not considered at all — and an unquoted substitution (SC2046) that splits filenames with spaces is exactly a warning",
+      "fix": "порог не выше warning; старые замечания — храповиком (aqk ratchet), а не порогом, который пропускает и новые",
+      "fix_en": "threshold no higher than warning; keep old findings under a ratchet (aqk ratchet), not a threshold that lets new ones in",
+      "red": [
+        "shellcheck -S error *.sh",
+        "shellcheck --severity=error scripts/run.sh"
+      ],
+      "green": [
+        "shellcheck *.sh",
+        "shellcheck -S warning *.sh",
+        "shellcheck --severity=style x.sh"
+      ]
+    }
+  ]
+}
