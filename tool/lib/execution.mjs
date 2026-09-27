@@ -64,6 +64,14 @@ function classify(r, isFinding = DEFAULT) {
   }
   const code = r.status;
   if (code === 0) return { state: "clean", reason: null, code };
+  // NPM НЕ СУМЕЛ ЗАПУСТИТЬ ИНСТРУМЕНТ — это сбой, а не находка, хоть код и тот же. `npx knip` без
+  // кеша (контейнер без домашнего каталога), без сети, с недоступным реестром выходит с 1 — как
+  // knip, нашедший мёртвый код. Подпись собственной неудачи npm — `npm error code E…` (старые
+  // версии: `npm ERR! code E…`). ELIFECYCLE — не она: так старый npm подписывает упавший
+  // СКРИПТ, то есть находку. Найдено заданием image конвейера 2026-09-27.
+  const said = `${r?.stdout || ""}\n${r?.stderr || ""}`;
+  const npm = /^npm (?:error|ERR!) code (E[A-Z0-9_]+)\b/m.exec(said);
+  if (npm && npm[1] !== "ELIFECYCLE") return { state: "infra_error", reason: `npm_${npm[1]}`, code };
   if (isFinding(code)) return { state: "finding", reason: null, code };
   return { state: "infra_error", reason: "unexpected_exit", code };
 }

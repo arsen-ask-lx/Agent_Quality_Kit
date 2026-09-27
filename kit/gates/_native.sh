@@ -64,6 +64,13 @@ fi
 # последней команды, и снятие цвета молча делало бы любой прогон успешным.
 OUT_RAW="$("$@" 2>&1)"; CODE=$?
 aqk_exit_verdict "$1" "$CODE"; VERDICT=$?
+# NPM НЕ СУМЕЛ ЗАПУСТИТЬ ИНСТРУМЕНТ — сбой, а не находка, хоть код тот же: `npx knip` без кеша
+# или без сети печатает `npm error code E…` и выходит с 1, как knip с находкой. ELIFECYCLE — не
+# она: так старый npm подписывает упавший скрипт. То же правило — в tool/lib/execution.mjs;
+# сверку держит smoke/gate-errors.test.mjs. Найдено заданием image конвейера 2026-09-27.
+if [ "$VERDICT" -eq 1 ] && printf '%s\n' "$OUT_RAW" | grep -E '^npm (error|ERR!) code E[A-Z0-9_]+' | grep -v 'code ELIFECYCLE' | grep -q .; then
+  VERDICT=2
+fi
 # Ошибку процесса нельзя фильтровать по путям: даже скрытый путь не отменяет сбой.
 if [ "$VERDICT" -eq 2 ] || { [ "$CODE" -ne 0 ] && [ -z "$OUT_RAW" ]; }; then
   printf '%s\n' "$OUT_RAW"

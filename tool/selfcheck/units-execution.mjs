@@ -212,3 +212,24 @@ test("pylint: неизвестные биты кода возврата не п�
     assert.equal(classify(R({ status: code }), findingCodes("pylint")).state, "infra_error");
   }
 });
+
+// NPM, НЕ СУМЕВШИЙ ЗАПУСТИТЬ ИНСТРУМЕНТ, — НЕ НАХОДКА. `npx --yes knip@6` в контейнере без
+// домашнего каталога: npm не может создать кеш, печатает `npm error code EACCES` и выходит с
+// кодом 1 — тем же, каким knip сообщает о мёртвом коде. Задание image конвейера 2026-09-27 так
+// объявило исправный гейт «ругается на зелёный образец». Подпись собственной неудачи npm —
+// `npm error code E…` (старые версии: `npm ERR! code E…`); ELIFECYCLE — не она: так старый npm
+// подписывает упавший СКРИПТ, то есть настоящую находку.
+test("собственная неудача npm — «не смогли проверить», а не находка", () => {
+  const eacces = { status: 1, stdout: "", stderr: "npm error code EACCES\nnpm error syscall mkdir\nnpm error path /.npm\n" };
+  const r = classify(eacces, (c) => c === 1);
+  assert.equal(r.state, "infra_error", "npm не смог запустить инструмент — это не находка о коде");
+  assert.match(String(r.reason), /npm/);
+
+  const old = classify({ status: 1, stdout: "npm ERR! code ENOTFOUND\n", stderr: "" }, (c) => c === 1);
+  assert.equal(old.state, "infra_error");
+
+  const lifecycle = classify({ status: 1, stdout: "", stderr: "npm ERR! code ELIFECYCLE\nnpm ERR! errno 1\n" }, (c) => c === 1);
+  assert.equal(lifecycle.state, "finding", "упавший скрипт — находка, а не сбой npm");
+  const npm10 = classify({ status: 1, stdout: "", stderr: "npm error Lifecycle script `lint` failed with error:\nnpm error code 1\n" }, (c) => c === 1);
+  assert.equal(npm10.state, "finding");
+});

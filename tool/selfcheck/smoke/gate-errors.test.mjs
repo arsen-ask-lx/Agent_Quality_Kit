@@ -113,3 +113,25 @@ for (const jobs of [1, 2]) {
     });
   }
 }
+
+// NPM НЕ СУМЕЛ ЗАПУСТИТЬ ИНСТРУМЕНТ — «не смогли», в обеих копиях правила. `npx knip` в
+// контейнере без домашнего каталога печатает `npm error code EACCES` и выходит с 1, как knip с
+// находкой. Задание image конвейера 2026-09-27 объявило так исправный гейт сломанным. Правило
+// живёт дважды: в Node (execution.mjs) и в обёртке родного рецепта (_native.sh) — обе копии
+// обязаны отвечать одинаково, и ELIFECYCLE (упавший скрипт) остаётся находкой в обеих.
+test("_native.sh и classify одинаково читают собственную неудачу npm", async (t) => {
+  const { classify } = await import("../../lib/execution.mjs");
+  const cases = [
+    { out: "npm error code EACCES", want: "infra_error", sh: 2 },
+    { out: "npm ERR! code ENOTFOUND", want: "infra_error", sh: 2 },
+    { out: "npm ERR! code ELIFECYCLE", want: "finding", sh: 1 },
+    { out: "src/a.js: unused export", want: "finding", sh: 1 },
+  ];
+  for (const k of cases) {
+    const p = project(t, {});
+    const command = program(p, "npx", 1, k.out);
+    const r = run(p, "bash", [`${root}/kit/gates/_native.sh`, ".", command]);
+    assert.equal(r.code, k.sh, `_native.sh на «${k.out}»: ${r.out}`);
+    assert.equal(classify({ status: 1, stdout: `${k.out}\n`, stderr: "" }, (c) => c === 1).state, k.want, `classify на «${k.out}»`);
+  }
+});

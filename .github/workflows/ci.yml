@@ -229,13 +229,16 @@ jobs:
           echo "повторители не поддерживаются — задание проверяет то, ради чего заведено"
 
       - name: записи каталога краснеют на красном и молчат на зелёном
-        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" --entrypoint bash aqk-ci tool/selfcheck/gates.sh
+        run: docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/work" --entrypoint bash aqk-ci tool/selfcheck/gates.sh
 
       - name: вердикт переживает мутации образца
-        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" --entrypoint bash aqk-ci tool/selfcheck/mutation.sh
+        run: docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/work" --entrypoint bash aqk-ci tool/selfcheck/mutation.sh
 
       - name: гейты доказаны по своим образцам
-        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" aqk-ci prove
+        # HOME=/tmp — у пользователя с чужим uid в образе нет домашнего каталога, и npm (`npx knip`
+        # гейта dead-code) падал на создании кеша в /.npm с `npm error code EACCES`. Раньше это
+        # читалось как находка; теперь AQK называет это «не смогли», но гейт от этого не доказан.
+        run: docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/work" aqk-ci prove
 
       # Образ обязан РАБОТАТЬ, а не собираться: проверяется тот путь, который документация
       # предлагает человеку. И отдельно — что файлы достались вызывающему, а не root: без
@@ -243,8 +246,8 @@ jobs:
       - name: образ делает то, что обещано, и файлы остаются вызывающему
         run: |
           T=$(mktemp -d) && git init -q "$T"
-          docker run --rm -u "$(id -u):$(id -g)" -v "$T:/work" aqk-ci init
-          docker run --rm -u "$(id -u):$(id -g)" -v "$T:/work" aqk-ci doctor --min 0
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$T:/work" aqk-ci init
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$T:/work" aqk-ci doctor --min 0
           test -O "$T/.aqk.yml" || { echo "файлы образа достались не вызывающему"; exit 1; }
 
   # в корне. Проверять его тем же прогоном, что и всё остальное, нельзя: он запускает не наш
