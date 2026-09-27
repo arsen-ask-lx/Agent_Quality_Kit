@@ -93,6 +93,8 @@ done
 # сконфигурирует проект. В клоне их нет по построению — «такой цели нет» было бы неправдой.
 # Тот же третий исход, что у подключённого файла: не смогли проверить, и это сказано вслух.
 for GEN in CMakeLists.txt configure.ac Makefile.am; do
+  # skip_find печатает аргументы find — разбиение на слова здесь нужно намеренно.
+  # shellcheck disable=SC2046
   G=$(find "$DIR" $(skip_find) -maxdepth 2 -type f -name "$GEN" -print 2>/dev/null | own_samples_filter "$DIR" | grep -v '^$' | head -1)
   [ -n "$G" ] && MK_BLIND="$MK_BLIND${G#"$DIR"/} — Makefile создаётся при сборке
 "
