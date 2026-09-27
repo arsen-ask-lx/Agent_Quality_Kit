@@ -12,6 +12,7 @@ import { detectFacts, claudeShimFor } from "../lib/repo.mjs";
 import { reportBaseline, reportCatalog } from "./doctor-catalog.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
+import { rulesStatus } from "../lib/rules.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
 import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree, readRun, localStamp } from "../lib/run.mjs";
 import { splitByAge, readHistory } from "../lib/red-age.mjs";
@@ -121,6 +122,8 @@ async function cmdDoctor() {
       );
     }
   }
+
+  await reportRules(man, verbose);
 
   // Опечатка в имени поля означала «поля нет»: вердикт выдавался неверный, а причина молчала.
   // Называем поле и говорим, какие бывают — иначе человек ищет ошибку в проекте, а она в файле.
@@ -354,3 +357,16 @@ async function cmdDoctor() {
 // Наружу — только команда. Остальное здесь же и используется: экспорт, который никто не
 // импортирует, читается как «это часть договора» и мешает менять внутренности.
 export { cmdDoctor };
+
+// Правила из папки `rules:` — чем держится каждое. Пользователю важнее всего последняя строка:
+// правило обещает проверку, а проверка у него не поставлена. Это совет «что поставить», взятый
+// из его же правил, а не из нашего вкуса.
+async function reportRules(man, verbose) {
+  const dir = typeof man?.rules === "string" && man.rules.trim() ? man.rules.trim() : join(TARGET_DIR, "rules");
+  const st = await rulesStatus(join(CWD, dir), new Set(declaredGates(man).map(([n]) => n)));
+  if (!st) return;
+  console.log(`\n  ${c.yellow("!")}  ${L.doctor.rulesDir(dir, st.total, st.machine, st.human)}`);
+  if (st.unmarked) console.log(c.dim(`     ${L.doctor.rulesUnmarked(st.unmarked)}`));
+  for (const m of st.missing) console.log(`     ${L.doctor.rulesMissing(m.gate, m.rules, `${SELF} add ${m.gate}`)}`);
+  if (verbose && st.missing.length) console.log(c.dim(`     ${L.doctor.rulesMissingWhy}`));
+}

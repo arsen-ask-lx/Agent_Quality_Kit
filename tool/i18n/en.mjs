@@ -98,7 +98,11 @@ export const en = {
     jobsBad: (v) => `--jobs expects a whole number from 1: "${v}" will not do. A one-by-one run passed off as parallel would be a lie, so stopping.`,
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
-    rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the ENTRY POINT only: a promise kept in any other file is checked by nothing at all, and this kit will not tell you it exists.",
+    rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the entry point and in the manifest's rules folder: a promise kept in any other file is checked by nothing, and this kit will not tell you it exists.",
+    rulesDir: (dir, total, machine, human) => `rules in ${dir}: ${total}. Guarded by a check: ${machine}, by a human: ${human}.`,
+    rulesUnmarked: (n) => `${n} carry no mark saying what guards them: to a machine that is text followed while remembered.`,
+    rulesMissing: (gate, n, cmd) => `a rule promises the check ${gate}, and it is not installed (rules: ${n}) → ${cmd}`,
+    rulesMissingWhy: "Matched by catalog entry name: if you installed the same check under another name, this line is wrong — rename the gate in the manifest.",
     emptyCommands: (n) => `AGENTS.md has ${n} unfilled commands.`,
     emptyCommandsWhy: "An agent cannot execute an empty line.",
 

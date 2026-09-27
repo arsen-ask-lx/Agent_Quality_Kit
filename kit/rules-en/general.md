@@ -1,13 +1,16 @@
 # General standards
 
+> Every rule carries a mark `<!-- aqk: … -->` naming what guards it: a catalog check or a human.
+> `aqk doctor` names the checks promised here that the project lacks, with the command to install them.
+
 ## Principles
 
-- **Simple beats clever.** Every extra moving part multiplies the unreliability of the chain.
-- **Fail fast.** No data means a clear error, not a placeholder.
-- **No silent failures.** An error is either handled and logged, or re-raised.
-- **Explicit boundaries.** At a seam, validate the input rather than trust it.
+- **Simple beats clever.** Every extra moving part multiplies the unreliability of the chain.  <!-- aqk: human -->
+- **Fail fast.** No data means a clear error, not a placeholder.  <!-- aqk: human -->
+- **No silent failures.** An error is either handled and logged, or re-raised.  <!-- aqk: swallowed-error -->
+- **Explicit boundaries.** At a seam, validate the input rather than trust it.  <!-- aqk: human -->
 
-## Doubt is a reason to look outward
+## Doubt is a reason to look outward  <!-- aqk: human -->
 
 An agent answers with the same confidence whether it knows or is reconstructing from memory.
 From the outside those are indistinguishable; their cost is not. So four situations must end in
@@ -35,34 +38,34 @@ answer. A guess presented as knowledge is not.
 
 ## Forbidden in finished code
 
-- debug printing;
-- "do it later" markers with no task filed;
-- made-up data standing in for real data;
-- catching an error without logging it;
-- a "temporary workaround" with no written plan for removing it.
+- debug printing;  <!-- aqk: no-print-in-prod -->
+- "do it later" markers with no task filed;  <!-- aqk: todo-without-task -->
+- made-up data standing in for real data;  <!-- aqk: human -->
+- catching an error without logging it;  <!-- aqk: swallowed-error -->
+- a "temporary workaround" with no written plan for removing it.  <!-- aqk: human -->
 
 ## Sizes are a gate, not a wish
 
-- production source file over 500 lines — split it;
-- UI component over 300 lines — split it;
-- test file over 800 lines — split it by subject.
+- production source file over 500 lines — split it;  <!-- aqk: file-size-limit -->
+- UI component over 300 lines — split it;  <!-- aqk: file-size-limit -->
+- test file over 800 lines — split it by subject.  <!-- aqk: file-size-limit -->
 
 The numbers are arguable; what matters is that **a limit exists and a machine checks it**. An
 agent loses its bearings in large files and starts rewriting instead of editing.
 
-## A new dependency is a separate decision
+## A new dependency is a separate decision  <!-- aqk: human -->
 
 Check the package's age, adoption and liveness, name it to a human, get agreement. Roughly one
 in five libraries a model suggests **does not exist** — and the names of such packages are
 registered in advance by attackers.
 
-## Parse input at the boundary
+## Parse input at the boundary  <!-- aqk: human -->
 
 Data from outside is parsed in one place — a function or a schema — not as a raw dictionary
 passed around the codebase. Otherwise validation spreads out and every handler trusts input in
 its own way.
 
-## Commits and changesets
+## Commits and changesets  <!-- aqk: human -->
 
 A type at the start of the message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`). One
 changeset, one task: a mixed changeset can neither be reviewed nor rolled back.
@@ -71,7 +74,7 @@ In a repository where several sessions work, a commit takes an **explicit list o
 (`git commit -- <paths>`), never "whatever is staged": the index is shared, and someone else's
 prepared work would ride along in your commit. A new file is `git add`-ed by name first.
 
-## Explain the diff before merging
+## Explain the diff before merging  <!-- aqk: human -->
 
 "An agent wrote it" is not an answer. Before merging, the agent explains the control flow, the
 edge cases and the failure paths. A diff beyond roughly 400 lines is a heightened-risk event:
@@ -80,14 +83,14 @@ split it, or explain it in parts.
 **WHY.** Code now appears faster than a human can understand it. Gates catch mechanics; they do
 not catch "approved a design nobody understood".
 
-## A check must be able to say "no"
+## A check must be able to say "no"  <!-- aqk: human -->
 
 A one-off check the agent uses to confirm "done" (a search in output, a comparison, a measurement)
 also looks for a control object that is CERTAINLY there or CERTAINLY absent, and prints both
 answers. A pattern that never matches anything answers "verified" to everything; being absent
 from a report does not mean "verified".
 
-## Done
+## Done  <!-- aqk: human -->
 
 Linter, types and tests are green. One task, one changeset. Touched storage — the migration ships
 in the same changeset.
