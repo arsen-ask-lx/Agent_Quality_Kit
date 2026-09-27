@@ -106,3 +106,28 @@ test("хук стоит, но AQK в нём не вызывается — это
   // Чужой хук — не поломка: человек мог сознательно гонять AQK в конвейере.
   assert.equal(vitalsVerdict(rows), 0, "команда кричит «сломано» про чужой выбор");
 });
+
+// КОНВЕЙЕР НА СТАРОЙ ВЕРСИИ. Живой проект владельца 2026-09-27: на машине 0.18.0, в конвейере
+// закреплён `agent-quality-kit@0.17.0`. Проверки на GitHub шли слабее, чем на машине, и ни одна
+// команда об этом не говорила.
+test("закреплённая в конвейере версия старее этой — называется, но не роняет", async () => {
+  const { pinnedKitVersions } = await import("../commands/vitals.mjs");
+  const yml = [
+    "      - run: npx --yes agent-quality-kit@0.17.0 doctor --run",
+    "      - uses: arsen-ask-lx/Agent_Quality_Kit@v0.16.0",
+    "      - run: npx agent-quality-kit doctor",
+  ].join("\n");
+  assert.deepEqual(pinnedKitVersions(yml), ["0.17.0", "0.16.0"]);
+
+  const rows = vitalsRows({ ...ok, ci: { current: "0.18.0", pins: [{ file: ".github/workflows/ci.yml", version: "0.17.0" }] } });
+  const ci = rows.find((r) => r.key === "ciVersion");
+  assert.ok(ci, "строки про версию в конвейере нет");
+  assert.equal(ci.ok, "no");
+  assert.match(ci.detail, /0\.17\.0/);
+  assert.match(ci.detail, /ci\.yml/);
+  assert.equal(vitalsVerdict(rows), 0, "закреплённая версия — решение, а не поломка");
+
+  const same = vitalsRows({ ...ok, ci: { current: "0.18.0", pins: [{ file: "x.yml", version: "0.18.0" }] } });
+  assert.equal(same.find((r) => r.key === "ciVersion").ok, true);
+  assert.equal(vitalsRows(ok).find((r) => r.key === "ciVersion"), undefined, "нет закрепления — нечего и говорить");
+});

@@ -337,3 +337,25 @@ test("requires — известное поле манифеста", () => {
   assert.ok(KNOWN_KEYS.includes("requires"));
   assert.deepEqual(unknownKeys({ requires: { g: "docker" } }), []);
 });
+
+// НАЗВАНА НЕ ТА ПРИЧИНА. Живой проект владельца 2026-09-27: 45 зелёных гейтов, `rules:
+// dock/standards` в манифесте, а папки нет. Ступень AQK-1 не бралась, и совет гласил «укажи
+// rules» — указанное. А строкой выше про ту же папку было напечатано «это совет, прогон не
+// роняет». Две строки одного вывода противоречили друг другу, и ни одна не называла причину.
+test("ступень AQK-1 называет несуществующую папку правил, а не просит её указать", async () => {
+  const man = { aqk: 1, entry: [], rules: "нет-такой-папки/standards", gates: { lint: "npm run lint" } };
+  const { steps } = await assessLevel(man, null);
+  assert.equal(steps[1].ok, false);
+  assert.match(steps[1].need, /нет-такой-папки\/standards/, `причина не названа: ${steps[1].need}`);
+  assert.doesNotMatch(steps[1].need, /укажи rules/, "просит указать уже указанное");
+
+  const noGates = await assessLevel({ aqk: 1, entry: [], rules: ".", gates: {} }, null);
+  assert.match(noGates.steps[1].need, /гейт/, "без гейтов причина — гейты, а не папка");
+});
+
+test("папка правил не выдаётся за необязательный совет: без неё нет AQK-1", () => {
+  const row = layoutChecks({ rules: "dock/standards" }, false).find(([p]) => p === "dock/standards");
+  assert.ok(row[3], "строка раскладки не знает, что от этой папки зависит ступень");
+  const docs = layoutChecks({ docs: "dock/ai" }, false).find(([p]) => p === "dock/ai");
+  assert.ok(!docs[3], "методички ступень не держат — и не должны пугать");
+});

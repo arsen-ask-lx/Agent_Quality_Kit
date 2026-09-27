@@ -80,7 +80,34 @@ function vitalsRows(f) {
           : t.versionOk(f.version.current),
     });
   }
+  // КОНВЕЙЕР НА СТАРОЙ ВЕРСИИ. Живой проект владельца 2026-09-27: на машине 0.18.0, в конвейере
+  // закреплён 0.17.0 — на GitHub проверки шли слабее, чем у человека, и ни одна команда об этом
+  // не говорила. Не отказ: закрепить версию — решение, и ронять за него нельзя. Но и не молчание.
+  if (f.ci?.pins?.length) {
+    const old = f.ci.pins.filter((x) => olderThan(x.version, f.ci.current));
+    rows.push({
+      key: "ciVersion",
+      ok: old.length ? "no" : true,
+      detail: old.length
+        ? t.ciVersionOld(old.map((x) => `${x.file} → ${x.version}`).join(", "), f.ci.current)
+        : t.ciVersionOk(f.ci.current),
+    });
+  }
   return rows;
+}
+
+// Версии комплекта, закреплённые в тексте конвейера: пакет из npm и действие с GitHub.
+function pinnedKitVersions(text) {
+  const out = [];
+  for (const m of String(text || "").matchAll(/(?:agent-quality-kit|Agent_Quality_Kit)@v?(\d+\.\d+\.\d+)/gi)) out.push(m[1]);
+  return out;
+}
+
+function olderThan(a, b) {
+  const pa = String(a).split(".").map(Number);
+  const pb = String(b).split(".").map(Number);
+  for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) < (pb[i] || 0);
+  return false;
 }
 
 function vitalsVerdict(rows) {
@@ -166,7 +193,26 @@ async function cmdVitals() {
     }
   }
 
-  const rows = vitalsRows({ tools: [...seen.values()], unparsed, preCommit, sessionHook, version });
+  // Закреплённые в конвейере версии сверяются с ЭТОЙ, а не с реестром: вопрос «проверяет ли
+  // конвейер тем же, чем я», и сети для него не нужно.
+  let ci = null;
+  try {
+    const { readdir } = await import("node:fs/promises");
+    const { PKG_ROOT } = await import("../lib/core.mjs");
+    const current = JSON.parse(await readFile(join(PKG_ROOT, "package.json"), "utf8")).version || "";
+    const dir = join(CWD, ".github", "workflows");
+    const pins = [];
+    if (current && (await exists(dir))) {
+      for (const f of (await readdir(dir)).filter((n) => /\.ya?ml$/.test(n)).sort()) {
+        for (const version of pinnedKitVersions(await readFile(join(dir, f), "utf8"))) {
+          pins.push({ file: `.github/workflows/${f}`, version });
+        }
+      }
+    }
+    ci = { current, pins };
+  } catch { /* не прочитали — строки не будет, а не «всё свежее» */ }
+
+  const rows = vitalsRows({ tools: [...seen.values()], unparsed, preCommit, sessionHook, version, ci });
   console.log(c.bold(`\n  ${L.vitals.title}\n`));
   for (const r of rows) {
     const mark = r.ok === true ? c.green("✔")
@@ -179,4 +225,4 @@ async function cmdVitals() {
   process.exit(vitalsVerdict(rows));
 }
 
-export { cmdVitals, vitalsRows, vitalsVerdict };
+export { cmdVitals, vitalsRows, vitalsVerdict, pinnedKitVersions };

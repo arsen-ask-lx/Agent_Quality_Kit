@@ -14,6 +14,7 @@ import { parseLastRun } from "../lib/run.mjs";
 import { CATALOGS } from "../i18n/index.mjs";
 import { commandRows } from "../lib/core.mjs";
 import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 
 const T = CATALOGS.ru.context;
 const base = {
@@ -285,4 +286,54 @@ test("есть отчёт для человека — блок велит его
 
 test("отчёта нет — о нём не сказано: называть несуществующий файл нельзя", () => {
   assert.doesNotMatch(text({ report: null }), /report\.html/);
+});
+
+// ВРЕМЯ ПРОГОНА ПИШЕТСЯ ПО ГРИНВИЧУ, А ЧИТАЛОСЬ КАК МЕСТНОЕ. Найдено 2026-09-27 в живом проекте
+// владельца (UTC+5): прогон 11:01 по часам, коммит 10:28 — а агенту в контекст уходило «прогон
+// СТАРЕЕ последнего коммита». Любой прогон в первые пять часов после коммита объявлялся
+// устаревшим. Часовой пояс задаётся дочернему процессу: в самом прогоне тестов он может быть UTC,
+// и там ошибка невидима по построению.
+test("прогон после коммита не называется устаревшим ни в каком часовом поясе", () => {
+  const code = `
+    import { runOlderThanCommit, localStamp } from ${JSON.stringify(new URL("../lib/run.mjs", import.meta.url).href)};
+    const out = {
+      after: runOlderThanCommit("2026-09-27 06:01", "2026-09-27T10:28:27+05:00"),
+      before: runOlderThanCommit("2026-09-27 05:00", "2026-09-27T10:28:27+05:00"),
+      local: localStamp("2026-09-27 06:01"),
+      sameMinute: runOlderThanCommit("2026-09-27 06:36:45", "2026-09-27T11:36:30+05:00"),
+      sameMinuteBefore: runOlderThanCommit("2026-09-27 06:36:10", "2026-09-27T11:36:30+05:00"),
+      localSecs: localStamp("2026-09-27 06:36:45"),
+    };
+    console.log(JSON.stringify(out));`;
+  for (const TZ of ["Asia/Tashkent", "America/New_York", "UTC"]) {
+    const r = spawnSync(process.execPath, ["--input-type=module", "-e", code], { encoding: "utf8", env: { ...process.env, TZ } });
+    assert.equal(r.status, 0, r.stderr);
+    const o = JSON.parse(r.stdout);
+    assert.equal(o.after, false, `${TZ}: прогон 06:01 UTC позже коммита 05:28 UTC — назван устаревшим`);
+    assert.equal(o.before, true, `${TZ}: прогон 05:00 UTC раньше коммита — назван свежим`);
+    // Минут мало: коммит и прогон в одну минуту — обычное дело, и прогон, сделанный ПОСЛЕ
+    // коммита, при точности до минуты назывался устаревшим. Отчёт пишет секунды.
+    assert.equal(o.sameMinute, false, `${TZ}: прогон через 15 секунд после коммита назван устаревшим`);
+    assert.equal(o.sameMinuteBefore, true, `${TZ}: прогон за 20 секунд до коммита назван свежим`);
+    if (TZ === "Asia/Tashkent") {
+      assert.equal(o.local, "2026-09-27 11:01", "человеку время показывается по его часам");
+      assert.equal(o.localSecs, "2026-09-27 11:36", "секунды человеку не нужны");
+    }
+  }
+});
+
+// «45 ГЕЙТОВ НЕ ЗАПУСКАЛОСЬ» — при прогоне 45 из 45 полчаса назад. `doctor` без `--run` хотел
+// сказать «в этот раз я их не запускал», а читалось «не запускались никогда».
+test("отчёт прошлого прогона знает, сколько зелёных из скольких", () => {
+  const r = parseLastRun([
+    "# aqk doctor --run — 2026-09-27 06:01",
+    "✔ lint — 1.1s",
+    "✔ unit — 4.8s",
+    "✘ dead-code — 0.1s",
+    "? smoke — нет инструмента",
+    "",
+    "итого: 2 из 4 зелёных",
+  ].join("\n"));
+  assert.equal(r.green, 2);
+  assert.equal(r.total, 4);
 });

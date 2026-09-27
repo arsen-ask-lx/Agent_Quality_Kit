@@ -79,7 +79,7 @@ function contextBlock(state, T = L.context) {
     const short = (list) => (list.length > MAX_RED
       ? `${list.slice(0, MAX_RED).join(", ")} — ${T.andMore(list.length - MAX_RED)}`
       : list.join(", "));
-    if (red.length) out.push(T.runRed(state.run.when, short(red)));
+    if (red.length) out.push(T.runRed((state.run.local || state.run.when), short(red)));
     // Давнее отдельной строкой с датой: список без возраста делает долг с 13.09 и только что
     // сломанное одинаковыми, и глаз перестаёт читать весь список.
     const age = state.run.age;
@@ -90,8 +90,8 @@ function contextBlock(state, T = L.context) {
     // пойдёт чинить исправный файл. А если бы он не попал НИКУДА, прогон, где всё сломалось,
     // читался бы как «чисто» — та же тишина, только внутри блока, который читает машина.
     if (cannot.length) out.push(T.runCannot(short(cannot)));
-    if (!red.length && !cannot.length) out.push(T.runClean(state.run.when));
-    if (state.run.stale) out.push(T.runStale(state.run.when));
+    if (!red.length && !cannot.length) out.push(T.runClean((state.run.local || state.run.when)));
+    if (state.run.stale) out.push(T.runStale((state.run.local || state.run.when)));
     if (state.run.skipped) out.push(T.skipped(state.run.skipped));
   }
 

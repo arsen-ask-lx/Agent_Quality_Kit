@@ -13,7 +13,7 @@ import { reportBaseline, reportCatalog } from "./doctor-catalog.mjs";
 import { L } from "../i18n/index.mjs";
 import { countArbiters } from "./context.mjs";
 import { beginBrief, finishBrief } from "../lib/brief.mjs";
-import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree } from "../lib/run.mjs";
+import { declaredGates, sinceRef, runGates, progress, listArg, writeRunReport, stagedDiffersFromWorktree, readRun, localStamp } from "../lib/run.mjs";
 import { splitByAge, readHistory } from "../lib/red-age.mjs";
 import { writeHtmlReport, writeStepSummary } from "./report-page.mjs";
 import { autoProbeAllowed, levelLimits } from "../lib/cadence.mjs";
@@ -62,11 +62,14 @@ async function cmdDoctor() {
   const checks = layoutChecks(man, inKit);
 
   let missing = 0;
-  for (const [path, what, required] of checks) {
+  for (const [path, what, required, holdsLevel] of checks) {
     const ok = await exists(join(CWD, path));
     if (!ok && required) missing++;
-    const mark = ok ? c.green("✔") : required ? c.red("✘") : c.dim("○");
-    console.log(`  ${mark}  ${path.padEnd(22)} ${c.dim(what)}${!ok && !required ? c.dim(` · ${L.doctor.layoutAdvice}`) : ""}`);
+    const mark = ok ? c.green("✔") : required ? c.red("✘") : holdsLevel ? c.yellow("!") : c.dim("○");
+    // Прогон не роняет, но ступень держит — так и сказать, а не «это совет»: иначе двумя
+    // строками ниже ступень не засчитается по причине, которую здесь назвали пустяком.
+    const why = ok || required ? "" : holdsLevel ? c.yellow(` · ${L.doctor.layoutHoldsLevel(holdsLevel)}`) : c.dim(` · ${L.doctor.layoutAdvice}`);
+    console.log(`  ${mark}  ${path.padEnd(22)} ${c.dim(what)}${why}`);
   }
 
   // СЛУЖЕБНЫЙ ФАЙЛ, КОТОРЫЙ ВИДИТ GIT. Отзыв с живого проекта 2026-09-11: `.aqk/last-run.md`
@@ -246,10 +249,21 @@ async function cmdDoctor() {
     if (!brief && process.env.AQK_PROBE !== "0") await autoProbe(brief);
     cannotNames = run.results.filter((r) => r.cannot).map((r) => r.name);
   } else if (gates.length) {
-    console.log(
-      c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
-        c.dim(L.doctor.declaredNotRunWhy(`${SELF} doctor --run`) + "\n")
-    );
+    // «Не запускалось» при прогоне полчаса назад читалось как «не запускалось никогда» (живой
+    // проект владельца 2026-09-27). Этот вызов гейты не гонял — но прошлый прогон мог быть, и
+    // о нём сказать можно, ничего не запуская: он записан в `.aqk/last-run.md`.
+    const last = await readRun();
+    if (last && last.total) {
+      const line = L.doctor.lastRun(localStamp(last.when), last.green, last.total, gates.length);
+      console.log((last.green === last.total && !last.stale ? c.dim : c.yellow)(`  ${line}`) +
+        (last.stale ? c.yellow(` ${L.doctor.lastRunStale}`) : "") +
+        c.dim(` ${L.doctor.lastRunAgain(`${SELF} doctor --run`)}\n`));
+    } else {
+      console.log(
+        c.yellow(`  ${L.doctor.declaredNotRun(gates.length)}`) +
+          c.dim(L.doctor.declaredNotRunWhy(`${SELF} doctor --run`) + "\n")
+      );
+    }
   }
 
   // ЕДИНСТВЕННАЯ ПЛАТА ЗА КОМПЛЕКТ — один ответ автору. Человеку говорим здесь, агенту — в

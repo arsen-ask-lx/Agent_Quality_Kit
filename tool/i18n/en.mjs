@@ -79,6 +79,7 @@ export const en = {
     runtimeTracked: (f, cmd) => `${f} is tracked by git — every run rewrites it, and the tree always shows a modified file. Take it out: ${cmd}`,
     runtimeNotIgnored: (f, cmd) => `${f} is this machine's state, yet git sees it: one \`git add .\` and it is in a commit. Hide it: ${cmd}`,
     layoutAdvice: "missing — advice, it does not fail the run",
+    layoutHoldsLevel: (n) => `missing — does not fail the run, but AQK-${n} is not granted without it`,
     coversImpossible: (entry, gate, linter) => `the claim "${gate} holds ${entry}" is wrong: ${linter} has no rule for this class — there is nothing to hold it with`,
     coversCantCheck: (entry, gate) => `cannot check the claim "${gate} holds ${entry}": the gate's linter is not recognised or the entry has no rules for it — taken on trust`,
     selectUnknown: (names, groups) => `--only/--skip: "${names}" is neither a gate from gates: nor a group from groups:${groups ? ` (groups: ${groups})` : ""}. Running everything instead of skipping would be a lie, so stopping.`,
@@ -194,6 +195,9 @@ export const en = {
     moreLines: (n) => `… and ${n} more lines`,
     declaredNotRun: (n) => `${n} gates declared, but never run.`,
     declaredNotRunWhy: (cmd) => ` "declared" and "works" are different claims: ${cmd}`,
+    lastRun: (when, green, total, declared) => `Gates were not run this time. Last run ${when}: ${green} of ${total} green` + (total !== declared ? ` (${declared} declared now)` : "") + ".",
+    lastRunStale: "It is OLDER than the last commit — it describes different code.",
+    lastRunAgain: (cmd) => `Run again: ${cmd}`,
 
     manifestUnknown: (keys) =>
       `The manifest has fields the standard does not know: ${keys.join(", ")}. Looks like a typo — ` +

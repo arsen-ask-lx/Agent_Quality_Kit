@@ -16,6 +16,7 @@ const enDocs = {
       manifest: "manifest parsed",
       preCommit: "pre-commit hook",
       sessionHook: "state to the agent",
+      ciVersion: "version in CI",
       version: "version",
     vitals: "is what the kit runs on wired up: tools, hooks, freshness",
     },
@@ -32,6 +33,8 @@ const enDocs = {
     sessionOk: "the SessionStart hook hands the state to the agent",
     sessionNo: (cmd) => `the agent gets no state: ${cmd}`,
     versionOk: (v) => `${v}, current`,
+    ciVersionOld: (list, cur) => `CI checks with an older version: ${list}, here ${cur} — checks on GitHub are weaker than yours`,
+    ciVersionOk: (v) => `CI on the same version, ${v}`,
     versionUnknown: (v) => `${v}, could not reach the registry — freshness unknown`,
     versionOld: (l, cur) => `${l} is out, you have ${cur}`,
   },
@@ -221,6 +224,10 @@ const enDocs = {
     {
       title: "rules and working gates",
       need: "set rules (the standards directory) and fill at least one gate in gates with a real command",
+      needRulesMissing: (p) => `the manifest says rules: ${p}, but there is no such directory — create it (project standards live there) or fix the path`,
+      needGates: "fill at least one gate in gates with a real command",
+      needRulesMissing: (p) => `the manifest says rules: ${p}, but there is no such directory — create it (project standards live there) or fix the path`,
+      needGates: "fill at least one gate in gates with a real command",
       gives: "checks are declared as commands, not described in prose",
     },
     {

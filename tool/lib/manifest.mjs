@@ -138,7 +138,10 @@ function layoutChecks(man, inKit) {
   // входа, .gitignore и .git — обязательны: на них стоит своя проверка вердикта.
   return [
     [field("docs", inKit ? "kit/docs" : ".aqk/docs"), inKit ? L.doctor.docsKit : L.doctor.docs, false],
-    [field("rules", inKit ? "kit/rules" : ".aqk/rules"), inKit ? L.doctor.rulesKit : L.doctor.rules, false],
+    // Четвёртый элемент — держит ли пункт ступень. Папка правил не обязательна для прогона, но
+    // без неё не засчитывается AQK-1: печатать про неё «это совет» значило противоречить
+    // ступени двумя строками ниже (живой проект владельца 2026-09-27).
+    [field("rules", inKit ? "kit/rules" : ".aqk/rules"), inKit ? L.doctor.rulesKit : L.doctor.rules, false, 1],
     ...(entries.length ? entries : ["AGENTS.md"]).map((e) => [e, L.doctor.agents, true]),
     [".gitignore", L.doctor.gitignore, true],
     [".git", L.doctor.git, true],
@@ -296,6 +299,16 @@ async function assessLevel(man, proof = null) {
     needsProof: level === NEEDS_PROOF && proof === null,
     ...L.levels[level],
   }));
+
+  // Причина называется та, что есть. Общий совет «укажи rules и заполни гейт» проекту, у
+  // которого rules указан и 45 гейтов заполнены, посылает делать сделанное.
+  if (!conditions[1]) {
+    const T = L.levels[1];
+    const rulesSet = typeof man?.rules === "string" && man.rules.trim();
+    steps[1].need = !rulesSet ? T.need
+      : !(await has(man.rules)) ? T.needRulesMissing(man.rules.trim())
+      : T.needGates;
+  }
 
   let reached = -1;
   for (const s of steps) {

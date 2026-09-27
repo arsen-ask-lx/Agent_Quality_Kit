@@ -82,6 +82,7 @@ export const ru = {
     runtimeTracked: (f, cmd) => `${f} отслеживается git — каждый прогон его переписывает, и в дереве вечно висит изменённый файл. Вынуть: ${cmd}`,
     runtimeNotIgnored: (f, cmd) => `${f} — состояние этой машины, а git его видит: одно \`git add .\`, и он в коммите. Спрятать: ${cmd}`,
     layoutAdvice: "нет — это совет, прогон не роняет",
+    layoutHoldsLevel: (n) => `нет — прогон не роняет, но без неё не засчитывается AQK-${n}`,
     coversImpossible: (entry, gate, linter) => `заявка «${gate} держит ${entry}» неверна: у ${linter} нет правила под этот класс — закрывать его нечем`,
     coversCantCheck: (entry, gate) => `заявку «${gate} держит ${entry}» проверить не умею: линтер гейта не распознан или правил записи для него нет — принято на слово`,
     selectUnknown: (names, groups) => `--only/--skip: не знаю «${names}» — это не гейт из gates: и не группа из groups:${groups ? ` (группы: ${groups})` : ""}. Прогон всего подряд вместо пропуска был бы неправдой, поэтому стоп.`,
@@ -201,6 +202,9 @@ export const ru = {
     moreLines: (n) => `… и ещё ${n} строк`,
     declaredNotRun: (n) => `${n} гейтов объявлено, но не запускалось.`,
     declaredNotRunWhy: (cmd) => ` «Объявлен» и «работает» — разные утверждения: ${cmd}`,
+    lastRun: (when, green, total, declared) => `Сейчас гейты не запускались. Последний прогон ${when}: зелёных ${green} из ${total}` + (total !== declared ? ` (объявлено сейчас ${declared})` : "") + ".",
+    lastRunStale: "Он СТАРЕЕ последнего коммита — описывает не тот код.",
+    lastRunAgain: (cmd) => `Прогнать заново: ${cmd}`,
 
     manifestUnknown: (keys) =>
       `В манифесте поля, которых стандарт не знает: ${keys.join(", ")}. Похоже на опечатку — ` +

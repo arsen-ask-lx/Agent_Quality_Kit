@@ -338,7 +338,9 @@ async function runGates(man, opts = {}) {
 // действительно стоят и работают именно СЕЙЧАС. Перезаписывается каждым прогоном, не копится:
 // история — дело git-лога коммитов с этим отчётом, если владелец решит его коммитить.
 async function writeRunReport({ version, reached, results, skipped = [] }) {
-  const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+  // С СЕКУНДАМИ: коммит и прогон в одну минуту — обычное дело, и при точности до минуты
+  // прогон, сделанный после коммита, объявлялся устаревшим. Пояс — Гринвич, см. `stampMs`.
+  const stamp = new Date().toISOString().replace("T", " ").slice(0, 19);
   const ok = results.filter((r) => r.ok).length;
   const lines = [
     `# ${L.report.title} — ${stamp}`,
@@ -417,7 +419,34 @@ function parseLastRun(text) {
   const cannot = [];
   for (const m of text.matchAll(/^\? ([^\s—]+)/gm)) cannot.push(m[1]);
   const skipped = (text.match(/^~ /gm) || []).length;
-  return { when: when.trim(), red, cannot, skipped, stale: false };
+  // Сколько зелёных из скольких — чтобы `doctor` без `--run` мог сказать «последний прогон:
+  // 45 из 45», а не «не запускалось». Пропущенные в итог не входят: их не гоняли.
+  const green = (text.match(/^✔ /gm) || []).length;
+  return { when: when.trim(), red, cannot, skipped, green, total: green + red.length + cannot.length, stale: false };
+}
+
+// ВРЕМЯ В ОТЧЁТЕ — ПО ГРИНВИЧУ, без пометки пояса (`toISOString`, обрезанный до минут). Читать
+// его надо тоже по Гринвичу: `Date.parse("2026-09-27T06:01")` без пояса берёт МЕСТНОЕ время, и в
+// UTC+5 любой прогон в первые пять часов после коммита объявлялся устаревшим. Найдено 2026-09-27
+// в живом проекте владельца.
+function stampMs(when) {
+  const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(:\d{2})?/.exec(String(when || "").trim());
+  return m ? Date.parse(`${m[1]}T${m[2]}${m[3] || ":00"}Z`) : NaN;
+}
+
+function runOlderThanCommit(when, commitIso) {
+  const run = stampMs(when);
+  const commit = Date.parse(String(commitIso || "").trim());
+  return Number.isFinite(commit) && Number.isFinite(run) && run < commit;
+}
+
+// Человеку — по его часам: «06:01» в 11 утра читается как «пять часов назад».
+function localStamp(when) {
+  const ms = stampMs(when);
+  if (!Number.isFinite(ms)) return String(when || "");
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 // Прогон старше последнего коммита описывает не тот код, что лежит перед агентом. Молча выдать
@@ -426,9 +455,7 @@ function runIsStale(when) {
   if (!when) return false;
   const r = spawnSync("git", ["log", "-1", "--format=%cI"], { cwd: CWD, encoding: "utf8" });
   if (r.status !== 0 || !r.stdout) return false;
-  const commit = Date.parse(r.stdout.trim());
-  const run = Date.parse(when.replace(" ", "T"));
-  return Number.isFinite(commit) && Number.isFinite(run) && run < commit;
+  return runOlderThanCommit(when, r.stdout);
 }
 
 // Файлы, у которых ИНДЕКС и рабочая копия расходятся. Гейты читают рабочую копию, а в коммит
@@ -461,8 +488,9 @@ async function readRun() {
   const lastRun = join(CWD, TARGET_DIR, "last-run.md");
   if (!(await exists(lastRun))) return null;
   const run = parseLastRun(await readFile(lastRun, "utf8"));
-  if (run) run.stale = runIsStale(run.when);
+  // `when` остаётся как записан — по нему считается свежесть; `local` — для глаз человека.
+  if (run) { run.stale = runIsStale(run.when); run.local = localStamp(run.when); }
   return run;
 }
 
-export { declaredGates, sinceRef, runGates, progress, selectGates, listArg, writeRunReport, parseLastRun, readRun, stagedDiffersFromWorktree };
+export { declaredGates, sinceRef, runGates, progress, selectGates, listArg, writeRunReport, parseLastRun, readRun, stagedDiffersFromWorktree, runOlderThanCommit, localStamp };

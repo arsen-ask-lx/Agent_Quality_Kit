@@ -33,7 +33,7 @@ function taskText(st, T = L.prompt) {
   const it = [];
   if (!st.manifest) it.push(T.item.init(self));
   if (!st.run) it.push(T.item.runNone(self));
-  else if (st.run.stale) it.push(T.item.runStale(self, st.run.when));
+  else if (st.run.stale) it.push(T.item.runStale(self, st.run.local || st.run.when));
   for (const name of st.run?.red || []) it.push(T.item.red(name, self));
   for (const m of st.missed || []) it.push(T.item.missed(m, self));
   for (const b of st.blind || []) it.push(T.item.blind(b, self));
