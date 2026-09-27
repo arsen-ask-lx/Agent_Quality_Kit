@@ -50,7 +50,15 @@ async function cmdProve() {
 
   const res = await proveGates(man, { planted: true });
   // Сначала сломанные: красное называется первым, иначе его не читают.
-  for (const r of res.results.filter((x) => x.state === "broken")) console.log(line(r));
+  // СЛОМАННЫЙ — С ПРИЧИНОЙ. «Покраснел на зелёном» без вывода гейта отправляет гадать: в
+  // конвейере 2026-09-27 так краснел `dead-code` в образе и зеленел везде, где его можно было
+  // рассмотреть. Хвост вывода того прогона, который и решил вердикт, — сразу под строкой.
+  for (const r of res.results.filter((x) => x.state === "broken")) {
+    console.log(line(r));
+    const side = r.why === "green-failed" ? r.green : r.why === "red-passed" ? r.red : null;
+    const tailLines = String(side?.out || "").trim().split("\n").slice(-6);
+    if (tailLines.length && tailLines[0]) console.log(c.dim(tailLines.map((l) => `       │ ${l}`).join("\n")));
+  }
   for (const r of res.results.filter((x) => x.state === "proven")) console.log(line(r));
   for (const r of res.results.filter((x) => x.state === "unprovable")) console.log(line(r));
 
