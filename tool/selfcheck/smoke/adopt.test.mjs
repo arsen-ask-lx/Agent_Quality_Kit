@@ -95,3 +95,30 @@ test("adopt и запись gates-run-in-ci одинаково решают, и�
     assert.equal(node, k.want, `adopt: ${k.ci}`);
   }
 });
+
+// ЧАСТИЧНАЯ БЕЗЗУБОСТЬ, КОТОРУЮ ПОДСАДКА НЕ ВИДИТ. eslint без `--max-warnings` не роняет проверку
+// на правилах уровня `warn` никогда (документация, раздел Exit Codes). Гейт объявлен обёрткой
+// `npm run lint` — флаги живут в package.json, и смотреть надо туда.
+test("eslint с правилами warn и без --max-warnings — шаг «заглушён» с цитатой и починкой", (t) => {
+  const p = project(t, {
+    ...files({ lint: "npm run lint" }, { samples: false }),
+    "package.json": JSON.stringify({ scripts: { lint: "eslint ." } }),
+    "eslint.config.js": "export default [{ rules: { 'no-console': 'warn' } }];\n",
+  });
+  const out = plain(aqk(p, "adopt", "lint").out);
+  assert.match(out, /✘\s+заглушён: eslint/, tail(out, 25));
+  assert.match(out, /--max-warnings 0/, "не сказано, как починить");
+  assert.match(out, /eslint\.org\/docs/, "нет адреса документации");
+});
+
+test("eslint с --max-warnings 0 — шаг «не заглушён»; неизвестный инструмент — без галочки", (t) => {
+  const p = project(t, {
+    ...files({ lint: "npm run lint", words: "sh check.sh" }, { samples: false }),
+    "package.json": JSON.stringify({ scripts: { lint: "eslint . --max-warnings 0" } }),
+    "eslint.config.js": "export default [{ rules: { 'no-console': 'warn' } }];\n",
+  });
+  assert.match(plain(aqk(p, "adopt", "lint").out), /✔\s+не заглушён: eslint/);
+  const unknown = plain(aqk(p, "adopt", "words").out);
+  assert.doesNotMatch(unknown, /заглушён/, "про неизвестный инструмент сказано «(не) заглушён»");
+  assert.match(unknown, /сведений об этом инструменте в AQK нет/);
+});

@@ -45,7 +45,8 @@
     "entry": [
       "tool/selfcheck/units*.mjs",
       "tool/selfcheck/smoke/*.test.mjs",
-      "tool/selfcheck/lifecycle.mjs"
+      "tool/selfcheck/lifecycle.mjs",
+      "tool/selfcheck/tools-quotes.mjs"
     ],
     "project": [
       "tool/**/*.mjs"

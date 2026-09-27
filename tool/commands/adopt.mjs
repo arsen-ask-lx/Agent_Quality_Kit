@@ -21,8 +21,9 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { readManifest } from "../lib/manifest.mjs";
 import { proveGates } from "../lib/prove.mjs";
+import { toolFindings } from "../lib/tools.mjs";
 import { CWD, SELF, c, exists } from "../lib/core.mjs";
-import { L } from "../i18n/index.mjs";
+import { L, LANG } from "../i18n/index.mjs";
 import { portableSelf } from "./context.mjs";
 
 // Тексты конвейера — те же места, что смотрит запись `gates-run-in-ci`, и то же правило: либо
@@ -105,23 +106,44 @@ async function cmdAdopt(args = []) {
     step(false, T.provenNeedsSamples);
   }
 
-  // 4. Конвейер. Гейт, который гоняет только человек, работает до первого «забыл».
+  // 4. Не заглушён. Сведения об инструменте — по его официальной документации, с цитатой: как
+  // его выключают так, что подсадка этого не всегда покажет. Инструмент не опознан — сведений
+  // нет, и это НЕ галочка: шаг печатается без знака и в вердикт не идёт.
+  const known = await toolFindings(cmd);
+  const en = LANG === "en";
+  if (known) {
+    const off = known.found;
+    step(off.length === 0, off.length === 0 ? T.toolClean(known.tool.tool, (known.tool.off || []).length) : T.toolMuted(known.tool.tool));
+    for (const r of off) {
+      rows.push({ ok: null, text: `${en ? r.why_en : r.why}`, fix: `${T.quote(r.quote, r.source)}\n     ${T.fixLine(en ? r.fix_en : r.fix)}` });
+    }
+  }
+
+  // 5. Конвейер. Гейт, который гоняет только человек, работает до первого «забыл».
   const ci = ciRuns(await ciTexts(), cmd);
   step(ci === "all" || ci === "named",
     ci === "all" ? T.ciAll : ci === "named" ? T.ciNamed : ci === "none" ? T.ciNone : T.ciMissing,
     ci === "all" || ci === "named" ? "" : T.ciFix(`${portableSelf()} doctor --run`));
 
   print(rows);
-  // 5. Документация — шаг для агента, без галочки: его не проверить машиной.
+  // 6. Документация — шаг для агента, без галочки: его не проверить машиной. Если инструмент
+  // опознан, называется его адрес и то, как он сообщает о находке.
   console.log(`  ${c.yellow("→")}  ${T.docs}`);
-  const ok = rows.every((r) => r.ok);
-  console.log(ok ? c.green(`\n  ${T.done}\n`) : c.red(`\n  ${T.notDone(rows.filter((r) => !r.ok).length)}\n`));
+  if (known) {
+    console.log(c.dim(`     ${known.tool.docs}`));
+    console.log(c.dim(`     ${T.exitCodes(en ? known.tool.exit_en : known.tool.exit)}`));
+  } else {
+    console.log(c.dim(`     ${T.toolUnknown}`));
+  }
+  const ok = rows.every((r) => r.ok !== false);
+  console.log(ok ? c.green(`\n  ${T.done}\n`) : c.red(`\n  ${T.notDone(rows.filter((r) => r.ok === false).length)}\n`));
   process.exit(ok ? 0 : 1);
 }
 
 function print(rows) {
   for (const r of rows) {
-    console.log(`  ${r.ok ? c.green("✔") : c.red("✘")}  ${r.text}`);
+    const mark = r.ok === null ? c.red("   ·") : r.ok ? c.green("✔") : c.red("✘");
+    console.log(`  ${mark}  ${r.text}`);
     if (r.fix) console.log(c.dim(`     ${r.fix}`));
   }
 }

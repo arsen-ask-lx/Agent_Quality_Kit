@@ -1,0 +1,76 @@
+{
+  "tool": "ruff",
+  "detect": "(^|[\\s/])ruff(\\s|$)",
+  "catches": "ошибки и нарушения стиля в Python: неиспользуемое, опасное, забытая печать",
+  "catches_en": "Python errors and style violations: unused code, dangerous calls, leftover prints",
+  "for": {
+    "langs": [
+      "python"
+    ]
+  },
+  "docs": "https://docs.astral.sh/ruff/linter/#exit-codes",
+  "install": "uv tool install ruff  (или pip install ruff)",
+  "exit": "0 — чисто или всё исправлено само; 1 — нарушения; 2 — сбой настройки или самого ruff",
+  "exit_en": "0 — clean or everything auto-fixed; 1 — violations; 2 — config or internal failure",
+  "off": [
+    {
+      "id": "exit-zero",
+      "command_has": "--exit-zero\\b",
+      "quote": "`--exit-zero` will cause Ruff to exit with a status code of `0` even if violations were found.",
+      "source": "https://docs.astral.sh/ruff/linter/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/astral-sh/ruff/main/docs/linter.md",
+      "why": "проверка выходит с нулём при любых нарушениях — покраснеть не может",
+      "why_en": "the check exits zero on any violation — it cannot fail",
+      "fix": "убери --exit-zero из команды гейта",
+      "fix_en": "remove --exit-zero from the gate command",
+      "red": [
+        "ruff check --exit-zero .",
+        "ruff check . --exit-zero --select T20"
+      ],
+      "green": [
+        "ruff check .",
+        "ruff check --select T20 ."
+      ]
+    },
+    {
+      "id": "fix-hides",
+      "command_has": "\\bcheck\\b.*--fix\\b|--fix\\b.*\\bcheck\\b",
+      "command_lacks": "--exit-non-zero-on-fix\\b",
+      "quote": "`0` if no violations were found, or if all present violations were fixed automatically.",
+      "source": "https://docs.astral.sh/ruff/linter/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/astral-sh/ruff/main/docs/linter.md",
+      "why": "с --fix исправимые нарушения чинятся молча и выход 0: в конвейере брак не виден, а локально гейт правит файлы",
+      "why_en": "with --fix, fixable violations are repaired silently and exit 0: CI never sees them, locally the gate edits files",
+      "fix": "в гейте — ruff check без --fix, либо добавь --exit-non-zero-on-fix",
+      "fix_en": "in a gate use ruff check without --fix, or add --exit-non-zero-on-fix",
+      "red": [
+        "ruff check --fix .",
+        "ruff check . --fix --select E"
+      ],
+      "green": [
+        "ruff check .",
+        "ruff check --fix --exit-non-zero-on-fix ."
+      ]
+    },
+    {
+      "id": "format-without-check",
+      "command_has": "\\bruff\\s+format\\b",
+      "command_lacks": "--check\\b|--exit-non-zero-on-format\\b",
+      "quote": "`0` if Ruff terminates successfully, regardless of whether any files were formatted.",
+      "source": "https://docs.astral.sh/ruff/formatter/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/astral-sh/ruff/main/docs/formatter.md",
+      "why": "ruff format без --check переписывает файлы и выходит с нулём — это не проверка, а правка",
+      "why_en": "ruff format without --check rewrites files and exits zero — an edit, not a check",
+      "fix": "в гейте — ruff format --check",
+      "fix_en": "in a gate use ruff format --check",
+      "red": [
+        "ruff format .",
+        "ruff format src"
+      ],
+      "green": [
+        "ruff format --check .",
+        "ruff format --exit-non-zero-on-format ."
+      ]
+    }
+  ]
+}

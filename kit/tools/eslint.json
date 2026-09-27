@@ -1,0 +1,79 @@
+{
+  "tool": "eslint",
+  "detect": "(^|[\\s/])eslint(\\s|$)",
+  "catches": "ошибки и опасные приёмы в JavaScript и TypeScript: забытая печать, пустой catch, сложность",
+  "catches_en": "errors and risky patterns in JavaScript and TypeScript: leftover console, empty catch, complexity",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript"
+    ]
+  },
+  "docs": "https://eslint.org/docs/latest/use/command-line-interface#exit-codes",
+  "install": "npm i -D eslint",
+  "exit": "0 — ошибок нет, а предупреждений не больше --max-warnings (без флага — сколько угодно); 1 — ошибка или предупреждений больше порога; 2 — сбой настройки",
+  "exit_en": "0 — no errors and at most --max-warnings warnings (unlimited without the flag); 1 — an error or too many warnings; 2 — config failure",
+  "off": [
+    {
+      "id": "warnings-never-fail",
+      "config_files": [
+        "eslint.config.js",
+        "eslint.config.mjs",
+        "eslint.config.cjs",
+        "eslint.config.ts",
+        "eslint.config.mts",
+        "eslint.config.cts",
+        ".eslintrc",
+        ".eslintrc.js",
+        ".eslintrc.cjs",
+        ".eslintrc.json",
+        ".eslintrc.yml",
+        ".eslintrc.yaml"
+      ],
+      "config_has": "[\"']warn[\"']",
+      "command_lacks": "--max-warnings[=\\s]+0\\b",
+      "quote": "`0`: Linting was successful and there are no linting errors. If the `--max-warnings` flag is set to `n`, the number of linting warnings is at most `n`.",
+      "source": "https://eslint.org/docs/latest/use/command-line-interface#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/eslint/eslint/main/docs/src/use/command-line-interface.md",
+      "why": "правила уровня warn не роняют проверку никогда: предупреждений сколько угодно — выход 0. Подсадка это не всегда видит: образец может попасть в правило уровня error",
+      "why_en": "warn-level rules never fail the check: any number of warnings exits 0. Planting does not always show it: the sample may hit an error-level rule",
+      "fix": "добавь в команду гейта --max-warnings 0 либо переведи нужные правила в error",
+      "fix_en": "add --max-warnings 0 to the gate command, or raise the rules you rely on to error",
+      "red": [
+        {
+          "command": "eslint .",
+          "config": "export default [{ rules: { 'no-console': 'warn' } }];"
+        }
+      ],
+      "green": [
+        {
+          "command": "eslint . --max-warnings 0",
+          "config": "export default [{ rules: { 'no-console': 'warn' } }];"
+        },
+        {
+          "command": "eslint .",
+          "config": "export default [{ rules: { 'no-console': 'error' } }];"
+        }
+      ]
+    },
+    {
+      "id": "empty-is-clean",
+      "command_has": "--no-error-on-unmatched-pattern\\b",
+      "quote": "This option prevents errors when a quoted glob pattern is unmatched.",
+      "source": "https://eslint.org/docs/latest/use/command-line-interface#--no-error-on-unmatched-pattern",
+      "source_raw": "https://raw.githubusercontent.com/eslint/eslint/main/docs/src/use/command-line-interface.md",
+      "why": "шаблон, не совпавший ни с одним файлом, даёт выход 0: проверено ничего, а выглядит как «чисто»",
+      "why_en": "a pattern matching no files exits 0: nothing was checked, and it looks clean",
+      "fix": "убери флаг и укажи шаблон, который находит файлы",
+      "fix_en": "drop the flag and give a pattern that matches files",
+      "red": [
+        "eslint 'src/**/*.ts' --no-error-on-unmatched-pattern",
+        "eslint --no-error-on-unmatched-pattern 'lib/**'"
+      ],
+      "green": [
+        "eslint 'src/**/*.ts'",
+        "eslint ."
+      ]
+    }
+  ]
+}
