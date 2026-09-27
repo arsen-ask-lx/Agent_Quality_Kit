@@ -71,6 +71,8 @@
 - собрать методички одним файлом: `node tool/program.mjs blob` → `GOD_AI.md`
 - проверить функции программы: `node --test tool/selfcheck/units*.mjs`
 - доказать, что гейты ловят брак: `node tool/program.mjs prove`
+- договор установки инструмента: `node tool/program.mjs adopt <гейт>` — код 0, только если гейт
+  объявлен, у него есть образцы, он краснеет на красном и идёт в конвейере
 - проверить комплект: `bash tool/selfcheck/smoke.sh`
 - проверить гейты: `bash tool/selfcheck/gates.sh`
 - проверить, что гейт краснеет на КЛАССЕ примеров, а не на одном: `bash tool/selfcheck/mutation.sh`

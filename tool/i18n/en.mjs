@@ -10,6 +10,7 @@ import { templates } from "./templates-en.mjs";
 const ago = (n) => (n === null || n === undefined ? "" : ` (${n} commit${n === 1 ? "" : "s"} ago)`);
 
 import { enGates } from "./en-gates.mjs";
+import { enAdopt } from "./en-adopt.mjs";
 import { enReport } from "./en-report.mjs";
 
 export const en = {
@@ -38,6 +39,7 @@ export const en = {
     initForce: "overwrite files that already exist",
     start: "no code yet: day-zero guards and the order of work",
     probe: "what the declared checks cannot see: plant a defect into files history calls hot",
+    adopt: "adoption contract: the gate is declared, has samples, is proven, runs in CI — installed is not working",
     prove: "prove the gates catch a defect: each against its own red and green sample",
     doctor: "check what is laid out and what is missing",
     doctorRun: "and also run the declared gates",
@@ -354,5 +356,6 @@ export const en = {
     ],
   },
   ...enGates,
+  ...enAdopt,
   ...enReport,
 };

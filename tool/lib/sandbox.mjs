@@ -91,4 +91,4 @@ async function plantTree(root, src) {
   return async () => { for (const u of undo.reverse()) await u(); };
 }
 
-export { buildSandbox, plant, plantTree, DEP_DIRS };
+export { buildSandbox, plant, plantTree };

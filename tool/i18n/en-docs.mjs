@@ -115,7 +115,7 @@ const enDocs = {
         ? "Before a commit → `aqk doctor --run --since main`: an active Git hook is installed, but AQK is not called from it — the run will not happen by itself."
         : "Before a commit → `aqk doctor --run --since main`: there is no pre-commit hook, it will not happen by itself.",
     whenRules: [
-      "Added or changed a check → `aqk prove`: the gate must go red on its own red sample, otherwise it checks nothing.",
+      "Installed a tool, added or changed a check → `aqk adopt <name>` must return 0: declared, has samples, fails on the red one, runs in CI. Installed is not working — first read the tool's official docs: exit code, threshold, flags that silence it.",
       "Writing a rule into the rulebook → put the arbiter mark next to it, `<!-- aqk: gate-name -->`; no gate — `<!-- aqk: human -->`, which is an admission, not a check.",
       "A check is in your way → do not weaken it (`|| true`, `--exit-zero`, a suppression without a rule code): stop and ask the owner.",
       "You think it is done → `aqk report --since main`: every changed file must be named by a check.",

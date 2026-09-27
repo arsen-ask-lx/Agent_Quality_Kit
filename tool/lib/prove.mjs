@@ -117,8 +117,11 @@ function run(cmd, timeoutMs, prog, cwd = CWD) {
 
 // Возвращает { proven, broken, unprovable, results } — числами и списком, чтобы вызывающий
 // сам решал, что печатать и чем краснеть.
-async function proveGates(man, { timeoutMs = gateTimeout().ms } = {}) {
-  const gates = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+// `only` — доказать один гейт: `adopt` спрашивает про конкретную проверку, и гонять ради неё
+// все остальные значило бы платить минутами за ответ на другой вопрос.
+async function proveGates(man, { timeoutMs = gateTimeout().ms, only = null } = {}) {
+  const all = man?.gates && typeof man.gates === "object" && !Array.isArray(man.gates) ? man.gates : {};
+  const gates = only ? Object.fromEntries(Object.entries(all).filter(([n]) => n === only)) : all;
   const samplesDir = typeof man?.samples === "string" ? man.samples.trim() : "";
   const results = [];
   // Песочница одна на весь вызов и строится только тогда, когда понадобилась: копировать
