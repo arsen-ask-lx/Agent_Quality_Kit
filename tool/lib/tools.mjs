@@ -52,7 +52,11 @@ function ruleFires(rule, command, configTexts = []) {
   if (rule.config_has && !configTexts.some((t) => new RegExp(rule.config_has).test(t))) return false;
   if (rule.config_lacks && configTexts.length && configTexts.every((t) => new RegExp(rule.config_lacks).test(t))) return false;
   // Правило про конфиг без единого конфига не срабатывает: нечего читать — не значит «заглушён».
-  if ((rule.config_has || rule.config_lacks) && !configTexts.length) return false;
+  // Исключение — `config_optional`: там, где нужная настройка ВЫКЛЮЧЕНА ПО УМОЛЧАНИЮ и её можно
+  // включить либо флагом, либо в конфиге. Нет конфига — значит нет и настройки, и это факт, а
+  // не догадка (jscpd: пустой обход без `--fail-on-empty` выходит с нулём).
+  if (rule.config_has && !configTexts.length) return false;
+  if (rule.config_lacks && !configTexts.length && !rule.config_optional) return false;
   return true;
 }
 

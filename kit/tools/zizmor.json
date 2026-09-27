@@ -1,0 +1,69 @@
+{
+  "tool": "zizmor",
+  "detect": "(^|[\\s/])zizmor(\\s|$)",
+  "catches": "опасные настройки GitHub Actions: утечка прав и секретов, подстановка чужого текста в команды",
+  "catches_en": "dangerous GitHub Actions setups: leaked permissions and secrets, untrusted text injected into commands",
+  "for": {
+    "langs": []
+  },
+  "docs": "https://docs.zizmor.sh/usage/#exit-codes",
+  "install": "uvx zizmor  (или pipx install zizmor)",
+  "exit": "0 — находок нет; 11–14 — находки по уровню самой серьёзной; 1 — ошибка; 3 — не нашлось ни одного входа",
+  "exit_en": "0 — no findings; 11–14 — findings by the highest severity; 1 — error; 3 — no inputs collected",
+  "off": [
+    {
+      "id": "no-exit-codes",
+      "command_has": "--no-exit-codes\\b",
+      "quote": "If you run with --no-exit-codes, zizmor will not use exit codes 11 and above.",
+      "source": "https://docs.zizmor.sh/usage/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/zizmorcore/zizmor/main/docs/usage.md",
+      "why": "находки больше не дают ненулевого выхода — проверка не может покраснеть",
+      "why_en": "findings no longer produce a non-zero exit — the check cannot fail",
+      "fix": "убери --no-exit-codes из команды гейта",
+      "fix_en": "remove --no-exit-codes from the gate command",
+      "red": [
+        "zizmor --no-exit-codes .github/workflows"
+      ],
+      "green": [
+        "zizmor .github/workflows"
+      ]
+    },
+    {
+      "id": "sarif-never-fails",
+      "command_has": "--format[=\\s]+sarif\\b",
+      "quote": "If you use --format=sarif, zizmor will not use exit codes 11 and above.",
+      "source": "https://docs.zizmor.sh/usage/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/zizmorcore/zizmor/main/docs/usage.md",
+      "why": "в режиме SARIF находки не дают ненулевого выхода: отчёт уходит в GitHub, а шаг зеленеет. Как гейт такой запуск не работает",
+      "why_en": "in SARIF mode findings do not produce a non-zero exit: the report goes to GitHub, and the step stays green. As a gate this run does not work",
+      "fix": "для гейта запускай zizmor без --format=sarif; SARIF — отдельным шагом для отчёта",
+      "fix_en": "run zizmor without --format=sarif for the gate; produce SARIF in a separate reporting step",
+      "red": [
+        "zizmor --format=sarif .",
+        "zizmor --format sarif .github/workflows"
+      ],
+      "green": [
+        "zizmor .",
+        "zizmor --format=plain ."
+      ]
+    },
+    {
+      "id": "fix-hides",
+      "command_has": "--fix\\b",
+      "quote": "If you run with --fix and all findings are successfully auto-fixed, zizmor will not use exit codes 11 and above.",
+      "source": "https://docs.zizmor.sh/usage/#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/zizmorcore/zizmor/main/docs/usage.md",
+      "why": "с --fix исправимые находки чинятся молча и выход 0: в конвейере беда не видна, а локально гейт правит файлы",
+      "why_en": "with --fix, fixable findings are repaired silently and exit 0: CI never sees them, locally the gate edits files",
+      "fix": "в гейте — zizmor без --fix",
+      "fix_en": "run zizmor without --fix in a gate",
+      "red": [
+        "zizmor --fix .",
+        "zizmor --fix=all ."
+      ],
+      "green": [
+        "zizmor ."
+      ]
+    }
+  ]
+}

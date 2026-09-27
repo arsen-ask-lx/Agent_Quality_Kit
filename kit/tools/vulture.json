@@ -1,0 +1,36 @@
+{
+  "tool": "vulture",
+  "detect": "(^|[\\s/])vulture(\\s|$)",
+  "catches": "мёртвый код в Python: неиспользуемые функции, классы, переменные, импорты и недостижимый код",
+  "catches_en": "dead code in Python: unused functions, classes, variables, imports and unreachable code",
+  "for": {
+    "langs": [
+      "python"
+    ]
+  },
+  "docs": "https://github.com/jendrikseipp/vulture#exit-codes",
+  "install": "pip install vulture",
+  "exit": "3 — найден мёртвый код; 0 — нет; 1 — плохой ввод (нет файла, синтаксическая ошибка); 2 — плохие аргументы",
+  "exit_en": "3 — dead code found; 0 — none; 1 — invalid input (missing file, syntax error); 2 — invalid arguments",
+  "off": [
+    {
+      "id": "confidence-hides-most",
+      "command_has": "--min-confidence[=\\s]+(6[1-9]|[7-9][0-9]|100)\\b",
+      "quote": "attribute, class, function, method, property, variable | 60%",
+      "source": "https://github.com/jendrikseipp/vulture#types-of-unused-code",
+      "source_raw": "https://raw.githubusercontent.com/jendrikseipp/vulture/main/README.md",
+      "why": "уверенность у неиспользуемых функций, классов, методов и переменных — 60%; порог выше молча прячет их все, остаются импорты и недостижимый код",
+      "why_en": "unused functions, classes, methods and variables get 60% confidence; any higher threshold silently hides all of them, leaving imports and unreachable code",
+      "fix": "поставь --min-confidence 60, а ложные срабатывания убери белым списком (vulture --make-whitelist)",
+      "fix_en": "use --min-confidence 60 and move false positives into a whitelist (vulture --make-whitelist)",
+      "red": [
+        "vulture --min-confidence 80 src",
+        "vulture src --min-confidence=100"
+      ],
+      "green": [
+        "vulture --min-confidence 60 src",
+        "vulture src"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "tool": "jscpd",
+  "detect": "(^|[\\s/])jscpd(@\\S+)?(\\s|$)",
+  "catches": "скопированный код: одинаковые и почти одинаковые куски в JavaScript, TypeScript, Python, Go и ещё полутора сотнях форматов",
+  "catches_en": "copy-pasted code: identical and near-identical chunks in JavaScript, TypeScript, Python, Go and 150+ formats",
+  "for": {
+    "langs": [
+      "javascript",
+      "typescript",
+      "python",
+      "go"
+    ]
+  },
+  "docs": "https://github.com/kucherenko/jscpd/blob/master/docs/rust.md#exit-codes",
+  "install": "npx --yes jscpd@5.3  (ставить не обязательно; с 5.3 есть --fail-on-empty)",
+  "exit": "1 — найден клон (или превышен --threshold); 0 — нет, а также когда НЕ ПРОВЕРЕН НИ ОДИН ФАЙЛ, если не передан --fail-on-empty",
+  "exit_en": "1 — a clone found (or --threshold exceeded); 0 — none, and also when NO FILE WAS ANALYZED unless --fail-on-empty is passed",
+  "off": [
+    {
+      "id": "exit-code-zero",
+      "command_has": "--exit-code[=\\s]+0\\b",
+      "quote": "--exit-code N (default 1) when at least one clone was found",
+      "source": "https://github.com/kucherenko/jscpd/blob/master/docs/rust.md#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/kucherenko/jscpd/master/docs/rust.md",
+      "why": "с --exit-code 0 найденный клон даёт выход 0 — проверка не может покраснеть",
+      "why_en": "with --exit-code 0 a found clone exits 0 — the check cannot fail",
+      "fix": "убери --exit-code 0 из команды гейта",
+      "fix_en": "remove --exit-code 0 from the gate command",
+      "red": [
+        "npx jscpd --exit-code 0 src",
+        "jscpd src --exit-code=0"
+      ],
+      "green": [
+        "npx jscpd src",
+        "jscpd --exit-code 1 src",
+        "jscpd --exit-code 10 src"
+      ]
+    },
+    {
+      "id": "empty-is-clean",
+      "command_lacks": "--fail-on-empty\\b",
+      "config_files": [
+        ".jscpd.json"
+      ],
+      "config_lacks": "failOnEmpty[\"']?\\s*:\\s*true",
+      "config_optional": true,
+      "quote": "prints Warning: jscpd analyzed no files and still exits 0, so an intentionally empty tree does not break a pipeline.",
+      "source": "https://github.com/kucherenko/jscpd/blob/master/docs/rust.md#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/kucherenko/jscpd/master/docs/rust.md",
+      "why": "если шаблоны, --format или --ignore не пропустили ни одного файла, выход 0: проверено ничего, а выглядит как «клонов нет»",
+      "why_en": "if the patterns, --format or --ignore let no file through, it exits 0: nothing was checked, and it looks like \"no clones\"",
+      "fix": "добавь в команду гейта --fail-on-empty (или failOnEmpty: true в .jscpd.json); флаг есть с jscpd 5.3 — закрепи версию: npx --yes jscpd@5.3",
+      "fix_en": "add --fail-on-empty to the gate command (or failOnEmpty: true in .jscpd.json); the flag exists since jscpd 5.3 — pin the version: npx --yes jscpd@5.3",
+      "red": [
+        {
+          "command": "npx --yes jscpd@5 --min-lines 8 --threshold 1 src",
+          "config": null
+        },
+        {
+          "command": "jscpd src",
+          "config": "{ \"threshold\": 1 }"
+        }
+      ],
+      "green": [
+        {
+          "command": "npx --yes jscpd@5.3 --fail-on-empty src",
+          "config": null
+        },
+        {
+          "command": "jscpd src",
+          "config": "{ \"failOnEmpty\": true }"
+        }
+      ]
+    }
+  ]
+}

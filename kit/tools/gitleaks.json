@@ -1,0 +1,34 @@
+{
+  "tool": "gitleaks",
+  "detect": "(^|[\\s/])gitleaks(\\s|$)",
+  "catches": "секреты в коде и истории git: ключи, токены, пароли",
+  "catches_en": "secrets in code and git history: keys, tokens, passwords",
+  "for": {
+    "langs": []
+  },
+  "docs": "https://github.com/gitleaks/gitleaks#exit-codes",
+  "install": "brew install gitleaks  (или бинарник с GitHub Releases)",
+  "exit": "0 — утечек нет; 1 — утечка или ошибка; код при утечке меняется флагом --exit-code",
+  "exit_en": "0 — no leaks; 1 — leaks or error; the leak exit code is set by --exit-code",
+  "off": [
+    {
+      "id": "exit-code-zero",
+      "command_has": "--exit-code[=\\s]+0\\b",
+      "quote": "You can always set the exit code when leaks are encountered with the --exit-code flag.",
+      "source": "https://github.com/gitleaks/gitleaks#exit-codes",
+      "source_raw": "https://raw.githubusercontent.com/gitleaks/gitleaks/master/README.md",
+      "why": "с --exit-code 0 найденный секрет даёт выход 0 — проверка не может покраснеть",
+      "why_en": "with --exit-code 0 a found secret exits 0 — the check cannot fail",
+      "fix": "убери --exit-code 0 из команды гейта",
+      "fix_en": "remove --exit-code 0 from the gate command",
+      "red": [
+        "gitleaks dir --exit-code 0 .",
+        "gitleaks git --exit-code=0"
+      ],
+      "green": [
+        "gitleaks dir --no-banner .",
+        "gitleaks git --exit-code 1"
+      ]
+    }
+  ]
+}
