@@ -11,7 +11,7 @@ import {
 import { parseManifest, readManifest, manifestWithGate, entryLifecycle } from "../lib/manifest.mjs";
 import { recordProtection } from "../lib/protection.mjs";
 import {
-  detectFacts, readCatalog, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
+  detectFacts, pickRecipe, triggerVerdict, stems, overlap, matchCatalog,
 } from "../lib/repo.mjs";
 import { GATE_YML_TEMPLATE, CHECK_SH_TEMPLATE, README_TEMPLATE } from "../lib/templates.mjs";
 import { L } from "../i18n/index.mjs";

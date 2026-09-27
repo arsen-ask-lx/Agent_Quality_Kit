@@ -12,14 +12,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseManifest, manifestWithGate, unknownKeys, entryLifecycle, advisorySet, KNOWN_KEYS } from "../lib/manifest.mjs";
-import { triggerVerdict, recipeFor, pickRecipe, stems, overlap, EXT_LANG, whichSync, browserServerAdvice, MARKS } from "../lib/repo.mjs";
+import { triggerVerdict, pickRecipe, stems, overlap } from "../lib/repo.mjs";
 import { scopeOutput, splitAdvice } from "../lib/scope.mjs";
 import { assessBaseline, ITEMS, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { CATALOGS, pickLang, L } from "../i18n/index.mjs";
 import { badgeMarkdown, BADGE_RE, placesToCheck } from "../commands/badge.mjs";
-import { dirname } from "node:path";
 
-const facts = (over = {}) => ({ langs: new Set(), files: 0, ...over });
 
 // --- разбор манифеста ---------------------------------------------------------
 test("список читается и строкой в скобках, и пунктами", () => {

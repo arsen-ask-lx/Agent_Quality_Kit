@@ -63,5 +63,7 @@ todo-without-task
 # run todo-without-task: bash kit/gates/todo-without-task/check.sh .
 units
 shellcheck
+biome
 # run units: node --test tool/selfcheck/units*.mjs
 # run shellcheck: bash kit/ratchet/ratchet.sh ratchets/shellcheck.txt bash tool/selfcheck/shellcheck.sh
+# run biome: bash kit/ratchet/ratchet.sh ratchets/biome.txt bash tool/selfcheck/biome.sh

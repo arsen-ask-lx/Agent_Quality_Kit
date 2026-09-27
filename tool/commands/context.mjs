@@ -370,7 +370,7 @@ async function gatherState({ full = false } = {}) {
 async function cmdContext(args = []) {
   const full = args.includes("--full");
   if (args.includes("--install")) return installHook(full);
-  const { man, entry, rules, level, run, probe, ratchets, fullPart, next, report } = await gatherState({ full });
+  const { entry, rules, level, run, probe, ratchets, fullPart, next, report } = await gatherState({ full });
 
   // ЕДИНСТВЕННАЯ ПЛАТА ЗА КОМПЛЕКТ — один ответ автору, и просит о нём агент: он читает этот
   // блок каждую сессию и передаёт человеку то, что в нём написано. Замер 2026-09-14: тысяча

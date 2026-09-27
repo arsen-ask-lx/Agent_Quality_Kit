@@ -11,7 +11,7 @@
 // где гейты гоняются, — в задание `check` конвейера. Здесь оба правила сторожатся машиной.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 

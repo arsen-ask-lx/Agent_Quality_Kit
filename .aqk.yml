@@ -55,6 +55,8 @@ gates:
   # счётчик провалов в коде выхода, плавающий `printf | grep -q`, here-документ поверх трубы).
   # Всё, что советуем ставить, стоит у нас (решение владельца того же дня).
   shellcheck: "bash kit/ratchet/ratchet.sh ratchets/shellcheck.txt bash tool/selfcheck/shellcheck.sh"
+  # JavaScript комплекта — под biome (выбран замером против eslint 2026-09-27; см. шапку скрипта).
+  biome: "bash kit/ratchet/ratchet.sh ratchets/biome.txt bash tool/selfcheck/biome.sh"
   # Настройка — ключом "knip" в package.json: точка входа модульные проверки, область tool/.
   # Образцы в kit/gates/ намеренно ни на что не ссылаются, это их природа, а не мёртвый код.
   dead-code: "npx --yes knip@6 --directory ."

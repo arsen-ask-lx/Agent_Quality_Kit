@@ -1,6 +1,6 @@
 // tool/commands/doctor.mjs — что разложено, какая ступень, какие гейты применимы и работают.
 
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { CWD, PKG_ROOT, TARGET_DIR, MANIFEST, SELF, c, exists, die, RUNTIME_FILES } from "../lib/core.mjs";

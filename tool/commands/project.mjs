@@ -1,9 +1,9 @@
 // tool/commands/project.mjs — что делают с проектом целиком: разложить комплект, записать
 // урок в общий журнал, собрать методички одним файлом.
 
-import { readdir, mkdir, writeFile, readFile } from "node:fs/promises";
+import { readdir, writeFile, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-import { join, dirname, relative } from "node:path";
+import { join, relative } from "node:path";
 import {
   CWD, PKG_ROOT, DOCS_SRC, RULES_SRC, SKILLS_SRC, TARGET_DIR, MANIFEST, SELF, REPO_URL, c, exists, die,
   copyDir, writeIfAbsent, stateDirs, docPath, ensureIgnored } from "../lib/core.mjs";
@@ -188,7 +188,8 @@ async function cmdNote(args) {
   // Проверяем ровно то же, что потом сверяет kit/gates/lesson-has-outcome: слово «вывод» в
   // тексте не значит вывод, если рядом нет одной из трёх настоящих отметок. Запись проходила бы
   // здесь и тут же краснела на doctor --run — разные требования в двух местах одного правила.
-  if (!/[✅🔧📜👤]/.test(body)) {
+  // Флаг u обязателен: без него 🔧📜👤 — пары суррогатов, и класс совпадал с ЛЮБЫМ эмодзи.
+  if (!/[✅🔧📜👤]/u.test(body)) {
     die(L.note.noOutcome);
   }
 

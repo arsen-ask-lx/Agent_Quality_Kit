@@ -1,0 +1,49 @@
+# Реестр долга: biome
+# Снят 2026-09-27. Список разрешается ТОЛЬКО укорачивать.
+# Новое нарушение красит гейт; исправленное вычёркивается автоматически.
+#
+# Долг без цели и срока не кончается. Цель — сколько нарушений считать погашенным долгом;
+# по достижении храповик скажет убрать обёртку. Срок необязателен, но если он есть,
+# после этой даты непогашенный долг красит гейт — срок без последствия не срок.
+#
+# Находка, которая выпадает не каждый прогон (гонка, чужой код, сеть), вычеркнулась бы
+# в тихий прогон и вернулась бы новой. Такую пометь «~ » в начале строки, а строкой выше
+# напиши «# постоянная: <почему>» — по отсутствию она не вычёркивается.
+# aqk-goal: 0
+# aqk-deadline:
+tool/commands/context.mjs:14: lint/suspicious/useIterableCallbackReturn: This callback passed to forEach() iterable method should not return a value.
+tool/commands/context.mjs:7: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/doctor.mjs:7: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/doctor.mjs:9: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/feedback.mjs:13: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/feedback.mjs:25: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/feedback.mjs:33: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/feedback.mjs:7: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/gates.mjs:9: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/commands/learn.mjs:84: lint/suspicious/noSparseArray: This array contains an empty slots..
+tool/commands/prompt.mjs:26: lint/suspicious/useIterableCallbackReturn: This callback passed to forEach() iterable method should not return a value.
+tool/commands/vitals.mjs:11: lint/complexity/noUselessTernary: Unnecessary use of boolean literals in conditional expression.
+tool/i18n/templates-en.mjs:26: lint/correctness/noUnusedFunctionParameters: This parameter slug is unused.
+tool/i18n/templates-en.mjs:28: lint/correctness/noUnusedFunctionParameters: This parameter slug is unused.
+tool/i18n/templates-ru.mjs:26: lint/correctness/noUnusedFunctionParameters: This parameter slug is unused.
+tool/i18n/templates-ru.mjs:28: lint/correctness/noUnusedFunctionParameters: This parameter slug is unused.
+tool/lib/brief.mjs:7: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/lib/protection.mjs:14: lint/suspicious/noPrototypeBuiltins: Do not access Object.prototype method 'hasOwnProperty' from target object.
+tool/lib/protection.mjs:8: lint/suspicious/noPrototypeBuiltins: Do not access Object.prototype method 'hasOwnProperty' from target object.
+tool/lib/prove.mjs:60: lint/suspicious/noAssignInExpressions: The assignment should not be in an expression.
+tool/lib/red-age.mjs:63: lint/complexity/useOptionalChain: Change to an optional chain.
+tool/lib/repo.mjs:49: lint/suspicious/noSparseArray: This array contains an empty slots..
+tool/lib/report-html.mjs:11: lint/suspicious/useIterableCallbackReturn: This callback passed to forEach() iterable method should not return a value.
+tool/selfcheck/smoke/adopt.test.mjs:33: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/ci-hooks.test.mjs:85: lint/suspicious/noTemplateCurlyInString: Unexpected template string placeholder.
+tool/selfcheck/smoke/ci-pipe.test.mjs:71: lint/suspicious/noTemplateCurlyInString: Unexpected template string placeholder.
+tool/selfcheck/smoke/ci-pipe.test.mjs:73: lint/suspicious/noTemplateCurlyInString: Unexpected template string placeholder.
+tool/selfcheck/smoke/fail-closed.test.mjs:41: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/first-run.test.mjs:31: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/first-run.test.mjs:33: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/protection-command.test.mjs:58: lint/complexity/noAdjacentSpacesInRegex: This regular expression contains unclear uses of consecutive spaces.
+tool/selfcheck/smoke/prove-planted.test.mjs:37: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/recipes-proven.test.mjs:49: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/staged-vs-worktree.test.mjs:41: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/smoke/verdict.test.mjs:45: lint/suspicious/noControlCharactersInRegex: Unexpected control character in a regular expression.
+tool/selfcheck/units.mjs:64: lint/suspicious/noUselessEscapeInString: The character doesn't need to be escaped.

@@ -226,8 +226,6 @@ const enDocs = {
       need: "set rules (the standards directory) and fill at least one gate in gates with a real command",
       needRulesMissing: (p) => `the manifest says rules: ${p}, but there is no such directory — create it (project standards live there) or fix the path`,
       needGates: "fill at least one gate in gates with a real command",
-      needRulesMissing: (p) => `the manifest says rules: ${p}, but there is no such directory — create it (project standards live there) or fix the path`,
-      needGates: "fill at least one gate in gates with a real command",
       gives: "checks are declared as commands, not described in prose",
     },
     {

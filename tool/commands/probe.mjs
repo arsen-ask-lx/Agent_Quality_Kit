@@ -29,7 +29,7 @@ import { fixHotspots, probeSummary, probeVerdictPaired, countProbe, namesPlant, 
 import { detectFacts, readCatalog, triggerVerdict } from "../lib/repo.mjs";
 import { blindAdvice } from "../lib/advice.mjs";
 import { CWD, GATES_SRC, TARGET_DIR, c, SELF, exists } from "../lib/core.mjs";
-import { probeState, probeEvery, PROBE_EVERY, blindLines, parseBlind, parseRan, parseCounts } from "../lib/cadence.mjs";
+import { probeState, probeEvery, blindLines, parseBlind, parseRan, parseCounts } from "../lib/cadence.mjs";
 import { L } from "../i18n/index.mjs";
 import { gateCommand } from "../lib/execution.mjs";
 import { buildSandbox, plant } from "../lib/sandbox.mjs";

@@ -14,7 +14,7 @@
 // «прочитал и решил не применять» машине не видна, и притворяться иначе было бы враньём.
 
 import { mkdir, writeFile, readdir, readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import { statSync } from "node:fs";
 import { CWD, TARGET_DIR, SELF, c, exists, docPath } from "../lib/core.mjs";
 import { readManifest, assessLevel } from "../lib/manifest.mjs";

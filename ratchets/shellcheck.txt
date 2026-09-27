@@ -80,4 +80,3 @@ tool/selfcheck/smoke.sh:44: note: Note that A && B || C is not if-then-else. C m
 tool/selfcheck/smoke.sh:6: note: Check exit code directly with e.g. 'if mycmd;', not indirectly with $?. [SC2181]
 tool/selfcheck/smoke.sh:8: note: Don't use variables in the printf format string. Use printf '..%s..' "$foo". [SC2059]
 tool/selfcheck/syntax.sh:8: warning: Use var=$(command) to assign output (or quote to assign string). [SC2209]
-почини: замечание shellcheck — его код в скобках, объяснение: https://www.shellcheck.net/wiki/<код>

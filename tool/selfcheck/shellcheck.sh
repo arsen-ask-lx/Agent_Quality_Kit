@@ -51,6 +51,6 @@ CODE=$?
 # находкой не выдаётся.
 case "$CODE" in
   0) exit 0 ;;
-  1) echo "почини: замечание shellcheck — его код в скобках, объяснение: https://www.shellcheck.net/wiki/<код>"; exit 1 ;;
+  1) echo "  почини: замечание shellcheck — его код в скобках, объяснение: https://www.shellcheck.net/wiki/<код>"; exit 1 ;;
   *) echo "не смогли проверить: shellcheck вышел с кодом $CODE"; exit 2 ;;
 esac
