@@ -14,7 +14,8 @@ import { startWith, catalogBuckets, blindAdvice } from "../lib/advice.mjs";
 import { proposeGates, readAdoptFiles } from "../lib/adopt.mjs";
 import { assessBaseline, DEP_FILES, BASELINE_TOTAL } from "../lib/baseline.mjs";
 import { declaredGates } from "../lib/run.mjs";
-import { L } from "../i18n/index.mjs";
+import { loadTools, effectiveCommand, toolAdvice } from "../lib/tools.mjs";
+import { L, LANG } from "../i18n/index.mjs";
 
 // Обязательный минимум проекта — прогоном, а не по памяти. До сих пор это было единственное
 // место, где комплект просил верить на слово, что человек прочитал методичку и сверился.
@@ -180,6 +181,8 @@ async function reportCatalog(man, facts, probe = null, verbose = true) {
     console.log(c.dim(`     ${L.doctor.todoRestHow(SELF)}`));
   }
 
+  await reportToolAdvice(man, facts, catalog);
+
   // Второстепенное — в конце: что закрыто чужим арбитром, что неприменимо, советы без вердикта.
   if (byOther.length) {
     console.log(c.dim(`\n  ${L.doctor.coveredBy(byOther.length)}`));
@@ -239,6 +242,32 @@ async function reportCatalog(man, facts, probe = null, verbose = true) {
   // Числа отдаются наружу, а не пересчитываются второй раз: два счёта одного и того же
   // расходятся ровно так же, как два списка команд.
   return { held: held.length, todo: todo.length, todoRecs: todo };
+}
+
+// ЧТО ЕЩЁ СТОИТ ПОСТАВИТЬ — инструменты вне каталога. Сведения о них (`kit/tools`) раньше читались
+// только о том, что уже стоит, а совета не давал никто: живой проект владельца 2026-09-27 получил
+// от агента «какие сторонние инструменты поставить, AQK не советует» — и это было правдой.
+// Не повторяем и не обходим каталог: инструмент из проверки проекта или из ЛЮБОГО рецепта каталога
+// решает каталог — с его условиями применимости. Иначе совет называл jscpd проекту из двух файлов,
+// которому запись `duplicate-code` сознательно не показана.
+async function reportToolAdvice(man, facts, catalog) {
+  const tools = await loadTools();
+  if (!tools.length) return;
+  let scripts = {};
+  try { scripts = JSON.parse(await readFile(join(CWD, "package.json"), "utf8")).scripts || {}; } catch { /* нет package.json — раскрывать нечего */ }
+  const commands = [
+    ...declaredGates(man).map(([, cmd]) => effectiveCommand(cmd, scripts)),
+    ...catalog.flatMap((r) => Object.values(r.recipes || {}).map(String)),
+  ];
+  const covered = new Set(tools.filter((t) => commands.some((cmd) => new RegExp(t.detect).test(cmd))).map((t) => t.tool));
+  const advice = toolAdvice(tools, facts, covered);
+  if (!advice.length) return;
+  console.log(`\n  ${c.bold(L.doctor.toolsHeading)}`);
+  for (const { tool, because } of advice) {
+    const why = because.map((b) => (b === "langs" ? L.doctor.toolBecauseLangs((tool.for.langs || []).filter((l) => facts.langs.has(l)).join(", ")) : L.doctor.toolBecause[b] || b)).join(", ");
+    console.log(`  ${c.yellow("→")}  ${tool.tool.padEnd(22)} ${why} — ${LANG === "en" ? tool.catches_en : tool.catches}`);
+    console.log(c.dim(`     ${L.doctor.toolHow(tool.install, `${SELF} adopt ${tool.tool}`)}`));
+  }
 }
 
 export { reportBaseline, reportCatalog };

@@ -84,6 +84,8 @@ const SKIP_DIRS = new Set(readSkipNames());
 // спрашивает, — это лишний обход дерева.
 const MARKS = [
   ["has_ci", [".github/workflows", ".gitlab-ci.yml", ".circleci", "Jenkinsfile", "azure-pipelines.yml"]],
+  // Конвейер именно на GitHub Actions: zizmor проверяет только его, совет проекту на GitLab — неправда.
+  ["has_gh_actions", [".github/workflows"]],
   ["has_docker", ["Dockerfile", "compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"]],
   ["has_deps", ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "composer.json"]],
   ["has_env", [".env", ".env.example", ".env.sample"]],

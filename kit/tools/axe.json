@@ -8,7 +8,7 @@
       "javascript",
       "typescript"
     ],
-    "has_frontend": true
+    "has_ui": true
   },
   "docs": "https://github.com/dequelabs/axe-core-npm/tree/develop/packages/cli#readme",
   "install": "npx @axe-core/cli <адрес>  (внутри тестов Playwright — @axe-core/playwright)",

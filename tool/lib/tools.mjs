@@ -90,4 +90,52 @@ async function toolFindings(cmd, { tools, cwd = CWD } = {}) {
   return { tool, command, found };
 }
 
-export { loadTools, effectiveCommand, detectTool, ruleFires, toolFindings };
+// СОВЕТ «ЧТО ПОСТАВИТЬ». Поле `for` инструмента — условие по признакам репозитория, которые
+// вычисляет `detectFacts` (repo.mjs). Только эти ключи: признак, которого `doctor` не считает,
+// делает совет мёртвым молча — так было у axe (`has_frontend`) и k6 (`has_server`) до 2026-09-27.
+// Сторожит `units-tools.mjs`.
+const ADVICE_FACTS = ["has_tests", "has_ui", "has_api_spec", "has_db", "has_ci", "has_gh_actions", "has_docker", "has_deps", "has_env", "has_mcp"];
+
+// Подходит ли инструмент проекту — и по каким признакам. null — не подходит.
+function toolFits(t, facts) {
+  const want = t.for || {};
+  const because = [];
+  const langs = Array.isArray(want.langs) ? want.langs : [];
+  if (langs.length) {
+    // Основные языки, а не любой встреченный: скрипт на Python в проекте на TypeScript не повод
+    // советовать мутационное тестирование Python. Так же `doctor` выбирает команду записи.
+    const main = Array.isArray(facts.mainLangs) ? facts.mainLangs : [...(facts.langs || [])];
+    if (!langs.some((l) => main.includes(l))) return null;
+    because.push("langs");
+  }
+  for (const k of Object.keys(want)) {
+    if (k === "langs") continue;
+    if (!facts[k]) return null;
+    because.push(k);
+  }
+  return because;
+}
+
+// Что посоветовать поставить. `covered` — инструменты, которые уже стоят в проверках проекта или
+// советуются записью каталога: второй раз их не называем. Один инструмент на роль: проекту с
+// eslint не советуют biome. Сначала совет по признаку проекта (есть описание API, интерфейс,
+// тесты) — он конкретнее совета «у вас TypeScript»; и не больше `limit`: длинный список не читают.
+function toolAdvice(tools, facts, covered, limit = 3) {
+  const taken = new Set(tools.filter((t) => t.role && covered.has(t.tool)).map((t) => t.role));
+  const specific = (b) => b.filter((x) => x !== "langs").length;
+  const fits = tools
+    .filter((t) => !t.no_advice && !covered.has(t.tool) && !(t.role && taken.has(t.role)))
+    .map((t) => ({ tool: t, because: toolFits(t, facts) }))
+    .filter((a) => a.because)
+    .sort((a, b) => specific(b.because) - specific(a.because) || a.tool.tool.localeCompare(b.tool.tool));
+  const out = [];
+  for (const a of fits) {
+    if (a.tool.role && taken.has(a.tool.role)) continue;
+    if (a.tool.role) taken.add(a.tool.role);
+    out.push(a);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+export { loadTools, effectiveCommand, detectTool, ruleFires, toolFindings, ADVICE_FACTS, toolAdvice };

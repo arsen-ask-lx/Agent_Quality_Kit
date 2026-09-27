@@ -103,6 +103,28 @@ const CASES = [
     gates: { "entry-commands-exist": 0 },
   },
   {
+    name: "описание API есть, проверки по нему нет — совет поставить schemathesis",
+    source: "живой проект владельца 2026-09-27: «какие сторонние инструменты поставить, AQK не советует»",
+    files: {
+      "openapi.yaml": "openapi: 3.0.0\ninfo: {title: x, version: '1'}\npaths: {}\n",
+      "app.py": "def f():\n    return 1\n",
+    },
+    env: { AQK_LANG: "ru" },
+    doctorHas: /schemathesis\s+есть описание API/,
+  },
+  {
+    name: "schemathesis уже стоит в проверке — второй раз не советуется",
+    source: "там же: совет о поставленном — шум, после которого совет перестают читать",
+    files: {
+      "openapi.yaml": "openapi: 3.0.0\ninfo: {title: x, version: '1'}\npaths: {}\n",
+      "app.py": "def f():\n    return 1\n",
+      ".aqk.yml": "aqk: 1\nentry:\n  - AGENTS.md\ngates:\n  api: \"st run openapi.yaml\"\n",
+    },
+    before: [],
+    env: { AQK_LANG: "ru" },
+    doctorNot: /schemathesis\s+есть описание API/,
+  },
+  {
     name: "договор в коде (провайдер типов Fastify) без проверки типов",
     source: "отзыв с живого проекта 2026-09-11: «спецификации API не видно» при zod-схемах в общем пакете",
     files: { "backend/package.json": JSON.stringify({ dependencies: { "@fastify/type-provider-zod": "1.0.0", zod: "4.5.4" } }) },

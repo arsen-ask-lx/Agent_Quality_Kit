@@ -109,5 +109,6 @@
         "biome check ."
       ]
     }
-  ]
+  ],
+  "role": "js-linter"
 }

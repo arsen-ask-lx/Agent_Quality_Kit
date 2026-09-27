@@ -75,5 +75,6 @@
         "eslint ."
       ]
     }
-  ]
+  ],
+  "role": "js-linter"
 }

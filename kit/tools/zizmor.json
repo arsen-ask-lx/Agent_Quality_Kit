@@ -4,7 +4,8 @@
   "catches": "опасные настройки GitHub Actions: утечка прав и секретов, подстановка чужого текста в команды",
   "catches_en": "dangerous GitHub Actions setups: leaked permissions and secrets, untrusted text injected into commands",
   "for": {
-    "langs": []
+    "langs": [],
+    "has_gh_actions": true
   },
   "docs": "https://docs.zizmor.sh/usage/#exit-codes",
   "install": "uvx zizmor  (или pipx install zizmor)",

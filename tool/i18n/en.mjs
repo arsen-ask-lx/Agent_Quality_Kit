@@ -99,6 +99,10 @@ export const en = {
     rulesByHuman: (total, machine, human) =>
       `${human} of ${total} rules in the entry point are guarded by a HUMAN, ${machine} by a machine.`,
     rulesByHumanWhy: "A rule guarded by a human is guarded by nobody the day the human is busy. That is the hole this kit exists to close — and the reminder belongs to the human, not only to the agent. Counted in the entry point and in the manifest's rules folder: a promise kept in any other file is checked by nothing, and this kit will not tell you it exists.",
+    toolsHeading: "Worth installing next — tools outside the catalog, by what this repository has:",
+    toolBecauseLangs: (langs) => `${langs} code`,
+    toolBecause: { has_api_spec: "an API spec", has_ui: "a user interface", has_tests: "tests", has_db: "a database", has_ci: "a CI pipeline", has_gh_actions: "GitHub Actions", has_docker: "Docker", has_deps: "dependencies", has_env: "a .env file", has_mcp: "MCP servers" },
+    toolHow: (install, adopt) => `install: ${install} · then declare the check in .aqk.yml and prove it goes red: ${adopt}`,
     rulesDir: (dir, total, machine, human) => `rules in ${dir}: ${total}. Guarded by a check: ${machine}, by a human: ${human}.`,
     rulesUnmarked: (n) => `${n} carry no mark saying what guards them: to a machine that is text followed while remembered.`,
     rulesMissing: (gate, n, cmd) => `a rule promises the check ${gate}, and it is not installed (rules: ${n}) → ${cmd}`,
@@ -277,6 +281,7 @@ export const en = {
     flags: {
       has_gates: ["no gates declared in the manifest", "gates are already declared"],
       has_ci: ["no pipeline in this repository", "a pipeline already exists"],
+      has_gh_actions: ["no GitHub Actions workflows here", "GitHub Actions workflows already exist"],
       has_db: ["no database in sight: no migrations, no sql", "a database exists"],
       has_docker: ["no Dockerfile or compose", "docker is already here"],
       has_deps: ["no dependency file in sight", "dependencies are declared"],
